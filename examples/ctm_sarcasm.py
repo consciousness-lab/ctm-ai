@@ -1,4 +1,6 @@
-from ctm_base import BaseConsciousnessTuringMachine
+import sys
+sys.path.append('..')
+from ctm.ctm_base import BaseConsciousnessTuringMachine
 
 @BaseConsciousnessTuringMachine.register_ctm('whatname_ctm')
 class WhatNameConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
@@ -16,7 +18,7 @@ if __name__ == "__main__":
     answer_threshold = 0.5
     max_iter = 3
     question = 'Is the person saying sarcasm or not?'
-    image_path = './sarcasm-test1.png'
+    image_path = '../images/sarcasm_example1.png'
     
     answer = ctm(question=question, image_path=image_path)
     print(answer)
