@@ -40,7 +40,7 @@ class BaseProcessor(object):
         max_attempts = 5
         for attempt in range(max_attempts):
             try:
-                response = self.client.chat.completions.create(
+                response = self.model.chat.completions.create(
                     model="gpt-4-0125-preview",
                     messages=[
                         {"role": "user", "content": "How related is the information ({}) with the query ({})? Answer with a number from 0 to 5 and do not add any other thing.".format(gist, query)},
@@ -61,7 +61,7 @@ class BaseProcessor(object):
         max_attempts = 5
         for attempt in range(max_attempts):
             try:
-                response = self.client.chat.completions.create(
+                response = self.model.chat.completions.create(
                     model="gpt-4-0125-preview",
                     messages=[
                         {"role": "user", "content": "How confidence do you think the information ({}) is a mustk? Answer with a number from 0 to 5 and do not add any other thing.".format(gist, query)},
@@ -83,7 +83,7 @@ class BaseProcessor(object):
         max_attempts = 5
         for attempt in range(max_attempts):
             try:
-                response = self.client.chat.completions.create(
+                response = self.model.chat.completions.create(
                     model="gpt-4-0125-preview",
                     messages=[
                         {"role": "user", "content": "How surprise do you think the information ({}) is as an output of the processor? Answer with a number from 0 to 5 and do not add any other thing.".format(gist, query)},

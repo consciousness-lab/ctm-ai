@@ -1,6 +1,6 @@
 from typing import Union, List, Dict
 
-class BaseProcessorMessenger(object):
+class BaseMessenger(object):
     _messenger_registry = {}
 
     @classmethod
@@ -10,13 +10,13 @@ class BaseProcessorMessenger(object):
             return subclass
         return decorator
 
-    def __new__(cls, processor_name, *args, **kwargs):
-        if processor_name not in cls._messenger_registry:
-            raise ValueError(f"No messenger registered with name '{processor_name}'")
-        return super(BaseProcessorMessenger, cls).__new__(cls._messenger_registry[processor_name])
+    def __new__(cls, messenger_name, *args, **kwargs):
+        if messenger_name not in cls._messenger_registry:
+            raise ValueError(f"No messenger registered with name '{messenger_name}'")
+        return super(BaseMessenger, cls).__new__(cls._messenger_registry[messenger_name])
 
     def __init__(self, role = None, content = None, *args, **kwargs):
-        self.init_messager(role, content)
+        self.init_messenger(role, content)
 
     def init_messenger(self, role: str = None, content: Union[str, Dict, List] = None):
         pass
