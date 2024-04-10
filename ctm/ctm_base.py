@@ -99,9 +99,12 @@ class BaseConsciousnessTuringMachine(object):
         final_answer, score = self.answer_generator['processor_instance'].ask(question, processor_info['gist'])
         return final_answer, score
 
-    def downtree_broadcast(self, gist):
+    def downtree_broadcast(self, winning_output):
+        winning_processor_name = winning_output['name']
+        winning_processor_gist = winning_output['gist']
         for processor in self.processor_list:
-            processor['processor_instance'].base_prompt.append('hello, world')
+            if processor['processor_name'] != winning_processor_name:
+                processor['processor_instance'].update_info(winning_processor_gist)
         return 
         
     def link_form(self, infos, scores):
@@ -116,14 +119,13 @@ class BaseConsciousnessTuringMachine(object):
         
         for i in range(max_iter):
             print('start the {}-th iteration'.format(i + 1))
-            self.downtree_broadcast('hello')
             processor_output = self.ask_processors(question=question, image_path=image_path)
             winning_output = self.uptree_competition(processor_output)
             answer, score = self.answer_generation(question, winning_output)
+            import pdb; pdb.set_trace()
             if score > answer_threshold:
                 break
             else:
                 self.downtree_broadcast(winning_output)
                 self.link_form()
-
         return answer, score
