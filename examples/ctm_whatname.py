@@ -1,4 +1,4 @@
-from ctm.ctm_base import BaseConsciousnessTuringMachine
+from ctm_base import BaseConsciousnessTuringMachine
 
 @BaseConsciousnessTuringMachine.register_ctm('whatname_ctm')
 class WhatNameConsciousnessTuringMachine(BaseConsciousnessTuringMachine):

@@ -1,10 +1,7 @@
 from processors.processor_base import BaseProcessor
+from supervisors.supervisor_base import BaseSupervisor
 import concurrent.futures
-import random
-import openai
 from collections import defaultdict
-import numpy as np
-from collections import Counter
 from openai import OpenAI
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -38,9 +35,9 @@ class BaseConsciousnessTuringMachine(object):
         if group_name:
             self.processor_group_map[processor_name] = group_name
     
-    def add_answer_generator(self, answer_generator_name):
-        answer_generator_instance = BaseProcessor(answer_generator_name)
-        self.answer_generator = {'processor_name': answer_generator_name, 'processor_instance': answer_generator_instance}
+    def add_supervisor(self, supervisor_name):
+        supervisor_instance = BaseSupervisor(supervisor_name)
+        self.supervisor = {'supervisor_name': supervisor_name, 'supervisor_instance': supervisor_instance}
 
     @staticmethod
     def ask_processor(processor, question, image_path):
@@ -97,8 +94,8 @@ class BaseConsciousnessTuringMachine(object):
         }
         return winning_info
 
-    def answer_generation(self, question, processor_info):
-        final_answer, score = self.answer_generator['processor_instance'].ask(question, processor_info['gist'])
+    def ask_supervisor(self, question, processor_info):
+        final_answer, score = self.supervisor['supervisor_instance'].ask(question, processor_info['gist'])
         return final_answer, score
 
     def downtree_broadcast(self, winning_output):
@@ -151,10 +148,13 @@ class BaseConsciousnessTuringMachine(object):
             print('start the {}-th iteration'.format(i + 1))
             processor_output = self.ask_processors(question=question, image_path=image_path)
             winning_output = self.uptree_competition(processor_output)
-            answer, score = self.answer_generation(question, winning_output)
+            answer, score = self.ask_supervisor(question, winning_output)
             if score > answer_threshold:
                 break
             else:
                 self.downtree_broadcast(winning_output)
                 self.link_form(processor_output)
         return answer, score
+    
+    def craft_ctm(self):
+        pass

@@ -6,7 +6,6 @@ from .processor_gpt4v_ocr import GPT4VOCRProcessor
 from .processor_gpt4v_cloth_fashion import GPT4VClothFashionProcessor
 from .processor_gpt4v_face_emotion import GPT4VFaceEmotionProcessor
 from .processor_gpt4v_posture import GPT4VPostureProcessor
-from .processor_whatname_answer_generation import WhatNameAnswerGenerationProcessor
 
 __all__ = [
     'BaseProcessor',
@@ -19,5 +18,4 @@ __all__ = [
     'GPT4VClothFashionProcessor',
     'GPT4VFaceEmotionProcessor',
     'GPT4VPostureProcessor',
-    'WhatNameAnswerGenerationProcessor',
 ]
