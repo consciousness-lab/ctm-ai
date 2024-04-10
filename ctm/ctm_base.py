@@ -6,6 +6,8 @@ from collections import defaultdict
 import numpy as np
 from collections import Counter
 from openai import OpenAI
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 class BaseConsciousnessTuringMachine(object):
     _ctm_registry = {}
@@ -106,9 +108,37 @@ class BaseConsciousnessTuringMachine(object):
             if processor['processor_name'] != winning_processor_name:
                 processor['processor_instance'].update_info(winning_processor_gist)
         return 
+    
+    def calc_processor_sim(self, processor_output):
+        processor_gists = [info['gist'] for info in processor_output.values()]
+        tfidf_vectorizer = TfidfVectorizer()
+        tfidf_matrix = tfidf_vectorizer.fit_transform(processor_gists)
+        cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+        return cosine_sim
         
-    def link_form(self, infos, scores):
-        return infos, scores
+    def link_form(self, processor_output):
+        sim = self.calc_processor_sim(processor_output)
+        print(sim)
+        # iterate on each sim pair
+        # if sim > threshold, then link the two processors by combining them into the same group
+        link_threshold = 0.5
+        for i in range(len(sim)):
+            for j in range(i + 1, len(sim)):
+                if sim[i][j] > 0.5:
+                    processor1_name = list(processor_output.keys())[i]
+                    processor2_name = list(processor_output.keys())[j]
+                    # choose the group that includes more processors
+                    # processor_group_map is a dict with processor_name as key and group_name as value
+                    group1 = self.processor_group_map[processor1_name]
+                    group2 = self.processor_group_map[processor2_name]
+                    # calculate the number of processors in each group
+                    group1_count = sum([1 for group in self.processor_group_map.values() if group == group1])
+                    group2_count = sum([1 for group in self.processor_group_map.values() if group == group2])
+                    # choose the group with more processors
+                    group_name = group1 if group1_count > group2_count else group2
+                    self.processor_group_map[processor1_name] = group_name
+                    self.processor_group_map[processor2_name] = group_name
+        return
     
     def processor_fuse(self, infos, scores):
         return infos, scores
@@ -122,10 +152,9 @@ class BaseConsciousnessTuringMachine(object):
             processor_output = self.ask_processors(question=question, image_path=image_path)
             winning_output = self.uptree_competition(processor_output)
             answer, score = self.answer_generation(question, winning_output)
-            import pdb; pdb.set_trace()
             if score > answer_threshold:
                 break
             else:
                 self.downtree_broadcast(winning_output)
-                self.link_form()
+                self.link_form(processor_output)
         return answer, score
