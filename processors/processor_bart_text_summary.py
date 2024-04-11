@@ -3,8 +3,8 @@ from messengers.messenger_base import BaseMessenger
 from huggingface_hub.inference_api import InferenceApi
 import os
 
-@BaseProcessor.register_processor('bart_text_summ_processor')
-class BartTextSummarizationProcessor(BaseProcessor):
+@BaseProcessor.register_processor('bart_text_summary_processor')
+class BartTextSummaryProcessor(BaseProcessor):
 
     def __init__(self, *args, **kwargs):
         self.init_processor()

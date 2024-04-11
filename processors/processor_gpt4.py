@@ -1,6 +1,7 @@
 from processors.processor_base import BaseProcessor
 from messengers.messenger_base import BaseMessenger
 from openai import OpenAI
+from utils.exponential_backoff import exponential_backoff
 
 
 @BaseProcessor.register_processor('gpt4_processor')
@@ -21,15 +22,20 @@ class GPT4Processor(BaseProcessor):
     def update_info(self, feedback: str):
         self.messenger.add_assistant_message(feedback)
 
-    def ask_info(self, query: str, context: str = None, image_path: str = None, audio_path: str = None, video_path: str = None) -> str:
-        if self.messenger.check_iter_round_num() == 0:
-            self.messenger.add_user_message('The text information for the previously described task is as follows: ' + context + 'Here is what you should do: ' + self.task_instruction)
-
+    @exponential_backoff(retries=5, base_wait_time=1)
+    def gpt4_requst(self):
         response = self.model.chat.completions.create(
             model="gpt-4-turbo-preview",
             messages=self.messenger.get_messages(),
             max_tokens=300,
         )
+        return response
+
+    def ask_info(self, query: str, context: str = None, image_path: str = None, audio_path: str = None, video_path: str = None) -> str:
+        if self.messenger.check_iter_round_num() == 0:
+            self.messenger.add_user_message('The text information for the previously described task is as follows: ' + context + 'Here is what you should do: ' + self.task_instruction)
+
+        response = self.gpt4_requst()
         description = response.choices[0].message.content
         return description
 

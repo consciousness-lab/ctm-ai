@@ -1,8 +1,8 @@
 from processors.processor_gpt4 import GPT4Processor
 
 
-@GPT4Processor.register_processor('gpt4_cloth_fashion_processor')
-class GPT4ClothFashionProcessor(GPT4Processor):
+@GPT4Processor.register_processor('gpt4_text_summary_processor')
+class GPT4TextSummaryProcessor(GPT4Processor):
     def __init__(self, *args, **kwargs):
         self.init_processor()
         self.task_instruction = "You are a text summarizer. You can understand the meaning of the text and generate the summary."

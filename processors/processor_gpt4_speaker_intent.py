@@ -1,8 +1,8 @@
 from processors.processor_gpt4 import GPT4Processor
 
 
-@GPT4Processor.register_processor('gpt4_cloth_fashion_processor')
-class GPT4ClothFashionProcessor(GPT4Processor):
+@GPT4Processor.register_processor('gpt4_speaker_intent_processor')
+class GPT4SpeakerIntentProcessor(GPT4Processor):
     def __init__(self, *args, **kwargs):
         self.init_processor()
         self.task_instruction = "You are a speaker intent predictor. You can understand the intent of the speaker and describe what is the speaker's intent for saying that. If there is no speaker detected, please answer with None."

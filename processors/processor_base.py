@@ -1,4 +1,5 @@
 import base64
+from utils.exponential_backoff import exponential_backoff
 
 class BaseProcessor(object):
     _processor_registry = {}
@@ -36,69 +37,42 @@ class BaseProcessor(object):
         score = self.ask_score(query, gist, verbose=True)
         return gist, score
 
+    @exponential_backoff(retries=5, base_wait_time=1)
     def ask_relevance(self, query: str, gist: str) -> float:
-        max_attempts = 5
-        for attempt in range(max_attempts):
-            try:
-                response = self.model.chat.completions.create(
-                    model="gpt-4-0125-preview",
-                    messages=[
-                        {"role": "user", "content": "How related is the information ({}) with the query ({})? Answer with a number from 0 to 5 and do not add any other thing.".format(gist, query)},
-                    ],
-                    max_tokens=50,
-                )
-                score = int(response.choices[0].message.content.strip()) / 5
-                return score
-            except Exception as e:
-                print(f"Attempt {attempt + 1} failed: {e}")
-                if attempt < max_attempts - 1:
-                    print("Retrying...")
-                else:
-                    print("Max attempts reached. Returning default score.")
-        return 0
+        response = self.model.chat.completions.create(
+            model="gpt-4-0125-preview",
+            messages=[
+                {"role": "user", "content": "How related is the information ({}) with the query ({})? Answer with a number from 0 to 5 and do not add any other thing.".format(gist, query)},
+            ],
+            max_tokens=50,
+        )
+        score = int(response.choices[0].message.content.strip()) / 5
+        return score
+    
 
+    @exponential_backoff(retries=5, base_wait_time=1)
     def ask_confidence(self, query: str, gist: str) -> float:
-        max_attempts = 5
-        for attempt in range(max_attempts):
-            try:
-                response = self.model.chat.completions.create(
-                    model="gpt-4-0125-preview",
-                    messages=[
-                        {"role": "user", "content": "How confidence do you think the information ({}) is a mustk? Answer with a number from 0 to 5 and do not add any other thing.".format(gist, query)},
-                    ],
-                    max_tokens=50,
-                )
-                score = int(response.choices[0].message.content.strip()) / 5
-                return score
-            except Exception as e:
-                print(f"Attempt {attempt + 1} failed: {e}")
-                if attempt < max_attempts - 1:
-                    print("Retrying...")
-                else:
-                    print("Max attempts reached. Returning default score.")
-        return 0
+        response = self.model.chat.completions.create(
+            model="gpt-4-0125-preview",
+            messages=[
+                {"role": "user", "content": "How confidence do you think the information ({}) is a mustk? Answer with a number from 0 to 5 and do not add any other thing.".format(gist, query)},
+            ],
+            max_tokens=50,
+        )
+        score = int(response.choices[0].message.content.strip()) / 5
+        return score
 
+    @exponential_backoff(retries=5, base_wait_time=1)
     def ask_surprise(self, query: str, gist: str, history_gists: str = None) -> float:
-        # TODO: need to add cached history data
-        max_attempts = 5
-        for attempt in range(max_attempts):
-            try:
-                response = self.model.chat.completions.create(
-                    model="gpt-4-0125-preview",
-                    messages=[
-                        {"role": "user", "content": "How surprise do you think the information ({}) is as an output of the processor? Answer with a number from 0 to 5 and do not add any other thing.".format(gist, query)},
-                    ],
-                    max_tokens=50,
-                )
-                score = int(response.choices[0].message.content.strip()) / 5
-                return score
-            except Exception as e:
-                print(f"Attempt {attempt + 1} failed: {e}")
-                if attempt < max_attempts - 1:
-                    print("Retrying...")
-                else:
-                    print("Max attempts reached. Returning default score.")
-        return 0
+        response = self.model.chat.completions.create(
+            model="gpt-4-0125-preview",
+            messages=[
+                {"role": "user", "content": "How surprise do you think the information ({}) is as an output of the processor? Answer with a number from 0 to 5 and do not add any other thing.".format(gist, query)},
+            ],
+            max_tokens=50,
+        )
+        score = int(response.choices[0].message.content.strip()) / 5
+        return score
 
     def ask_score(self, query, gist, verbose=False, *args, **kwargs):
         relevance = self.ask_relevance(query, gist, *args, **kwargs) 

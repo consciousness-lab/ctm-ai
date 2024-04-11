@@ -1,6 +1,7 @@
 from processors.processor_base import BaseProcessor
 from messengers.messenger_base import BaseMessenger
 from openai import OpenAI
+from utils.exponential_backoff import exponential_backoff
 
 
 @BaseProcessor.register_processor('gpt4v_processor')
@@ -21,9 +22,19 @@ class GPT4VProcessor(BaseProcessor):
     def update_info(self, feedback: str):
         self.messenger.add_assistant_message(feedback)
 
+    @exponential_backoff(retries=5, base_wait_time=1)
+    def gpt4v_requst(self):
+        response = self.model.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=self.messenger.get_messages(),
+            max_tokens=300,
+        )
+        return response
+
     def ask_info(self, query: str, context: str = None, image_path: str = None, audio_path: str = None, video_path: str = None) -> str:
         if self.messenger.check_iter_round_num() == 0:
             image = self.process_image(image_path)
+            #image = '0'
             self.messenger.add_user_message(
                 [
                     {"type": "text", "text": self.task_instruction},
@@ -31,11 +42,7 @@ class GPT4VProcessor(BaseProcessor):
                 ]
             )
 
-        response = self.model.chat.completions.create(
-            model="gpt-4-vision-preview",
-            messages=self.messenger.get_messages(),
-            max_tokens=300,
-        )
+        response = self.gpt4v_requst()
         description = response.choices[0].message.content
         return description
 
