@@ -27,14 +27,14 @@ class BaseMessenger(object):
     def check_iter_round_num(self):
         pass
 
-    def add_system_instruction(self, instruction: Union[str, Dict, List]):
-        self.update_message("system", instruction)
+    def add_system_message(self, message: Union[str, Dict, List]):
+        self.update_message("system", message)
     
     def add_assistant_message(self, message: Union[str, Dict, List]):
         self.update_message("assitant", message)
 
-    def add_user_message(self, query: Union[str, Dict, List]):
-        self.update_message("user", query)
+    def add_user_message(self, message: Union[str, Dict, List]):
+        self.update_message("user", message)
 
     def add_user_image(self, image_base64: str):
         self.add_message("user", {

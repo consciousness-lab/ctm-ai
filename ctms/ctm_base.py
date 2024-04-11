@@ -40,10 +40,10 @@ class BaseConsciousnessTuringMachine(object):
         self.supervisor = {'supervisor_name': supervisor_name, 'supervisor_instance': supervisor_instance}
 
     @staticmethod
-    def ask_processor(processor, question, image_path):
+    def ask_processor(processor, question, context, image_path, audio_path, video_path):
         processor_instance = processor['processor_instance']
         processor_name = processor['processor_name']
-        gist, score = processor_instance.ask(question, image_path)
+        gist, score = processor_instance.ask(question, context, image_path, audio_path, video_path)
         return {
             'name': processor_name,
             'gist': gist,
@@ -146,7 +146,7 @@ class BaseConsciousnessTuringMachine(object):
         
         for i in range(max_iter):
             print('start the {}-th iteration'.format(i + 1))
-            processor_output = self.ask_processors(question=question, image_path=image_path)
+            processor_output = self.ask_processors(question=question, context=context, image_path=image_path, audio_path=audio_path, video_path=video_path)
             winning_output = self.uptree_competition(processor_output)
             answer, score = self.ask_supervisor(question, winning_output)
             if score > answer_threshold:
