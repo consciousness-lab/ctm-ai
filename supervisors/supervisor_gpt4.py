@@ -1,5 +1,6 @@
 from .supervisor_base import BaseSupervisor
 from openai import OpenAI
+from utils.exponential_backoff import exponential_backoff
 
 
 @BaseSupervisor.register_supervisor('gpt4_supervisor')
@@ -10,19 +11,16 @@ class GPT4Supervisior(BaseSupervisor):
     def init_supervisor(self):
         self.model = OpenAI()
 
+    @exponential_backoff(retries=5, base_wait_time=1)
     def ask_info(self, query: str, context: str = None) -> str:
         prompt = [{"role": "user", "content": f"The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a few words:"}]
-        try:
-            responses = self.model.chat.completions.create(
-                model="gpt-4-turbo-preview",
-                messages=prompt,
-                max_tokens=300,
-                n=1
-            )
-            answer = responses.choices[0].message.content
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            answer = None
+        responses = self.model.chat.completions.create(
+            model="gpt-4-turbo-preview",
+            messages=prompt,
+            max_tokens=300,
+            n=1
+        )
+        answer = responses.choices[0].message.content
         return answer
     
     def ask_score(self, query, gist, verbose=False, *args, **kwargs):
