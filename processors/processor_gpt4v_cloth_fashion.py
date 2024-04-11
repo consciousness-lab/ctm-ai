@@ -1,6 +1,4 @@
 from processors.processor_gpt4v import GPT4VProcessor
-from messengers.messenger_base import BaseMessenger
-from openai import OpenAI
 
 
 @GPT4VProcessor.register_processor('gpt4v_cloth_fashion_processor')

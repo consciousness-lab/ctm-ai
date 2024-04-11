@@ -31,8 +31,8 @@ class BaseProcessor(object):
     def process_video(video_path):
         return None
 
-    def ask(self, query, image_path):
-        gist = self.ask_info(query, image_path)
+    def ask(self, query, context, image_path, audio_path, video_path):
+        gist = self.ask_info(query, context, image_path, audio_path, video_path)
         score = self.ask_score(query, gist, verbose=True)
         return gist, score
 
