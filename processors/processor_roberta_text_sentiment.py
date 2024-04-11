@@ -1,6 +1,4 @@
-import sys
-sys.path.append('..')
-from processor_base import BaseProcessor
+from processors.processor_base import BaseProcessor
 from messengers.messenger_base import BaseMessenger
 from huggingface_hub.inference_api import InferenceApi
 import os

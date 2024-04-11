@@ -1,33 +1,22 @@
 from processors.processor_base import BaseProcessor
 from supervisors.supervisor_base import BaseSupervisor
+from configs.ctm_config_base import BaseConsciousnessTuringMachineConfig
 import concurrent.futures
 from collections import defaultdict
-from openai import OpenAI
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 class BaseConsciousnessTuringMachine(object):
-    _ctm_registry = {}
-
-    @classmethod
-    def register_ctm(cls, ctm_name):
-        def decorator(subclass):
-            cls._ctm_registry[ctm_name] = subclass
-            return subclass
-        return decorator
-
-    def __new__(cls, ctm_name, *args, **kwargs):
-        if ctm_name not in cls._ctm_registry:
-            raise ValueError(f"No CTM registered with name '{ctm_name}'")
-        return super(BaseConsciousnessTuringMachine, cls).__new__(cls._ctm_registry[ctm_name])
     
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 
     def __init__(self, ctm_name, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.config = BaseConsciousnessTuringMachineConfig.from_ctm(ctm_name)
         self.processor_list = []
         self.processor_group_map = defaultdict(list)
+        self.load_ctm()
 
     def add_processor(self, processor_name, group_name=None):
         processor_instance = BaseProcessor(processor_name)
@@ -50,9 +39,9 @@ class BaseConsciousnessTuringMachine(object):
             'score': score
         }
 
-    def ask_processors(self, question, image_path=None):
+    def ask_processors(self, question, context, image_path, audio_path, video_path):
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(self.ask_processor, processor, question, image_path) for processor in self.processor_list]
+            futures = [executor.submit(self.ask_processor, processor, question, context, image_path, audio_path, video_path) for processor in self.processor_list]
             results = [future.result() for future in concurrent.futures.as_completed(futures)]
         
         output = {}
@@ -156,5 +145,8 @@ class BaseConsciousnessTuringMachine(object):
                 self.link_form(processor_output)
         return answer, score
     
-    def craft_ctm(self):
-        pass
+    def load_ctm(self):
+        for group_name, processor_list in self.config.groups_of_processors.items():
+            for processor_name in processor_list:
+                self.add_processor(processor_name, group_name=group_name)
+        self.add_supervisor(self.config.supervisor)

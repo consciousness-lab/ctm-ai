@@ -31,7 +31,7 @@ class BaseMessenger(object):
         self.update_message("system", message)
     
     def add_assistant_message(self, message: Union[str, Dict, List]):
-        self.update_message("assitant", message)
+        self.update_message("assistant", message)
 
     def add_user_message(self, message: Union[str, Dict, List]):
         self.update_message("user", message)
