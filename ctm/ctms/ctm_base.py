@@ -15,9 +15,14 @@ class BaseConsciousnessTuringMachine(object):
     def __call__(self, *args, **kwargs):
         return self.forward(*args, **kwargs)
 
-    def __init__(self, ctm_name, *args, **kwargs):
+    def __init__(self, ctm_name=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.config = BaseConsciousnessTuringMachineConfig.from_ctm(ctm_name)
+        if ctm_name:
+            self.config = BaseConsciousnessTuringMachineConfig.from_ctm(
+                ctm_name
+            )
+        else:
+            self.config = BaseConsciousnessTuringMachineConfig()
         self.processor_list = []
         self.processor_group_map = defaultdict(list)
         self.load_ctm()

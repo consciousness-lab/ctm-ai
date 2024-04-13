@@ -8,10 +8,11 @@ class BaseConsciousnessTuringMachineConfig(object):
         ctm_name=None,
         max_iter_num=3,
         output_threshold=0.5,
-        groups_of_processors=None,
-        supervisor=None,
+        groups_of_processors={},
+        supervisor="gpt4_supervisor",
         **kwargs,
     ):
+        self.ctm_name = ctm_name
         self.max_iter_num = max_iter_num
         self.output_threshold = output_threshold
         self.groups_of_processors = groups_of_processors
