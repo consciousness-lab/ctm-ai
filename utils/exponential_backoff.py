@@ -3,16 +3,16 @@ import time
 from functools import wraps
 
 
-def exponential_backoff(retries=5, base_wait_time=1):
+def exponential_backoff(retries=5, base_wait_time=1):  # type: ignore[no-untyped-def] # FIX ME
     """
     Decorator for applying exponential backoff to a function.
     :param retries: Maximum number of retries.
     :param base_wait_time: Base wait time in seconds for the exponential backoff.
     """
 
-    def decorator(func):
+    def decorator(func):  # type: ignore[no-untyped-def] # FIX ME
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
             attempts = 0
             while attempts < retries:
                 try:

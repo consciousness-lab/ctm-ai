@@ -1,7 +1,9 @@
 import sys
 
 sys.path.append("..")
-from ctm.ctm_base import BaseConsciousnessTuringMachine
+from ctm.ctm_base import (
+    BaseConsciousnessTuringMachine,  # type: ignore[import] # FIX ME
+)
 
 if __name__ == "__main__":
     ctm = BaseConsciousnessTuringMachine("sarcasm_ctm")

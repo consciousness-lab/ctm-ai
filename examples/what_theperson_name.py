@@ -1,11 +1,6 @@
-from ctm_base import BaseConsciousnessTuringMachine
-
-
-@BaseConsciousnessTuringMachine.register_ctm("whatname_ctm")
-class WhatNameConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
-    def __init__(self, ctm_name, *args, **kwargs):
-        super().__init__(ctm_name, *args, **kwargs)
-
+from ctm_base import (
+    BaseConsciousnessTuringMachine,  # type: ignore[import] # FIX ME
+)
 
 if __name__ == "__main__":
     ctm = BaseConsciousnessTuringMachine("whatname_ctm")
