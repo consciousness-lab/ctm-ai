@@ -39,5 +39,5 @@ class BaseConsciousnessTuringMachineConfig(object):
         """
         # This path would be generated dynamically based on `model_name_or_path`
         # For simplicity, we're directly using it as a path to a local file
-        config_file = f"../configs/{ctm_name}_config.json"
+        config_file = f"../ctm/configs/{ctm_name}_config.json"
         return cls.from_json_file(config_file)

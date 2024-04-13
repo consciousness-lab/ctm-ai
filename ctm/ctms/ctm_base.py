@@ -4,9 +4,11 @@ from collections import defaultdict
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from configs.ctm_config_base import BaseConsciousnessTuringMachineConfig
-from processors.processor_base import BaseProcessor
-from supervisors.supervisor_base import BaseSupervisor
+from ctm.configs.ctm_config_base import (
+    BaseConsciousnessTuringMachineConfig,
+)
+from ctm.processors.processor_base import BaseProcessor
+from ctm.supervisors.supervisor_base import BaseSupervisor
 
 
 class BaseConsciousnessTuringMachine(object):

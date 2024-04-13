@@ -1,10 +1,10 @@
 from typing import Dict, List, Union
 
-from messengers.messenger_base import BaseMessenger
+from ctm.messengers.messenger_base import BaseMessenger
 
 
-@BaseMessenger.register_messenger("roberta_text_sentiment_messenger")  # type: ignore[no-untyped-call] # FIX ME
-class RobertaTextSentimentMessenger(BaseMessenger):
+@BaseMessenger.register_messenger("bart_text_summ_messenger")  # type: ignore[no-untyped-call] # FIX ME
+class BartTextSummarizationMessenger(BaseMessenger):
     def __init__(self, role=None, content=None, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
         self.init_messenger(role, content)
 
@@ -16,8 +16,7 @@ class RobertaTextSentimentMessenger(BaseMessenger):
             self.update_messages(role, content)  # type: ignore[attr-defined] # FIX ME
 
     def update_message(self, role: str, content: Union[str, Dict, List]):  # type: ignore[no-untyped-def, type-arg] # FIX ME
-        # should replace with updated message
-        self.messages = content  # type: ignore[assignment] # FIX ME
+        self.messages += content  # type: ignore[operator] # FIX ME
 
     def check_iter_round_num(self):  # type: ignore[no-untyped-def] # FIX ME
         return 1 if len(self.messages) > 0 else 0

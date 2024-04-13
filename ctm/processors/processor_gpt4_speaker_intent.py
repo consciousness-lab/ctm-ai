@@ -1,4 +1,4 @@
-from processors.processor_gpt4 import GPT4Processor
+from ctm.processors.processor_gpt4 import GPT4Processor
 
 
 @GPT4Processor.register_processor("gpt4_speaker_intent_processor")  # type: ignore[no-untyped-call] # FIX ME

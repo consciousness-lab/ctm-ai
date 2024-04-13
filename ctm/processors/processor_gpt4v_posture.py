@@ -1,4 +1,4 @@
-from processors.processor_gpt4v import GPT4VProcessor
+from ctm.processors.processor_gpt4v import GPT4VProcessor
 
 
 @GPT4VProcessor.register_processor("gpt4v_posture_processor")  # type: ignore[no-untyped-call] # FIX ME
