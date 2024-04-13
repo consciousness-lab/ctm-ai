@@ -1,7 +1,7 @@
 from ctm.processors.processor_gpt4 import GPT4Processor
 
 
-@GPT4Processor.register_processor("gpt4_cloth_fashion_processor")  # type: ignore[no-untyped-call] # FIX ME
+@GPT4Processor.register_processor("gpt4_text_emotion_processor")  # type: ignore[no-untyped-call] # FIX ME
 class GPT4TextEmotionProcessor(GPT4Processor):
     def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
         self.init_processor()  # type: ignore[no-untyped-call] # FIX ME
