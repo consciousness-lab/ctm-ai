@@ -1,4 +1,5 @@
-from typing import Union, List, Dict
+from typing import Dict, List, Union
+
 
 class BaseMessenger(object):
     _messenger_registry = {}
@@ -8,17 +9,24 @@ class BaseMessenger(object):
         def decorator(subclass):
             cls._messenger_registry[messenger_name] = subclass
             return subclass
+
         return decorator
 
     def __new__(cls, messenger_name, *args, **kwargs):
         if messenger_name not in cls._messenger_registry:
-            raise ValueError(f"No messenger registered with name '{messenger_name}'")
-        return super(BaseMessenger, cls).__new__(cls._messenger_registry[messenger_name])
+            raise ValueError(
+                f"No messenger registered with name '{messenger_name}'"
+            )
+        return super(BaseMessenger, cls).__new__(
+            cls._messenger_registry[messenger_name]
+        )
 
-    def __init__(self, role = None, content = None, *args, **kwargs):
+    def __init__(self, role=None, content=None, *args, **kwargs):
         self.init_messenger(role, content)
 
-    def init_messenger(self, role: str = None, content: Union[str, Dict, List] = None):
+    def init_messenger(
+        self, role: str = None, content: Union[str, Dict, List] = None
+    ):
         pass
 
     def update_message(self, role: str, content: Union[str, Dict, List]):
@@ -29,7 +37,7 @@ class BaseMessenger(object):
 
     def add_system_message(self, message: Union[str, Dict, List]):
         self.update_message("system", message)
-    
+
     def add_assistant_message(self, message: Union[str, Dict, List]):
         self.update_message("assistant", message)
 
@@ -37,10 +45,13 @@ class BaseMessenger(object):
         self.update_message("user", message)
 
     def add_user_image(self, image_base64: str):
-        self.add_message("user", {
-            "type": "image_url",
-            "image_url": f"data:image/jpeg;base64,{image_base64}",
-        })
+        self.add_message(
+            "user",
+            {
+                "type": "image_url",
+                "image_url": f"data:image/jpeg;base64,{image_base64}",
+            },
+        )
 
     def add_feedback(self, feedback: Union[str, Dict, List]):
         self.add_message("system", feedback)

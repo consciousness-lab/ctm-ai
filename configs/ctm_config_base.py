@@ -1,14 +1,16 @@
 import json
 
+
 class BaseConsciousnessTuringMachineConfig(object):
     # Initialize with default values or those passed to the constructor
-    def __init__(self, 
+    def __init__(
+        self,
         ctm_name=None,
-        max_iter_num=3, 
-        output_threshold=0.5, 
+        max_iter_num=3,
+        output_threshold=0.5,
         groups_of_processors=None,
         supervisor=None,
-        **kwargs
+        **kwargs,
     ):
         self.max_iter_num = max_iter_num
         self.output_threshold = output_threshold

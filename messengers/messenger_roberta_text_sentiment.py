@@ -1,13 +1,17 @@
-from messengers.messenger_base import BaseMessenger
-from typing import Union, List, Dict
+from typing import Dict, List, Union
 
-@BaseMessenger.register_messenger('roberta_text_sentiment_messenger')
+from messengers.messenger_base import BaseMessenger
+
+
+@BaseMessenger.register_messenger("roberta_text_sentiment_messenger")
 class RobertaTextSentimentMessenger(BaseMessenger):
-    def __init__(self, role = None, content = None, *args, **kwargs):
+    def __init__(self, role=None, content=None, *args, **kwargs):
         self.init_messenger(role, content)
 
-    def init_messenger(self, role: str = None, content: Union[str, Dict, List] = None):
-        self.messages = ''
+    def init_messenger(
+        self, role: str = None, content: Union[str, Dict, List] = None
+    ):
+        self.messages = ""
         if content and role:
             self.update_messages(role, content)
 
