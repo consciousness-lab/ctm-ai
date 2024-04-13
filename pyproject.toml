@@ -1,0 +1,8 @@
+[tool.poetry]
+name = "ctm"
+version = "0.0.1"
+description = "A cognitive architecture motivated by consciousness turing machine."
+authors = ["Haofei Yu <yuhaofei44@gmail.com>"]
+license = "MIT License"
+readme = "README.md"
+packages = [{include = "ctm-ai"}]
