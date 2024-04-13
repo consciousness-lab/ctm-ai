@@ -1,9 +1,14 @@
 import sys
 
 sys.path.append("..")
-from ctms.ctm_base import BaseConsciousnessTuringMachine
+from ctm.ctm_base import (
+    BaseConsciousnessTuringMachine,  # type: ignore[import] # FIX ME
+)
 
 if __name__ == "__main__":
+    ctm = BaseConsciousnessTuringMachine("sarcasm_ctm")
+    question = "Is the person saying sarcasm or not?"
+    image_path = "../images/sarcasm_example1.png"
     ctm = BaseConsciousnessTuringMachine("sarcasm_ctm")
     question = "Is the person saying sarcasm or not?"
     image_path = "../images/sarcasm_example1.png"
