@@ -4,21 +4,20 @@ from huggingface_hub.inference_api import (
     InferenceApi,  # type: ignore[import] # FIX ME
 )
 
-from messengers.messenger_base import BaseMessenger
-from processors.processor_base import BaseProcessor
+from ctm.messengers.messenger_base import BaseMessenger
+from ctm.processors.processor_base import BaseProcessor
 
 
-@BaseProcessor.register_processor("roberta_text_sentiment_processor")  # type: ignore[no-untyped-call] # FIX ME
-class RobertaTextSentimentProcessor(BaseProcessor):
+@BaseProcessor.register_processor("bart_text_summary_processor")  # type: ignore[no-untyped-call] # FIX ME
+class BartTextSummaryProcessor(BaseProcessor):
     def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
         self.init_processor()  # type: ignore[no-untyped-call] # FIX ME
 
     def init_processor(self):  # type: ignore[no-untyped-def] # FIX ME
         self.model = InferenceApi(
-            token=os.environ["HF_TOKEN"],
-            repo_id="cardiffnlp/twitter-roberta-base-sentiment-latest",
+            token=os.environ["HF_TOKEN"], repo_id="facebook/bart-large-cnn"
         )
-        self.messenger = BaseMessenger("roberta_text_sentiment_messenger")  # type: ignore[no-untyped-call] # FIX ME
+        self.messenger = BaseMessenger("bart_text_summ_messenger")  # type: ignore[no-untyped-call] # FIX ME
         return
 
     def update_info(self, feedback: str):  # type: ignore[no-untyped-def] # FIX ME
@@ -36,28 +35,12 @@ class RobertaTextSentimentProcessor(BaseProcessor):
             self.messenger.add_user_message(context)
 
         response = self.model(self.messenger.get_messages())  # type: ignore[no-untyped-call] # FIX ME
-        results = response[0]
-        # choose the label with the highest score
-        pos_score = 0
-        neg_score = 0
-        neutral_score = 0
-        for result in results:
-            if result["label"] == "POSITIVE":
-                pos_score = result["score"]
-            elif result["label"] == "NEGATIVE":
-                neg_score = result["score"]
-            else:
-                neutral_score = result["score"]
-        if max(pos_score, neg_score, neutral_score) == pos_score:
-            return "This text is positive."
-        elif max(pos_score, neg_score, neutral_score) == neg_score:
-            return "This text is negative."
-        else:
-            return "This text is neutral."
+        summary = response[0]["summary_text"]
+        return summary  # type: ignore[no-any-return] # FIX ME
 
 
 if __name__ == "__main__":
-    processor = BaseProcessor("roberta_text_sentiment_processor")  # type: ignore[no-untyped-call] # FIX ME
+    processor = BaseProcessor("bart_text_summ_processor")  # type: ignore[no-untyped-call] # FIX ME
     image_path = "../ctmai-test1.png"
     text: str = (
         "In a shocking turn of events, Hugging Face has released a new version of Transformers "
@@ -66,5 +49,7 @@ if __name__ == "__main__":
         "The Hugging Face team is thankful for the community's support and continues to work "
         "towards making the library the best it can be."
     )
-    label = processor.ask_info(query=None, context=text, image_path=image_path)  # type: ignore[no-untyped-call] # FIX ME
-    print(label)
+    summary: str = processor.ask_info(  # type: ignore[no-untyped-call] # FIX ME
+        query=None, context=text, image_path=image_path
+    )
+    print(summary)

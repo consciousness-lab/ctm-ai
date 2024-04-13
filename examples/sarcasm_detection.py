@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append("..")
-from ctm.ctm_base import (
+from ctm.ctms.ctm_base import (
     BaseConsciousnessTuringMachine,  # type: ignore[import] # FIX ME
 )
 

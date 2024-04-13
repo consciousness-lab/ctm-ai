@@ -1,10 +1,10 @@
 from typing import Dict, List, Union
 
-from messengers.messenger_base import BaseMessenger
+from ctm.messengers.messenger_base import BaseMessenger
 
 
-@BaseMessenger.register_messenger("gpt4_messenger")  # type: ignore[no-untyped-call] # FIX ME
-class GPT4Messenger(BaseMessenger):
+@BaseMessenger.register_messenger("gpt4v_messenger")  # type: ignore[no-untyped-call] # FIX ME
+class GPT4VMessenger(BaseMessenger):
     def __init__(self, role=None, content=None, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
         self.init_messenger(role, content)
 

@@ -1,6 +1,6 @@
 import base64
 
-from utils.exponential_backoff import exponential_backoff
+from ctm.utils.exponential_backoff import exponential_backoff
 
 
 class BaseProcessor(object):
