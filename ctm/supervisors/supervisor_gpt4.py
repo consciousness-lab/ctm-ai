@@ -1,7 +1,7 @@
 from openai import OpenAI
 
 from ctm.supervisors.supervisor_base import BaseSupervisor
-from ctm.utils.exponential_backoff import exponential_backoff
+from ctm.utils.decorator import exponential_backoff
 
 
 @BaseSupervisor.register_supervisor("gpt4_supervisor")

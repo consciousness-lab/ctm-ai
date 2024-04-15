@@ -2,7 +2,7 @@ from openai import OpenAI
 
 from ctm.messengers.messenger_base import BaseMessenger
 from ctm.processors.processor_base import BaseProcessor
-from ctm.utils.exponential_backoff import exponential_backoff
+from ctm.utils.decorator import exponential_backoff
 
 
 @BaseProcessor.register_processor("gpt4_processor")  # type: ignore[no-untyped-call] # FIX ME
@@ -34,15 +34,14 @@ class GPT4Processor(BaseProcessor):
     def ask_info(  # type: ignore[override] # FIX ME
         self,
         query: str,
-        context: str = None,  # type: ignore[assignment] # FIX ME
-        image_path: str = None,  # type: ignore[assignment] # FIX ME
-        audio_path: str = None,  # type: ignore[assignment] # FIX ME
-        video_path: str = None,  # type: ignore[assignment] # FIX ME
+        text: str = None,  # type: ignore[assignment] # FIX ME
+        *args,
+        **kwargs,
     ) -> str:
         if self.messenger.check_iter_round_num() == 0:  # type: ignore[no-untyped-call] # FIX ME
             self.messenger.add_user_message(
                 "The text information for the previously described task is as follows: "
-                + context
+                + text
                 + "Here is what you should do: "
                 + self.task_instruction  # type: ignore[operator] # FIX ME
             )
@@ -54,6 +53,6 @@ class GPT4Processor(BaseProcessor):
 
 if __name__ == "__main__":
     processor = BaseProcessor("ocr_processor")  # type: ignore[no-untyped-call] # FIX ME
-    image_path = "../ctmai-test1.png"
-    summary: str = processor.ask_info(query=None, image_path=image_path)  # type: ignore[no-untyped-call] # FIX ME
+    image = "../ctmai-test1.png"
+    summary: str = processor.ask_info(query=None, image=image)  # type: ignore[no-untyped-call] # FIX ME
     print(summary)

@@ -2,7 +2,7 @@ from openai import OpenAI
 
 from ctm.messengers.messenger_base import BaseMessenger
 from ctm.processors.processor_base import BaseProcessor
-from ctm.utils.exponential_backoff import exponential_backoff
+from ctm.utils.decorator import exponential_backoff
 
 
 @BaseProcessor.register_processor("gpt4v_processor")  # type: ignore[no-untyped-call] # FIX ME
@@ -34,14 +34,13 @@ class GPT4VProcessor(BaseProcessor):
     def ask_info(  # type: ignore[override] # FIX ME
         self,
         query: str,
-        context: str = None,  # type: ignore[assignment] # FIX ME
-        image_path: str = None,  # type: ignore[assignment] # FIX ME
-        audio_path: str = None,  # type: ignore[assignment] # FIX ME
-        video_path: str = None,  # type: ignore[assignment] # FIX ME
+        text: str = None,  # type: ignore[assignment] # FIX ME
+        image: str = None,  # type: ignore[assignment] # FIX ME
+        video_frames: str = None,  # type: ignore[assignment] # FIX ME
+        *args,
+        **kwargs,
     ) -> str:
         if self.messenger.check_iter_round_num() == 0:  # type: ignore[no-untyped-call] # FIX ME
-            image = self.process_image(image_path)  # type: ignore[no-untyped-call] # FIX ME
-            # image = '0'
             self.messenger.add_user_message(
                 [
                     {"type": "text", "text": self.task_instruction},
