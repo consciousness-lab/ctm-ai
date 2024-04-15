@@ -12,7 +12,7 @@ from ctm.processors.processor_base import BaseProcessor
 from ctm.supervisors.supervisor_base import BaseSupervisor
 
 
-class BaseConsciousnessTuringMachine:
+class BaseConsciousnessTuringMachine(object):
     def __init__(self, ctm_name: Optional[str] = None) -> None:
         super().__init__()
         if ctm_name:
