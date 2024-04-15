@@ -1,5 +1,6 @@
 import concurrent.futures
 from collections import defaultdict
+from typing import Any, Dict, List, Optional, Tuple
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -11,23 +12,22 @@ from ctm.processors.processor_base import BaseProcessor
 from ctm.supervisors.supervisor_base import BaseSupervisor
 
 
-class BaseConsciousnessTuringMachine(object):
-    def __call__(self, *args, **kwargs):
-        return self.forward(*args, **kwargs)
-
-    def __init__(self, ctm_name=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class BaseConsciousnessTuringMachine:
+    def __init__(self, ctm_name: Optional[str] = None) -> None:
+        super().__init__()
         if ctm_name:
             self.config = BaseConsciousnessTuringMachineConfig.from_ctm(
                 ctm_name
             )
         else:
             self.config = BaseConsciousnessTuringMachineConfig()
-        self.processor_list = []
-        self.processor_group_map = defaultdict(list)
+        self.processor_list: List[Dict[str, Any]] = []
+        self.processor_group_map: Dict[str, str] = defaultdict(str)
         self.load_ctm()
 
-    def add_processor(self, processor_name, group_name=None):
+    def add_processor(
+        self, processor_name: str, group_name: Optional[str] = None
+    ) -> None:
         processor_instance = BaseProcessor(processor_name)
         self.processor_list.append(
             {
@@ -38,15 +38,22 @@ class BaseConsciousnessTuringMachine(object):
         if group_name:
             self.processor_group_map[processor_name] = group_name
 
-    def add_supervisor(self, supervisor_name):
+    def add_supervisor(self, supervisor_name: str) -> None:
         supervisor_instance = BaseSupervisor(supervisor_name)
-        self.supervisor = {
+        self.supervisor: Dict[str, Any] = {
             "supervisor_name": supervisor_name,
             "supervisor_instance": supervisor_instance,
         }
 
     @staticmethod
-    def ask_processor(processor, query, text, image, audio, video_frames):
+    def ask_processor(
+        processor: Dict[str, Any],
+        query: str,
+        text: str,
+        image: Any,
+        audio: Any,
+        video_frames: Any,
+    ) -> Dict[str, Any]:
         processor_instance = processor["processor_instance"]
         processor_name = processor["processor_name"]
         print(processor_name)
@@ -59,7 +66,9 @@ class BaseConsciousnessTuringMachine(object):
         )
         return {"name": processor_name, "gist": gist, "score": score}
 
-    def ask_processors(self, query, text, image, audio, video_frames):
+    def ask_processors(
+        self, query: str, text: str, image: Any, audio: Any, video_frames: Any
+    ) -> Dict[str, Dict[str, Any]]:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
@@ -78,7 +87,7 @@ class BaseConsciousnessTuringMachine(object):
                 for future in concurrent.futures.as_completed(futures)
             ]
 
-        output = {}
+        output: Dict[str, Dict[str, Any]] = {}
         for result in results:
             output[result["name"]] = {
                 "gist": result["gist"],
@@ -88,7 +97,9 @@ class BaseConsciousnessTuringMachine(object):
         assert len(output) == len(self.processor_list)
         return output
 
-    def uptree_competition(self, processor_output):
+    def uptree_competition(
+        self, processor_output: Dict[str, Dict[str, Any]]
+    ) -> Dict[str, Any]:
         # Unpack processor outputs into lists for easier processing
         gists, scores, names = [], [], []
         for name, info in processor_output.items():
@@ -124,13 +135,15 @@ class BaseConsciousnessTuringMachine(object):
         }
         return winning_info
 
-    def ask_supervisor(self, query, processor_info):
+    def ask_supervisor(
+        self, query: str, processor_info: Dict[str, Any]
+    ) -> Tuple[str, float]:
         final_answer, score = self.supervisor["supervisor_instance"].ask(
             query, processor_info["gist"]
         )
         return final_answer, score
 
-    def downtree_broadcast(self, winning_output):
+    def downtree_broadcast(self, winning_output: Dict[str, str]) -> None:
         winning_processor_name = winning_output["name"]
         winning_processor_gist = winning_output["gist"]
         for processor in self.processor_list:
@@ -140,14 +153,16 @@ class BaseConsciousnessTuringMachine(object):
                 )
         return
 
-    def calc_processor_sim(self, processor_output):
+    def calc_processor_sim(
+        self, processor_output: Dict[str, Dict[str, str]]
+    ) -> Any:
         processor_gists = [info["gist"] for info in processor_output.values()]
         tfidf_vectorizer = TfidfVectorizer()
         tfidf_matrix = tfidf_vectorizer.fit_transform(processor_gists)
         cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
         return cosine_sim
 
-    def link_form(self, processor_output):
+    def link_form(self, processor_output: Dict[str, Dict[str, str]]) -> None:
         sim = self.calc_processor_sim(processor_output)
         print(sim)
         # iterate on each sim pair
@@ -185,17 +200,14 @@ class BaseConsciousnessTuringMachine(object):
                     self.processor_group_map[processor2_name] = group_name
         return
 
-    def processor_fuse(self, infos, scores):
+    def processor_fuse(
+        self, infos: List[str], scores: List[float]
+    ) -> Tuple[List[str], List[float]]:
         return infos, scores
 
     def forward(
-        self,
-        query=None,
-        text=None,
-        image=None,
-        audio=None,
-        video_frames=None,
-    ):
+        self, query: str, text: str, image: Any, audio: Any, video_frames: Any
+    ) -> Tuple[str, float]:
         answer_threshold = 0.5
         max_iter = 3
 
@@ -217,7 +229,7 @@ class BaseConsciousnessTuringMachine(object):
                 self.link_form(processor_output)
         return answer, score
 
-    def load_ctm(self):
+    def load_ctm(self) -> None:
         for (
             group_name,
             processor_list,
