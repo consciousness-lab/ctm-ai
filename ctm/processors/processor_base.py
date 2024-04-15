@@ -1,6 +1,6 @@
 import base64
 
-from ctm.utils.exponential_backoff import exponential_backoff
+from ctm.utils.decorator import exponential_backoff
 
 
 class BaseProcessor(object):
@@ -28,22 +28,15 @@ class BaseProcessor(object):
             "The 'set_model' method must be implemented in derived classes."
         )
 
-    @staticmethod
-    def process_image(image_path):  # type: ignore[no-untyped-def] # FIX ME
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode("utf-8")
-
-    @staticmethod
-    def process_audio(audio_path):  # type: ignore[no-untyped-def] # FIX ME
-        return None
-
-    @staticmethod
-    def process_video(video_path):  # type: ignore[no-untyped-def] # FIX ME
-        return None
-
-    def ask(self, query, context, image_path, audio_path, video_path):  # type: ignore[no-untyped-def] # FIX ME
+    def ask(
+        self, query, text, image, audio, video_frames
+    ):  # type: ignore[no-untyped-def] # FIX ME
         gist = self.ask_info(  # type: ignore[no-untyped-call] # FIX ME
-            query, context, image_path, audio_path, video_path
+            query=query,
+            text=text,
+            image=image,
+            audio=audio,
+            video_frames=video_frames,
         )
         score = self.ask_score(query, gist, verbose=True)  # type: ignore[no-untyped-call] # FIX ME
         return gist, score
@@ -111,7 +104,7 @@ class BaseProcessor(object):
             )
         return relevance * confidence * surprise
 
-    def ask_info(self, query, image_path, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
+    def ask_info(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
         raise NotImplementedError(
             "The 'ask_information' method must be implemented in derived classes."
         )

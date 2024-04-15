@@ -25,12 +25,11 @@ class BartTextSummaryProcessor(BaseProcessor):
 
     def ask_info(  # type: ignore[override] # FIX ME
         self,
-        query: str,
         context: str = None,  # type: ignore[assignment] # FIX ME
-        image_path: str = None,  # type: ignore[assignment] # FIX ME
-        audio_path: str = None,  # type: ignore[assignment] # FIX ME
-        video_path: str = None,  # type: ignore[assignment] # FIX ME
+        *args,
+        **kwargs,
     ) -> str:
+
         if self.messenger.check_iter_round_num() == 0:  # type: ignore[no-untyped-call] # FIX ME
             self.messenger.add_user_message(context)
 

@@ -32,11 +32,11 @@ class BaseSupervisor(object):
             return base64.b64encode(image_file.read()).decode("utf-8")
 
     @staticmethod
-    def process_audio(audio_path):
+    def process_audio(audio):
         return None
 
     @staticmethod
-    def process_video(video_path):
+    def process_video(video_frames):
         return None
 
     def ask(self, query, image_path):

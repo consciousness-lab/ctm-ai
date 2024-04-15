@@ -46,29 +46,30 @@ class BaseConsciousnessTuringMachine(object):
         }
 
     @staticmethod
-    def ask_processor(
-        processor, question, context, image_path, audio_path, video_path
-    ):
+    def ask_processor(processor, query, text, image, audio, video_frames):
         processor_instance = processor["processor_instance"]
         processor_name = processor["processor_name"]
+        print(processor_name)
         gist, score = processor_instance.ask(
-            question, context, image_path, audio_path, video_path
+            query=query,
+            text=text,
+            image=image,
+            audio=audio,
+            video_frames=video_frames,
         )
         return {"name": processor_name, "gist": gist, "score": score}
 
-    def ask_processors(
-        self, question, context, image_path, audio_path, video_path
-    ):
+    def ask_processors(self, query, text, image, audio, video_frames):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
                     self.ask_processor,
                     processor,
-                    question,
-                    context,
-                    image_path,
-                    audio_path,
-                    video_path,
+                    query,
+                    text,
+                    image,
+                    audio,
+                    video_frames,
                 )
                 for processor in self.processor_list
             ]
@@ -123,9 +124,9 @@ class BaseConsciousnessTuringMachine(object):
         }
         return winning_info
 
-    def ask_supervisor(self, question, processor_info):
+    def ask_supervisor(self, query, processor_info):
         final_answer, score = self.supervisor["supervisor_instance"].ask(
-            question, processor_info["gist"]
+            query, processor_info["gist"]
         )
         return final_answer, score
 
@@ -189,11 +190,11 @@ class BaseConsciousnessTuringMachine(object):
 
     def forward(
         self,
-        question=None,
-        context=None,
-        image_path=None,
-        audio_path=None,
-        video_path=None,
+        query=None,
+        text=None,
+        image=None,
+        audio=None,
+        video_frames=None,
     ):
         answer_threshold = 0.5
         max_iter = 3
@@ -201,14 +202,14 @@ class BaseConsciousnessTuringMachine(object):
         for i in range(max_iter):
             print("start the {}-th iteration".format(i + 1))
             processor_output = self.ask_processors(
-                question=question,
-                context=context,
-                image_path=image_path,
-                audio_path=audio_path,
-                video_path=video_path,
+                query=query,
+                text=text,
+                image=image,
+                audio=audio,
+                video_frames=video_frames,
             )
             winning_output = self.uptree_competition(processor_output)
-            answer, score = self.ask_supervisor(question, winning_output)
+            answer, score = self.ask_supervisor(query, winning_output)
             if score > answer_threshold:
                 break
             else:
