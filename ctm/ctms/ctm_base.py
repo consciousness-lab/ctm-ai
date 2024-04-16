@@ -5,11 +5,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from ctm.configs.ctm_config_base import (
-    BaseConsciousnessTuringMachineConfig,
-)
-from ctm.processors.processor_base import BaseProcessor
-from ctm.supervisors.supervisor_base import BaseSupervisor
+from ctm.configs import BaseConsciousnessTuringMachineConfig
+from ctm.processors import BaseProcessor
+from ctm.supervisors import BaseSupervisor
 
 
 class BaseConsciousnessTuringMachine(object):

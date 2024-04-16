@@ -7,14 +7,11 @@ from ctm.utils.decorator import exponential_backoff
 
 @BaseProcessor.register_processor("gpt4_processor")  # type: ignore[no-untyped-call] # FIX ME
 class GPT4Processor(BaseProcessor):
-    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
-        self.init_processor()  # type: ignore[no-untyped-call] # FIX ME
-        self.task_instruction = None
-
     def init_processor(self):  # type: ignore[no-untyped-def] # FIX ME
         self.model = OpenAI()
+
+    def init_messenger(self):
         self.messenger = BaseMessenger("gpt4_messenger")  # type: ignore[no-untyped-call] # FIX ME
-        return
 
     def process(self, payload: dict) -> dict:  # type: ignore[type-arg] # FIX ME
         return  # type: ignore[return-value] # FIX ME

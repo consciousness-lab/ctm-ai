@@ -1,29 +1,21 @@
 import base64
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional, Tuple, Type
 
 
 class BaseSupervisor(object):
-    _supervisor_registry: Dict[
-        str, Type["BaseSupervisor"]
-    ] = {}  # Specify type of keys and values in the dictionary
+    _supervisor_registry: Dict[str, Type["BaseSupervisor"]] = {}
 
     @classmethod
-    def register_supervisor(
-        cls, supervisor_name: str
-    ):  # Type annotation for parameter
+    def register_supervisor(cls, supervisor_name: str) -> Any:
         def decorator(
             subclass: Type["BaseSupervisor"],
-        ) -> Type[
-            "BaseSupervisor"
-        ]:  # Type annotations for parameters and return type
+        ) -> Type["BaseSupervisor"]:
             cls._supervisor_registry[supervisor_name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(
-        cls, supervisor_name: str, *args, **kwargs
-    ) -> Any:  # Type annotation for return type
+    def __new__(cls, supervisor_name: str, *args: Any, **kwargs: Any) -> Any:
         if supervisor_name not in cls._supervisor_registry:
             raise ValueError(
                 f"No supervisor registered with name '{supervisor_name}'"
@@ -34,28 +26,22 @@ class BaseSupervisor(object):
 
     def set_model(
         self,
-    ) -> None:  # Specify return type None for methods that do not return anything
+    ) -> None:
         raise NotImplementedError(
             "The 'set_model' method must be implemented in derived classes."
         )
 
-    def ask(
-        self, query: str, image_path: str
-    ) -> (str, float):  # Type annotations for parameters and return type
+    def ask(self, query: str, image_path: str) -> Tuple[str, float]:
         gist = self.ask_info(query, image_path)
         score = self.ask_score(query, gist, verbose=True)
         return gist, score
 
-    def ask_info(
-        self, query: str, context: Optional[str] = None
-    ) -> str:  # Use Optional for parameters that could be None
+    def ask_info(self, query: str, context: Optional[str] = None) -> str:
         raise NotImplementedError(
             "The 'ask_info' method must be implemented in derived classes."
-        )  # Updated to raise NotImplementedError
+        )
 
-    def ask_score(
-        self, query: str, gist: str, verbose: bool = False
-    ) -> float:  # Type annotations for parameters and return type
+    def ask_score(self, query: str, gist: str, verbose: bool = False) -> float:
         raise NotImplementedError(
             "The 'ask_score' method must be implemented in derived classes."
-        )  # Updated to raise NotImplementedError
+        )

@@ -1,20 +1,28 @@
-import base64
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
-from ctm.utils.decorator import exponential_backoff
+from openai import OpenAI
+
+from ..utils.decorator import score_exponential_backoff
 
 
-class BaseProcessor(object):
-    _processor_registry = {}  # type: ignore[var-annotated] # FIX ME
+class BaseProcessor:
+    _processor_registry: Dict[str, Type["BaseProcessor"]] = {}
 
     @classmethod
-    def register_processor(cls, processor_name):  # type: ignore[no-untyped-def] # FIX ME
-        def decorator(subclass):  # type: ignore[no-untyped-def] # FIX ME
+    def register_processor(
+        cls, processor_name: str
+    ) -> Callable[[Type["BaseProcessor"]], Type["BaseProcessor"]]:
+        def decorator(
+            subclass: Type["BaseProcessor"],
+        ) -> Type["BaseProcessor"]:
             cls._processor_registry[processor_name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, processor_name, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
+    def __new__(
+        cls, processor_name: str, *args: Any, **kwargs: Any
+    ) -> "BaseProcessor":
         if processor_name not in cls._processor_registry:
             raise ValueError(
                 f"No processor registered with name '{processor_name}'"
@@ -23,78 +31,113 @@ class BaseProcessor(object):
             cls._processor_registry[processor_name]
         )
 
-    def set_model(self):  # type: ignore[no-untyped-def] # FIX ME
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.init_scorer()
+        self.init_processor()
+        self.init_messenger()
+        self.init_task_info()
+
+    def init_processor(self) -> None:
         raise NotImplementedError(
-            "The 'set_model' method must be implemented in derived classes."
+            "The 'init_processor' method must be implemented in derived classes."
+        )
+
+    def init_messenger(self) -> None:
+        raise NotImplementedError(
+            "The 'init_messenger' method must be implemented in derived classes."
+        )
+
+    def init_task_info(self) -> None:
+        raise NotImplementedError(
+            "The 'init_task_info' method must be implemented in derived classes."
+        )
+
+    def init_scorer(self) -> None:
+        self.scorer = OpenAI()
+        raise NotImplementedError(
+            "The 'init_scorer' method must be implemented in derived classes."
         )
 
     def ask(
-        self, query, text, image, audio, video_frames
-    ):  # type: ignore[no-untyped-def] # FIX ME
-        gist = self.ask_info(  # type: ignore[no-untyped-call] # FIX ME
+        self, query: str, text: str, image: str, audio: str, video_frames: str
+    ) -> Tuple[str, float]:
+        gist = self.ask_info(
             query=query,
             text=text,
             image=image,
             audio=audio,
             video_frames=video_frames,
         )
-        score = self.ask_score(query, gist, verbose=True)  # type: ignore[no-untyped-call] # FIX ME
+        score = self.ask_score(query, gist, verbose=True)
         return gist, score
 
-    @exponential_backoff(retries=5, base_wait_time=1)  # type: ignore[misc, no-untyped-call] # FIX ME
+    @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_relevance(self, query: str, gist: str) -> float:
-        response = self.model.chat.completions.create(  # type: ignore[attr-defined] # FIX ME
+        response = self.scorer.chat.completions.create(
             model="gpt-4-0125-preview",
             messages=[
                 {
                     "role": "user",
-                    "content": "How related is the information ({}) with the query ({})? Answer with a number from 0 to 5 and do not add any other thing.".format(
-                        gist, query
-                    ),
-                },
+                    "content": f"How related is the information ({gist}) with the query ({query})? Answer with a number from 0 to 5 and do not add any other thing.",
+                }
             ],
             max_tokens=50,
         )
-        score = int(response.choices[0].message.content.strip()) / 5
+        score = (
+            float(response.choices[0].message.content.strip()) / 5
+            if response.choices[0].message.content
+            else 0.0
+        )
         return score
 
-    @exponential_backoff(retries=5, base_wait_time=1)  # type: ignore[misc, no-untyped-call] # FIX ME
+    @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_confidence(self, query: str, gist: str) -> float:
-        response = self.model.chat.completions.create(  # type: ignore[attr-defined] # FIX ME
+        response = self.scorer.chat.completions.create(
             model="gpt-4-0125-preview",
             messages=[
                 {
                     "role": "user",
-                    "content": "How confidence do you think the information ({}) is a mustk? Answer with a number from 0 to 5 and do not add any other thing.".format(  # type: ignore[str-format] # FIX ME
-                        gist, query
-                    ),
-                },
+                    "content": f"How confident do you think the information ({gist}) is a must-know? Answer with a number from 0 to 5 and do not add any other thing.",
+                }
             ],
             max_tokens=50,
         )
-        score = int(response.choices[0].message.content.strip()) / 5
+        score = (
+            float(response.choices[0].message.content.strip()) / 5
+            if response.choices[0].message.content
+            else 0.0
+        )
         return score
 
-    @exponential_backoff(retries=5, base_wait_time=1)  # type: ignore[misc, no-untyped-call] # FIX ME
+    @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_surprise(
-        self, query: str, gist: str, history_gists: str = None  # type: ignore[assignment] # FIX ME
+        self, query: str, gist: str, history_gists: Optional[str] = None
     ) -> float:
-        response = self.model.chat.completions.create(  # type: ignore[attr-defined] # FIX ME
+        response = self.scorer.chat.completions.create(
             model="gpt-4-0125-preview",
             messages=[
                 {
                     "role": "user",
-                    "content": "How surprise do you think the information ({}) is as an output of the processor? Answer with a number from 0 to 5 and do not add any other thing.".format(  # type: ignore[str-format] # FIX ME
-                        gist, query
-                    ),
-                },
+                    "content": f"How surprising do you think the information ({gist}) is as an output of the processor? Answer with a number from 0 to 5 and do not add any other thing.",
+                }
             ],
             max_tokens=50,
         )
-        score = int(response.choices[0].message.content.strip()) / 5
+        score = (
+            float(response.choices[0].message.content.strip()) / 5
+            if response.choices[0].message.content
+            else 0.0
+        )
         return score
 
-    def ask_score(self, query, gist, verbose=False, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
+    def ask_score(
+        self,
+        query: str,
+        gist: str,
+        verbose: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ) -> float:
         relevance = self.ask_relevance(query, gist, *args, **kwargs)
         confidence = self.ask_confidence(query, gist, *args, **kwargs)
         surprise = self.ask_surprise(query, gist, *args, **kwargs)
@@ -102,9 +145,11 @@ class BaseProcessor(object):
             print(
                 f"Relevance: {relevance}, Confidence: {confidence}, Surprise: {surprise}"
             )
-        return relevance * confidence * surprise
 
-    def ask_info(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
+        final_score = relevance * confidence * surprise
+        return final_score
+
+    def ask_info(self, *args: Any, **kwargs: Any) -> str:
         raise NotImplementedError(
-            "The 'ask_information' method must be implemented in derived classes."
+            "The 'ask_info' method must be implemented in derived classes."
         )
