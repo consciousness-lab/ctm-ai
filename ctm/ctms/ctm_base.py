@@ -1,6 +1,6 @@
 import concurrent.futures
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -22,6 +22,16 @@ class BaseConsciousnessTuringMachine(object):
         self.processor_list: List[Dict[str, Any]] = []
         self.processor_group_map: Dict[str, str] = defaultdict(str)
         self.load_ctm()
+
+    def __call__(
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[Any] = None,
+        audio: Optional[Any] = None,
+        video_frames: Optional[Any] = None,
+    ) -> Tuple[str, float]:
+        return self.forward(query, text, image, audio, video_frames)
 
     def add_processor(
         self, processor_name: str, group_name: Optional[str] = None
@@ -47,10 +57,10 @@ class BaseConsciousnessTuringMachine(object):
     def ask_processor(
         processor: Dict[str, Any],
         query: str,
-        text: str,
-        image: Any,
-        audio: Any,
-        video_frames: Any,
+        text: Optional[str] = None,
+        image: Optional[Any] = None,
+        audio: Optional[Any] = None,
+        video_frames: Optional[Any] = None,
     ) -> Dict[str, Any]:
         processor_instance = processor["processor_instance"]
         processor_name = processor["processor_name"]
@@ -65,7 +75,12 @@ class BaseConsciousnessTuringMachine(object):
         return {"name": processor_name, "gist": gist, "score": score}
 
     def ask_processors(
-        self, query: str, text: str, image: Any, audio: Any, video_frames: Any
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[Any] = None,
+        audio: Optional[Any] = None,
+        video_frames: Optional[Any] = None,
     ) -> Dict[str, Dict[str, Any]]:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
@@ -99,34 +114,49 @@ class BaseConsciousnessTuringMachine(object):
         self, processor_output: Dict[str, Dict[str, Any]]
     ) -> Dict[str, Any]:
         # Unpack processor outputs into lists for easier processing
-        gists, scores, names = [], [], []
+        gists: List[str] = []
+        scores: List[float] = []
+        names: List[str] = []
+
         for name, info in processor_output.items():
             gists.append(info["gist"])
             scores.append(info["score"])
             names.append(name)
 
         # Determine the unique group for each processor
-        unique_groups = set(self.processor_group_map.values())
+        unique_groups: Set[str] = set(self.processor_group_map.values())
 
         # Prepare to track the best processor by group
-        best_processor_by_group = {
-            group: (None, -1) for group in unique_groups
-        }  # (processor_name, score)
+        best_processor_by_group: Dict[str, Tuple[Optional[str], float]] = {
+            group: (
+                None,
+                float("-inf"),
+            )  # Use negative infinity as the initial lowest score
+            for group in unique_groups
+        }
 
         # Iterate through processors to find the best in each group
         for name, score in zip(names, scores):
-            group = self.processor_group_map[name]
+            group = self.processor_group_map.get(name, "")
             if score > best_processor_by_group[group][1]:
                 best_processor_by_group[group] = (name, score)
 
         # Select the overall best across groups
-        best_overall = max(
+        best_overall: Tuple[Optional[str], float] = max(
             best_processor_by_group.values(), key=lambda x: x[1]
         )
-        best_name = best_overall[0]
-        index = names.index(best_name)
+        best_name: Optional[str] = best_overall[0]
 
-        winning_info = {
+        if best_name is None:
+            raise ValueError(
+                "No valid processor found."
+            )  # Ensure best_name is not None
+
+        index: int = names.index(
+            best_name
+        )  # Now best_name is guaranteed to be not None
+
+        winning_info: Dict[str, Any] = {
             "name": best_name,
             "gist": gists[index],
             "score": scores[index],
@@ -204,7 +234,12 @@ class BaseConsciousnessTuringMachine(object):
         return infos, scores
 
     def forward(
-        self, query: str, text: str, image: Any, audio: Any, video_frames: Any
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[Any] = None,
+        audio: Optional[Any] = None,
+        video_frames: Optional[Any] = None,
     ) -> Tuple[str, float]:
         answer_threshold = 0.5
         max_iter = 3

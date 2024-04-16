@@ -1,8 +1,6 @@
 import os
 
-from huggingface_hub.inference_api import (
-    InferenceApi,  # type: ignore[import] # FIX ME
-)
+from huggingface_hub.inference_api import InferenceApi
 
 from ctm.messengers.messenger_base import BaseMessenger
 from ctm.processors.processor_base import BaseProcessor
