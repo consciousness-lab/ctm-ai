@@ -1,14 +1,25 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
+
+T = TypeVar("T", bound="BaseMessenger")
 
 from .messenger_base import BaseMessenger
 
 
-@BaseMessenger.register_messenger("bart_text_summ_messenger")  # type: ignore[no-untyped-call] # FIX ME
-class BartTextSummarizationMessenger(BaseMessenger):
+@BaseMessenger.register_messenger("bart_text_summ_messenger")
+class BartTextSummarizationMessenger(BaseMessenger[T]):
     def __init__(
         self,
         role: Optional[str] = None,
-        content: Optional[Union[str, Dict, List]] = None,
+        content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
         *args: Any,
         **kwargs: Any
     ) -> None:
@@ -18,14 +29,16 @@ class BartTextSummarizationMessenger(BaseMessenger):
     def init_messenger(
         self,
         role: Optional[str] = None,
-        content: Optional[Union[str, Dict, List]] = None,
+        content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
     ) -> None:
-        self.messages = []
+        self.messages: List[
+            Tuple[str, Union[str, Dict[str, Any], List[Any]]]
+        ] = []
         if role and content:
             self.update_message(role, content)
 
     def update_message(
-        self, role: str, content: Union[str, Dict, List]
+        self, role: str, content: Union[str, Dict[str, Any], List[Any]]
     ) -> None:
         self.messages.append((role, content))
 

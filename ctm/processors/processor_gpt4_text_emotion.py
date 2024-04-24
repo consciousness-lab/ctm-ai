@@ -1,15 +1,19 @@
+from typing import Any
+
 from ctm.processors.processor_gpt4 import GPT4Processor
 
 
-@GPT4Processor.register_processor("gpt4_text_emotion_processor")  # type: ignore[no-untyped-call] # FIX ME
+# Assuming GPT4Processor has a properly typed `register_processor` method
+@GPT4Processor.register_processor("gpt4_text_emotion_processor")
 class GPT4TextEmotionProcessor(GPT4Processor):
-    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
-        self.init_processor()  # type: ignore[no-untyped-call] # FIX ME
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)  # Call to parent class constructor
         self.task_instruction = "You are a text emotion classifier. You can understand the emotion within the text and generate the emotion label. If there is no text detected, please answer with None."
 
 
 if __name__ == "__main__":
-    processor = GPT4Processor("close_fashion_processor")  # type: ignore[no-untyped-call] # FIX ME
-    image_path = "../ctmai-test1.png"
-    summary: str = processor.ask_info(query=None, image_path=image_path)  # type: ignore[arg-type] # FIX ME
+    # Instantiate the specific subclass for text emotion processing
+    processor = GPT4TextEmotionProcessor()
+    text = "I am feeling great today! The sun is shining and I've got a lot of work done."
+    summary: str = processor.ask_info(query="Identify the emotion.", text=text)
     print(summary)

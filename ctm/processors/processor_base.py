@@ -5,7 +5,7 @@ from openai import OpenAI
 from ..utils.decorator import score_exponential_backoff
 
 
-class BaseProcessor:
+class BaseProcessor(object):
     _processor_registry: Dict[str, Type["BaseProcessor"]] = {}
 
     @classmethod
