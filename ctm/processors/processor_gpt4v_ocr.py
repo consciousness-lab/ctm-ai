@@ -1,15 +1,22 @@
+from typing import Any
+
 from ctm.processors.processor_gpt4v import GPT4VProcessor
 
 
-@GPT4VProcessor.register_processor("gpt4v_ocr_processor")  # type: ignore[no-untyped-call] # FIX ME
+# Correct the registration method to include type checking if possible in the GPT4VProcessor class
+@GPT4VProcessor.register_processor("gpt4v_ocr_processor")
 class GPT4VOCRProcessor(GPT4VProcessor):
-    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
-        self.init_processor()  # type: ignore[no-untyped-call] # FIX ME
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(
+            *args, **kwargs
+        )  # Ensure the parent constructor is called properly
         self.task_instruction = "You should act like an OCR model. Please extract the text from the image. If there is no text detected, please answer with None."
 
 
 if __name__ == "__main__":
-    processor = GPT4VProcessor("ocr_processor")  # type: ignore[no-untyped-call] # FIX ME
+    # Ensure that we're instantiating the correct processor for the job
+    processor = GPT4VOCRProcessor()
     image_path = "../ctmai-test1.png"
-    summary: str = processor.ask_info(query=None, image_path=image_path)  # type: ignore[arg-type] # FIX ME
+    # Provide a valid query string; ensure `ask_info` can handle all provided parameters
+    summary: str = processor.ask_info(query="Extract text", image=image_path)
     print(summary)

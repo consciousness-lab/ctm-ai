@@ -1,63 +1,74 @@
+from typing import Any, Dict, List, Optional, Union
+
 from openai import OpenAI
 
 from ctm.messengers.messenger_base import BaseMessenger
 from ctm.processors.processor_base import BaseProcessor
-from ctm.utils.decorator import exponential_backoff
+from ctm.utils.decorator import info_exponential_backoff
 
 
-@BaseProcessor.register_processor("gpt4v_processor")  # type: ignore[no-untyped-call] # FIX ME
+# Ensure that BaseProcessor has a properly typed register_processor method:
+@BaseProcessor.register_processor("gpt4v_processor")
 class GPT4VProcessor(BaseProcessor):
-    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
-        self.init_processor()  # type: ignore[no-untyped-call] # FIX ME
-        self.task_instruction = None
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)  # Properly initialize the base class
+        self.init_processor()
+        self.task_instruction: Optional[str] = None
 
-    def init_processor(self):  # type: ignore[no-untyped-def] # FIX ME
+    def init_processor(self) -> None:
         self.model = OpenAI()
-        self.messenger = BaseMessenger("gpt4v_messenger")  # type: ignore[no-untyped-call] # FIX ME
-        return
+        self.messenger = BaseMessenger("gpt4v_messenger")
 
-    def process(self, payload: dict) -> dict:  # type: ignore[type-arg] # FIX ME
-        return  # type: ignore[return-value] # FIX ME
+    def process(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return {}  # Return an empty dict or a meaningful response as required
 
-    def update_info(self, feedback: str):  # type: ignore[no-untyped-def] # FIX ME
+    def update_info(self, feedback: str) -> None:
         self.messenger.add_assistant_message(feedback)
 
-    @exponential_backoff(retries=5, base_wait_time=1)  # type: ignore[no-untyped-call] # FIX ME
-    def gpt4v_requst(self):  # type: ignore[no-untyped-def] # FIX ME
-        response = self.model.chat.completions.create(
+    @info_exponential_backoff(retries=5, base_wait_time=1)
+    def gpt4v_request(self) -> str | Any:
+        response = self.model.completions.create(
             model="gpt-4-vision-preview",
-            messages=self.messenger.get_messages(),  # type: ignore[no-untyped-call] # FIX ME
+            messages=self.messenger.get_messages(),
             max_tokens=300,
         )
-        return response
+        description = response.choices[0].message.content
+        return description
 
-    def ask_info(  # type: ignore[override] # FIX ME
+    def ask_info(
         self,
         query: str,
-        text: str = None,  # type: ignore[assignment] # FIX ME
-        image: str = None,  # type: ignore[assignment] # FIX ME
-        video_frames: str = None,  # type: ignore[assignment] # FIX ME
-        *args,
-        **kwargs,
+        text: Optional[str] = None,
+        image: Optional[str] = None,
+        video_frames: Optional[str] = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> str:
-        if self.messenger.check_iter_round_num() == 0:  # type: ignore[no-untyped-call] # FIX ME
-            self.messenger.add_user_message(
-                [
-                    {"type": "text", "text": self.task_instruction},
+        if self.messenger.check_iter_round_num() == 0:
+            messages: List[Dict[str, Union[str, Dict[str, str]]]] = [
+                {
+                    "type": "text",
+                    "text": self.task_instruction
+                    or "No instruction provided.",
+                },
+            ]
+            if image:
+                messages.append(
                     {
                         "type": "image_url",
                         "image_url": f"data:image/jpeg;base64,{image}",
-                    },
-                ]
-            )
+                    }
+                )
+            self.messenger.add_user_message(messages)
 
-        response = self.gpt4v_requst()
-        description = response.choices[0].message.content
-        return description  # type: ignore[no-any-return] # FIX ME
+        description = self.gpt4v_request()
+        return description
 
 
 if __name__ == "__main__":
-    processor = BaseProcessor("ocr_processor")  # type: ignore[no-untyped-call] # FIX ME
+    processor = GPT4VProcessor()
     image_path = "../ctmai-test1.png"
-    summary: str = processor.ask_info(query=None, image_path=image_path)  # type: ignore[no-untyped-call] # FIX ME
+    summary: str = processor.ask_info(
+        query="Describe the image.", image=image_path
+    )
     print(summary)

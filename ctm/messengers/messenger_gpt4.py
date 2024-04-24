@@ -1,22 +1,39 @@
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from ctm.messengers.messenger_base import BaseMessenger
+from .messenger_base import BaseMessenger
 
 
-@BaseMessenger.register_messenger("gpt4_messenger")  # type: ignore[no-untyped-call] # FIX ME
+# Assuming BaseMessenger has a correctly typed decorator:
+@BaseMessenger.register_messenger("gpt4_messenger")
 class GPT4Messenger(BaseMessenger):
-    def __init__(self, role=None, content=None, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
+    def __init__(
+        self,
+        role: Optional[str] = None,
+        content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
+        *args: Any,
+        **kwargs: Any
+    ) -> None:
+        super().__init__(*args, **kwargs)
         self.init_messenger(role, content)
 
-    def init_messenger(  # type: ignore[no-untyped-def] # FIX ME
-        self, role: str = None, content: Union[str, Dict, List] = None  # type: ignore[assignment, type-arg] # FIX ME
-    ):
-        self.messages = []  # type: ignore[var-annotated] # FIX ME
-        if content and role:
-            self.update_messages(role, content)  # type: ignore[attr-defined] # FIX ME
+    def init_messenger(
+        self,
+        role: Optional[str] = None,
+        content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
+    ) -> None:
+        # Define messages as a list of dictionaries with specific types
+        self.messages: List[
+            Dict[str, Union[str, Dict[str, Any], List[Any]]]
+        ] = []
+        if role is not None and content is not None:
+            self.update_message(role, content)
 
-    def update_message(self, role: str, content: Union[str, Dict, List]):  # type: ignore[no-untyped-def, type-arg] # FIX ME
+    def update_message(
+        self, role: str, content: Union[str, Dict[str, Any], List[Any]]
+    ) -> None:
+        # Append a new message to the list with a specified structure
         self.messages.append({"role": role, "content": content})
 
-    def check_iter_round_num(self):  # type: ignore[no-untyped-def] # FIX ME
+    def check_iter_round_num(self) -> int:
+        # Return the number of iterations, which is the length of the messages list
         return len(self.messages)

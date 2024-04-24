@@ -1,15 +1,21 @@
+from typing import Any
+
 from ctm.processors.processor_gpt4 import GPT4Processor
 
 
-@GPT4Processor.register_processor("gpt4_text_summary_processor")  # type: ignore[no-untyped-call] # FIX ME
+# Assuming GPT4Processor has a properly typed `register_processor` method
+@GPT4Processor.register_processor("gpt4_text_summary_processor")
 class GPT4TextSummaryProcessor(GPT4Processor):
-    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
-        self.init_processor()  # type: ignore[no-untyped-call] # FIX ME
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(
+            *args, **kwargs
+        )  # Properly initialize the parent class
         self.task_instruction = "You are a text summarizer. You can understand the meaning of the text and generate the summary."
 
 
 if __name__ == "__main__":
-    processor = GPT4Processor("close_fashion_processor")  # type: ignore[no-untyped-call] # FIX ME
-    image_path = "../ctmai-test1.png"
-    summary: str = processor.ask_info(query=None, image_path=image_path)  # type: ignore[arg-type] # FIX ME
+    # Instantiate the specific subclass for the text summarization task
+    processor = GPT4TextSummaryProcessor()
+    text = "The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet."
+    summary: str = processor.ask_info(query="Summarize the text.", text=text)
     print(summary)

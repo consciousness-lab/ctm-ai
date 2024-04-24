@@ -1,5 +1,7 @@
-from .supervisor_gpt4 import GPT4Supervisior
+from ctm.supervisors.supervisor_base import BaseSupervisor
+from ctm.supervisors.supervisor_gpt4 import GPT4Supervisor
 
 __all__ = [
-    "GPT4Supervisior",
+    "GPT4Supervisor",
+    "BaseSupervisor",
 ]

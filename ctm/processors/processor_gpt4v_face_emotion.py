@@ -1,15 +1,24 @@
+from typing import Any
+
 from ctm.processors.processor_gpt4v import GPT4VProcessor
 
 
-@GPT4VProcessor.register_processor("gpt4v_face_emotion_processor")  # type: ignore[no-untyped-call] # FIX ME
+# Assume register_processor method has been properly typed
+@GPT4VProcessor.register_processor("gpt4v_face_emotion_processor")
 class GPT4VFaceEmotionProcessor(GPT4VProcessor):
-    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
-        self.init_processor()  # type: ignore[no-untyped-call] # FIX ME
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(
+            *args, **kwargs
+        )  # Properly initialize the parent class
         self.task_instruction = "Besides the main scene in the image, can you describe the face emotion that is on people's faces within this picture?"
 
 
 if __name__ == "__main__":
-    processor = GPT4VProcessor("face_emotion_processor")  # type: ignore[no-untyped-call] # FIX ME
+    # Instantiate the specific subclass for face emotion processing
+    processor = GPT4VFaceEmotionProcessor()
     image_path = "../ctmai-test1.png"
-    summary: str = processor.ask_info(query=None, image_path=image_path)  # type: ignore[arg-type] # FIX ME
+    # Providing a valid query and ensuring that the method ask_info accepts the correct parameters
+    summary: str = processor.ask_info(
+        query="Describe face emotions", image=image_path
+    )
     print(summary)

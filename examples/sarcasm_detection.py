@@ -1,9 +1,7 @@
 import sys
 
 sys.path.append("..")
-from ctm.ctms.ctm_base import (
-    BaseConsciousnessTuringMachine,  # type: ignore[import] # FIX ME
-)
+from ctm.ctms.ctm_base import BaseConsciousnessTuringMachine
 from ctm.utils import load_image
 
 if __name__ == "__main__":

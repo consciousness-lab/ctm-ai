@@ -1,58 +1,65 @@
+from typing import Any, Dict, Optional, Union
+
 from openai import OpenAI
 
 from ctm.messengers.messenger_base import BaseMessenger
 from ctm.processors.processor_base import BaseProcessor
-from ctm.utils.decorator import exponential_backoff
+from ctm.utils.decorator import info_exponential_backoff
 
 
-@BaseProcessor.register_processor("gpt4_processor")  # type: ignore[no-untyped-call] # FIX ME
+# Assuming the `register_processor` method has been updated to be properly typed:
+@BaseProcessor.register_processor("gpt4_processor")
 class GPT4Processor(BaseProcessor):
-    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def] # FIX ME
-        self.init_processor()  # type: ignore[no-untyped-call] # FIX ME
-        self.task_instruction = None
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
 
-    def init_processor(self):  # type: ignore[no-untyped-def] # FIX ME
-        self.model = OpenAI()
-        self.messenger = BaseMessenger("gpt4_messenger")  # type: ignore[no-untyped-call] # FIX ME
-        return
+    def init_task_info(self) -> None:
+        self.task_instruction = "Please summarize the text."
 
-    def process(self, payload: dict) -> dict:  # type: ignore[type-arg] # FIX ME
-        return  # type: ignore[return-value] # FIX ME
+    def init_processor(self) -> None:
+        self.model = OpenAI().ChatCompletion()
 
-    def update_info(self, feedback: str):  # type: ignore[no-untyped-def] # FIX ME
+    def init_messenger(self) -> None:
+        self.messenger = BaseMessenger("gpt4_messenger")
+
+    def process(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        # Assume process should do something and return a dictionary
+        return {}
+
+    def update_info(self, feedback: str) -> None:
         self.messenger.add_assistant_message(feedback)
 
-    @exponential_backoff(retries=5, base_wait_time=1)  # type: ignore[no-untyped-call] # FIX ME
-    def gpt4_requst(self):  # type: ignore[no-untyped-def] # FIX ME
-        response = self.model.chat.completions.create(
+    @info_exponential_backoff(retries=5, base_wait_time=1)
+    def gpt4_request(self) -> Any:
+        response = self.model.create(
             model="gpt-4-turbo-preview",
-            messages=self.messenger.get_messages(),  # type: ignore[no-untyped-call] # FIX ME
+            messages=self.messenger.get_messages(),
             max_tokens=300,
         )
-        return response
-
-    def ask_info(  # type: ignore[override] # FIX ME
-        self,
-        query: str,
-        text: str = None,  # type: ignore[assignment] # FIX ME
-        *args,
-        **kwargs,
-    ) -> str:
-        if self.messenger.check_iter_round_num() == 0:  # type: ignore[no-untyped-call] # FIX ME
-            self.messenger.add_user_message(
-                "The text information for the previously described task is as follows: "
-                + text
-                + "Here is what you should do: "
-                + self.task_instruction  # type: ignore[operator] # FIX ME
-            )
-
-        response = self.gpt4_requst()
         description = response.choices[0].message.content
-        return description  # type: ignore[no-any-return] # FIX ME
+        return description
+
+    def ask_info(
+        self, query: str, text: Optional[str] = None, *args: Any, **kwargs: Any
+    ) -> str:
+        if self.messenger.check_iter_round_num() == 0:
+            initial_message = "The text information for the previously described task is as follows: "
+            initial_message += (
+                text if text is not None else "No text provided."
+            )
+            initial_message += (
+                " Here is what you should do: " + self.task_instruction
+            )
+            self.messenger.add_user_message(initial_message)
+
+        description = self.gpt4_request()
+        return description
 
 
 if __name__ == "__main__":
-    processor = BaseProcessor("ocr_processor")  # type: ignore[no-untyped-call] # FIX ME
-    image = "../ctmai-test1.png"
-    summary: str = processor.ask_info(query=None, image=image)  # type: ignore[no-untyped-call] # FIX ME
+    processor = GPT4Processor()
+    text = "Hugging Face has released a new version of Transformers that brings several enhancements."
+    summary: str = processor.ask_info(
+        query="Summarize the changes.", text=text
+    )
     print(summary)
