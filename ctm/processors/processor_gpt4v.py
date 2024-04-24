@@ -4,7 +4,7 @@ from openai import OpenAI
 
 from ctm.messengers.messenger_base import BaseMessenger
 from ctm.processors.processor_base import BaseProcessor
-from ctm.utils.decorator import exponential_backoff
+from ctm.utils.decorator import info_exponential_backoff
 
 
 # Ensure that BaseProcessor has a properly typed register_processor method:
@@ -25,14 +25,15 @@ class GPT4VProcessor(BaseProcessor):
     def update_info(self, feedback: str) -> None:
         self.messenger.add_assistant_message(feedback)
 
-    @exponential_backoff(retries=5, base_wait_time=1)
-    def gpt4v_request(self) -> Any:
+    @info_exponential_backoff(retries=5, base_wait_time=1)
+    def gpt4v_request(self) -> str | Any:
         response = self.model.chat_completions.create(
             model="gpt-4-vision-preview",
             messages=self.messenger.get_messages(),
             max_tokens=300,
         )
-        return response
+        description = response.choices[0].message.content
+        return description
 
     def ask_info(
         self,
@@ -60,8 +61,7 @@ class GPT4VProcessor(BaseProcessor):
                 )
             self.messenger.add_user_message(messages)
 
-        response = self.gpt4v_request()
-        description = response.choices[0].message.content
+        description = self.gpt4v_request()
         return description
 
 

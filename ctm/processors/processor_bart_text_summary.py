@@ -1,7 +1,7 @@
 import os
 from typing import Any, Dict, Optional
 
-from huggingface_hub.inference_api import InferenceApi
+from huggingface_hub import InferenceClient
 
 from ctm.messengers.messenger_base import BaseMessenger
 from ctm.processors.processor_base import BaseProcessor
@@ -19,7 +19,7 @@ class BartTextSummaryProcessor(BaseProcessor):
         hf_token = os.getenv("HF_TOKEN")
         if not hf_token:
             raise ValueError("HF_TOKEN environment variable is not set")
-        self.model = InferenceApi(
+        self.model = InferenceClient(
             token=hf_token, repo_id="facebook/bart-large-cnn"
         )
         self.messenger = BaseMessenger("bart_text_summ_messenger")

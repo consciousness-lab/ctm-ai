@@ -12,8 +12,6 @@ from ctm.utils.decorator import info_exponential_backoff
 class GPT4Processor(BaseProcessor):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.init_processor()
-        self.init_messenger()
 
     def init_processor(self) -> None:
         self.model = OpenAI()
@@ -35,7 +33,8 @@ class GPT4Processor(BaseProcessor):
             messages=self.messenger.get_messages(),
             max_tokens=300,
         )
-        return response
+        description = response.choices[0].message.content
+        return description
 
     def ask_info(
         self, query: str, text: Optional[str] = None, *args: Any, **kwargs: Any
@@ -50,8 +49,7 @@ class GPT4Processor(BaseProcessor):
             )
             self.messenger.add_user_message(initial_message)
 
-        response = self.gpt4_request()
-        description = response["choices"][0]["message"]["content"]
+        description = self.gpt4_request()
         return description
 
 

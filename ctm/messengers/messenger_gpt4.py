@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from .messenger_base import BaseMessenger
 
@@ -10,8 +10,8 @@ class GPT4Messenger(BaseMessenger):
         self,
         role: Optional[str] = None,
         content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
-        *args,
-        **kwargs
+        *args: Any,
+        **kwargs: Any
     ) -> None:
         super().__init__(*args, **kwargs)
         self.init_messenger(role, content)
@@ -20,7 +20,7 @@ class GPT4Messenger(BaseMessenger):
         self,
         role: Optional[str] = None,
         content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
-    ):
+    ) -> None:
         # Define messages as a list of dictionaries with specific types
         self.messages: List[
             Dict[str, Union[str, Dict[str, Any], List[Any]]]
@@ -30,7 +30,7 @@ class GPT4Messenger(BaseMessenger):
 
     def update_message(
         self, role: str, content: Union[str, Dict[str, Any], List[Any]]
-    ):
+    ) -> None:
         # Append a new message to the list with a specified structure
         self.messages.append({"role": role, "content": content})
 

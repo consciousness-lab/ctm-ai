@@ -51,7 +51,7 @@ class BaseMessenger:
     ) -> None:
         self.init_messenger(role, content)
         self.messages: List[
-            Tuple[str, Union[str, Dict[str, Any], List[Any]]]
+            Dict[str, Union[str, Dict[str, Any], List[Any]]]
         ] = []
 
     def init_messenger(
@@ -65,7 +65,7 @@ class BaseMessenger:
     def update_message(
         self, role: str, content: Union[str, Dict[str, Any], List[Any]]
     ) -> None:
-        self.messages.append((role, content))
+        self.messages.append({"role": role, "content": content})
 
     def check_iter_round_num(self) -> int:
         return len(self.messages)
@@ -104,5 +104,5 @@ class BaseMessenger:
 
     def get_messages(
         self,
-    ) -> List[Tuple[str, Union[str, Dict[str, Any], List[Any]]]]:
+    ) -> List[Dict[str, Union[str, Dict[str, Any], List[Any]]]]:
         return self.messages

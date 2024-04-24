@@ -8,7 +8,7 @@ from .messenger_base import BaseMessenger
 # If the BaseMessenger has a register_messenger method that is not typed to accept a generic class,
 # you might need to define it properly in BaseMessenger or ensure that the typing is correct there.
 @BaseMessenger.register_messenger("gpt4v_messenger")
-class GPT4VMessenger(BaseMessenger[T]):
+class GPT4VMessenger(BaseMessenger):
     def __init__(
         self,
         role: Optional[str] = None,
@@ -29,7 +29,7 @@ class GPT4VMessenger(BaseMessenger[T]):
 
     def update_message(
         self, role: str, content: Union[str, Dict[str, Any], List[Any]]
-    ):
+    ) -> None:
         # Ensuring that 'messages' is defined and typed properly in the base class
         self.messages.append({"role": role, "content": content})
 
