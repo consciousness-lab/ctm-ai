@@ -15,7 +15,7 @@ class GPT4Supervisor(BaseSupervisor):
         self.model = OpenAI()
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_info(self, query: str, context: Optional[str] = None) -> str:
+    def ask_info(self, query: str, context: Optional[str] = None) -> str | Any:
 
         responses = self.model.chat.completions.create(
             model="gpt-4-turbo-preview",

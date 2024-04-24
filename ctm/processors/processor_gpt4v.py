@@ -27,7 +27,7 @@ class GPT4VProcessor(BaseProcessor):
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def gpt4v_request(self) -> str | Any:
-        response = self.model.chat_completions.create(
+        response = self.model.completions.create(
             model="gpt-4-vision-preview",
             messages=self.messenger.get_messages(),
             max_tokens=300,

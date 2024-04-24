@@ -1,7 +1,7 @@
 import os
 from typing import Any, Optional
 
-from huggingface_hub import InferenceClient
+from transformers import InferenceClient
 
 from ..messengers.messenger_base import BaseMessenger
 from .processor_base import BaseProcessor

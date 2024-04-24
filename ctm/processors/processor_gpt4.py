@@ -13,8 +13,11 @@ class GPT4Processor(BaseProcessor):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
+    def init_task_info(self) -> None:
+        self.task_instruction = "Please summarize the text."
+
     def init_processor(self) -> None:
-        self.model = OpenAI()
+        self.model = OpenAI().ChatCompletion()
 
     def init_messenger(self) -> None:
         self.messenger = BaseMessenger("gpt4_messenger")
@@ -28,7 +31,7 @@ class GPT4Processor(BaseProcessor):
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def gpt4_request(self) -> Any:
-        response = self.model.chat_completions.create(
+        response = self.model.create(
             model="gpt-4-turbo-preview",
             messages=self.messenger.get_messages(),
             max_tokens=300,
