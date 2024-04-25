@@ -2,6 +2,17 @@ import base64
 from typing import Any, List, Tuple
 
 import numpy as np
+from numpy.typing import NDArray
+
+
+def load_audio(audio_path: str) -> Tuple[NDArray[np.float32], int]:
+    import librosa
+
+    audio, sr = librosa.load(audio_path, sr=None)
+    import pdb
+
+    pdb.set_trace()  # Debugging breakpoint
+    return (audio.astype(np.float32), int(sr))
 
 
 def load_image(image_path: str) -> str:
@@ -10,16 +21,7 @@ def load_image(image_path: str) -> str:
         return encoded_image
 
 
-def load_audio(audio_path: str) -> Tuple[np.ndarray[np.float32, Any], int]:
-    import librosa
-
-    audio, sr = librosa.load(audio_path, sr=None)
-    return audio.astype(np.float32), int(sr)
-
-
-def load_video(
-    video_path: str, frame_num: int = 5
-) -> List[np.ndarray[np.uint8, Any]]:
+def load_video(video_path: str, frame_num: int = 5) -> List[NDArray[np.uint8]]:
     import cv2
 
     cap = cv2.VideoCapture(video_path)

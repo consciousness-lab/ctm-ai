@@ -1,7 +1,7 @@
 import os
 from typing import Any, Dict, Optional
 
-from transformers import InferenceClient
+from huggingface_hub import InferenceClient
 
 from ctm.messengers.messenger_base import BaseMessenger
 from ctm.processors.processor_base import BaseProcessor

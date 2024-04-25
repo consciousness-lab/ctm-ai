@@ -8,6 +8,8 @@ from ctm.processors.processor_gpt4v import GPT4VProcessor
 class GPT4VClothFashionProcessor(GPT4VProcessor):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)  # Call to parent class constructor
+
+    def init_task_info(self):
         self.task_instruction = "Focus on the cloth of people in the image, describe the style of the cloth fashion. If there is no people detected, please answer with None."
 
 

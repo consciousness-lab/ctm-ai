@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from openai import OpenAI
 
@@ -14,10 +14,12 @@ class GPT4Processor(BaseProcessor):
         super().__init__(*args, **kwargs)
 
     def init_task_info(self) -> None:
-        self.task_instruction = "Please summarize the text."
+        raise NotImplementedError(
+            "The 'init_task_info' method must be implemented in derived classes."
+        )
 
-    def init_processor(self) -> None:
-        self.model = OpenAI().ChatCompletion()
+    def init_executor(self) -> None:
+        self.model = OpenAI()
 
     def init_messenger(self) -> None:
         self.messenger = BaseMessenger("gpt4_messenger")
@@ -31,7 +33,7 @@ class GPT4Processor(BaseProcessor):
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def gpt4_request(self) -> Any:
-        response = self.model.create(
+        response = self.model.chat.completions.create(
             model="gpt-4-turbo-preview",
             messages=self.messenger.get_messages(),
             max_tokens=300,

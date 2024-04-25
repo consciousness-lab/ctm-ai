@@ -12,11 +12,11 @@ from ctm.utils.decorator import info_exponential_backoff
 class GPT4VProcessor(BaseProcessor):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)  # Properly initialize the base class
-        self.init_processor()
-        self.task_instruction: Optional[str] = None
 
-    def init_processor(self) -> None:
+    def init_executor(self) -> None:
         self.model = OpenAI()
+
+    def init_messenger(self) -> None:
         self.messenger = BaseMessenger("gpt4v_messenger")
 
     def process(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -27,7 +27,7 @@ class GPT4VProcessor(BaseProcessor):
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def gpt4v_request(self) -> str | Any:
-        response = self.model.completions.create(
+        response = self.model.chat.completions.create(
             model="gpt-4-vision-preview",
             messages=self.messenger.get_messages(),
             max_tokens=300,

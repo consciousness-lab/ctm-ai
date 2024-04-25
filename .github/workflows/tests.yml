@@ -20,6 +20,6 @@ jobs:
     - name: Test with pytest
       env: # Or as an environment variable
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        REDIS_OM_URL: ${{ secrets.REDIS_OM_URL }}
-        TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
+        poetry run pytest
