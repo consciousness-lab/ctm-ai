@@ -1,7 +1,7 @@
 import os
 from typing import Any, Optional
 
-from transformers import InferenceClient
+from huggingface_hub import InferenceClient
 
 from ..messengers.messenger_base import BaseMessenger
 from .processor_base import BaseProcessor
@@ -26,7 +26,7 @@ class RobertaTextSentimentProcessor(BaseProcessor):
         query: Optional[str],
         text: Optional[str] = None,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> str:
         if text and self.messenger.check_iter_round_num() == 0:
             self.messenger.add_user_message(text)

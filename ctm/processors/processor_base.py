@@ -33,13 +33,13 @@ class BaseProcessor(object):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.init_scorer()
-        self.init_processor()
+        self.init_executor()
         self.init_messenger()
         self.init_task_info()
 
-    def init_processor(self) -> None:
+    def init_executor(self) -> None:
         raise NotImplementedError(
-            "The 'init_processor' method must be implemented in derived classes."
+            "The 'init_executor' method must be implemented in derived classes."
         )
 
     def init_messenger(self) -> None:
@@ -54,9 +54,6 @@ class BaseProcessor(object):
 
     def init_scorer(self) -> None:
         self.scorer = OpenAI()
-        raise NotImplementedError(
-            "The 'init_scorer' method must be implemented in derived classes."
-        )
 
     def ask(
         self, query: str, text: str, image: str, audio: str, video_frames: str

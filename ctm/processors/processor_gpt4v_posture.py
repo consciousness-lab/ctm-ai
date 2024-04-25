@@ -10,6 +10,8 @@ class GPT4VPostureProcessor(GPT4VProcessor):
         super().__init__(
             *args, **kwargs
         )  # Properly call the parent's constructor
+
+    def init_task_info(self):
         self.task_instruction = "Besides the main scene in the image, can you describe the posture that is going on within this picture?"
 
 
