@@ -9,7 +9,7 @@ class GPT4VSceneLocationProcessor(GPT4VProcessor):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)  # Initialize the parent processor
 
-    def init_task_info(self):
+    def init_task_info(self) -> None:
         self.task_instruction = "Besides the main activity in the image, can you describe the potential location or the event that is going on within this picture?"
 
 

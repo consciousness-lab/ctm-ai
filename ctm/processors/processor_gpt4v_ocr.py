@@ -11,7 +11,7 @@ class GPT4VOCRProcessor(GPT4VProcessor):
             *args, **kwargs
         )  # Ensure the parent constructor is called properly
 
-    def init_task_info(self):
+    def init_task_info(self) -> None:
         self.task_instruction = "You should act like an OCR model. Please extract the text from the image. If there is no text detected, please answer with None."
 
 

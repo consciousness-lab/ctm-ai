@@ -1,17 +1,8 @@
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Tuple,
-    TypeVar,
-    Union,
-)
-
-T = TypeVar("T", bound="BaseMessenger")
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 from .messenger_base import BaseMessenger
+
+T = TypeVar("T", bound="BaseMessenger")
 
 
 @BaseMessenger.register_messenger("bart_text_summ_messenger")
@@ -21,7 +12,7 @@ class BartTextSummarizationMessenger(BaseMessenger):
         role: Optional[str] = None,
         content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self.init_messenger(role, content)
@@ -31,13 +22,14 @@ class BartTextSummarizationMessenger(BaseMessenger):
         role: Optional[str] = None,
         content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
     ) -> None:
+        self.messages: str = ""
         if role and content:
             self.update_message(role, content)
 
     def update_message(
         self, role: str, content: Union[str, Dict[str, Any], List[Any]]
     ) -> None:
-        self.messages.append({"role": role, "content": content})
+        self.messages += content
 
     def check_iter_round_num(self) -> int:
         return len(self.messages)

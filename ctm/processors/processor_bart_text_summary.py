@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any, Dict, Optional
 
@@ -13,29 +14,36 @@ class BartTextSummaryProcessor(BaseProcessor):
         super().__init__(
             *args, **kwargs
         )  # Ensure base class is properly initialized
-        self.init_processor()
 
-    def init_processor(self) -> None:
+    def init_executor(self) -> None:
         hf_token = os.getenv("HF_TOKEN")
         if not hf_token:
             raise ValueError("HF_TOKEN environment variable is not set")
-        self.model = InferenceClient(
-            token=hf_token, repo_id="facebook/bart-large-cnn"
-        )
+        self.executor = InferenceClient(token=hf_token)
+
+    def init_messenger(self) -> None:
         self.messenger = BaseMessenger("bart_text_summ_messenger")
+
+    def init_task_info(self) -> None:
+        pass
 
     def update_info(self, feedback: str) -> None:
         self.messenger.add_assistant_message(feedback)
 
     def ask_info(
-        self, context: Optional[str] = None, *args: Any, **kwargs: Any
+        self, text: Optional[str] = None, *args: Any, **kwargs: Any
     ) -> str | Any:
-        if context is None:
+        if text is None:
             raise ValueError("Context must not be None")
         if self.messenger.check_iter_round_num() == 0:
-            self.messenger.add_user_message(context)
+            self.messenger.add_user_message(text)
 
-        response: Dict[str, Any] = self.model(self.messenger.get_messages())[0]
+        response: Dict[str, Any] = json.loads(
+            self.executor.post(
+                json={"inputs": self.messenger.get_messages()},
+                model="facebook/bart-large-cnn",
+            )
+        )[0]
         return response["summary_text"]
 
 

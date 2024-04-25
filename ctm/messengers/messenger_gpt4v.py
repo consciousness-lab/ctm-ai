@@ -1,8 +1,8 @@
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
-
-T = TypeVar("T", bound="BaseMessenger")
+from typing import Any, Dict, List, Optional, TypeVar, Union
 
 from .messenger_base import BaseMessenger
+
+T = TypeVar("T", bound="BaseMessenger")
 
 
 # If the BaseMessenger has a register_messenger method that is not typed to accept a generic class,
@@ -14,7 +14,7 @@ class GPT4VMessenger(BaseMessenger):
         role: Optional[str] = None,
         content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
         *args: Any,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         super().__init__(*args, **kwargs)
         self.init_messenger(role, content)
@@ -24,6 +24,9 @@ class GPT4VMessenger(BaseMessenger):
         role: Optional[str] = None,
         content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
     ) -> None:
+        self.messages: List[
+            Dict[str, Union[str, Dict[str, Any], List[Any]]]
+        ] = []
         if role is not None and content is not None:
             self.update_message(role, content)
 
