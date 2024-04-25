@@ -10,6 +10,8 @@ class GPT4VFaceEmotionProcessor(GPT4VProcessor):
         super().__init__(
             *args, **kwargs
         )  # Properly initialize the parent class
+
+    def init_task_info(self) -> None:
         self.task_instruction = "Besides the main scene in the image, can you describe the face emotion that is on people's faces within this picture?"
 
 

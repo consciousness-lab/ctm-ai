@@ -1,5 +1,6 @@
+import json
 import os
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from huggingface_hub import InferenceClient
 
@@ -9,11 +10,11 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor("roberta_text_sentiment_processor")
 class RobertaTextSentimentProcessor(BaseProcessor):
-    def init_processor(self) -> None:
-        self.processor = InferenceClient(
-            token=os.environ["HF_TOKEN"],
-            model="cardiffnlp/twitter-roberta-base-sentiment-latest",
-        )
+    def init_executor(self) -> None:
+        self.executor = InferenceClient(token=os.environ["HF_TOKEN"])
+
+    def init_task_info(self) -> None:
+        pass
 
     def init_messenger(self) -> None:
         self.messenger = BaseMessenger("roberta_text_sentiment_messenger")
@@ -31,8 +32,12 @@ class RobertaTextSentimentProcessor(BaseProcessor):
         if text and self.messenger.check_iter_round_num() == 0:
             self.messenger.add_user_message(text)
 
-        response = self.processor(self.messenger.get_messages())
-        results = response[0]
+        results: Dict[str, Any] = json.loads(
+            self.executor.post(
+                json={"inputs": self.messenger.get_messages()},
+                model="cardiffnlp/twitter-roberta-base-sentiment-latest",
+            )
+        )[0]
         pos_score = (
             neg_score
         ) = neutral_score = 0.0  # Initialize scores as floats

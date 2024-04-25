@@ -19,7 +19,7 @@ class GPT4Processor(BaseProcessor):
         )
 
     def init_executor(self) -> None:
-        self.model = OpenAI()
+        self.executor = OpenAI()
 
     def init_messenger(self) -> None:
         self.messenger = BaseMessenger("gpt4_messenger")
@@ -33,7 +33,7 @@ class GPT4Processor(BaseProcessor):
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def gpt4_request(self) -> Any:
-        response = self.model.chat.completions.create(
+        response = self.executor.chat.completions.create(
             model="gpt-4-turbo-preview",
             messages=self.messenger.get_messages(),
             max_tokens=300,

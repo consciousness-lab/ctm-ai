@@ -10,6 +10,8 @@ class GPT4TextSummaryProcessor(GPT4Processor):
         super().__init__(
             *args, **kwargs
         )  # Properly initialize the parent class
+
+    def init_task_info(self) -> None:
         self.task_instruction = "You are a text summarizer. You can understand the meaning of the text and generate the summary."
 
 

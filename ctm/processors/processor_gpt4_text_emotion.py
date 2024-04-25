@@ -8,6 +8,8 @@ from ctm.processors.processor_gpt4 import GPT4Processor
 class GPT4TextEmotionProcessor(GPT4Processor):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)  # Call to parent class constructor
+
+    def init_task_info(self) -> None:
         self.task_instruction = "You are a text emotion classifier. You can understand the emotion within the text and generate the emotion label. If there is no text detected, please answer with None."
 
 

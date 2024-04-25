@@ -14,10 +14,15 @@ class GPT4VProcessor(BaseProcessor):
         super().__init__(*args, **kwargs)  # Properly initialize the base class
 
     def init_executor(self) -> None:
-        self.model = OpenAI()
+        self.executor = OpenAI()
 
     def init_messenger(self) -> None:
         self.messenger = BaseMessenger("gpt4v_messenger")
+
+    def init_task_info(self) -> None:
+        raise NotImplementedError(
+            "The 'init_task_info' method must be implemented in derived classes."
+        )
 
     def process(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         return {}  # Return an empty dict or a meaningful response as required
@@ -27,7 +32,7 @@ class GPT4VProcessor(BaseProcessor):
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def gpt4v_request(self) -> str | Any:
-        response = self.model.chat.completions.create(
+        response = self.executor.chat.completions.create(
             model="gpt-4-vision-preview",
             messages=self.messenger.get_messages(),
             max_tokens=300,

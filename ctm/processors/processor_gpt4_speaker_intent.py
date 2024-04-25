@@ -10,6 +10,8 @@ class GPT4SpeakerIntentProcessor(GPT4Processor):
         super().__init__(
             *args, **kwargs
         )  # Ensure the parent constructor is called properly
+
+    def init_task_info(self) -> None:
         self.task_instruction = "You are a speaker intent predictor. You can understand the intent of the speaker and describe what is the speaker's intent for saying that. If there is no speaker detected, please answer with None."
 
 
