@@ -34,7 +34,7 @@ class BaseConsciousnessTuringMachine(object):
         return self.forward(query, text, image, audio, video_frames)
 
     def add_processor(
-        self, processor_name: str, group_name: Optional[str] = None
+        self, processor_name: str, group_name: Optional[str] = "default_group"
     ) -> None:
         processor_instance = BaseProcessor(processor_name)
         self.processor_list.append(
