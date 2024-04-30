@@ -5,9 +5,10 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from ctm.configs import BaseConsciousnessTuringMachineConfig
-from ctm.processors import BaseProcessor
-from ctm.supervisors import BaseSupervisor
+from ..configs import BaseConsciousnessTuringMachineConfig
+from ..processors import BaseProcessor
+from ..scorers import BaseScorer
+from ..supervisors import BaseSupervisor
 
 
 class BaseConsciousnessTuringMachine(object):
@@ -53,6 +54,13 @@ class BaseConsciousnessTuringMachine(object):
             "supervisor_instance": supervisor_instance,
         }
 
+    def add_scorer(self, scorer_name: str) -> None:
+        scorer_instance = BaseScorer(scorer_name)
+        self.scorer: Dict[str, Any] = {
+            "scorer_name": scorer_name,
+            "scorer_instance": scorer_instance,
+        }
+
     @staticmethod
     def ask_processor(
         processor: Dict[str, Any],
@@ -65,14 +73,14 @@ class BaseConsciousnessTuringMachine(object):
         processor_instance = processor["processor_instance"]
         processor_name = processor["processor_name"]
         print(processor_name)
-        gist, score = processor_instance.ask(
+        gist = processor_instance.ask(
             query=query,
             text=text,
             image=image,
             audio=audio,
             video_frames=video_frames,
         )
-        return {"name": processor_name, "gist": gist, "score": score}
+        return {"name": processor_name, "gist": gist}
 
     def ask_processors(
         self,
@@ -104,7 +112,6 @@ class BaseConsciousnessTuringMachine(object):
         for result in results:
             output[result["name"]] = {
                 "gist": result["gist"],
-                "score": result["score"],
             }
 
         assert len(output) == len(self.processor_list)
@@ -162,6 +169,21 @@ class BaseConsciousnessTuringMachine(object):
             "score": scores[index],
         }
         return winning_info
+
+    def ask_scorer(
+        self, processor_output: Dict[str, Dict[str, str]]
+    ) -> Dict[str, Dict[str, float]]:
+        processor_output_with_score: Dict[str, Dict[str, float]] = {}
+        for processor_name, processor_info in processor_output.items():
+            processor_gist = processor_info["gist"]
+            processor_score = self.scorer["scorer_instance"].ask(
+                query=processor_gist, gist=processor_gist, verbose=True
+            )
+            processor_output_with_score[processor_name] = {
+                "gist": processor_gist,
+                "score": processor_score,
+            }
+        return processor_output_with_score
 
     def ask_supervisor(
         self, query: str, processor_info: Dict[str, Any]
@@ -253,14 +275,19 @@ class BaseConsciousnessTuringMachine(object):
                 audio=audio,
                 video_frames=video_frames,
             )
-            winning_output = self.uptree_competition(processor_output)
-            answer, score = self.ask_supervisor(query, winning_output)
-            if score > answer_threshold:
+            processor_output_with_score = self.ask_scorer(processor_output)
+            winning_output = self.uptree_competition(
+                processor_output_with_score
+            )
+            answer, confidence_score = self.ask_supervisor(
+                query, winning_output
+            )
+            if confidence_score > answer_threshold:
                 break
             else:
                 self.downtree_broadcast(winning_output)
-                self.link_form(processor_output)
-        return answer, score
+                self.link_form(processor_output_with_score)
+        return answer, confidence_score
 
     def load_ctm(self) -> None:
         for (
@@ -270,3 +297,4 @@ class BaseConsciousnessTuringMachine(object):
             for processor_name in processor_list:
                 self.add_processor(processor_name, group_name=group_name)
         self.add_supervisor(self.config.supervisor)
+        self.add_scorer(self.config.scorer)

@@ -11,6 +11,7 @@ class BaseConsciousnessTuringMachineConfig:
         groups_of_processors: Dict[
             str, Any
         ] = {},  # Better to avoid mutable default arguments
+        scorer: str = "gpt4_scorer",
         supervisor: str = "gpt4_supervisor",
         **kwargs: Any,
     ) -> None:
@@ -18,6 +19,7 @@ class BaseConsciousnessTuringMachineConfig:
         self.max_iter_num: int = max_iter_num
         self.output_threshold: float = output_threshold
         self.groups_of_processors: Dict[str, Any] = groups_of_processors
+        self.scorer: str = scorer
         self.supervisor: str = supervisor
         # Handle additional, possibly unknown configuration parameters
         for key, value in kwargs.items():
