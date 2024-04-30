@@ -24,7 +24,7 @@ class BaseSupervisor(object):
             cls._supervisor_registry[supervisor_name]
         )
 
-    def set_model(
+    def init_supervisor(
         self,
     ) -> None:
         raise NotImplementedError(
