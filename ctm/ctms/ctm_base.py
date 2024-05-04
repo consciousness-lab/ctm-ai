@@ -176,12 +176,14 @@ class BaseConsciousnessTuringMachine(object):
         processor_output_with_score: Dict[str, Dict[str, float]] = {}
         for processor_name, processor_info in processor_output.items():
             processor_gist = processor_info["gist"]
-            processor_score = self.scorer["scorer_instance"].ask(
-                query=processor_gist, gist=processor_gist, verbose=True
-            )
+            relevance, confidence, surrise = self.scorer[
+                "scorer_instance"
+            ].ask(query=processor_gist, gist=processor_gist, verbose=True)
             processor_output_with_score[processor_name] = {
                 "gist": processor_gist,
-                "score": processor_score,
+                "relevance": relevance,
+                "confidence": confidence,
+                "surprise": surrise,
             }
         return processor_output_with_score
 

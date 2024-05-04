@@ -68,5 +68,4 @@ class BaseScorer(object):
                 f"Relevance: {relevance}, Confidence: {confidence}, Surprise: {surprise}"
             )
 
-        final_score = relevance * confidence * surprise
-        return final_score
+        return (relevance, confidence, surprise)
