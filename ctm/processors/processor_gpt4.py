@@ -14,6 +14,7 @@ class GPT4Processor(BaseProcessor):
         super().__init__(*args, **kwargs)
 
     def init_task_info(self) -> None:
+        self.task_instruction = ""
         raise NotImplementedError(
             "The 'init_task_info' method must be implemented in derived classes."
         )

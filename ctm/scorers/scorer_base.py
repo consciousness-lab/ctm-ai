@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 from openai import OpenAI
 
@@ -20,14 +20,16 @@ class BaseScorer(object):
 
         return decorator
 
-    def __new__(cls, scorer_name: str, *args, **kwargs) -> "BaseScorer":
+    def __new__(
+        cls, scorer_name: str, *args: Any, **kwargs: Any
+    ) -> "BaseScorer":
         if scorer_name not in cls._scorer_registry:
             raise ValueError(f"No scorer registered with name '{scorer_name}'")
         return super(BaseScorer, cls).__new__(
             cls._scorer_registry[scorer_name]
         )
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.init_scorer()
 
     def init_scorer(self) -> None:
@@ -35,19 +37,19 @@ class BaseScorer(object):
             "The 'init_scorer' method must be implemented in derived classes."
         )
 
-    def ask_relevance(self, query: str, gist: str) -> None:
+    def ask_relevance(self, query: str, gist: str) -> float:
         raise NotImplementedError(
             "The 'ask_relevance' method must be implemented in derived classes."
         )
 
-    def ask_confidence(self, query: str, gist: str) -> None:
+    def ask_confidence(self, query: str, gist: str) -> float:
         raise NotImplementedError(
             "The 'ask_confidence' method must be implemented in derived classes."
         )
 
     def ask_surprise(
         self, query: str, gist: str, history_gists: Optional[str] = None
-    ) -> None:
+    ) -> float:
         raise NotImplementedError(
             "The 'ask_surprise' method must be implemented in derived classes."
         )
@@ -59,7 +61,7 @@ class BaseScorer(object):
         verbose: bool = False,
         *args: Any,
         **kwargs: Any,
-    ) -> float:
+    ) -> Tuple[float, float, float]:
         relevance = self.ask_relevance(query, gist, *args, **kwargs)
         confidence = self.ask_confidence(query, gist, *args, **kwargs)
         surprise = self.ask_surprise(query, gist, *args, **kwargs)

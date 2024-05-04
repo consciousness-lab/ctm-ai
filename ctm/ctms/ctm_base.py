@@ -1,6 +1,6 @@
 import concurrent.futures
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -173,7 +173,7 @@ class BaseConsciousnessTuringMachine(object):
     def ask_scorer(
         self, processor_output: Dict[str, Dict[str, str]]
     ) -> Dict[str, Dict[str, float]]:
-        processor_output_with_score: Dict[str, Dict[str, float]] = {}
+        processor_output_with_score: Dict[str, Dict[str, Any]] = {}
         for processor_name, processor_info in processor_output.items():
             processor_gist = processor_info["gist"]
             relevance, confidence, surrise = self.scorer[
@@ -206,7 +206,7 @@ class BaseConsciousnessTuringMachine(object):
         return
 
     def calc_processor_sim(
-        self, processor_output: Dict[str, Dict[str, str]]
+        self, processor_output: Dict[str, Dict[str, float]]
     ) -> Any:
         processor_gists = [info["gist"] for info in processor_output.values()]
         tfidf_vectorizer = TfidfVectorizer()
@@ -214,7 +214,7 @@ class BaseConsciousnessTuringMachine(object):
         cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
         return cosine_sim
 
-    def link_form(self, processor_output: Dict[str, Dict[str, str]]) -> None:
+    def link_form(self, processor_output: Dict[str, Dict[str, float]]) -> None:
         sim = self.calc_processor_sim(processor_output)
         print(sim)
         # iterate on each sim pair

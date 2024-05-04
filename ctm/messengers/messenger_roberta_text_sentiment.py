@@ -26,9 +26,14 @@ class RobertaTextSentimentMessenger(BaseMessenger):
             self.update_message(role, content)
 
     def update_message(
-        self, role: str, content: Union[str, Dict[str, Any], List[Any]]
+        self,
+        role: str,
+        content: Union[str, Dict[str, Any], List[Any]],
     ) -> None:
-        self.messages += content
+        if isinstance(content, str):
+            self.messages += content
+        else:
+            raise ValueError("Content must be a string.")
 
     def check_iter_round_num(self) -> int:
         return len(self.messages)

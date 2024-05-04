@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from huggingface_hub import InferenceClient
 
@@ -11,7 +11,9 @@ from .processor_base import BaseProcessor
 @BaseProcessor.register_processor("roberta_text_sentiment_processor")
 class RobertaTextSentimentProcessor(BaseProcessor):
     def init_executor(self) -> None:
-        self.executor = InferenceClient(token=os.environ["HF_TOKEN"])
+        self.executor = InferenceClient(
+            token=os.environ["HF_TOKEN"],
+        )
 
     def init_task_info(self) -> None:
         pass
@@ -32,7 +34,7 @@ class RobertaTextSentimentProcessor(BaseProcessor):
         if text and self.messenger.check_iter_round_num() == 0:
             self.messenger.add_user_message(text)
 
-        results: Dict[str, Any] = json.loads(
+        results: List[Dict[str, Any]] = json.loads(
             self.executor.post(
                 json={"inputs": self.messenger.get_messages()},
                 model="cardiffnlp/twitter-roberta-base-sentiment-latest",
