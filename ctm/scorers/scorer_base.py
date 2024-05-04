@@ -67,5 +67,4 @@ class BaseScorer(object):
             print(
                 f"Relevance: {relevance}, Confidence: {confidence}, Surprise: {surprise}"
             )
-
         return (relevance, confidence, surprise)
