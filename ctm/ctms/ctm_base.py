@@ -47,6 +47,13 @@ class BaseConsciousnessTuringMachine(object):
         if group_name:
             self.processor_group_map[processor_name] = group_name
 
+    def remove_processor(self, processor_name: str) -> None:
+        for processor in self.processor_list:
+            if processor["processor_name"] == processor_name:
+                self.processor_list.remove(processor)
+                break
+        self.processor_group_map.pop(processor_name, None)
+
     def add_supervisor(self, supervisor_name: str) -> None:
         supervisor_instance = BaseSupervisor(supervisor_name)
         self.supervisor: Dict[str, Any] = {
@@ -54,12 +61,18 @@ class BaseConsciousnessTuringMachine(object):
             "supervisor_instance": supervisor_instance,
         }
 
+    def remove_supervisor(self, supervisor_name: str) -> None:
+        self.supervisor.pop(supervisor_name, None)
+
     def add_scorer(self, scorer_name: str) -> None:
         scorer_instance = BaseScorer(scorer_name)
         self.scorer: Dict[str, Any] = {
             "scorer_name": scorer_name,
             "scorer_instance": scorer_instance,
         }
+
+    def remove_scorer(self, scorer_name: str) -> None:
+        self.scorer.pop(scorer_name, None)
 
     @staticmethod
     def ask_processor(
