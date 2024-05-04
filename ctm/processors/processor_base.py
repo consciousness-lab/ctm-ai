@@ -53,7 +53,7 @@ class BaseProcessor(object):
 
     def ask(
         self, query: str, text: str, image: str, audio: str, video_frames: str
-    ) -> Tuple[str, float]:
+    ) -> str:
         gist = self.ask_info(
             query=query,
             text=text,

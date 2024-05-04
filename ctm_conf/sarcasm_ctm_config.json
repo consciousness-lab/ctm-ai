@@ -13,7 +13,8 @@
         "group_3": [
             "gpt4v_ocr_processor",
             "gpt4_speaker_intent_processor",
-            "bart_text_summary_processor"
+            "bart_text_summary_processor",
+            "roberta_text_sentiment_processor"
         ]
     },
     "supervisor": "gpt4_supervisor"

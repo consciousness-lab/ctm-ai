@@ -20,6 +20,7 @@ class GPT4VProcessor(BaseProcessor):
         self.messenger = BaseMessenger("gpt4v_messenger")
 
     def init_task_info(self) -> None:
+        self.task_instruction = ""
         raise NotImplementedError(
             "The 'init_task_info' method must be implemented in derived classes."
         )

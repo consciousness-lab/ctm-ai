@@ -37,3 +37,8 @@ class GPT4Messenger(BaseMessenger):
     def check_iter_round_num(self) -> int:
         # Return the number of iterations, which is the length of the messages list
         return len(self.messages)
+
+    def get_messages(
+        self,
+    ) -> List[Dict[str, Union[str, Dict[str, Any], List[Any]]]]:
+        return self.messages

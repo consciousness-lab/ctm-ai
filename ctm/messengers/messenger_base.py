@@ -54,6 +54,9 @@ class BaseMessenger:
         role: Optional[str] = None,
         content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
     ) -> None:
+        self.messages: Union[
+            str, List[Dict[str, Union[str, Dict[str, Any], List[Any]]]]
+        ] = []
         raise NotImplementedError(
             "The 'init_messenger' method must be implemented in derived classes."
         )
@@ -61,7 +64,9 @@ class BaseMessenger:
     def update_message(
         self, role: str, content: Union[str, Dict[str, Any], List[Any]]
     ) -> None:
-        self.messages.append({"role": role, "content": content})
+        raise NotImplementedError(
+            "The 'update_message' method must be implemented in derived classes."
+        )
 
     def check_iter_round_num(self) -> int:
         return len(self.messages)
@@ -96,9 +101,11 @@ class BaseMessenger:
         self.update_message("system", feedback)
 
     def clear(self) -> None:
-        self.messages.clear()
+        raise NotImplementedError(
+            "The 'clear' method must be implemented in derived classes."
+        )
 
     def get_messages(
         self,
-    ) -> List[Dict[str, Union[str, Dict[str, Any], List[Any]]]]:
+    ) -> Any:
         return self.messages
