@@ -93,7 +93,7 @@ class BaseConsciousnessTuringMachine(object):
             audio=audio,
             video_frames=video_frames,
         )
-        return {"name": processor_name, "gist": gist}
+        return {"processor_name": processor_name, "gist": gist}
 
     def ask_processors(
         self,
@@ -123,7 +123,7 @@ class BaseConsciousnessTuringMachine(object):
 
         output: Dict[str, Dict[str, Any]] = {}
         for result in results:
-            output[result["name"]] = {
+            output[result["processor_name"]] = {
                 "gist": result["gist"],
             }
 
@@ -193,6 +193,7 @@ class BaseConsciousnessTuringMachine(object):
                 "scorer_instance"
             ].ask(query=processor_gist, gist=processor_gist, verbose=True)
             processor_output_with_score[processor_name] = {
+                "processor_name": processor_name,
                 "gist": processor_gist,
                 "relevance": relevance,
                 "confidence": confidence,
