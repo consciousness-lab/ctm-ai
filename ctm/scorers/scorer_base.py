@@ -1,9 +1,5 @@
 from typing import Any, Callable, Dict, Optional, Tuple, Type
 
-from openai import OpenAI
-
-from ..utils.decorator import score_exponential_backoff
-
 
 class BaseScorer(object):
     _scorer_registry: Dict[str, Type["BaseScorer"]] = {}

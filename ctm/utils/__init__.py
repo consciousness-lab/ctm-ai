@@ -1,3 +1,4 @@
+from .chunk_sim import calc_gist_sim
 from .decorator import (
     info_exponential_backoff,
     score_exponential_backoff,
@@ -10,4 +11,5 @@ __all__ = [
     "load_audio",
     "load_image",
     "load_video",
+    "calc_gist_sim",
 ]
