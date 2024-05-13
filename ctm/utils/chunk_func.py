@@ -6,7 +6,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from ..chunks.chunk import Chunk
 
 
-def calc_gist_sim(chunks: List[Chunk]) -> List[List[float]]:
+def calc_chunk_sim(chunks: List[Chunk]) -> List[List[float]]:
     gists = [chunk.gist for chunk in chunks]
     tfidf = TfidfVectorizer().fit_transform(gists)
     cos_sim = cosine_similarity(tfidf, tfidf)

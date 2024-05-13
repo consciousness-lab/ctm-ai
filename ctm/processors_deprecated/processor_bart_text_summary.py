@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 from huggingface_hub import InferenceClient
 
 from ctm.messengers.messenger_base import BaseMessenger
-from ctm.processors.processor_base import BaseProcessor
+from ctm.processors_deprecated.processor_base import BaseProcessor
 
 
 @BaseProcessor.register_processor("bart_text_summary_processor")

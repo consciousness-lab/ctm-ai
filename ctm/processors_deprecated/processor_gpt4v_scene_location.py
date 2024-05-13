@@ -1,6 +1,6 @@
 from typing import Any
 
-from ctm.processors.processor_gpt4v import GPT4VProcessor
+from ctm.processors_deprecated.processor_gpt4v import GPT4VProcessor
 
 
 # Assuming GPT4VProcessor has a properly typed `register_processor` method:
