@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 from openai import OpenAI
 
 from ctm.messengers.messenger_base import BaseMessenger
-from ctm.processors.processor_base import BaseProcessor
+from ctm.processors_deprecated.processor_base import BaseProcessor
 from ctm.utils.decorator import info_exponential_backoff
 
 

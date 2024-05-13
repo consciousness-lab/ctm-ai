@@ -2,7 +2,6 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 from openai import OpenAI
 
-from ..chunks import Chunk
 from ..utils.decorator import score_exponential_backoff
 
 
@@ -22,24 +21,21 @@ class BaseProcessor(object):
         return decorator
 
     def __new__(
-        cls,
-        name: str,
-        group_name: Optional[str] = None,
-        *args: Any,
-        **kwargs: Any,
+        cls, processor_name: str, *args: Any, **kwargs: Any
     ) -> "BaseProcessor":
-        if name not in cls._processor_registry:
-            raise ValueError(f"No processor registered with name '{name}'")
-        subclass = cls._processor_registry[name]
-        instance = super(BaseProcessor, cls).__new__(subclass)
-        instance.name = name
-        instance.group_name = group_name
-        return instance
+        if processor_name not in cls._processor_registry:
+            raise ValueError(
+                f"No processor registered with name '{processor_name}'"
+            )
+        return super(BaseProcessor, cls).__new__(
+            cls._processor_registry[processor_name]
+        )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.init_messenger()
         self.init_executor()
+        self.init_messenger()
         self.init_scorer()
+        self.init_task()
 
     def init_executor(self) -> None:
         raise NotImplementedError(
@@ -56,40 +52,24 @@ class BaseProcessor(object):
             "The 'init_scorer' method must be implemented in derived classes."
         )
 
-    def ask(
-        self, query: str, text: str, image: Any, audio: Any, video_frames: Any
-    ) -> Chunk:
+    def init_task(self) -> None:
+        raise NotImplementedError(
+            "The 'init_task_info' method must be implemented in derived classes."
+        )
 
-        executor_prompt = self.messenger.generate_executor_prompt(
+    def ask(
+        self, query: str, text: str, image: str, audio: str, video_frames: str
+    ) -> str:
+        gist = self.ask_info(
             query=query,
             text=text,
             image=image,
             audio=audio,
             video_frames=video_frames,
         )
+        return gist
 
-        gist = self.executor.ask(
-            prompt=executor_prompt,
-        )
-
-        scorer_prompt = self.messenger.generate_scorer_prompt(
-            query=query,
-            gist=gist,
-        )
-
-        relavance, confidence, surprise, weight = self.scorer.ask(
-            prompt=scorer_prompt,
-            verbose=True,
-        )
-
-        return Chunk(
-            processor_name=self.processor_name,
-            time_step=0,
-            gist=gist,
-            relevance=relavance,
-            confidence=confidence,
-            surprise=surprise,
-            weight=weight,
-            intensity=weight,
-            mood=weight,
+    def ask_info(self, *args: Any, **kwargs: Any) -> str:
+        raise NotImplementedError(
+            "The 'ask_info' method must be implemented in derived classes."
         )
