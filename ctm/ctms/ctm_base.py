@@ -143,13 +143,13 @@ class BaseConsciousnessTuringMachine(object):
                     audio,
                     video_frames,
                 )
-                for processor in self.processors
+                for processor in self.processor_graph.keys()
             ]
             chunks = [
                 future.result()
                 for future in concurrent.futures.as_completed(futures)
             ]
-        assert len(chunks) == len(self.processors)
+        assert len(chunks) == len(self.processor_graph)
         return chunks
 
     def ask_supervisor(self, query: str, chunk: Chunk) -> Tuple[str, float]:
@@ -179,10 +179,8 @@ class BaseConsciousnessTuringMachine(object):
         return candidate_chunks[0]
 
     def downtree_broadcast(self, chunk: Chunk) -> None:
-        for processor in self.processors:
-            if processor.name != chunk.processor_name:
-                processor.update_info(chunk.gist)
-        return
+        for processor in self.processor_graph.keys():
+            processor.update(chunk)
 
     def link_form(self, chunks: List[Chunk]) -> None:
         sim = calc_chunk_sim(chunks)
@@ -220,7 +218,7 @@ class BaseConsciousnessTuringMachine(object):
         for chunk_pair in chunk_pairs:
             fused_chunk = self.fuser.fuse(chunk_pair)
             chunks.append(fused_chunk)
-        chunks = random.shuffle(chunks)
+        random.shuffle(chunks)
         return chunks
 
     def forward(

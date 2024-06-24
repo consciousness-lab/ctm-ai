@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 
 class BaseScorer(object):
@@ -61,8 +61,15 @@ class BaseScorer(object):
         relevance = self.ask_relevance(query, gist, *args, **kwargs)
         confidence = self.ask_confidence(query, gist, *args, **kwargs)
         surprise = self.ask_surprise(query, gist, *args, **kwargs)
+        weight = relevance * confidence * surprise
         if verbose:
             print(
                 f"Relevance: {relevance}, Confidence: {confidence}, Surprise: {surprise}"
             )
-        return (relevance, confidence, surprise)
+        score = {
+            "relevance": relevance,
+            "confidence": confidence,
+            "surprise": surprise,
+            "weight": weight,
+        }
+        return score
