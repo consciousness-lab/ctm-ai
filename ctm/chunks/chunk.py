@@ -4,8 +4,8 @@ from typing import Optional
 class Chunk(object):
     def __init__(
         self,
-        processor_name: str = None,
-        time_step: int = -1,
+        time_step: int,
+        processor_name: Optional[str] = None,
         gist: Optional[str] = None,
         relevance: Optional[float] = None,
         confidence: Optional[float] = None,
@@ -14,8 +14,8 @@ class Chunk(object):
         intensity: Optional[float] = None,
         mood: Optional[float] = None,
     ):
-        self.processor_name: Optional[str] = processor_name
         self.time_step: int = time_step
+        self.processor_name: Optional[str] = processor_name
         self.gist: Optional[str] = gist
         self.relevance: Optional[float] = relevance
         self.confidence: Optional[float] = confidence

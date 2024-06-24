@@ -13,17 +13,18 @@ from typing import (
 T = TypeVar("T")
 
 
-class BaseMessenger:
+"""
+class BaseMessenger(object):
     _messenger_registry: Dict[str, Type["BaseMessenger"]] = {}
 
     @classmethod
     def register_messenger(
-        cls, messenger_name: str
+        cls, name: str
     ) -> Callable[[Type["BaseMessenger"]], Type["BaseMessenger"]]:
         def decorator(
             subclass: Type["BaseMessenger"],
         ) -> Type["BaseMessenger"]:
-            cls._messenger_registry[messenger_name] = subclass
+            cls._messenger_registry[name] = subclass
             return subclass
 
         return decorator
@@ -109,3 +110,43 @@ class BaseMessenger:
         self,
     ) -> Any:
         return self.messages
+"""
+
+
+from typing import Any, Callable, Dict, Type
+
+
+class BaseMessenger(object):
+    _messenger_registry: Dict[str, Type["BaseMessenger"]] = {}
+
+    @classmethod
+    def register_messenger(
+        cls, messenger_name: str
+    ) -> Callable[[Type["BaseMessenger"]], Type["BaseMessenger"]]:
+        def decorator(
+            subclass: Type["BaseMessenger"],
+        ) -> Type["BaseMessenger"]:
+            cls._messenger_registry[messenger_name] = subclass
+            return subclass
+
+        return decorator
+
+    def __new__(
+        cls, messenger_name: str, *args: Any, **kwargs: Any
+    ) -> "BaseMessenger":
+        if messenger_name not in cls._messenger_registry:
+            raise ValueError(
+                f"No messenger registered with name '{messenger_name}'"
+            )
+        instance = super(BaseMessenger, cls).__new__(
+            cls._messenger_registry[messenger_name]
+        )
+        return instance
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.init_messenger(*args, **kwargs)
+
+    def init_messenger(self, *args: Any, **kwargs: Any) -> None:
+        raise NotImplementedError(
+            "The 'init_messenger' method must be implemented in derived classes."
+        )

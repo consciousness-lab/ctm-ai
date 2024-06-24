@@ -5,8 +5,6 @@ from .messenger_base import BaseMessenger
 T = TypeVar("T", bound="BaseMessenger")
 
 
-# If the BaseMessenger has a register_messenger method that is not typed to accept a generic class,
-# you might need to define it properly in BaseMessenger or ensure that the typing is correct there.
 @BaseMessenger.register_messenger("gpt4v_messenger")
 class GPT4VMessenger(BaseMessenger):
     def __init__(

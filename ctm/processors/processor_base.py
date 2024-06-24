@@ -1,9 +1,6 @@
-from typing import Any, Callable, Dict, Optional, Tuple, Type
-
-from openai import OpenAI
+from typing import Any, Callable, Dict, Optional, Type
 
 from ..chunks import Chunk
-from ..utils.decorator import score_exponential_backoff
 
 
 class BaseProcessor(object):
@@ -11,12 +8,12 @@ class BaseProcessor(object):
 
     @classmethod
     def register_processor(
-        cls, processor_name: str
+        cls, name: str
     ) -> Callable[[Type["BaseProcessor"]], Type["BaseProcessor"]]:
         def decorator(
             subclass: Type["BaseProcessor"],
         ) -> Type["BaseProcessor"]:
-            cls._processor_registry[processor_name] = subclass
+            cls._processor_registry[name] = subclass
             return subclass
 
         return decorator
@@ -60,7 +57,7 @@ class BaseProcessor(object):
         self, query: str, text: str, image: Any, audio: Any, video_frames: Any
     ) -> Chunk:
 
-        executor_prompt = self.messenger.generate_executor_prompt(
+        executor_messages = self.messenger.collect_executor_messages(
             query=query,
             text=text,
             image=image,
@@ -68,28 +65,27 @@ class BaseProcessor(object):
             video_frames=video_frames,
         )
 
-        gist = self.executor.ask(
-            prompt=executor_prompt,
-        )
+        gist = self.executor.ask(messages=executor_messages)
 
-        scorer_prompt = self.messenger.generate_scorer_prompt(
+        self.messenger.update_executor_messages(gist=gist)
+
+        score = self.scorer.ask(
             query=query,
             gist=gist,
         )
 
-        relavance, confidence, surprise, weight = self.scorer.ask(
-            prompt=scorer_prompt,
-            verbose=True,
+        return Chunk(
+            time_step=0,
+            processor_name=self.name,
+            gist=gist,
+            relevance=score["relevance"],
+            confidence=score["confidence"],
+            surprise=score["surprise"],
+            weight=score["weight"],
+            intensity=score["weight"],
+            mood=score["weight"],
         )
 
-        return Chunk(
-            processor_name=self.processor_name,
-            time_step=0,
-            gist=gist,
-            relevance=relavance,
-            confidence=confidence,
-            surprise=surprise,
-            weight=weight,
-            intensity=weight,
-            mood=weight,
-        )
+    def update(self, chunk: Chunk) -> None:
+        if chunk.processor_name != self.name:
+            self.messenger.update_executor_messages(gist=chunk.gist)

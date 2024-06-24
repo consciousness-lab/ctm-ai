@@ -1,8 +1,5 @@
-from chunk import Chunk
-
-from ctm.utils.chunk_func import ChunkOperator
+from .chunk import Chunk
 
 __all__ = [
     "Chunk",
-    "ChunkOperator",
 ]
