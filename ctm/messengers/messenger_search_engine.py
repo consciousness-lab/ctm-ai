@@ -5,8 +5,8 @@ from .messenger_base import BaseMessenger
 T = TypeVar("T", bound="BaseMessenger")
 
 
-@BaseMessenger.register_messenger("gpt4v_messenger")
-class GPT4VMessenger(BaseMessenger):
+@BaseMessenger.register_messenger("search_engine_messenger")
+class SearchEngineMessenger(BaseMessenger):
     def __init__(
         self,
         role: Optional[str] = None,
@@ -50,11 +50,7 @@ class GPT4VMessenger(BaseMessenger):
         *args: Any,
         **kwargs: Any,
     ):
-        content = "Query: {}\n".format(query)
-        if text is not None:
-            content += "Text: {}\n".format(text)
-        messages = [{"role": "user", "content": content}]
-        return messages
+        return query
 
     def update_executor_messages(self, gist: str):
         return

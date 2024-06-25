@@ -4,10 +4,12 @@
     "output_threshold": 0.5,
     "groups_of_processors": {
         "group_1": [
-            "gpt4v_processor"
+            "gpt4v_processor",
+            "search_engine_processor"
         ],
         "group_2": [
-            "gpt4_processor"
+            "gpt4_processor",
+            "wolfram_alpha_processor"
         ]
     },
     "supervisor": "gpt4_supervisor"
