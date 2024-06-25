@@ -1,7 +1,10 @@
 from typing import Optional
 
+from ..utils import logging_chunk
+
 
 class Chunk:
+    @logging_chunk
     def __init__(
         self,
         time_step: int,

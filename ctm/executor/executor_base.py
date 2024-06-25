@@ -1,7 +1,5 @@
 from typing import Any, Callable, Dict, List, Type
 
-from ..utils import info_exponential_backoff
-
 
 class BaseExecutor(object):
     _executor_registry: Dict[str, Type["BaseExecutor"]] = {}
@@ -36,12 +34,4 @@ class BaseExecutor(object):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         raise NotImplementedError(
             "The 'init_model' method must be implemented in derived classes."
-        )
-
-    @info_exponential_backoff
-    def ask(
-        self, messages: List[Dict[str, str]], *args: Any, **kwargs: Any
-    ) -> str:
-        raise NotImplementedError(
-            "The 'ask' method must be implemented in derived classes."
         )
