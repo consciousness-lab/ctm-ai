@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from ..executor.executor_base import BaseExecutor
+from ..executors.executor_base import BaseExecutor
 from ..messengers.messenger_base import BaseMessenger
 from ..scorers.scorer_base import BaseScorer
 from .processor_base import BaseProcessor
