@@ -9,6 +9,7 @@ from numpy.typing import NDArray
 from ..chunks import Chunk
 from ..configs import BaseConsciousnessTuringMachineConfig
 from ..fusers import BaseFuser
+from ..graphs import ProcessorGraph
 from ..processors import BaseProcessor
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
@@ -49,9 +50,7 @@ class BaseConsciousnessTuringMachine(object):
         )
 
     def load_ctm(self) -> None:
-        self.processor_graph: Dict[
-            BaseProcessor, Set[BaseProcessor]
-        ] = defaultdict(set)
+        self.processor_graph = ProcessorGraph()
         self.supervisors: List[BaseSupervisor] = []
         self.scorers: List[BaseScorer] = []
         self.fusers: List[BaseFuser] = []
@@ -67,16 +66,12 @@ class BaseConsciousnessTuringMachine(object):
     def add_processor(
         self, name: str, group_name: Optional[str] = "default_group"
     ) -> None:
-        self.processor_graph = add_node_on_processor_graph(
-            processor_name=name,
-            processor_group_name=group_name,
-            processor_graph=self.processor_graph,
+        self.processor_graph.add_node(
+            processor_name=name, processor_group_name=group_name
         )
 
     def remove_processor(self, name: str) -> None:
-        self.processor_graph = remove_node_on_processor_graph(
-            processor_name=name, processor_graph=self.processor_graph
-        )
+        self.processor_graph.remove_node(processor_name=name)
 
     def add_supervisor(self, name: str) -> None:
         self.supervisors.append(BaseSupervisor(name))
@@ -143,7 +138,7 @@ class BaseConsciousnessTuringMachine(object):
                     audio,
                     video_frames,
                 )
-                for processor in self.processor_graph.keys()
+                for processor in self.processor_graph.nodes
             ]
             chunks = [
                 future.result()
@@ -179,7 +174,7 @@ class BaseConsciousnessTuringMachine(object):
         return candidate_chunks[0]
 
     def downtree_broadcast(self, chunk: Chunk) -> None:
-        for processor in self.processor_graph.keys():
+        for processor in self.processor_graph.nodes:
             processor.update(chunk)
 
     def link_form(self, chunks: List[Chunk]) -> None:
@@ -188,16 +183,14 @@ class BaseConsciousnessTuringMachine(object):
         for i in range(len(sim)):
             for j in range(i + 1, len(sim)):
                 if sim[i][j] > 0.5:
-                    self.processor_graph = add_link_on_processor_graph(
+                    self.processor_graph.add_link(
                         processor1_name=chunks[i].processor_name,
                         processor2_name=chunks[j].processor_name,
-                        processor_graph=self.processor_graph,
                     )
                 if sim[i][j] < 0.2:
-                    self.processor_graph = remove_link_on_processor_graph(
+                    self.processor_graph.remove_link(
                         processor1_name=chunks[i].processor_name,
                         processor2_name=chunks[j].processor_name,
-                        processor_graph=self.processor_graph,
                     )
         return
 
@@ -205,9 +198,9 @@ class BaseConsciousnessTuringMachine(object):
         chunk_pairs: List[Tuple[Chunk, Chunk]] = []
         for chunk in chunks:
             src_chunk = chunk
-            tgt_processor_names = self.processor_graph[
-                src_chunk.processor_name
-            ]
+            tgt_processor_names = self.processor_graph.get_linked_node_names(
+                processor_name=src_chunk.processor_name
+            )
             chunk_pairs.extend(
                 [
                     (src_chunk, chunk)
