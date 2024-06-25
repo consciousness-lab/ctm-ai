@@ -1,7 +1,7 @@
 from typing import Optional
 
 
-class Chunk(object):
+class Chunk:
     def __init__(
         self,
         time_step: int,
@@ -14,15 +14,15 @@ class Chunk(object):
         intensity: Optional[float] = None,
         mood: Optional[float] = None,
     ):
-        self.time_step: int = time_step
-        self.processor_name: Optional[str] = processor_name
-        self.gist: Optional[str] = gist
-        self.relevance: Optional[float] = relevance
-        self.confidence: Optional[float] = confidence
-        self.surprise: Optional[float] = surprise
-        self.weight: Optional[float] = weight
-        self.intensity: Optional[float] = intensity
-        self.mood: Optional[float] = mood
+        self.time_step = time_step
+        self.processor_name = processor_name
+        self.gist = gist
+        self.relevance = relevance
+        self.confidence = confidence
+        self.surprise = surprise
+        self.weight = weight
+        self.intensity = intensity
+        self.mood = mood
 
     def __eq__(self, other):
         if not isinstance(other, Chunk):
