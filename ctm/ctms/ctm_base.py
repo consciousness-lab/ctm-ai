@@ -1,25 +1,17 @@
 import concurrent.futures
 import random
-from collections import defaultdict
 from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
 
-from ..chunks import Chunk
+from ..chunks import Chunk, ChunkManager
 from ..configs import BaseConsciousnessTuringMachineConfig
 from ..fusers import BaseFuser
 from ..graphs import ProcessorGraph
 from ..processors import BaseProcessor
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-from ..utils import (
-    add_link_on_processor_graph,
-    add_node_on_processor_graph,
-    calc_chunk_sim,
-    remove_link_on_processor_graph,
-    remove_node_on_processor_graph,
-)
 
 
 class BaseConsciousnessTuringMachine(object):
@@ -59,19 +51,13 @@ class BaseConsciousnessTuringMachine(object):
             processors,
         ) in self.config.groups_of_processors.items():
             for processor_name in processors:
-                self.add_processor(name=processor_name, group_name=group_name)
+                self.processor_graph.add_node(
+                    processor_name=processor_name,
+                    processor_group_name=group_name,
+                )
         self.add_supervisor(self.config.supervisor)
         self.add_scorer(self.config.scorer)
-
-    def add_processor(
-        self, name: str, group_name: Optional[str] = "default_group"
-    ) -> None:
-        self.processor_graph.add_node(
-            processor_name=name, processor_group_name=group_name
-        )
-
-    def remove_processor(self, name: str) -> None:
-        self.processor_graph.remove_node(processor_name=name)
+        self.add_fuser(self.config.fuser)
 
     def add_supervisor(self, name: str) -> None:
         self.supervisors.append(BaseSupervisor(name))
@@ -178,7 +164,8 @@ class BaseConsciousnessTuringMachine(object):
             processor.update(chunk)
 
     def link_form(self, chunks: List[Chunk]) -> None:
-        sim = calc_chunk_sim(chunks)
+        chunk_manager = ChunkManager(chunks)
+        sim = chunk_manager.get_similarity_matrix()
         print(sim)
         for i in range(len(sim)):
             for j in range(i + 1, len(sim)):
@@ -187,7 +174,7 @@ class BaseConsciousnessTuringMachine(object):
                         processor1_name=chunks[i].processor_name,
                         processor2_name=chunks[j].processor_name,
                     )
-                if sim[i][j] < 0.2:
+                if sim[i][j] < 0.4:
                     self.processor_graph.remove_link(
                         processor1_name=chunks[i].processor_name,
                         processor2_name=chunks[j].processor_name,
@@ -198,7 +185,7 @@ class BaseConsciousnessTuringMachine(object):
         chunk_pairs: List[Tuple[Chunk, Chunk]] = []
         for chunk in chunks:
             src_chunk = chunk
-            tgt_processor_names = self.processor_graph.get_linked_node_names(
+            tgt_processor_names = self.processor_graph.get_neighbor_names(
                 processor_name=src_chunk.processor_name
             )
             chunk_pairs.extend(

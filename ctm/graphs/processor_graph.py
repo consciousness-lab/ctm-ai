@@ -39,7 +39,11 @@ class ProcessorGraph(object):
             f"Processor with name {processor_name} not found in graph"
         )
 
-    def get_linked_node_names(self, processor_name: str) -> List[str]:
+    def get_neighbor(self, processor_name: str) -> List[str]:
+        processor = self.get_node(processor_name)
+        return [node for node in self.graph[processor]]
+
+    def get_neighbor_names(self, processor_name: str) -> List[str]:
         processor = self.get_node(processor_name)
         return [node.name for node in self.graph[processor]]
 
