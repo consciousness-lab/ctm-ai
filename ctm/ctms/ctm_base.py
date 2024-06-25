@@ -12,6 +12,7 @@ from ..graphs import ProcessorGraph
 from ..processors import BaseProcessor
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
+from ..utils import logger, logging_func, logging_func_with_count
 
 
 class BaseConsciousnessTuringMachine(object):
@@ -91,10 +92,7 @@ class BaseConsciousnessTuringMachine(object):
         image: Optional[str] = None,
         audio: Optional[NDArray[np.float32]] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
-        verbose: Optional[bool] = False,
     ) -> Chunk:
-        if verbose:
-            print(processor.name, processor.group_name)
 
         chunk = processor.ask(
             query=query,
@@ -105,6 +103,7 @@ class BaseConsciousnessTuringMachine(object):
         )
         return chunk
 
+    @logging_func
     def ask_processors(
         self,
         query: str,
@@ -133,40 +132,26 @@ class BaseConsciousnessTuringMachine(object):
         assert len(chunks) == len(self.processor_graph)
         return chunks
 
+    @logging_func
     def ask_supervisor(self, query: str, chunk: Chunk) -> Tuple[str, float]:
         final_answer, score = self.supervisors[0].ask(query, chunk.gist)
         return final_answer, score
 
+    @logging_func
     def uptree_competition(self, chunks: List[Chunk]) -> Chunk:
-        # Unpack processor outputs into lists for easier processing
-        winning_chunks: List[Chunk] = []
-        candidate_chunks: List[Chunk] = chunks
-        for _ in range(len(chunks) - 1):
-            for chunk1, chunk2 in zip(
-                candidate_chunks[:-1], candidate_chunks[1:]
-            ):
-                winning_chunk = (
-                    chunk1
-                    if chunk1 > chunk2
-                    else (
-                        chunk2
-                        if chunk1 < chunk2
-                        else random.choice([chunk1, chunk2])
-                    )
-                )
-                winning_chunks.append(winning_chunk)
-            candidate_chunks = winning_chunks
-            winning_chunks = []
-        return candidate_chunks[0]
+        chunk_manager = ChunkManager(chunks)
+        winning_chunk = chunk_manager.uptree_competition()
+        return winning_chunk
 
+    @logging_func
     def downtree_broadcast(self, chunk: Chunk) -> None:
         for processor in self.processor_graph.nodes:
             processor.update(chunk)
 
+    @logging_func
     def link_form(self, chunks: List[Chunk]) -> None:
         chunk_manager = ChunkManager(chunks)
         sim = chunk_manager.get_similarity_matrix()
-        print(sim)
         for i in range(len(sim)):
             for j in range(i + 1, len(sim)):
                 if sim[i][j] > 0.5:
@@ -181,6 +166,7 @@ class BaseConsciousnessTuringMachine(object):
                     )
         return
 
+    @logging_func
     def processor_fuse(self, chunks: List[Chunk]) -> List[Chunk]:
         chunk_pairs: List[Tuple[Chunk, Chunk]] = []
         for chunk in chunks:
@@ -201,6 +187,31 @@ class BaseConsciousnessTuringMachine(object):
         random.shuffle(chunks)
         return chunks
 
+    @logging_func_with_count
+    def go_up(
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+    ) -> "Chunk":
+        chunks = self.ask_processors(
+            query=query,
+            text=text,
+            image=image,
+            audio=audio,
+            video_frames=video_frames,
+        )
+        chunks = self.processor_fuse(chunks)
+        winning_chunk = self.uptree_competition(chunks)
+        return winning_chunk, chunks
+
+    @logging_func_with_count
+    def go_down(self, winning_chunk: "Chunk", chunks: List["Chunk"]) -> None:
+        self.downtree_broadcast(winning_chunk)
+        self.link_form(chunks)
+
     def forward(
         self,
         query: str,
@@ -209,26 +220,15 @@ class BaseConsciousnessTuringMachine(object):
         audio: Optional[NDArray[np.float32]] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Tuple[str, float]:
-        answer_threshold = 0.5
-        max_iter = 3
-
-        for i in range(max_iter):
-            print("start the {}-th iteration".format(i + 1))
-            chunks = self.ask_processors(
-                query=query,
-                text=text,
-                image=image,
-                audio=audio,
-                video_frames=video_frames,
+        for i in range(self.config.max_iter_num):
+            winning_chunk, chunks = self.go_up(
+                query, text, image, audio, video_frames
             )
-            chunks = self.processor_fuse(chunks)
-            winning_chunk = self.uptree_competition(chunks)
             answer, confidence_score = self.ask_supervisor(
                 query, winning_chunk
             )
-            if confidence_score > answer_threshold:
-                break
+            if confidence_score > self.config.output_threshold:
+                return answer, confidence_score
             else:
-                self.downtree_broadcast(winning_chunk)
-                self.link_form(chunks)
+                self.go_down(winning_chunk, chunks)
         return answer, confidence_score

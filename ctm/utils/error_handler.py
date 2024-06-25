@@ -3,6 +3,8 @@ import time
 from functools import wraps
 from typing import Any, Callable, Optional
 
+from .logger import logger
+
 INF = float(math.inf)
 
 
@@ -24,12 +26,14 @@ def info_exponential_backoff(
                     return func(*args, **kwargs)
                 except Exception as e:
                     wait_time = base_wait_time * (2**attempts)
-                    print(f"Attempt {attempts + 1} failed: {e}")
-                    print(f"Waiting {wait_time} seconds before retrying...")
+                    logger.error(f"Attempt {attempts + 1} failed: {e}")
+                    logger.error(
+                        f"Waiting {wait_time} seconds before retrying..."
+                    )
                     time.sleep(wait_time)
                     attempts += 1
-            print(
-                f"Failed to execute '{func.__name__}' after {retries} retries."
+            logger.error(
+                f"Failed to execute '{func.__name__}' after {retries} retries.",
             )
             return "FAILED"
 
@@ -56,11 +60,13 @@ def score_exponential_backoff(
                     return func(*args, **kwargs)
                 except Exception as e:
                     wait_time = base_wait_time * (2**attempts)
-                    print(f"Attempt {attempts + 1} failed: {e}")
-                    print(f"Waiting {wait_time} seconds before retrying...")
+                    logger.error(f"Attempt {attempts + 1} failed: {e}")
+                    logger.error(
+                        f"Waiting {wait_time} seconds before retrying..."
+                    )
                     time.sleep(wait_time)
                     attempts += 1
-            print(
+            logger.error(
                 f"Failed to execute '{func.__name__}' after {retries} retries."
             )
             return -INF

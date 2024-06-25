@@ -2,7 +2,7 @@ from typing import Any, Callable, Dict, Optional, Type
 
 from openai import OpenAI
 
-from ..utils.decorator import score_exponential_backoff
+from ..utils.error_handler import score_exponential_backoff
 from .scorer_base import BaseScorer
 
 

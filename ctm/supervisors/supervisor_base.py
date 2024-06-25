@@ -1,6 +1,8 @@
 import base64
 from typing import Any, Dict, Optional, Tuple, Type
 
+from ..utils import logging_ask
+
 
 class BaseSupervisor(object):
     _supervisor_registry: Dict[str, Type["BaseSupervisor"]] = {}
@@ -31,6 +33,7 @@ class BaseSupervisor(object):
             "The 'set_model' method must be implemented in derived classes."
         )
 
+    @logging_ask()
     def ask(self, query: str, image_path: str) -> Tuple[str, float]:
         gist = self.ask_info(query, image_path)
         score = self.ask_score(query, gist, verbose=True)
