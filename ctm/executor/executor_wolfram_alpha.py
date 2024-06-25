@@ -23,10 +23,6 @@ class WolframAlphaExecutor(BaseExecutor):
             response = requests.get(self.url, params=params)
             response.raise_for_status()
             search_results = response.json()
-            import pdb
-
-            pdb.set_trace()
-            # Assuming the results are nested in the 'queryresult' key and we want the 'plaintext' content
             content = ""
             for pod in search_results.get("queryresult", {}).get("pods", []):
                 for subpod in pod.get("subpods", []):

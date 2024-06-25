@@ -1,5 +1,3 @@
 from .chunk import Chunk
 
-__all__ = [
-    "Chunk",
-]
+__all__ = ["Chunk"]
