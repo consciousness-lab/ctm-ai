@@ -50,9 +50,6 @@ class ChunkManager:
         sim = self._get_similarity_matrix()
         interaction_type_matrix = np.zeros_like(sim)
 
-        import pdb
-
-        pdb.set_trace()
         for i in range(len(sim)):
             for j in range(i + 1, len(sim)):
                 chunk_i, chunk_j = self.chunks[i], self.chunks[j]

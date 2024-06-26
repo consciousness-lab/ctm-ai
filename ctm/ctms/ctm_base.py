@@ -153,10 +153,6 @@ class BaseConsciousnessTuringMachine(object):
         chunk_manager = ChunkManager(chunks, self.config)
         interaction_matrix = chunk_manager.get_interaction_type_matrix()
 
-        import pdb
-
-        pdb.set_trace()
-
         for i in range(len(interaction_matrix)):
             for j in range(i + 1, len(interaction_matrix)):
                 interaction_type = interaction_matrix[i][j]
