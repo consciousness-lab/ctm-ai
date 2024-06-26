@@ -150,16 +150,23 @@ class BaseConsciousnessTuringMachine(object):
 
     @logging_func
     def link_form(self, chunks: List[Chunk]) -> None:
-        chunk_manager = ChunkManager(chunks)
-        sim = chunk_manager.get_similarity_matrix()
-        for i in range(len(sim)):
-            for j in range(i + 1, len(sim)):
-                if sim[i][j] > 0.5:
+        chunk_manager = ChunkManager(chunks, self.config)
+        interaction_matrix = chunk_manager.get_interaction_type_matrix()
+
+        import pdb
+
+        pdb.set_trace()
+
+        for i in range(len(interaction_matrix)):
+            for j in range(i + 1, len(interaction_matrix)):
+                interaction_type = interaction_matrix[i][j]
+
+                if interaction_type != 0:  # redundant or synergy
                     self.processor_graph.add_link(
                         processor1_name=chunks[i].processor_name,
                         processor2_name=chunks[j].processor_name,
                     )
-                if sim[i][j] < 0.4:
+                elif interaction_type == 0:  # uniqueness
                     self.processor_graph.remove_link(
                         processor1_name=chunks[i].processor_name,
                         processor2_name=chunks[j].processor_name,
@@ -167,21 +174,21 @@ class BaseConsciousnessTuringMachine(object):
         return
 
     @logging_func
-    def processor_fuse(self, chunks: List[Chunk]) -> List[Chunk]:
-        chunk_pairs: List[Tuple[Chunk, Chunk]] = []
+    def fuse_processor(self, chunks: List[Chunk]) -> List[Chunk]:
+        linked_chunks: List[Tuple[Chunk, Chunk]] = []
         for chunk in chunks:
             src_chunk = chunk
             tgt_processor_names = self.processor_graph.get_neighbor_names(
                 processor_name=src_chunk.processor_name
             )
-            chunk_pairs.extend(
+            linked_chunks.extend(
                 [
                     (src_chunk, chunk)
                     for chunk in chunks
                     if chunk.processor_name in tgt_processor_names
                 ]
             )
-        for chunk_pair in chunk_pairs:
+        for chunk_pair in linked_chunks:
             fused_chunk = self.fuser.fuse(chunk_pair)
             chunks.append(fused_chunk)
         random.shuffle(chunks)
@@ -203,7 +210,7 @@ class BaseConsciousnessTuringMachine(object):
             audio=audio,
             video_frames=video_frames,
         )
-        chunks = self.processor_fuse(chunks)
+        chunks = self.fuse_processor(chunks)
         winning_chunk = self.uptree_competition(chunks)
         return winning_chunk, chunks
 

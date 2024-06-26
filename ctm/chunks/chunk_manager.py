@@ -1,16 +1,22 @@
 import random
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+from ..configs import BaseConsciousnessTuringMachineConfig
 from ..utils import logger, logging_chunk_compete
 from .chunk import Chunk
 
 
 class ChunkManager:
-    def __init__(self, chunks: List[Chunk] = []):
+    def __init__(
+        self,
+        chunks: List[Chunk] = [],
+        config: Optional[BaseConsciousnessTuringMachineConfig] = None,
+    ):
+        self.config = config
         self.chunks: List[Chunk] = chunks
         self.vectorizer = TfidfVectorizer()
         self.tfidf_matrix = None
@@ -35,10 +41,37 @@ class ChunkManager:
         else:
             self.tfidf_matrix = None
 
-    def get_similarity_matrix(self):
+    def _get_similarity_matrix(self):
         if self.tfidf_matrix is not None:
             return cosine_similarity(self.tfidf_matrix)
         return np.array([])  # Return an empty array if no data is available
+
+    def get_interaction_type_matrix(self):
+        sim = self._get_similarity_matrix()
+        interaction_type_matrix = np.zeros_like(sim)
+
+        import pdb
+
+        pdb.set_trace()
+        for i in range(len(sim)):
+            for j in range(i + 1, len(sim)):
+                chunk_i, chunk_j = self.chunks[i], self.chunks[j]
+
+                # Check for redundant interaction
+                if (
+                    sim[i][j] > self.config.redundant_text_sim_threshold
+                    and chunk_i.weight > self.config.redundant_weight_threshold
+                    and chunk_j.weight > self.config.redundant_weight_threshold
+                ):
+                    interaction_type_matrix[i][j] = 1
+                # Check for synergy interaction
+                elif (
+                    sim[i][j] < self.config.synergy_text_sim_threshold
+                    and chunk_i.weight > self.config.synergy_weight_threshold
+                    and chunk_j.weight > self.config.synergy_weight_threshold
+                ):
+                    interaction_type_matrix[i][j] = -1
+        return interaction_type_matrix
 
     def reset(self):
         """Clears all chunks and resets the TF-IDF matrix."""
