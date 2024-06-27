@@ -1,8 +1,8 @@
 import sys
 
 sys.path.append("..")
-from ctm.ctms.ctm_base import BaseConsciousnessTuringMachine
-from ctm.utils import load_image
+from ctm_ai.ctms.ctm_base import BaseConsciousnessTuringMachine
+from ctm_ai.utils import load_image
 
 if __name__ == "__main__":
     ctm = BaseConsciousnessTuringMachine("sarcasm_ctm")
