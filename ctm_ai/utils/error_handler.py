@@ -10,16 +10,16 @@ INF = float(math.inf)
 
 def info_exponential_backoff(
     retries: int = 5, base_wait_time: int = 1
-) -> Callable[[Callable[..., str]], Callable[..., str]]:
+) -> Callable[[Callable[..., str | None]], Callable[..., str | None]]:
     """
     Decorator for applying exponential backoff to a function.
     :param retries: Maximum number of retries.
     :param base_wait_time: Base wait time in seconds for the exponential backoff.
     """
 
-    def decorator(func: Callable[..., str]) -> Callable[..., str]:
+    def decorator(func: Callable[..., str | None]) -> Callable[..., str | None]:
         @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> str:
+        def wrapper(*args: Any, **kwargs: Any) -> str | None:
             attempts = 0
             while attempts < retries:
                 try:
@@ -33,7 +33,7 @@ def info_exponential_backoff(
             logger.error(
                 f"Failed to execute '{func.__name__}' after {retries} retries.",
             )
-            return 'FAILED'
+            return None
 
         return wrapper
 

@@ -16,7 +16,7 @@ class GPT4Fuser(BaseFuser):
         self.model = OpenAI()
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
-    def fuse_info(self, chunk1: Chunk, chunk2: Chunk) -> Any:
+    def fuse_info(self, chunk1: Chunk, chunk2: Chunk) -> str | None:
         gist1, gist2 = chunk1.gist, chunk2.gist
         responses = self.model.chat.completions.create(
             model='gpt-4-turbo-preview',
@@ -32,7 +32,7 @@ class GPT4Fuser(BaseFuser):
         answer = (
             responses.choices[0].message.content
             if responses.choices[0].message.content
-            else 'FAILED'
+            else None
         )
         return answer
 

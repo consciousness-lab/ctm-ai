@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 from ..utils import logging_ask
 
@@ -37,17 +37,17 @@ class BaseSupervisor(object):
         )
 
     @logging_ask()
-    def ask(self, query: str, image_path: str) -> Tuple[str, float]:
+    def ask(self, query: str, image_path: str) -> Tuple[Union[str, None], float]:
         gist = self.ask_info(query, image_path)
-        score = self.ask_score(query, gist, verbose=True)
+        score = self.ask_score(query, gist)
         return gist, score
 
-    def ask_info(self, query: str, context: Optional[str] = None) -> str:
+    def ask_info(self, query: str, context: Optional[str] = None) -> str | None:
         raise NotImplementedError(
             "The 'ask_info' method must be implemented in derived classes."
         )
 
-    def ask_score(self, query: str, gist: str, verbose: bool = False) -> float:
+    def ask_score(self, query: str, gist: str | None) -> float:
         raise NotImplementedError(
             "The 'ask_score' method must be implemented in derived classes."
         )

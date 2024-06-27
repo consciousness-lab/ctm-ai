@@ -12,7 +12,7 @@ class GPT4Supervisor(BaseSupervisor):
         self.model = OpenAI()
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_info(self, query: str, context: Optional[str] = None) -> Any:
+    def ask_info(self, query: str, context: Optional[str] = None) -> str | None:
         responses = self.model.chat.completions.create(
             model='gpt-4-turbo-preview',
             messages=[
@@ -27,7 +27,7 @@ class GPT4Supervisor(BaseSupervisor):
         answer = (
             responses.choices[0].message.content
             if responses.choices[0].message.content
-            else 'FAILED'
+            else None
         )
         return answer
 
@@ -36,10 +36,12 @@ class GPT4Supervisor(BaseSupervisor):
         self,
         query: str,
         gist: str,
-        verbose: bool = False,
         *args: Any,
         **kwargs: Any,
     ) -> float:
+        if not gist:
+            return 0.0
+
         max_attempts = 5
         for attempt in range(max_attempts):
             try:

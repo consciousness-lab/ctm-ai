@@ -1,6 +1,7 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 from ..utils import info_exponential_backoff
 from .executor_base import BaseExecutor
@@ -12,7 +13,7 @@ class GPT4VExecutor(BaseExecutor):
         self.model = OpenAI()
 
     @info_exponential_backoff()
-    def ask(self, messages: List[Dict[str, str]]) -> str | None:
+    def ask(self, messages: list[ChatCompletionMessageParam]) -> str | None:
         response = self.model.chat.completions.create(
             model='gpt-4-vision-preview',
             messages=messages,

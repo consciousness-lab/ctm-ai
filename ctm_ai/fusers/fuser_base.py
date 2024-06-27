@@ -52,7 +52,7 @@ class BaseFuser(object):
         )
         return chunk
 
-    def fuse_info(self, chunk1: Chunk, chunk2: Chunk) -> str:
+    def fuse_info(self, chunk1: Chunk, chunk2: Chunk) -> str | None:
         raise NotImplementedError(
             "The 'fuse_info' method must be implemented in derived classes."
         )
