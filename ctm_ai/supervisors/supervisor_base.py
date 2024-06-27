@@ -1,17 +1,16 @@
-import base64
 from typing import Any, Dict, Optional, Tuple, Type
 
 from ..utils import logging_ask
 
 
 class BaseSupervisor(object):
-    _supervisor_registry: Dict[str, Type["BaseSupervisor"]] = {}
+    _supervisor_registry: Dict[str, Type['BaseSupervisor']] = {}
 
     @classmethod
     def register_supervisor(cls, supervisor_name: str) -> Any:
         def decorator(
-            subclass: Type["BaseSupervisor"],
-        ) -> Type["BaseSupervisor"]:
+            subclass: Type['BaseSupervisor'],
+        ) -> Type['BaseSupervisor']:
             cls._supervisor_registry[supervisor_name] = subclass
             return subclass
 
@@ -19,9 +18,7 @@ class BaseSupervisor(object):
 
     def __new__(cls, supervisor_name: str, *args: Any, **kwargs: Any) -> Any:
         if supervisor_name not in cls._supervisor_registry:
-            raise ValueError(
-                f"No supervisor registered with name '{supervisor_name}'"
-            )
+            raise ValueError(f"No supervisor registered with name '{supervisor_name}'")
         return super(BaseSupervisor, cls).__new__(
             cls._supervisor_registry[supervisor_name]
         )

@@ -5,9 +5,9 @@ from .messenger_search_engine import SearchEngineMessenger
 from .messenger_wolfram_alpha import WolframAlphaMessenger
 
 __all__ = [
-    "BaseMessenger",
-    "GPT4VMessenger",
-    "GPT4Messenger",
-    "SearchEngineMessenger",
-    "WolframAlphaMessenger",
+    'BaseMessenger',
+    'GPT4VMessenger',
+    'GPT4Messenger',
+    'SearchEngineMessenger',
+    'WolframAlphaMessenger',
 ]

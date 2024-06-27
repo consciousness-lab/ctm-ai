@@ -1,29 +1,25 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 
 class BaseScorer(object):
-    _scorer_registry: Dict[str, Type["BaseScorer"]] = {}
+    _scorer_registry: Dict[str, Type['BaseScorer']] = {}
 
     @classmethod
     def register_scorer(
         cls, scorer_name: str
-    ) -> Callable[[Type["BaseScorer"]], Type["BaseScorer"]]:
+    ) -> Callable[[Type['BaseScorer']], Type['BaseScorer']]:
         def decorator(
-            subclass: Type["BaseScorer"],
-        ) -> Type["BaseScorer"]:
+            subclass: Type['BaseScorer'],
+        ) -> Type['BaseScorer']:
             cls._scorer_registry[scorer_name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(
-        cls, scorer_name: str, *args: Any, **kwargs: Any
-    ) -> "BaseScorer":
+    def __new__(cls, scorer_name: str, *args: Any, **kwargs: Any) -> 'BaseScorer':
         if scorer_name not in cls._scorer_registry:
             raise ValueError(f"No scorer registered with name '{scorer_name}'")
-        return super(BaseScorer, cls).__new__(
-            cls._scorer_registry[scorer_name]
-        )
+        return super(BaseScorer, cls).__new__(cls._scorer_registry[scorer_name])
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.init_scorer()
@@ -64,12 +60,12 @@ class BaseScorer(object):
         weight = relevance * confidence * surprise
         if verbose:
             print(
-                f"Relevance: {relevance}, Confidence: {confidence}, Surprise: {surprise}"
+                f'Relevance: {relevance}, Confidence: {confidence}, Surprise: {surprise}'
             )
         score = {
-            "relevance": relevance,
-            "confidence": confidence,
-            "surprise": surprise,
-            "weight": weight,
+            'relevance': relevance,
+            'confidence': confidence,
+            'surprise': surprise,
+            'weight': weight,
         }
         return score

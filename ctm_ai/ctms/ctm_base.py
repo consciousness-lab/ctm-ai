@@ -1,6 +1,6 @@
 import concurrent.futures
 import random
-from typing import Dict, List, Optional, Set, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -12,16 +12,14 @@ from ..graphs import ProcessorGraph
 from ..processors import BaseProcessor
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-from ..utils import logger, logging_func, logging_func_with_count
+from ..utils import logging_func, logging_func_with_count
 
 
 class BaseConsciousnessTuringMachine(object):
     def __init__(self, ctm_name: Optional[str] = None) -> None:
         super().__init__()
         if ctm_name:
-            self.config = BaseConsciousnessTuringMachineConfig.from_ctm(
-                ctm_name
-            )
+            self.config = BaseConsciousnessTuringMachineConfig.from_ctm(ctm_name)
         else:
             self.config = BaseConsciousnessTuringMachineConfig()
         self.load_ctm()
@@ -93,7 +91,6 @@ class BaseConsciousnessTuringMachine(object):
         audio: Optional[NDArray[np.float32]] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Chunk:
-
         chunk = processor.ask(
             query=query,
             text=text,
@@ -126,8 +123,7 @@ class BaseConsciousnessTuringMachine(object):
                 for processor in self.processor_graph.nodes
             ]
             chunks = [
-                future.result()
-                for future in concurrent.futures.as_completed(futures)
+                future.result() for future in concurrent.futures.as_completed(futures)
             ]
         assert len(chunks) == len(self.processor_graph)
         return chunks
@@ -198,7 +194,7 @@ class BaseConsciousnessTuringMachine(object):
         image: Optional[str] = None,
         audio: Optional[NDArray[np.float32]] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
-    ) -> "Chunk":
+    ) -> 'Chunk':
         chunks = self.ask_processors(
             query=query,
             text=text,
@@ -211,7 +207,7 @@ class BaseConsciousnessTuringMachine(object):
         return winning_chunk, chunks
 
     @logging_func_with_count
-    def go_down(self, winning_chunk: "Chunk", chunks: List["Chunk"]) -> None:
+    def go_down(self, winning_chunk: 'Chunk', chunks: List['Chunk']) -> None:
         self.downtree_broadcast(winning_chunk)
         self.link_form(chunks)
 
@@ -224,12 +220,8 @@ class BaseConsciousnessTuringMachine(object):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Tuple[str, float]:
         for i in range(self.config.max_iter_num):
-            winning_chunk, chunks = self.go_up(
-                query, text, image, audio, video_frames
-            )
-            answer, confidence_score = self.ask_supervisor(
-                query, winning_chunk
-            )
+            winning_chunk, chunks = self.go_up(query, text, image, audio, video_frames)
+            answer, confidence_score = self.ask_supervisor(query, winning_chunk)
             if confidence_score > self.config.output_threshold:
                 return answer, confidence_score
             else:
