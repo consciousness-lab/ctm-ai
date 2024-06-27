@@ -9,9 +9,6 @@ from .executor_base import BaseExecutor
 
 @BaseExecutor.register_executor('wolfram_alpha_executor')
 class WolframAlphaExecutor(BaseExecutor):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.init_model(*args, **kwargs)
-
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         self.api_key = os.environ.get('WOLFRAM_API_KEY')
         self.url = 'http://api.wolframalpha.com/v2/query'

@@ -22,9 +22,11 @@ class BaseExecutor(object):
         instance = super(BaseExecutor, cls).__new__(
             cls._executor_registry[executor_name]
         )
+        instance.name = executor_name
         return instance
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:
+        self.name = name
         self.init_model(*args, **kwargs)
 
     def init_model(self, *args: Any, **kwargs: Any) -> None:

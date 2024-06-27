@@ -47,12 +47,12 @@ class GPT4VMessenger(BaseMessenger):
         video_frames: Optional[List[str]] = None,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> List[Dict[str, str]]:
         content = 'Query: {}\n'.format(query)
         if text is not None:
             content += 'Text: {}\n'.format(text)
         messages = [{'role': 'user', 'content': content}]
         return messages
 
-    def update_executor_messages(self, gist: str):
+    def update_executor_messages(self, gist: str) -> None:
         return

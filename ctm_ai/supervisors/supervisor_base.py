@@ -19,9 +19,15 @@ class BaseSupervisor(object):
     def __new__(cls, supervisor_name: str, *args: Any, **kwargs: Any) -> Any:
         if supervisor_name not in cls._supervisor_registry:
             raise ValueError(f"No supervisor registered with name '{supervisor_name}'")
-        return super(BaseSupervisor, cls).__new__(
+        instance = super(BaseSupervisor, cls).__new__(
             cls._supervisor_registry[supervisor_name]
         )
+        instance.name = supervisor_name
+        return instance
+
+    def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:
+        self.name = name
+        self.init_supervisor()
 
     def init_supervisor(
         self,

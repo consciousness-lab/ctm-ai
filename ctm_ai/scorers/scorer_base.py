@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Type
 
 
 class BaseScorer(object):
@@ -19,9 +19,12 @@ class BaseScorer(object):
     def __new__(cls, scorer_name: str, *args: Any, **kwargs: Any) -> 'BaseScorer':
         if scorer_name not in cls._scorer_registry:
             raise ValueError(f"No scorer registered with name '{scorer_name}'")
-        return super(BaseScorer, cls).__new__(cls._scorer_registry[scorer_name])
+        instance = super(BaseScorer, cls).__new__(cls._scorer_registry[scorer_name])
+        instance.name = scorer_name
+        return instance
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:
+        self.name = name
         self.init_scorer()
 
     def init_scorer(self) -> None:
@@ -53,7 +56,7 @@ class BaseScorer(object):
         verbose: bool = False,
         *args: Any,
         **kwargs: Any,
-    ) -> Tuple[float, float, float]:
+    ) -> Dict[str, float]:
         relevance = self.ask_relevance(query, gist, *args, **kwargs)
         confidence = self.ask_confidence(query, gist, *args, **kwargs)
         surprise = self.ask_surprise(query, gist, *args, **kwargs)

@@ -9,9 +9,6 @@ from .executor_base import BaseExecutor
 
 @BaseExecutor.register_executor('search_engine_executor')
 class SearchEngineExecutor(BaseExecutor):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         self.api_key = os.environ['GOOGLE_API_KEY']
         self.cse_id = os.environ['GOOGLE_CSE_ID']

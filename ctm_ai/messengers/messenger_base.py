@@ -125,9 +125,11 @@ class BaseMessenger(object):
         instance = super(BaseMessenger, cls).__new__(
             cls._messenger_registry[messenger_name]
         )
+        instance.name = messenger_name
         return instance
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:
+        self.name = name
         self.init_messenger(*args, **kwargs)
 
     def init_messenger(self, *args: Any, **kwargs: Any) -> None:

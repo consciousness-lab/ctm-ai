@@ -8,9 +8,6 @@ from .supervisor_base import BaseSupervisor
 
 @BaseSupervisor.register_supervisor('gpt4_supervisor')
 class GPT4Supervisor(BaseSupervisor):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.init_supervisor()
-
     def init_supervisor(self) -> None:
         self.model = OpenAI()
 
