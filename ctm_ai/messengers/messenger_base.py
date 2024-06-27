@@ -136,3 +136,13 @@ class BaseMessenger(object):
         raise NotImplementedError(
             "The 'init_messenger' method must be implemented in derived classes."
         )
+
+    def collect_executor_messages(self, *args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError(
+            "The 'collect_executor_messages' method must be implemented in derived classes."
+        )
+
+    def update_executor_messages(self, *args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError(
+            "The 'update_executor_messages' method must be implemented in derived classes."
+        )

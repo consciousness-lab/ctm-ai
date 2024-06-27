@@ -13,12 +13,17 @@ class GPT4Executor(BaseExecutor):
 
     @info_exponential_backoff()
     def ask(
-        self, messages: List[Dict[str, str]], *args: Any, **kwargs: Any
+        self,
+        messages: List[Dict[str, str]],
+        max_token: int = 300,
+        return_num: int = 1,
+        *args: Any,
+        **kwargs: Any,
     ) -> str | None:
         response = self.model.chat.completions.create(
             model='gpt-4-turbo',
             messages=messages,
-            max_tokens=300,
-            n=1,
+            max_tokens=max_token,
+            n=return_num,
         )
         return response.choices[0].message.content

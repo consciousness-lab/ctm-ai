@@ -42,7 +42,7 @@ class ProcessorGraph(object):
                 return processor
         raise ValueError(f'Processor with name {processor_name} not found in graph')
 
-    def get_neighbor(self, processor_name: str) -> List[str]:
+    def get_neighbor(self, processor_name: str) -> List[BaseProcessor]:
         processor = self.get_node(processor_name)
         return [node for node in self.graph[processor]]
 

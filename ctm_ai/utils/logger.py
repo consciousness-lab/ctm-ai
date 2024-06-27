@@ -61,7 +61,7 @@ console_formatter = ColoredFormatter(
 )
 
 
-def get_console_handler() -> StreamHandler:
+def get_console_handler() -> StreamHandler[Any]:
     console_handler = StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(console_formatter)
@@ -143,10 +143,13 @@ def logging_func(func: Callable[..., Any]) -> Callable[..., Any]:
 
 
 def logging_func_with_count(func: Callable[..., Any]) -> Callable[..., Any]:
+    call_count = 0
+
     @wraps(func)
     def wrapper(self: Any, *args: List[Any], **kwargs: Dict[str, Any]) -> Any:
-        wrapper.call_count += 1
-        call_number = wrapper.call_count
+        nonlocal call_count
+        call_count += 1
+        call_number = call_count
         logger.info(
             f'========== {func.__name__} call #{call_number} starting =========='
         )
@@ -158,7 +161,6 @@ def logging_func_with_count(func: Callable[..., Any]) -> Callable[..., Any]:
         )
         return result
 
-    wrapper.call_count = 0  # type: ignore
     return wrapper
 
 

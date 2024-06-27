@@ -33,3 +33,8 @@ class BaseExecutor(object):
         raise NotImplementedError(
             "The 'init_model' method must be implemented in derived classes."
         )
+
+    def ask(self, messages: Any, *args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError(
+            "The 'ask' method must be implemented in derived classes."
+        )
