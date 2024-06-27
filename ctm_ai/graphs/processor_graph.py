@@ -5,11 +5,11 @@ from ..utils import logger
 
 
 class ProcessorGraph(object):
-    def __init__(self):
+    def __init__(self) -> None:
         self.graph: Dict[BaseProcessor, Set[BaseProcessor]] = {}
 
     def add_node(self, processor_name: str, processor_group_name: str) -> None:
-        processor = BaseProcessor(processor_name, processor_group_name)
+        processor = BaseProcessor(name=processor_name, group_name=processor_group_name)
         self.graph[processor] = set()
         logger.info(f'Added processor {processor_name} to graph')
 
@@ -42,7 +42,7 @@ class ProcessorGraph(object):
                 return processor
         raise ValueError(f'Processor with name {processor_name} not found in graph')
 
-    def get_neighbor(self, processor_name: str) -> List[str]:
+    def get_neighbor(self, processor_name: str) -> List[BaseProcessor]:
         processor = self.get_node(processor_name)
         return [node for node in self.graph[processor]]
 

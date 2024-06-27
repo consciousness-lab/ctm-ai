@@ -1,10 +1,9 @@
-from typing import Any, Tuple
+from typing import Any, Dict
 
 from openai import OpenAI
 
 from ..chunks import Chunk
-from ..scorers import BaseScorer
-from ..utils import info_exponential_backoff, score_exponential_backoff
+from ..utils import info_exponential_backoff
 from .fuser_base import BaseFuser
 
 
@@ -15,10 +14,9 @@ class GPT4Fuser(BaseFuser):
 
     def init_fuser(self) -> None:
         self.model = OpenAI()
-        self.scorer = BaseScorer('gpt4_scorer')
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
-    def fuse_info(self, chunk1: Chunk, chunk2: Chunk) -> Any:
+    def fuse_info(self, chunk1: Chunk, chunk2: Chunk) -> str | None:
         gist1, gist2 = chunk1.gist, chunk2.gist
         responses = self.model.chat.completions.create(
             model='gpt-4-turbo-preview',
@@ -34,10 +32,18 @@ class GPT4Fuser(BaseFuser):
         answer = (
             responses.choices[0].message.content
             if responses.choices[0].message.content
-            else 'FAILED'
+            else None
         )
         return answer
 
-    @score_exponential_backoff(retries=5, base_wait_time=1)
-    def fuse_score(self, query: str, gist: str) -> Tuple[float, float, float]:
-        return self.scorer.ask(query, gist)
+    def fuse_score(self, chunk1: Chunk, chunk2: Chunk) -> Dict[str, float]:
+        relevance = chunk1.relevance + chunk2.relevance
+        confidence = chunk1.confidence + chunk2.confidence
+        surprise = chunk1.surprise + chunk2.surprise
+        weight = relevance * confidence * surprise
+        return {
+            'relevance': relevance,
+            'confidence': confidence,
+            'surprise': surprise,
+            'weight': weight,
+        }

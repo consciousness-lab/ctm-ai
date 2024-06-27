@@ -61,7 +61,7 @@ console_formatter = ColoredFormatter(
 )
 
 
-def get_console_handler() -> StreamHandler:
+def get_console_handler() -> StreamHandler:  # type: ignore
     console_handler = StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(console_formatter)
@@ -75,7 +75,7 @@ logger.addHandler(get_console_handler())
 
 def logging_decorator(
     func: Callable[..., LogType],
-) -> Callable[..., LogType]:
+) -> Callable[..., None]:
     def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> None:
         messages = func(*args, **kwargs)
         if not messages:
@@ -103,10 +103,12 @@ def logging_decorator(
     return wrapper
 
 
-def logging_ask(level: str = 'INFO') -> Callable:
-    def decorator(func: Callable) -> Callable:
+def logging_ask(
+    level: str = 'INFO',
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @wraps(func)
-        def wrapper(*args, **kwargs) -> Any:
+        def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
             class_name = args[0].__class__.__name__
             result = func(*args, **kwargs)
             log_message = f'Asking {class_name} and return\n{result}'
@@ -118,9 +120,9 @@ def logging_ask(level: str = 'INFO') -> Callable:
     return decorator
 
 
-def logging_chunk(func: Callable) -> Callable:
+def logging_chunk(func: Callable[..., Any]) -> Callable[..., None]:
     @wraps(func)
-    def wrapper(self, *args, **kwargs) -> None:
+    def wrapper(self: Any, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
         func(self, *args, **kwargs)
         logger.info(
             f'{self.processor_name} creates \ngist:\n{self.gist}\nweight:\n{self.weight}'
@@ -129,9 +131,9 @@ def logging_chunk(func: Callable) -> Callable:
     return wrapper
 
 
-def logging_func(func: Callable) -> Callable:
+def logging_func(func: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(func)
-    def wrapper(self, *args, **kwargs) -> Any:
+    def wrapper(self: Any, *args: List[Any], **kwargs: Dict[str, Any]) -> Any:
         logger.info(f'========== {func.__name__} starting ==========')
         result = func(self, *args, **kwargs)
         logger.info(f'========== {func.__name__} finished ==========')
@@ -140,11 +142,14 @@ def logging_func(func: Callable) -> Callable:
     return wrapper
 
 
-def logging_func_with_count(func: Callable) -> Callable:
+def logging_func_with_count(func: Callable[..., Any]) -> Callable[..., Any]:
+    call_count = 0
+
     @wraps(func)
-    def wrapper(self, *args, **kwargs) -> Any:
-        wrapper.call_count += 1
-        call_number = wrapper.call_count
+    def wrapper(self: Any, *args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+        nonlocal call_count
+        call_count += 1
+        call_number = call_count
         logger.info(
             f'========== {func.__name__} call #{call_number} starting =========='
         )
@@ -156,13 +161,12 @@ def logging_func_with_count(func: Callable) -> Callable:
         )
         return result
 
-    wrapper.call_count = 0
     return wrapper
 
 
-def logging_chunk_compete(func: Callable) -> Callable:
+def logging_chunk_compete(func: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(func)
-    def wrapper(self, chunk1, chunk2) -> Any:
+    def wrapper(self: Any, chunk1: Any, chunk2: Any) -> Any:
         logger.info(f'Competing {chunk1.processor_name} vs {chunk2.processor_name}')
         result = func(self, chunk1, chunk2)
         logger.info(f'Winner: {result.processor_name}')

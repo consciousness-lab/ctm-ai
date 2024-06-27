@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 from ..utils import logging_ask
 
@@ -7,21 +7,25 @@ class BaseSupervisor(object):
     _supervisor_registry: Dict[str, Type['BaseSupervisor']] = {}
 
     @classmethod
-    def register_supervisor(cls, supervisor_name: str) -> Any:
+    def register_supervisor(cls, name: str) -> Any:
         def decorator(
             subclass: Type['BaseSupervisor'],
         ) -> Type['BaseSupervisor']:
-            cls._supervisor_registry[supervisor_name] = subclass
+            cls._supervisor_registry[name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, supervisor_name: str, *args: Any, **kwargs: Any) -> Any:
-        if supervisor_name not in cls._supervisor_registry:
-            raise ValueError(f"No supervisor registered with name '{supervisor_name}'")
-        return super(BaseSupervisor, cls).__new__(
-            cls._supervisor_registry[supervisor_name]
-        )
+    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> Any:
+        if name not in cls._supervisor_registry:
+            raise ValueError(f"No supervisor registered with name '{name}'")
+        instance = super(BaseSupervisor, cls).__new__(cls._supervisor_registry[name])
+        instance.name = name
+        return instance
+
+    def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:
+        self.name = name
+        self.init_supervisor()
 
     def init_supervisor(
         self,
@@ -31,17 +35,17 @@ class BaseSupervisor(object):
         )
 
     @logging_ask()
-    def ask(self, query: str, image_path: str) -> Tuple[str, float]:
+    def ask(self, query: str, image_path: str) -> Tuple[Union[str, None], float]:
         gist = self.ask_info(query, image_path)
-        score = self.ask_score(query, gist, verbose=True)
+        score = self.ask_score(query, gist)
         return gist, score
 
-    def ask_info(self, query: str, context: Optional[str] = None) -> str:
+    def ask_info(self, query: str, context: Optional[str] = None) -> str | None:
         raise NotImplementedError(
             "The 'ask_info' method must be implemented in derived classes."
         )
 
-    def ask_score(self, query: str, gist: str, verbose: bool = False) -> float:
+    def ask_score(self, query: str, gist: str | None) -> float:
         raise NotImplementedError(
             "The 'ask_score' method must be implemented in derived classes."
         )

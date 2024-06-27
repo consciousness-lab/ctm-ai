@@ -47,8 +47,8 @@ class SearchEngineMessenger(BaseMessenger):
         video_frames: Optional[List[str]] = None,
         *args: Any,
         **kwargs: Any,
-    ):
+    ) -> str:
         return query
 
-    def update_executor_messages(self, gist: str):
+    def update_executor_messages(self, gist: str) -> None:
         return

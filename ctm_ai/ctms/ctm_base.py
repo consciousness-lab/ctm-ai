@@ -181,7 +181,8 @@ class BaseConsciousnessTuringMachine(object):
                 ]
             )
         for chunk_pair in linked_chunks:
-            fused_chunk = self.fuser.fuse(chunk_pair)
+            chunk1, chunk2 = chunk_pair
+            fused_chunk = self.fusers[0].fuse(chunk1, chunk2)
             chunks.append(fused_chunk)
         random.shuffle(chunks)
         return chunks
@@ -194,7 +195,7 @@ class BaseConsciousnessTuringMachine(object):
         image: Optional[str] = None,
         audio: Optional[NDArray[np.float32]] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
-    ) -> 'Chunk':
+    ) -> Tuple[Chunk, List[Chunk]]:
         chunks = self.ask_processors(
             query=query,
             text=text,

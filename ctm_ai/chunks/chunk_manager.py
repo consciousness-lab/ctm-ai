@@ -2,6 +2,7 @@ import random
 from typing import List, Optional
 
 import numpy as np
+from numpy.typing import NDArray
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -15,40 +16,45 @@ class ChunkManager:
         self,
         chunks: List[Chunk] = [],
         config: Optional[BaseConsciousnessTuringMachineConfig] = None,
-    ):
+    ) -> None:
         self.config = config
         self.chunks: List[Chunk] = chunks
         self.vectorizer = TfidfVectorizer()
-        self.tfidf_matrix = None
+        self.tfidf_matrix: Optional[NDArray[np.float32]] = None
         self._update_tfidf()
 
-    def add_chunk(self, chunk: Chunk):
+    def add_chunk(self, chunk: Chunk) -> None:
         self.chunks.append(chunk)
         self._update_tfidf()
 
-    def add_chunks(self, chunks: List[Chunk]):
+    def add_chunks(self, chunks: List[Chunk]) -> None:
         self.chunks.extend(chunks)
         self._update_tfidf()
 
-    def remove_chunk(self, index: int):
+    def remove_chunk(self, index: int) -> None:
         self.chunks.pop(index)
         self._update_tfidf()
 
-    def _update_tfidf(self):
-        gists = [chunk.gist for chunk in self.chunks if chunk.gist is not None]
+    def _update_tfidf(self) -> None:
+        gists = [chunk.gist for chunk in self.chunks if chunk.gist]
         if gists:
-            self.tfidf_matrix = self.vectorizer.fit_transform(gists)
+            self.tfidf_matrix = self.vectorizer.fit_transform(gists).toarray()
         else:
             self.tfidf_matrix = None
 
-    def _get_similarity_matrix(self):
+    def _get_similarity_matrix(self) -> NDArray[np.float32]:
         if self.tfidf_matrix is not None:
             return cosine_similarity(self.tfidf_matrix)
         return np.array([])  # Return an empty array if no data is available
 
-    def get_interaction_type_matrix(self):
+    def get_interaction_type_matrix(self) -> NDArray[np.float32]:
         sim = self._get_similarity_matrix()
         interaction_type_matrix = np.zeros_like(sim)
+
+        if self.config is None:
+            raise ValueError(
+                'Config must be provided for interaction type calculation.'
+            )
 
         for i in range(len(sim)):
             for j in range(i + 1, len(sim)):
@@ -70,13 +76,13 @@ class ChunkManager:
                     interaction_type_matrix[i][j] = -1
         return interaction_type_matrix
 
-    def reset(self):
+    def reset(self) -> None:
         """Clears all chunks and resets the TF-IDF matrix."""
         self.chunks.clear()
         self.tfidf_matrix = None
 
     @logging_chunk_compete
-    def compete(self, chunk1: Chunk, chunk2: Chunk):
+    def compete(self, chunk1: Chunk, chunk2: Chunk) -> Chunk:
         if chunk1 > chunk2:
             winner = chunk1
         elif chunk1 < chunk2:

@@ -1,6 +1,9 @@
 from typing import Any, Callable, Dict, Optional, Type
 
 from ..chunks import Chunk
+from ..executors import BaseExecutor
+from ..messengers import BaseMessenger
+from ..scorers import BaseScorer
 
 
 class BaseProcessor(object):
@@ -33,28 +36,40 @@ class BaseProcessor(object):
         instance.group_name = group_name
         return instance
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self, name: str, group_name: Optional[str] = None, *args: Any, **kwargs: Any
+    ) -> None:
+        self.name = name
+        self.group_name = group_name
         self.init_messenger()
         self.init_executor()
         self.init_scorer()
 
     def init_executor(self) -> None:
+        self.executor = BaseExecutor(name='gpt4_executor')
         raise NotImplementedError(
             "The 'init_executor' method must be implemented in derived classes."
         )
 
     def init_messenger(self) -> None:
+        self.messenger = BaseMessenger(name='gpt4_messenger')
         raise NotImplementedError(
             "The 'init_messenger' method must be implemented in derived classes."
         )
 
     def init_scorer(self) -> None:
+        self.scorer = BaseScorer(name='gpt4_scorer')
         raise NotImplementedError(
             "The 'init_scorer' method must be implemented in derived classes."
         )
 
     def ask(
-        self, query: str, text: str, image: Any, audio: Any, video_frames: Any
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[Any] = None,
+        audio: Optional[Any] = None,
+        video_frames: Optional[Any] = None,
     ) -> Chunk:
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
