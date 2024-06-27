@@ -6,23 +6,21 @@ class BaseExecutor(object):
 
     @classmethod
     def register_executor(
-        cls, executor_name: str
+        cls, name: str
     ) -> Callable[[Type['BaseExecutor']], Type['BaseExecutor']]:
         def decorator(
             subclass: Type['BaseExecutor'],
         ) -> Type['BaseExecutor']:
-            cls._executor_registry[executor_name] = subclass
+            cls._executor_registry[name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, executor_name: str, *args: Any, **kwargs: Any) -> 'BaseExecutor':
-        if executor_name not in cls._executor_registry:
-            raise ValueError(f"No executor registered with name '{executor_name}'")
-        instance = super(BaseExecutor, cls).__new__(
-            cls._executor_registry[executor_name]
-        )
-        instance.name = executor_name
+    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> 'BaseExecutor':
+        if name not in cls._executor_registry:
+            raise ValueError(f"No executor registered with name '{name}'")
+        instance = super(BaseExecutor, cls).__new__(cls._executor_registry[name])
+        instance.name = name
         return instance
 
     def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:

@@ -22,16 +22,16 @@ class BaseMessenger(object):
 
     def __new__(
         cls: Type["BaseMessenger"],
-        messenger_name: str,
+        name: str,
         *args: Any,
         **kwargs: Any,
     ) -> "BaseMessenger":
-        if messenger_name not in cls._messenger_registry:
+        if name not in cls._messenger_registry:
             raise ValueError(
-                f"No messenger registered with name '{messenger_name}'"
+                f"No messenger registered with name '{name}'"
             )
         return super(BaseMessenger, cls).__new__(
-            cls._messenger_registry[messenger_name]
+            cls._messenger_registry[name]
         )
 
     def __init__(
@@ -109,23 +109,21 @@ class BaseMessenger(object):
 
     @classmethod
     def register_messenger(
-        cls, messenger_name: str
+        cls, name: str
     ) -> Callable[[Type['BaseMessenger']], Type['BaseMessenger']]:
         def decorator(
             subclass: Type['BaseMessenger'],
         ) -> Type['BaseMessenger']:
-            cls._messenger_registry[messenger_name] = subclass
+            cls._messenger_registry[name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, messenger_name: str, *args: Any, **kwargs: Any) -> 'BaseMessenger':
-        if messenger_name not in cls._messenger_registry:
-            raise ValueError(f"No messenger registered with name '{messenger_name}'")
-        instance = super(BaseMessenger, cls).__new__(
-            cls._messenger_registry[messenger_name]
-        )
-        instance.name = messenger_name
+    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> 'BaseMessenger':
+        if name not in cls._messenger_registry:
+            raise ValueError(f"No messenger registered with name '{name}'")
+        instance = super(BaseMessenger, cls).__new__(cls._messenger_registry[name])
+        instance.name = name
         return instance
 
     def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:

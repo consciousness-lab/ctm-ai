@@ -7,22 +7,20 @@ class BaseSupervisor(object):
     _supervisor_registry: Dict[str, Type['BaseSupervisor']] = {}
 
     @classmethod
-    def register_supervisor(cls, supervisor_name: str) -> Any:
+    def register_supervisor(cls, name: str) -> Any:
         def decorator(
             subclass: Type['BaseSupervisor'],
         ) -> Type['BaseSupervisor']:
-            cls._supervisor_registry[supervisor_name] = subclass
+            cls._supervisor_registry[name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, supervisor_name: str, *args: Any, **kwargs: Any) -> Any:
-        if supervisor_name not in cls._supervisor_registry:
-            raise ValueError(f"No supervisor registered with name '{supervisor_name}'")
-        instance = super(BaseSupervisor, cls).__new__(
-            cls._supervisor_registry[supervisor_name]
-        )
-        instance.name = supervisor_name
+    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> Any:
+        if name not in cls._supervisor_registry:
+            raise ValueError(f"No supervisor registered with name '{name}'")
+        instance = super(BaseSupervisor, cls).__new__(cls._supervisor_registry[name])
+        instance.name = name
         return instance
 
     def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:

@@ -7,20 +7,20 @@ class BaseFuser(object):
     _fuser_registry: Dict[str, Type['BaseFuser']] = {}
 
     @classmethod
-    def register_fuser(cls, fuser_name: str) -> Any:
+    def register_fuser(cls, name: str) -> Any:
         def decorator(
             subclass: Type['BaseFuser'],
         ) -> Type['BaseFuser']:
-            cls._fuser_registry[fuser_name] = subclass
+            cls._fuser_registry[name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, fuser_name: str, *args: Any, **kwargs: Any) -> Any:
-        if fuser_name not in cls._fuser_registry:
-            raise ValueError(f"No fuser registered with name '{fuser_name}'")
-        instance = super(BaseFuser, cls).__new__(cls._fuser_registry[fuser_name])
-        instance.name = fuser_name
+    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> Any:
+        if name not in cls._fuser_registry:
+            raise ValueError(f"No fuser registered with name '{name}'")
+        instance = super(BaseFuser, cls).__new__(cls._fuser_registry[name])
+        instance.name = name
         return instance
 
     def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:
