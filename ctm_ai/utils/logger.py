@@ -61,7 +61,7 @@ console_formatter = ColoredFormatter(
 )
 
 
-def get_console_handler() -> StreamHandler[Any]:
+def get_console_handler() -> StreamHandler:  # type: ignore
     console_handler = StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(console_formatter)
