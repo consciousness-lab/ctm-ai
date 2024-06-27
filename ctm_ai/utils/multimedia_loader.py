@@ -16,8 +16,8 @@ def load_audio(audio_path: str) -> Tuple[NDArray[np.float32], int]:
 
 
 def load_image(image_path: str) -> str:
-    with open(image_path, "rb") as image_file:
-        encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+    with open(image_path, 'rb') as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
         return encoded_image
 
 

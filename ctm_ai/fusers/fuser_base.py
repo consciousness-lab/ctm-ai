@@ -1,17 +1,16 @@
-import base64
-from typing import Any, Dict, Optional, Tuple, Type
+from typing import Any, Dict, Tuple, Type
 
 from ..chunks import Chunk
 
 
 class BaseFuser(object):
-    _fuser_registry: Dict[str, Type["BaseFuser"]] = {}
+    _fuser_registry: Dict[str, Type['BaseFuser']] = {}
 
     @classmethod
     def register_fuser(cls, fuser_name: str) -> Any:
         def decorator(
-            subclass: Type["BaseFuser"],
-        ) -> Type["BaseFuser"]:
+            subclass: Type['BaseFuser'],
+        ) -> Type['BaseFuser']:
             cls._fuser_registry[fuser_name] = subclass
             return subclass
 
@@ -32,12 +31,10 @@ class BaseFuser(object):
     def fuse(self, chunk1: Chunk, chunk2: Chunk) -> Tuple[str, float]:
         gist1, gist2 = chunk1.gist, chunk2.gist
         gist = self.fuse_info(gist1, gist2)
-        relevance, confidence, surprise = self.fuse_score(
-            gist1, gist2, verbose=True
-        )
+        relevance, confidence, surprise = self.fuse_score(gist1, gist2, verbose=True)
         weight = relevance * confidence * surprise
         chunk = Chunk(
-            processor_name="{}_{}_fuse".format(
+            processor_name='{}_{}_fuse'.format(
                 chunk1.processor_name, chunk2.processor_name
             ),
             gist=gist,
@@ -56,9 +53,7 @@ class BaseFuser(object):
             "The 'fuse_info' method must be implemented in derived classes."
         )
 
-    def fuse_score(
-        self, chunk1: Chunk, chunk2: Chunk, verbose: bool = False
-    ) -> float:
+    def fuse_score(self, chunk1: Chunk, chunk2: Chunk, verbose: bool = False) -> float:
         raise NotImplementedError(
             "The 'fuse_score' method must be implemented in derived classes."
         )

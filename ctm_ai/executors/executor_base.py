@@ -1,28 +1,24 @@
-from typing import Any, Callable, Dict, List, Type
+from typing import Any, Callable, Dict, Type
 
 
 class BaseExecutor(object):
-    _executor_registry: Dict[str, Type["BaseExecutor"]] = {}
+    _executor_registry: Dict[str, Type['BaseExecutor']] = {}
 
     @classmethod
     def register_executor(
         cls, executor_name: str
-    ) -> Callable[[Type["BaseExecutor"]], Type["BaseExecutor"]]:
+    ) -> Callable[[Type['BaseExecutor']], Type['BaseExecutor']]:
         def decorator(
-            subclass: Type["BaseExecutor"],
-        ) -> Type["BaseExecutor"]:
+            subclass: Type['BaseExecutor'],
+        ) -> Type['BaseExecutor']:
             cls._executor_registry[executor_name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(
-        cls, executor_name: str, *args: Any, **kwargs: Any
-    ) -> "BaseExecutor":
+    def __new__(cls, executor_name: str, *args: Any, **kwargs: Any) -> 'BaseExecutor':
         if executor_name not in cls._executor_registry:
-            raise ValueError(
-                f"No executor registered with name '{executor_name}'"
-            )
+            raise ValueError(f"No executor registered with name '{executor_name}'")
         instance = super(BaseExecutor, cls).__new__(
             cls._executor_registry[executor_name]
         )

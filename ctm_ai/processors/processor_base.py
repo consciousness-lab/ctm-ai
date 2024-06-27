@@ -4,15 +4,15 @@ from ..chunks import Chunk
 
 
 class BaseProcessor(object):
-    _processor_registry: Dict[str, Type["BaseProcessor"]] = {}
+    _processor_registry: Dict[str, Type['BaseProcessor']] = {}
 
     @classmethod
     def register_processor(
         cls, name: str
-    ) -> Callable[[Type["BaseProcessor"]], Type["BaseProcessor"]]:
+    ) -> Callable[[Type['BaseProcessor']], Type['BaseProcessor']]:
         def decorator(
-            subclass: Type["BaseProcessor"],
-        ) -> Type["BaseProcessor"]:
+            subclass: Type['BaseProcessor'],
+        ) -> Type['BaseProcessor']:
             cls._processor_registry[name] = subclass
             return subclass
 
@@ -24,7 +24,7 @@ class BaseProcessor(object):
         group_name: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> "BaseProcessor":
+    ) -> 'BaseProcessor':
         if name not in cls._processor_registry:
             raise ValueError(f"No processor registered with name '{name}'")
         subclass = cls._processor_registry[name]
@@ -56,7 +56,6 @@ class BaseProcessor(object):
     def ask(
         self, query: str, text: str, image: Any, audio: Any, video_frames: Any
     ) -> Chunk:
-
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
             text=text,
@@ -78,12 +77,12 @@ class BaseProcessor(object):
             time_step=0,
             processor_name=self.name,
             gist=gist,
-            relevance=score["relevance"],
-            confidence=score["confidence"],
-            surprise=score["surprise"],
-            weight=score["weight"],
-            intensity=score["weight"],
-            mood=score["weight"],
+            relevance=score['relevance'],
+            confidence=score['confidence'],
+            surprise=score['surprise'],
+            weight=score['weight'],
+            intensity=score['weight'],
+            mood=score['weight'],
         )
 
     def update(self, chunk: Chunk) -> None:

@@ -5,9 +5,9 @@ from .processor_search_engine import SearchEngineProcessor
 from .processor_wolfram_alpha import WolframAlphaProcessor
 
 __all__ = [
-    "BaseProcessor",
-    "GPT4VProcessor",
-    "GPT4Processor",
-    "SearchEngineProcessor",
-    "WolframAlphaProcessor",
+    'BaseProcessor',
+    'GPT4VProcessor',
+    'GPT4Processor',
+    'SearchEngineProcessor',
+    'WolframAlphaProcessor',
 ]

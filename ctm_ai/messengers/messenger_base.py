@@ -1,16 +1,7 @@
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Dict, Type, TypeVar
 
 # This TypeVar is used for methods that might need to return or work with instances of subclasses of BaseMessenger.
-T = TypeVar("T")
+T = TypeVar('T')
 
 
 """
@@ -113,31 +104,24 @@ class BaseMessenger(object):
 """
 
 
-from typing import Any, Callable, Dict, Type
-
-
 class BaseMessenger(object):
-    _messenger_registry: Dict[str, Type["BaseMessenger"]] = {}
+    _messenger_registry: Dict[str, Type['BaseMessenger']] = {}
 
     @classmethod
     def register_messenger(
         cls, messenger_name: str
-    ) -> Callable[[Type["BaseMessenger"]], Type["BaseMessenger"]]:
+    ) -> Callable[[Type['BaseMessenger']], Type['BaseMessenger']]:
         def decorator(
-            subclass: Type["BaseMessenger"],
-        ) -> Type["BaseMessenger"]:
+            subclass: Type['BaseMessenger'],
+        ) -> Type['BaseMessenger']:
             cls._messenger_registry[messenger_name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(
-        cls, messenger_name: str, *args: Any, **kwargs: Any
-    ) -> "BaseMessenger":
+    def __new__(cls, messenger_name: str, *args: Any, **kwargs: Any) -> 'BaseMessenger':
         if messenger_name not in cls._messenger_registry:
-            raise ValueError(
-                f"No messenger registered with name '{messenger_name}'"
-            )
+            raise ValueError(f"No messenger registered with name '{messenger_name}'")
         instance = super(BaseMessenger, cls).__new__(
             cls._messenger_registry[messenger_name]
         )

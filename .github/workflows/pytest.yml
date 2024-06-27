@@ -1,4 +1,4 @@
-name: Mypy
+name: Pytest
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -11,7 +11,7 @@ on:
     branches: [main]
 
 jobs:
-  Static-Type-Checking:
+  Pytest:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
@@ -28,8 +28,9 @@ jobs:
       run: |
         curl -sSL https://install.python-poetry.org | python3
         poetry install --all-extras
-    - name: Type-checking package with mypy
+    - name: Test with pytest
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        TOGETHERAI_API_KEY: ${{ secrets.TOGETHERAI_API_KEY }}
       run: |
-        # Run this mypy instance against our main package.
-        poetry run pip install types-protobuf==4.24.0.4
-        poetry run mypy --config-file pyproject.toml .
+        poetry run pytest
