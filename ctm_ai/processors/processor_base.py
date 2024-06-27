@@ -54,7 +54,12 @@ class BaseProcessor(object):
         )
 
     def ask(
-        self, query: str, text: str, image: Any, audio: Any, video_frames: Any
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[Any] = None,
+        audio: Optional[Any] = None,
+        video_frames: Optional[Any] = None,
     ) -> Chunk:
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
