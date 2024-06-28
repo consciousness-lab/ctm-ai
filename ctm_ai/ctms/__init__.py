@@ -1,5 +1,5 @@
-from .ctm_base import BaseConsciousnessTuringMachine
+from .ctm_base import ConsciousnessTuringMachine
 
 __all__ = [
-    'BaseConsciousnessTuringMachine',
+    'ConsciousnessTuringMachine',
 ]

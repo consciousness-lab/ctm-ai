@@ -2,7 +2,7 @@ import json
 from typing import Any, Dict, Optional
 
 
-class BaseConsciousnessTuringMachineConfig:
+class ConsciousnessTuringMachineConfig:
     def __init__(
         self,
         ctm_name: Optional[str] = None,
@@ -38,12 +38,12 @@ class BaseConsciousnessTuringMachineConfig:
         return json.dumps(self.__dict__, indent=2) + '\n'
 
     @classmethod
-    def from_json_file(cls, json_file: str) -> 'BaseConsciousnessTuringMachineConfig':
+    def from_json_file(cls, json_file: str) -> 'ConsciousnessTuringMachineConfig':
         with open(json_file, 'r', encoding='utf-8') as reader:
             text = reader.read()
         return cls(**json.loads(text))
 
     @classmethod
-    def from_ctm(cls, ctm_name: str) -> 'BaseConsciousnessTuringMachineConfig':
+    def from_ctm(cls, ctm_name: str) -> 'ConsciousnessTuringMachineConfig':
         config_file = f'../ctm_conf/{ctm_name}_config.json'
         return cls.from_json_file(config_file)
