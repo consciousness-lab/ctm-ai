@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List, Union
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
@@ -17,14 +17,15 @@ class GPT4Executor(BaseExecutor):
         self,
         messages: list[ChatCompletionMessageParam],
         max_token: int = 300,
-        return_num: int = 1,
+        return_num: int = 5,
         *args: Any,
         **kwargs: Any,
-    ) -> str | None:
+    ) -> List[Union[str, None]]:
         response = self.model.chat.completions.create(
             model='gpt-4-turbo',
             messages=messages,
             max_tokens=max_token,
             n=return_num,
         )
-        return response.choices[0].message.content
+        gists = [response.choices[i].message.content for i in range(return_num)]
+        return gists

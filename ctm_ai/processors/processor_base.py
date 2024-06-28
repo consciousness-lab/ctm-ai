@@ -79,19 +79,19 @@ class BaseProcessor(object):
             video_frames=video_frames,
         )
 
-        gist = self.executor.ask(messages=executor_messages)
+        gists = self.executor.ask(messages=executor_messages)
 
-        self.messenger.update_executor_messages(gist=gist)
+        self.messenger.update_executor_messages(gist=gists[0])
 
         score = self.scorer.ask(
             query=query,
-            gist=gist,
+            gists=gists,
         )
 
         return Chunk(
             time_step=0,
             processor_name=self.name,
-            gist=gist,
+            gist=gists[0],
             relevance=score['relevance'],
             confidence=score['confidence'],
             surprise=score['surprise'],

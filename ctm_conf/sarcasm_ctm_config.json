@@ -1,7 +1,7 @@
 {
     "ctm_name": "sarcasm_ctm",
     "max_iter_num": 3,
-    "output_threshold": 1.0,
+    "output_threshold": 0.5,
     "redundant_text_sim_threshold": 0.5,
     "synergy_text_sim_threshold": 0.4,
     "redundant_weight_threshold": 0.6,

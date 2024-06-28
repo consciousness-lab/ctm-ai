@@ -1,9 +1,9 @@
 import os
-from typing import Any
+from typing import Any, List, Union
 
 import requests
 
-from ..utils import info_exponential_backoff
+from ..utils import info_exponential_backoff, logger
 from .executor_base import BaseExecutor
 
 
@@ -14,7 +14,7 @@ class WolframAlphaExecutor(BaseExecutor):
         self.url = 'http://api.wolframalpha.com/v2/query'
 
     @info_exponential_backoff()
-    def ask(self, messages: str, *args: Any, **kwargs: Any) -> str:
+    def ask(self, messages: str, *args: Any, **kwargs: Any) -> List[Union[str, None]]:
         params = {'input': messages, 'appid': self.api_key, 'output': 'json'}
         try:
             response = requests.get(self.url, params=params)
@@ -24,10 +24,10 @@ class WolframAlphaExecutor(BaseExecutor):
             for pod in search_results.get('queryresult', {}).get('pods', []):
                 for subpod in pod.get('subpods', []):
                     content += subpod.get('plaintext', '') + '\n'
-            return content
+            return [content]
         except requests.exceptions.HTTPError as err:
-            print(f'HTTP error occurred: {err}')
-            return ''
+            logger.error(f'HTTP error occurred: {err}')
+            return []
         except Exception as err:
-            print(f'An error occurred: {err}')
-            return ''
+            logger.error(f'An error occurred: {err}')
+            return []

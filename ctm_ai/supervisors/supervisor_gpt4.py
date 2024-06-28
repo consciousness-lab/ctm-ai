@@ -2,7 +2,11 @@ from typing import Any, Optional
 
 from openai import OpenAI
 
-from ..utils import info_exponential_backoff, score_exponential_backoff
+from ..utils import (
+    info_exponential_backoff,
+    logprobs_to_softmax,
+    score_exponential_backoff,
+)
 from .supervisor_base import BaseSupervisor
 
 
@@ -12,7 +16,7 @@ class GPT4Supervisor(BaseSupervisor):
         self.model = OpenAI()
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_info(self, query: str, context: Optional[str] = None) -> str | None:
+    def ask_info(self, query: str, context: Optional[str] = None) -> Optional[str]:
         responses = self.model.chat.completions.create(
             model='gpt-4-turbo-preview',
             messages=[
@@ -24,47 +28,28 @@ class GPT4Supervisor(BaseSupervisor):
             max_tokens=300,
             n=1,
         )
-        answer = (
-            responses.choices[0].message.content
-            if responses.choices[0].message.content
-            else None
-        )
-        return answer
+        return responses.choices[0].message.content or None
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_score(
-        self,
-        query: str,
-        gist: str,
-        *args: Any,
-        **kwargs: Any,
-    ) -> float:
+    def ask_score(self, query: str, gist: str, *args: Any, **kwargs: Any) -> float:
         if not gist:
             return 0.0
 
-        max_attempts = 5
-        for attempt in range(max_attempts):
-            try:
-                response = self.model.chat.completions.create(
-                    model='gpt-4-0125-preview',
-                    messages=[
-                        {
-                            'role': 'user',
-                            'content': f"How related is the information ({gist}) with the query ({query})? We want to make sure that the information includes a person's name as the answer. Answer with a number from 0 to 5 and do not add any other thing.",
-                        },
-                    ],
-                    max_tokens=50,
-                )
-                score = (
-                    float(response.choices[0].message.content.strip()) / 5
-                    if response.choices[0].message.content
-                    else 0.0
-                )
-                return score
-            except Exception as e:
-                print(f'Attempt {attempt + 1} failed: {e}')
-                if attempt < max_attempts - 1:
-                    print('Retrying...')
-                else:
-                    print('Max attempts reached. Returning default score.')
-        return 0.0
+        response = self.model.chat.completions.create(
+            model='gpt-4-0125-preview',
+            messages=[
+                {
+                    'role': 'user',
+                    'content': f'Is the information ({gist}) related to the query ({query})? Answer with "Yes" or "No".',
+                },
+            ],
+            max_tokens=50,
+            logprobs=True,
+            top_logprobs=20,
+        )
+        top_logprobs = response.choices[0].logprobs.content[0].top_logprobs
+        logprob_dict = {logprob.token: logprob.logprob for logprob in top_logprobs}
+        probs = logprobs_to_softmax(
+            [logprob_dict.get('Yes', 0), logprob_dict.get('No', 0)]
+        )
+        return probs[0]

@@ -1,8 +1,8 @@
-from typing import Any, Optional
+from typing import Any, List
 
 from openai import OpenAI
 
-from ..utils.error_handler import score_exponential_backoff
+from ..utils import logprobs_to_softmax, score_exponential_backoff
 from .scorer_base import BaseScorer
 
 
@@ -15,60 +15,24 @@ class GPT4Scorer(BaseScorer):
         self.scorer = OpenAI()
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_relevance(self, query: str, gist: str) -> float:
+    def ask_relevance(self, query: str, gists: List[str]) -> float:
+        gist = gists[0]
         response = self.scorer.chat.completions.create(
             model='gpt-4-0125-preview',
             messages=[
                 {
                     'role': 'user',
-                    'content': f'How related is the information ({gist}) with the query ({query})? Answer with a number from 0 to 5 and do not add any other thing.',
+                    'content': f"Is the information ({gist}) related with the query ({query})? Answer with 'Yes' or 'No'.",
                 }
             ],
             max_tokens=50,
+            logprobs=True,
+            top_logprobs=20,
         )
-        score = (
-            float(response.choices[0].message.content.strip()) / 5
-            if response.choices[0].message.content
-            else 0.0
+        top_logprobs = response.choices[0].logprobs.content[0].top_logprobs
+        logprob_dict = {logprob.token: logprob.logprob for logprob in top_logprobs}
+        probs = logprobs_to_softmax(
+            [logprob_dict.get('Yes', 0), logprob_dict.get('No', 0)]
         )
-        return score
-
-    @score_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_confidence(self, query: str, gist: str) -> float:
-        response = self.scorer.chat.completions.create(
-            model='gpt-4-0125-preview',
-            messages=[
-                {
-                    'role': 'user',
-                    'content': f'How confident do you think the information ({gist}) is a must-know? Answer with a number from 0 to 5 and do not add any other thing.',
-                }
-            ],
-            max_tokens=50,
-        )
-        score = (
-            float(response.choices[0].message.content.strip()) / 5
-            if response.choices[0].message.content
-            else 0.0
-        )
-        return score
-
-    @score_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_surprise(
-        self, query: str, gist: str, history_gists: Optional[str] = None
-    ) -> float:
-        response = self.scorer.chat.completions.create(
-            model='gpt-4-0125-preview',
-            messages=[
-                {
-                    'role': 'user',
-                    'content': f'How surprising do you think the information ({gist}) is as an output of the processor? Answer with a number from 0 to 5 and do not add any other thing.',
-                }
-            ],
-            max_tokens=50,
-        )
-        score = (
-            float(response.choices[0].message.content.strip()) / 5
-            if response.choices[0].message.content
-            else 0.0
-        )
+        score = probs[0]
         return score

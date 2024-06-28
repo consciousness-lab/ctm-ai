@@ -18,6 +18,7 @@ termcolor = "*"
 beartype = "*"
 requests = "*"
 types-requests = "*"
+wordfreq = "*"
 
 
 [tool.poetry.group.dev.dependencies]
