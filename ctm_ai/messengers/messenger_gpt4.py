@@ -18,30 +18,10 @@ class GPT4Messenger(BaseMessenger):
 
     def init_messenger(
         self,
-        role: Optional[str] = None,
-        content: Optional[Union[str, Dict[str, Any], List[Any]]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        # Define messages as a list of dictionaries with specific types
         self.messages: List[Dict[str, Union[str, Dict[str, Any], List[Any]]]] = []
-        if role is not None and content is not None:
-            self.update_message(role, content)
-
-    def update_message(
-        self, role: str, content: Union[str, Dict[str, Any], List[Any]]
-    ) -> None:
-        # Append a new message to the list with a specified structure
-        self.messages.append({'role': role, 'content': content})
-
-    def check_iter_round_num(self) -> int:
-        # Return the number of iterations, which is the length of the messages list
-        return len(self.messages)
-
-    def get_messages(
-        self,
-    ) -> List[Dict[str, Union[str, Dict[str, Any], List[Any]]]]:
-        return self.messages
 
     def collect_executor_messages(
         self,
