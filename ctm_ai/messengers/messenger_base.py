@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable, Dict, List, Type
 
 
 class BaseMessenger(object):
@@ -34,7 +34,7 @@ class BaseMessenger(object):
         return self.messages
 
     def init_messenger(self, *args: Any, **kwargs: Any) -> None:
-        self.messages = []
+        self.messages: List[Any] = []
         raise NotImplementedError(
             "The 'init_messenger' method must be implemented in derived classes."
         )
