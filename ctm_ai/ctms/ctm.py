@@ -1,6 +1,6 @@
 import concurrent.futures
 import random
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -112,8 +112,11 @@ class ConsciousnessTuringMachine:
         return chunks
 
     @logging_func
-    def ask_supervisor(self, query: str, chunk: Chunk) -> Tuple[str, float]:
-        return self.supervisors[0].ask(query, chunk.gist)
+    def ask_supervisor(
+        self, query: str, chunk: Chunk
+    ) -> Tuple[Union[str, None], float]:
+        final_answer, score = self.supervisors[0].ask(query, chunk.gist)
+        return final_answer, score
 
     @logging_func
     def uptree_competition(self, chunks: List[Chunk]) -> Chunk:

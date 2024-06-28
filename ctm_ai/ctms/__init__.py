@@ -1,4 +1,4 @@
-from .ctm_base import ConsciousnessTuringMachine
+from .ctm import ConsciousnessTuringMachine
 
 __all__ = [
     'ConsciousnessTuringMachine',

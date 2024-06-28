@@ -1,6 +1,6 @@
 import sys
 
-from ctm_ai.ctms.ctm_base import ConsciousnessTuringMachine
+from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
 from ctm_ai.utils import load_image
 
 sys.path.append('..')
