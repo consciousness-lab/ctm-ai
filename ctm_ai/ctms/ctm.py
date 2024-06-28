@@ -1,6 +1,6 @@
 import concurrent.futures
 import random
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -15,13 +15,14 @@ from ..supervisors import BaseSupervisor
 from ..utils import logging_func, logging_func_with_count
 
 
-class ConsciousnessTuringMachine(object):
+class ConsciousnessTuringMachine:
     def __init__(self, ctm_name: Optional[str] = None) -> None:
         super().__init__()
-        if ctm_name:
-            self.config = ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
-        else:
-            self.config = ConsciousnessTuringMachineConfig()
+        self.config = (
+            ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
+            if ctm_name
+            else ConsciousnessTuringMachineConfig()
+        )
         self.load_ctm()
 
     def __call__(
@@ -32,28 +33,20 @@ class ConsciousnessTuringMachine(object):
         audio: Optional[NDArray[np.float32]] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Tuple[str, float]:
-        return self.forward(
-            query=query,
-            text=text,
-            image=image,
-            audio=audio,
-            video_frames=video_frames,
-        )
+        return self.forward(query, text, image, audio, video_frames)
 
     def load_ctm(self) -> None:
         self.processor_graph = ProcessorGraph()
         self.supervisors: List[BaseSupervisor] = []
         self.scorers: List[BaseScorer] = []
         self.fusers: List[BaseFuser] = []
-        for (
-            group_name,
-            processors,
-        ) in self.config.groups_of_processors.items():
+
+        for group_name, processors in self.config.groups_of_processors.items():
             for processor_name in processors:
                 self.processor_graph.add_node(
-                    processor_name=processor_name,
-                    processor_group_name=group_name,
+                    processor_name=processor_name, processor_group_name=group_name
                 )
+
         self.add_supervisor(self.config.supervisor)
         self.add_scorer(self.config.scorer)
         self.add_fuser(self.config.fuser)
@@ -62,25 +55,21 @@ class ConsciousnessTuringMachine(object):
         self.supervisors.append(BaseSupervisor(name))
 
     def remove_supervisor(self, name: str) -> None:
-        for supervisor in self.supervisors:
-            if supervisor.name == name:
-                self.supervisors.remove(supervisor)
+        self.supervisors = [
+            supervisor for supervisor in self.supervisors if supervisor.name != name
+        ]
 
     def add_scorer(self, name: str) -> None:
         self.scorers.append(BaseScorer(name))
 
     def remove_scorer(self, name: str) -> None:
-        for scorer in self.scorers:
-            if scorer.name == name:
-                self.scorers.remove(scorer)
+        self.scorers = [scorer for scorer in self.scorers if scorer.name != name]
 
     def add_fuser(self, name: str) -> None:
         self.fusers.append(BaseFuser(name))
 
     def remove_fuser(self, name: str) -> None:
-        for fuser in self.fusers:
-            if fuser.name == name:
-                self.fusers.remove(fuser)
+        self.fusers = [fuser for fuser in self.fusers if fuser.name != name]
 
     @staticmethod
     def ask_processor(
@@ -91,14 +80,7 @@ class ConsciousnessTuringMachine(object):
         audio: Optional[NDArray[np.float32]] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Chunk:
-        chunk = processor.ask(
-            query=query,
-            text=text,
-            image=image,
-            audio=audio,
-            video_frames=video_frames,
-        )
-        return chunk
+        return processor.ask(query, text, image, audio, video_frames)
 
     @logging_func
     def ask_processors(
@@ -125,19 +107,21 @@ class ConsciousnessTuringMachine(object):
             chunks = [
                 future.result() for future in concurrent.futures.as_completed(futures)
             ]
-        assert len(chunks) == len(self.processor_graph)
+
+        assert len(chunks) == len(self.processor_graph.nodes)
         return chunks
 
     @logging_func
-    def ask_supervisor(self, query: str, chunk: Chunk) -> Tuple[str, float]:
+    def ask_supervisor(
+        self, query: str, chunk: Chunk
+    ) -> Tuple[Union[str, None], float]:
         final_answer, score = self.supervisors[0].ask(query, chunk.gist)
         return final_answer, score
 
     @logging_func
     def uptree_competition(self, chunks: List[Chunk]) -> Chunk:
         chunk_manager = ChunkManager(chunks)
-        winning_chunk = chunk_manager.uptree_competition()
-        return winning_chunk
+        return chunk_manager.uptree_competition()
 
     @logging_func
     def downtree_broadcast(self, chunk: Chunk) -> None:
@@ -153,21 +137,21 @@ class ConsciousnessTuringMachine(object):
             for j in range(i + 1, len(interaction_matrix)):
                 interaction_type = interaction_matrix[i][j]
 
-                if interaction_type != 0:  # redundant or synergy
+                if interaction_type != 0:
                     self.processor_graph.add_link(
                         processor1_name=chunks[i].processor_name,
                         processor2_name=chunks[j].processor_name,
                     )
-                elif interaction_type == 0:  # uniqueness
+                else:
                     self.processor_graph.remove_link(
                         processor1_name=chunks[i].processor_name,
                         processor2_name=chunks[j].processor_name,
                     )
-        return
 
     @logging_func
     def fuse_processor(self, chunks: List[Chunk]) -> List[Chunk]:
         linked_chunks: List[Tuple[Chunk, Chunk]] = []
+
         for chunk in chunks:
             src_chunk = chunk
             tgt_processor_names = self.processor_graph.get_neighbor_names(
@@ -180,10 +164,11 @@ class ConsciousnessTuringMachine(object):
                     if chunk.processor_name in tgt_processor_names
                 ]
             )
-        for chunk_pair in linked_chunks:
-            chunk1, chunk2 = chunk_pair
+
+        for chunk1, chunk2 in linked_chunks:
             fused_chunk = self.fusers[0].fuse(chunk1, chunk2)
             chunks.append(fused_chunk)
+
         random.shuffle(chunks)
         return chunks
 
@@ -196,19 +181,13 @@ class ConsciousnessTuringMachine(object):
         audio: Optional[NDArray[np.float32]] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Tuple[Chunk, List[Chunk]]:
-        chunks = self.ask_processors(
-            query=query,
-            text=text,
-            image=image,
-            audio=audio,
-            video_frames=video_frames,
-        )
+        chunks = self.ask_processors(query, text, image, audio, video_frames)
         chunks = self.fuse_processor(chunks)
         winning_chunk = self.uptree_competition(chunks)
         return winning_chunk, chunks
 
     @logging_func_with_count
-    def go_down(self, winning_chunk: 'Chunk', chunks: List['Chunk']) -> None:
+    def go_down(self, winning_chunk: Chunk, chunks: List[Chunk]) -> None:
         self.downtree_broadcast(winning_chunk)
         self.link_form(chunks)
 
@@ -220,11 +199,10 @@ class ConsciousnessTuringMachine(object):
         audio: Optional[NDArray[np.float32]] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Tuple[str, float]:
-        for i in range(self.config.max_iter_num):
+        for _ in range(self.config.max_iter_num):
             winning_chunk, chunks = self.go_up(query, text, image, audio, video_frames)
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
             if confidence_score > self.config.output_threshold:
                 return answer, confidence_score
-            else:
-                self.go_down(winning_chunk, chunks)
+            self.go_down(winning_chunk, chunks)
         return answer, confidence_score
