@@ -3,7 +3,7 @@ name = "ctm_ai"
 version = "0.0.1"
 description = "A cognitive architecture motivated by consciousness turing machine."
 authors = ["Haofei Yu <yuhaofei44@gmail.com>"]
-license = "MIT License"
+license = "Apache 2.0 License"
 readme = "README.md"
 
 
