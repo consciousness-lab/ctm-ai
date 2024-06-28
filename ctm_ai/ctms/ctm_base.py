@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ..chunks import Chunk, ChunkManager
-from ..configs import BaseConsciousnessTuringMachineConfig
+from ..configs import ConsciousnessTuringMachineConfig
 from ..fusers import BaseFuser
 from ..graphs import ProcessorGraph
 from ..processors import BaseProcessor
@@ -15,13 +15,13 @@ from ..supervisors import BaseSupervisor
 from ..utils import logging_func, logging_func_with_count
 
 
-class BaseConsciousnessTuringMachine(object):
+class ConsciousnessTuringMachine(object):
     def __init__(self, ctm_name: Optional[str] = None) -> None:
         super().__init__()
         if ctm_name:
-            self.config = BaseConsciousnessTuringMachineConfig.from_ctm(ctm_name)
+            self.config = ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
         else:
-            self.config = BaseConsciousnessTuringMachineConfig()
+            self.config = ConsciousnessTuringMachineConfig()
         self.load_ctm()
 
     def __call__(
