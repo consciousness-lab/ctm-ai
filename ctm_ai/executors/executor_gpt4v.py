@@ -3,7 +3,7 @@ from typing import Any, List, Union
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 
-from ..utils import info_exponential_backoff
+from ..utils import multi_info_exponential_backoff
 from .executor_base import BaseExecutor
 
 
@@ -12,7 +12,7 @@ class GPT4VExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         self.model = OpenAI()
 
-    @info_exponential_backoff()
+    @multi_info_exponential_backoff()
     def ask(
         self,
         messages: list[ChatCompletionMessageParam],

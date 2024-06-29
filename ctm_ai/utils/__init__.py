@@ -1,4 +1,8 @@
-from .error_handler import info_exponential_backoff, score_exponential_backoff
+from .error_handler import (
+    info_exponential_backoff,
+    multi_info_exponential_backoff,
+    score_exponential_backoff,
+)
 from .loader import load_audio, load_image, load_video
 from .logger import (
     logger,
@@ -13,6 +17,7 @@ from .tool import logprobs_to_softmax
 __all__ = [
     'score_exponential_backoff',
     'info_exponential_backoff',
+    'multi_info_exponential_backoff',
     'load_audio',
     'load_image',
     'load_video',

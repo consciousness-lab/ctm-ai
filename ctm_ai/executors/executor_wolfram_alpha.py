@@ -3,7 +3,7 @@ from typing import Any, List, Union
 
 import requests
 
-from ..utils import info_exponential_backoff, logger
+from ..utils import logger, multi_info_exponential_backoff
 from .executor_base import BaseExecutor
 
 
@@ -13,7 +13,7 @@ class WolframAlphaExecutor(BaseExecutor):
         self.api_key = os.environ.get('WOLFRAM_API_KEY')
         self.url = 'http://api.wolframalpha.com/v2/query'
 
-    @info_exponential_backoff()
+    @multi_info_exponential_backoff()
     def ask(self, messages: str, *args: Any, **kwargs: Any) -> List[Union[str, None]]:
         params = {'input': messages, 'appid': self.api_key, 'output': 'json'}
         try:

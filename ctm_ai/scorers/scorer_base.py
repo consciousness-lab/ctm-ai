@@ -58,19 +58,21 @@ class BaseScorer(object):
 
         avg_cos_sim = np.mean(upper_triangle_values)
 
-        confidence = avg_cos_sim
+        confidence = float(avg_cos_sim)
         return confidence
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_surprise(
         self,
         gists: List[str],
-        lang='en',
+        lang: str = 'en',
     ) -> float:
         gist_words = gists[0].split()
-        word_freqs = [word_frequency(gist_word, lang) for gist_word in gist_words]
+        word_freqs = [
+            float(word_frequency(gist_word, lang)) for gist_word in gist_words
+        ]
         surprise = sum(word_freqs) / len(word_freqs) if word_freqs else 0
-        surprise = 1 / surprise if surprise else 0
+        surprise = 1 / surprise if surprise != 0 else 0
         return surprise
 
     def ask(

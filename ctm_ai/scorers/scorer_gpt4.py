@@ -29,10 +29,18 @@ class GPT4Scorer(BaseScorer):
             logprobs=True,
             top_logprobs=20,
         )
-        top_logprobs = response.choices[0].logprobs.content[0].top_logprobs
-        logprob_dict = {logprob.token: logprob.logprob for logprob in top_logprobs}
-        probs = logprobs_to_softmax(
-            [logprob_dict.get('Yes', 0), logprob_dict.get('No', 0)]
-        )
-        score = probs[0]
-        return score
+        if (
+            response.choices
+            and response.choices[0].logprobs
+            and response.choices[0].logprobs.content
+            and response.choices[0].logprobs.content[0]
+            and response.choices[0].logprobs.content[0].top_logprobs
+        ):
+            top_logprobs = response.choices[0].logprobs.content[0].top_logprobs
+            logprob_dict = {logprob.token: logprob.logprob for logprob in top_logprobs}
+            probs = logprobs_to_softmax(
+                [logprob_dict.get('Yes', 0), logprob_dict.get('No', 0)]
+            )
+            return probs[0]
+        else:
+            return 0.0

@@ -3,7 +3,7 @@ from typing import Any, List, Union
 
 import requests
 
-from ..utils import info_exponential_backoff, logger
+from ..utils import logger, multi_info_exponential_backoff
 from .executor_base import BaseExecutor
 
 
@@ -14,7 +14,7 @@ class SearchEngineExecutor(BaseExecutor):
         self.cse_id = os.environ['GOOGLE_CSE_ID']
         self.url = 'https://www.googleapis.com/customsearch/v1'
 
-    @info_exponential_backoff()
+    @multi_info_exponential_backoff()
     def ask(self, messages: str, *args: Any, **kwargs: Any) -> List[Union[str, None]]:
         params = {'key': self.api_key, 'cx': self.cse_id, 'q': messages}
         try:
