@@ -1,4 +1,11 @@
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, List, Type
+
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+from wordfreq import word_frequency
+
+from ..utils import score_exponential_backoff
 
 
 class BaseScorer(object):
@@ -32,39 +39,53 @@ class BaseScorer(object):
             "The 'init_scorer' method must be implemented in derived classes."
         )
 
-    def ask_relevance(self, query: str, gist: str) -> float:
+    def ask_relevance(self, query: str, gists: List[str]) -> float:
         raise NotImplementedError(
             "The 'ask_relevance' method must be implemented in derived classes."
         )
 
-    def ask_confidence(self, query: str, gist: str) -> float:
-        raise NotImplementedError(
-            "The 'ask_confidence' method must be implemented in derived classes."
-        )
+    @score_exponential_backoff(retries=5, base_wait_time=1)
+    def ask_confidence(self, gists: List[str]) -> float:
+        if len(gists) < 2:
+            return 1.0
 
+        vectorizer = TfidfVectorizer()
+        tfidf_matrix = vectorizer.fit_transform(gists)
+        cos_sim_matrix = cosine_similarity(tfidf_matrix)
+
+        upper_triangle_indices = np.triu_indices_from(cos_sim_matrix, k=1)
+        upper_triangle_values = cos_sim_matrix[upper_triangle_indices]
+
+        avg_cos_sim = np.mean(upper_triangle_values)
+
+        confidence = float(avg_cos_sim)
+        return confidence
+
+    @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_surprise(
-        self, query: str, gist: str, history_gists: Optional[str] = None
+        self,
+        gists: List[str],
+        lang: str = 'en',
     ) -> float:
-        raise NotImplementedError(
-            "The 'ask_surprise' method must be implemented in derived classes."
-        )
+        gist_words = gists[0].split()
+        word_freqs = [
+            float(word_frequency(gist_word, lang)) for gist_word in gist_words
+        ]
+        surprise = sum(word_freqs) / len(word_freqs) if word_freqs else 0
+        surprise = 1 / surprise if surprise != 0 else 0
+        return surprise
 
     def ask(
         self,
         query: str,
-        gist: str,
-        verbose: bool = False,
+        gists: List[str],
         *args: Any,
         **kwargs: Any,
     ) -> Dict[str, float]:
-        relevance = self.ask_relevance(query, gist, *args, **kwargs)
-        confidence = self.ask_confidence(query, gist, *args, **kwargs)
-        surprise = self.ask_surprise(query, gist, *args, **kwargs)
+        relevance = self.ask_relevance(query, gists, *args, **kwargs)
+        confidence = self.ask_confidence(gists, *args, **kwargs)
+        surprise = self.ask_surprise(gists, *args, **kwargs)
         weight = relevance * confidence * surprise
-        if verbose:
-            print(
-                f'Relevance: {relevance}, Confidence: {confidence}, Surprise: {surprise}'
-            )
         score = {
             'relevance': relevance,
             'confidence': confidence,

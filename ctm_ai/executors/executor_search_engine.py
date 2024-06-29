@@ -1,9 +1,9 @@
 import os
-from typing import Any
+from typing import Any, List, Union
 
 import requests
 
-from ..utils import info_exponential_backoff
+from ..utils import logger, multi_info_exponential_backoff
 from .executor_base import BaseExecutor
 
 
@@ -14,8 +14,8 @@ class SearchEngineExecutor(BaseExecutor):
         self.cse_id = os.environ['GOOGLE_CSE_ID']
         self.url = 'https://www.googleapis.com/customsearch/v1'
 
-    @info_exponential_backoff()
-    def ask(self, messages: str, *args: Any, **kwargs: Any) -> str:
+    @multi_info_exponential_backoff()
+    def ask(self, messages: str, *args: Any, **kwargs: Any) -> List[Union[str, None]]:
         params = {'key': self.api_key, 'cx': self.cse_id, 'q': messages}
         try:
             response = requests.get(self.url, params=params)
@@ -24,10 +24,10 @@ class SearchEngineExecutor(BaseExecutor):
             content = ''
             for item in search_results.get('items', []):
                 content += item.get('snippet', '') + '\n'
-            return content
+            return [content]
         except requests.exceptions.HTTPError as err:
-            print(f'HTTP error occurred: {err}')
-            return ''
+            logger.error(f'HTTP error occurred: {err}')
+            return []
         except Exception as err:
-            print(f'Other error occurred: {err}')
-            return ''
+            logger.error(f'Other error occurred: {err}')
+            return []
