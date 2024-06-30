@@ -71,7 +71,7 @@ class BaseProcessor(object):
         audio: Optional[Any] = None,
         video_frames: Optional[Any] = None,
     ) -> Chunk:
-        executor_messages = self.messenger.collect_executor_messages(
+        executor_messages = self.messenger.collect_executor_message(
             query=query,
             text=text,
             image=image,
@@ -79,19 +79,32 @@ class BaseProcessor(object):
             video_frames=video_frames,
         )
 
-        gists = self.executor.ask(messages=executor_messages)
+        executor_output = self.executor.ask(messages=executor_messages)
 
-        self.messenger.update_executor_messages(gist=gists[0])
+        gist, scorer_inputs = self.messenger.parse_executor_message(
+            query=query,
+            executor_output=executor_output,
+        )
+
+        self.messenger.update_executor_message(gist=gist)
+
+        self.messenger.collect_scorer_message(
+            query=query,
+            gist=gist,
+            executor_output=executor_output,
+        )
 
         score = self.scorer.ask(
             query=query,
-            gists=gists,
+            gists=scorer_inputs,
         )
+        self.messenger.parse_scorer_message(score=score)
+        self.messenger.update_scorer_message(gist=gist)
 
         return Chunk(
             time_step=0,
             processor_name=self.name,
-            gist=gists[0],
+            gist=gist,
             relevance=score['relevance'],
             confidence=score['confidence'],
             surprise=score['surprise'],

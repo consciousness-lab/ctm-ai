@@ -1,3 +1,4 @@
+from .message import Message
 from .messenger_base import BaseMessenger
 from .messenger_gpt4 import GPT4Messenger
 from .messenger_gpt4v import GPT4VMessenger
@@ -10,4 +11,5 @@ __all__ = [
     'GPT4Messenger',
     'SearchEngineMessenger',
     'WolframAlphaMessenger',
+    'Message',
 ]

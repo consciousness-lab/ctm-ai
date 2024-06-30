@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional, Union
 
+from .message import Message
 from .messenger_base import BaseMessenger
 
 
-# Assuming BaseMessenger has a correctly typed decorator:
 @BaseMessenger.register_messenger('gpt4_messenger')
 class GPT4Messenger(BaseMessenger):
     def __init__(
@@ -21,9 +21,10 @@ class GPT4Messenger(BaseMessenger):
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        self.messages: List[Dict[str, Union[str, Dict[str, Any], List[Any]]]] = []
+        self.executor_messages: List[Message] = []
+        self.scorer_messages: List[Message] = []
 
-    def collect_executor_messages(
+    def collect_executor_message(
         self,
         query: str,
         text: Optional[str] = None,
@@ -32,12 +33,19 @@ class GPT4Messenger(BaseMessenger):
         video_frames: Optional[List[str]] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> List[Dict[str, str]]:
+    ) -> Message:
         content = 'Query: {}\n'.format(query)
         if text is not None:
             content += 'Text: {}\n'.format(text)
-        messages = [{'role': 'user', 'content': content}]
-        return messages
+        message = Message(
+            role='user',
+            content=content,
+        )
+        self.executor_messages.append(message)
+        return message
 
-    def update_executor_messages(self, gist: str) -> None:
+    def parse_executor_message(self, *args: Any, **kwargs: Any) -> None:
+        return
+
+    def update_executor_message(self, gist: str) -> None:
         return
