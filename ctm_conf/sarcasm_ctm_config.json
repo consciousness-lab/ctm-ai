@@ -9,10 +9,8 @@
     "groups_of_processors": {
         "group_1": [
             "gpt4v_processor",
-            "search_engine_processor"
-        ],
-        "group_2": [
             "gpt4_processor",
+            "search_engine_processor",
             "wolfram_alpha_processor"
         ]
     },

@@ -202,6 +202,7 @@ class ConsciousnessTuringMachine:
         for _ in range(self.config.max_iter_num):
             winning_chunk, chunks = self.go_up(query, text, image, audio, video_frames)
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
+            confidence_score = 0
             if confidence_score > self.config.output_threshold:
                 return answer, confidence_score
             self.go_down(winning_chunk, chunks)
