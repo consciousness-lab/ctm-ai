@@ -5,6 +5,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from wordfreq import word_frequency
 
+from ..messengers import Message
 from ..utils import score_exponential_backoff
 
 
@@ -39,15 +40,17 @@ class BaseScorer(object):
             "The 'init_scorer' method must be implemented in derived classes."
         )
 
-    def ask_relevance(self, query: str, gists: List[str]) -> float:
+    def ask_relevance(self, messages: List[Message]) -> float:
         raise NotImplementedError(
             "The 'ask_relevance' method must be implemented in derived classes."
         )
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_confidence(self, gists: List[str]) -> float:
-        if len(gists) < 2:
+    def ask_confidence(self, messages: List[Message]) -> float:
+        if messages[-1].gists == []:
             return 1.0
+        else:
+            gists = messages[-1].gists
 
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform(gists)
@@ -64,32 +67,32 @@ class BaseScorer(object):
     @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_surprise(
         self,
-        gists: List[str],
+        messages: List[Message],
         lang: str = 'en',
     ) -> float:
-        gist_words = gists[0].split()
+        if messages[-1].gist is None:
+            return 0.0
+        gist_words = messages[-1].gist.split()
+        print(gist_words)
         word_freqs = [
             float(word_frequency(gist_word, lang)) for gist_word in gist_words
         ]
         surprise = sum(word_freqs) / len(word_freqs) if word_freqs else 0
-        surprise = 1 / surprise if surprise != 0 else 0
+        print(surprise)
         return surprise
 
     def ask(
         self,
-        query: str,
-        gists: List[str],
-        *args: Any,
-        **kwargs: Any,
-    ) -> Dict[str, float]:
-        relevance = self.ask_relevance(query, gists, *args, **kwargs)
-        confidence = self.ask_confidence(gists, *args, **kwargs)
-        surprise = self.ask_surprise(gists, *args, **kwargs)
+        messages: List[Message],
+    ) -> Message:
+        relevance = self.ask_relevance(messages)
+        confidence = self.ask_confidence(messages)
+        surprise = self.ask_surprise(messages)
         weight = relevance * confidence * surprise
-        score = {
-            'relevance': relevance,
-            'confidence': confidence,
-            'surprise': surprise,
-            'weight': weight,
-        }
-        return score
+        message = Message(
+            relevance=relevance,
+            confidence=confidence,
+            surprise=surprise,
+            weight=weight,
+        )
+        return message

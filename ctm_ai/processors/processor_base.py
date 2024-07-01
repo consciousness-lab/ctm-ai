@@ -1,8 +1,8 @@
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 
 from ..chunks import Chunk
 from ..executors import BaseExecutor
-from ..messengers import BaseMessenger
+from ..messengers import BaseMessenger, Message
 from ..scorers import BaseScorer
 
 
@@ -41,27 +41,18 @@ class BaseProcessor(object):
     ) -> None:
         self.name = name
         self.group_name = group_name
-        self.init_messenger()
-        self.init_executor()
-        self.init_scorer()
+        self.executor = self.init_executor()
+        self.messenger = self.init_messenger()
+        self.scorer = self.init_scorer()
 
-    def init_executor(self) -> None:
-        self.executor = BaseExecutor(name='gpt4_executor')
-        raise NotImplementedError(
-            "The 'init_executor' method must be implemented in derived classes."
-        )
+    def init_executor(self) -> BaseExecutor:
+        return BaseExecutor(name='gpt4_executor')
 
-    def init_messenger(self) -> None:
-        self.messenger = BaseMessenger(name='gpt4_messenger')
-        raise NotImplementedError(
-            "The 'init_messenger' method must be implemented in derived classes."
-        )
+    def init_messenger(self) -> BaseMessenger:
+        return BaseMessenger(name='gpt4_messenger')
 
-    def init_scorer(self) -> None:
-        self.scorer = BaseScorer(name='gpt4_scorer')
-        raise NotImplementedError(
-            "The 'init_scorer' method must be implemented in derived classes."
-        )
+    def init_scorer(self) -> BaseScorer:
+        return BaseScorer(name='gpt4_scorer')
 
     def ask(
         self,
@@ -71,7 +62,7 @@ class BaseProcessor(object):
         audio: Optional[Any] = None,
         video_frames: Optional[Any] = None,
     ) -> Chunk:
-        executor_messages = self.messenger.collect_executor_message(
+        executor_messages = self.messenger.collect_executor_messages(
             query=query,
             text=text,
             image=image,
@@ -81,38 +72,59 @@ class BaseProcessor(object):
 
         executor_output = self.executor.ask(messages=executor_messages)
 
-        gist, scorer_inputs = self.messenger.parse_executor_message(
+        scorer_messages = self.messenger.collect_scorer_messages(
             query=query,
+            text=text,
+            image=image,
+            audio=audio,
+            video_frames=video_frames,
             executor_output=executor_output,
         )
 
-        self.messenger.update_executor_message(gist=gist)
+        scorer_output = self.scorer.ask(messages=scorer_messages)
 
-        self.messenger.collect_scorer_message(
-            query=query,
-            gist=gist,
+        self.messenger.update(
             executor_output=executor_output,
+            scorer_output=scorer_output,
         )
 
-        score = self.scorer.ask(
-            query=query,
-            gists=scorer_inputs,
+        chunk = self.merge_outputs_into_chunk(
+            name=self.name, scorer_output=scorer_output, executor_output=executor_output
         )
-        self.messenger.parse_scorer_message(score=score)
-        self.messenger.update_scorer_message(gist=gist)
-
-        return Chunk(
-            time_step=0,
-            processor_name=self.name,
-            gist=gist,
-            relevance=score['relevance'],
-            confidence=score['confidence'],
-            surprise=score['surprise'],
-            weight=score['weight'],
-            intensity=score['weight'],
-            mood=score['weight'],
-        )
+        return chunk
 
     def update(self, chunk: Chunk) -> None:
         if chunk.processor_name != self.name:
-            self.messenger.update_executor_messages(gist=chunk.gist)
+            executor_output, scorer_output = self.split_chunk_into_outputs(chunk)
+            self.messenger.update(
+                executor_output=executor_output,
+                scorer_output=scorer_output,
+            )
+
+    def merge_outputs_into_chunk(
+        self, name: str, scorer_output: Message, executor_output: Message
+    ) -> Chunk:
+        return Chunk(
+            time_step=0,
+            processor_name=name,
+            gist=executor_output.gist,
+            relevance=scorer_output.relevance,
+            confidence=scorer_output.confidence,
+            surprise=scorer_output.surprise,
+            weight=scorer_output.weight,
+            intensity=scorer_output.weight,
+            mood=scorer_output.weight,
+        )
+
+    def split_chunk_into_outputs(self, chunk: Chunk) -> Tuple[Message, Message]:
+        executor_output = Message(
+            role='assistant',
+            content=chunk.gist,
+        )
+        scorer_output = Message(
+            relevance=chunk.relevance,
+            confidence=chunk.confidence,
+            surprise=chunk.surprise,
+            weight=chunk.weight,
+        )
+        return executor_output, scorer_output

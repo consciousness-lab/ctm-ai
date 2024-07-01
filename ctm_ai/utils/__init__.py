@@ -1,5 +1,6 @@
 from .error_handler import (
     info_exponential_backoff,
+    message_exponential_backoff,
     multi_info_exponential_backoff,
     score_exponential_backoff,
 )
@@ -18,6 +19,7 @@ __all__ = [
     'score_exponential_backoff',
     'info_exponential_backoff',
     'multi_info_exponential_backoff',
+    'message_exponential_backoff',
     'load_audio',
     'load_image',
     'load_video',

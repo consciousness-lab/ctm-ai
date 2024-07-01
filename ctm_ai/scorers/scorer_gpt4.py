@@ -2,6 +2,7 @@ from typing import Any, List
 
 from openai import OpenAI
 
+from ..messengers import Message
 from ..utils import logprobs_to_softmax, score_exponential_backoff
 from .scorer_base import BaseScorer
 
@@ -15,8 +16,9 @@ class GPT4Scorer(BaseScorer):
         self.scorer = OpenAI()
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_relevance(self, query: str, gists: List[str]) -> float:
-        gist = gists[0]
+    def ask_relevance(self, messages: List[Message]) -> float:
+        query = messages[-1].query
+        gist = messages[-1].gist
         response = self.scorer.chat.completions.create(
             model='gpt-4-0125-preview',
             messages=[
