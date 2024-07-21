@@ -98,10 +98,11 @@ class BaseProcessor(object):
         return chunk
 
     def update(self, chunk: Chunk) -> None:
-        if chunk.feedback is True:
-            self.alpha = self.aplha * 1.1
-        elif chunk.feedback is False:
-            self.alpha = self.alpha * 0.9
+        if chunk.processor_name == self.name:
+            if chunk.feedback is True:
+                self.alpha = self.aplha * 2
+            elif chunk.feedback is False:
+                self.alpha = self.alpha * 0.5
 
         executor_output, scorer_output = self.split_chunk_into_outputs(chunk)
         self.messenger.update(
@@ -115,7 +116,7 @@ class BaseProcessor(object):
         return Chunk(
             time_step=0,
             processor_name=name,
-            gist=executor_output.gist,
+            gist=executor_output.content,
             relevance=scorer_output.relevance,
             confidence=scorer_output.confidence,
             surprise=scorer_output.surprise,

@@ -27,12 +27,15 @@ class Chunk:
         self.intensity: float = intensity
         self.mood: float = mood
         self.feedback: Optional[bool] = feedback
+        self.gist = gist
+        self.add_feedback(feedback)
+
+    def add_feedback(self, feedback: bool) -> None:
+        self.feedback = feedback
         if feedback is False:
-            self.gist = f'The answer generated based on the {gist} is incorrect. Please think based on this information and try again.'
+            self.gist = f'The answer generated based on the "{self.gist}" is incorrect. Please think based on this information and try again.'
         elif feedback is True:
-            self.gist = (
-                f'The answer generated based on the {gist} is correct. Great job!'
-            )
+            self.gist = f'The answer generated based on the "{self.gist}" is correct. Continue with more confident answer.'
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Chunk):

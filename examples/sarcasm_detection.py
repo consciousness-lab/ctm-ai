@@ -14,8 +14,12 @@ if __name__ == '__main__':
     label = 'yes'
     image_path = '../assets/sarcasm_example1.png'
     image = load_image(image_path)
-    info = ctm(query=query, text=text, image=image)
-    prediction, score = supervisor.ask(query, info)
-    feedback = prediction == label
-    ctm.backward(feedback)
-    print(feedback)
+    for i in range(5):
+        info = ctm(query=query, text=text, image=image)
+        prediction, score = supervisor.ask(query, info)
+        import pdb
+
+        pdb.set_trace()
+        feedback = prediction == label
+        ctm.backward(feedback)
+        print(feedback)

@@ -168,6 +168,6 @@ class ConsciousnessTuringMachine:
 
     @logging_func_with_count
     def backward(self, feedback: Optional[str] = None) -> None:
-        self.winning_chunk.feedback = feedback
+        self.winning_chunk.add_feedback(feedback)
         self.downtree_broadcast(self.winning_chunk)
         self.link_form(self.chunks)
