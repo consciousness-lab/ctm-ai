@@ -73,12 +73,10 @@ class BaseScorer(object):
         if messages[-1].gist is None:
             return 0.0
         gist_words = messages[-1].gist.split()
-        print(gist_words)
         word_freqs = [
             float(word_frequency(gist_word, lang)) for gist_word in gist_words
         ]
         surprise = sum(word_freqs) / len(word_freqs) if word_freqs else 0
-        print(surprise)
         return surprise
 
     def ask(
@@ -87,7 +85,8 @@ class BaseScorer(object):
     ) -> Message:
         relevance = self.ask_relevance(messages)
         confidence = self.ask_confidence(messages)
-        surprise = self.ask_surprise(messages)
+        # surprise = self.ask_surprise(messages)
+        surprise = 1.0
         weight = relevance * confidence * surprise
         message = Message(
             relevance=relevance,

@@ -41,6 +41,7 @@ class BaseProcessor(object):
     ) -> None:
         self.name = name
         self.group_name = group_name
+        self.alpha = 1.0
         self.executor = self.init_executor()
         self.messenger = self.init_messenger()
         self.scorer = self.init_scorer()
@@ -89,31 +90,39 @@ class BaseProcessor(object):
         )
 
         chunk = self.merge_outputs_into_chunk(
-            name=self.name, scorer_output=scorer_output, executor_output=executor_output
+            name=self.name,
+            scorer_output=scorer_output,
+            executor_output=executor_output,
+            alpha=self.alpha,
         )
         return chunk
 
     def update(self, chunk: Chunk) -> None:
-        if chunk.processor_name != self.name:
-            executor_output, scorer_output = self.split_chunk_into_outputs(chunk)
-            self.messenger.update(
-                executor_output=executor_output,
-                scorer_output=scorer_output,
-            )
+        if chunk.processor_name == self.name:
+            if chunk.feedback is True:
+                self.alpha = self.aplha * 2
+            elif chunk.feedback is False:
+                self.alpha = self.alpha * 0.5
+
+        executor_output, scorer_output = self.split_chunk_into_outputs(chunk)
+        self.messenger.update(
+            executor_output=executor_output,
+            scorer_output=scorer_output,
+        )
 
     def merge_outputs_into_chunk(
-        self, name: str, scorer_output: Message, executor_output: Message
+        self, name: str, scorer_output: Message, executor_output: Message, alpha: float
     ) -> Chunk:
         return Chunk(
             time_step=0,
             processor_name=name,
-            gist=executor_output.gist,
+            gist=executor_output.content,
             relevance=scorer_output.relevance,
             confidence=scorer_output.confidence,
             surprise=scorer_output.surprise,
-            weight=scorer_output.weight,
-            intensity=scorer_output.weight,
-            mood=scorer_output.weight,
+            weight=scorer_output.weight * alpha,
+            intensity=scorer_output.weight * alpha,
+            mood=scorer_output.weight * alpha,
         )
 
     def split_chunk_into_outputs(self, chunk: Chunk) -> Tuple[Message, Message]:

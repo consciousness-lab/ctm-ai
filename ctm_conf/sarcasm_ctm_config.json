@@ -14,6 +14,5 @@
             "wolfram_alpha_processor"
         ]
     },
-    "supervisor": "gpt4_supervisor",
     "fuser": "gpt4_fuser"
 }

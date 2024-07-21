@@ -49,6 +49,9 @@ class GPT4Executor(BaseExecutor):
         model_messages = [
             self.convert_message_to_param(message) for message in messages
         ]
+        import pdb
+
+        pdb.set_trace()
         response = self.model.chat.completions.create(
             model='gpt-4-turbo',
             messages=model_messages,

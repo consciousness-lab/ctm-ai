@@ -16,9 +16,12 @@ class GPT4VMessenger(BaseMessenger):
         audio: Optional[str] = None,
         video_frames: Optional[List[str]] = None,
     ) -> List[Message]:
-        content = 'Query: {}\n'.format(query)
+        content = 'Provide potentially helpful information from the given information related to the query "{}"\n'.format(
+            query
+        )
         if text is not None:
             content += 'Text: {}\n'.format(text)
+        content += 'Keep it short and simple.'
         message = Message(
             role='user',
             content=content,
