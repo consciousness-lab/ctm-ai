@@ -36,13 +36,13 @@ class BaseSupervisor(object):
 
     @logging_ask()
     def ask(self, query: str, image_path: str) -> Tuple[Union[str, None], float]:
-        gist = self.ask_info(query, image_path)
-        score = self.ask_score(query, gist)
-        return gist, score
+        answer = self.ask_answer(query, image_path)
+        score = self.ask_score(query, answer)
+        return answer, score
 
-    def ask_info(self, query: str, context: Optional[str] = None) -> str | None:
+    def ask_answer(self, query: str, context: Optional[str] = None) -> str | None:
         raise NotImplementedError(
-            "The 'ask_info' method must be implemented in derived classes."
+            "The 'ask_answer' method must be implemented in derived classes."
         )
 
     def ask_score(self, query: str, gist: str | None) -> float:

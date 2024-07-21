@@ -1,3 +1,5 @@
+from typing import Optional
+
 from ..utils import logging_chunk
 
 
@@ -14,16 +16,23 @@ class Chunk:
         weight: float = -1.0,
         intensity: float = -1.0,
         mood: float = -1.0,
+        feedback: Optional[bool] = None,
     ) -> None:
         self.time_step: int = time_step
         self.processor_name: str = processor_name
-        self.gist: str = gist
         self.relevance: float = relevance
         self.confidence: float = confidence
         self.surprise: float = surprise
         self.weight: float = weight
         self.intensity: float = intensity
         self.mood: float = mood
+        self.feedback: Optional[bool] = feedback
+        if feedback is False:
+            self.gist = f'The answer generated based on the {gist} is incorrect. Please think based on this information and try again.'
+        elif feedback is True:
+            self.gist = (
+                f'The answer generated based on the {gist} is correct. Great job!'
+            )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Chunk):
