@@ -70,7 +70,7 @@ const App = () => {
     for (let i = 0; i < kVal; i++) {
       const initNodeId = `init${i + 1}`;
       nodes.push({
-        data: { id: initNodeId, label: `Init ${i + 1}` },
+        data: { id: initNodeId, label: `Processor ${i + 1}` },
         position: { x: startX + i * spacing, y: startY },
         classes: 'rectangle'
       });
@@ -99,7 +99,6 @@ const App = () => {
     const maxNodesInLayer = kVal;
     const nodeSpacing = 100;
     const totalWidth = (maxNodesInLayer - 1) * nodeSpacing;
-    const baseX = 400 - (totalWidth / 2);
 
     // Build layers
     for (let layerIndex = 0; layerIndex < kVal; layerIndex++) {
@@ -206,62 +205,112 @@ const App = () => {
     });
   };
 
-  const getBottomLayerNodes = () => {
-    const bottomLayer = pyramidLayers[0];
-    return bottomLayer.nodes;
-  };
 
-    const handleStep = () => {
-    if (currentStep === totalSteps - 1) {
-        const nextLayer = pyramidLayers[1];
-        setElements([...pyramidLayers[0].nodes, ...nextLayer.nodes, ...nextLayer.edges]);
-        setCurrentLayerIndex(2);
-        setCurrentStep(1);
-    } else if (currentStep === 0) {
-        const nextLayer = pyramidLayers[1];
+const updateNodeParents = (parentUpdates) => {
+  console.log('Sending parent updates to backend:', parentUpdates); // Log the data being sent
+  fetch('http://localhost:5000/api/update-node-parents', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ updates: parentUpdates }),
+  })
+    .then((response) => {
+      console.log('Response status:', response.status); // Log the HTTP status
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      console.log('Updated node parents on backend:', data); // Log the response
+    })
+    .catch((error) => {
+      console.error('Error updating node parents:', error); // Log any errors
+    });
+};
 
-        // Build edges init{i} -> n{i} here:
-        const initToBottomEdges = [];
-        for (let i = 0; i < k; i++) {
-          const initNodeId = `init${i + 1}`;
-          const bottomNodeId = `n${i + 1}`;
-          initToBottomEdges.push({
-            data: {
-              source: initNodeId,
-              target: bottomNodeId,
-              id: `e${initNodeId}-${bottomNodeId}`
-            }
-          });
-        }
 
-        setElements(prev => [...prev, ...nextLayer.nodes, ...nextLayer.edges, ...initToBottomEdges]);
-        setCurrentLayerIndex(2);
-        setCurrentStep(1);
-    } else if (currentStep > 0 && currentStep < k) {
-        const nextLayer = pyramidLayers[currentLayerIndex];
-        setElements(prev => [...prev, ...nextLayer.nodes, ...nextLayer.edges]);
-        setCurrentLayerIndex(prev => prev + 1);
-        setCurrentStep(prev => prev + 1);
-    } else if (currentStep === k) {
-        const finalLayer = pyramidLayers[k + 1];
-        setElements(prev => [...prev, ...finalLayer.nodes, ...finalLayer.edges]);
-        setCurrentStep(prev => prev + 1);
-    } else if (currentStep === k + 1) {
-        setElements(prev => reverseEdges(prev));
-        setCurrentStep(prev => prev + 1);
-    } else if (currentStep === k + 2) {
-        // Keep only initX nodes, remove all others (and all edges)
-        setElements((prev) => {
-          return prev.filter((el) => {
-            // We keep only those whose ID starts with "init"
-            return el.data?.id?.startsWith('init');
-          });
-        });
 
-        // Reset the step to 0 so next click restarts the process
-        setCurrentStep(0);
+const handleStep = () => {
+  if (currentStep === 0) {
+    const nextLayer = pyramidLayers[1];
+
+    // Build edges init{i} -> n{i} and parent updates
+    const initToBottomEdges = [];
+    const parentUpdates = [];
+    for (let i = 0; i < k; i++) {
+      const initNodeId = `init${i + 1}`;
+      const bottomNodeId = `n${i + 1}`;
+      initToBottomEdges.push({
+        data: {
+          source: initNodeId,
+          target: bottomNodeId,
+          id: `e${initNodeId}-${bottomNodeId}`,
+        },
+      });
+
+      // Add parent update for backend
+      parentUpdates.push({
+        node_id: bottomNodeId,
+        parents: [initNodeId],
+      });
     }
-    };
+
+    // Send parent updates to the backend
+    updateNodeParents(parentUpdates);
+
+    setElements((prev) => [
+      ...prev,
+      ...nextLayer.nodes,
+      ...nextLayer.edges,
+      ...initToBottomEdges,
+    ]);
+    setCurrentLayerIndex(2);
+    setCurrentStep(1);
+  } else if (currentStep > 0 && currentStep < k) {
+    const nextLayer = pyramidLayers[currentLayerIndex];
+    const parentUpdates = [];
+
+    // Update parent relationships for the current layer
+    nextLayer.edges.forEach((edge) => {
+      const { source, target } = edge.data;
+      parentUpdates.push({
+        node_id: target,
+        parents: [source],
+      });
+    });
+
+    // Send parent updates to the backend
+    updateNodeParents(parentUpdates);
+
+    setElements((prev) => [...prev, ...nextLayer.nodes, ...nextLayer.edges]);
+    setCurrentLayerIndex((prev) => prev + 1);
+    setCurrentStep((prev) => prev + 1);
+  } else if (currentStep === k) {
+    const finalLayer = pyramidLayers[k + 1];
+    const finalNode = finalLayer.nodes[0].data.id;
+    const parentNodes = pyramidLayers[k].nodes.map((node) => node.data.id);
+
+    // Send parent updates for the final node
+    updateNodeParents([
+      {
+        node_id: finalNode,
+        parents: parentNodes,
+      },
+    ]);
+
+    setElements((prev) => [...prev, ...finalLayer.nodes, ...finalLayer.edges]);
+    setCurrentStep((prev) => prev + 1);
+  } else if (currentStep === k + 1) {
+    setElements((prev) => reverseEdges(prev));
+    setCurrentStep((prev) => prev + 1);
+  } else if (currentStep === k + 2) {
+    setElements((prev) => {
+      return prev.filter((el) => el.data?.id?.startsWith('init'));
+    });
+    setCurrentStep(0);
+  }
+};
+
 
 
   const getPhaseDescription = () => {
@@ -273,25 +322,35 @@ const App = () => {
   };
 
 
-  useEffect(() => {
-    if (selectedNode) {
-      fetch(`http://localhost:5000/api/nodes/${selectedNode}`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.details) {
-            setNodeDetailText(data.details);
+useEffect(() => {
+  if (selectedNode) {
+    fetch(`http://localhost:5000/api/nodes/${selectedNode}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.self) {
+          let detailsText = `Node Details:\n${data.self}`;
+          if (data.parents && Object.keys(data.parents).length > 0) {
+            detailsText += `\n\nParent Details:\n`;
+            for (const [parentId, parentDetails] of Object.entries(data.parents)) {
+              detailsText += `Parent ${parentId}: ${parentDetails}\n`;
+            }
           } else {
-            setNodeDetailText('No details found for this node.');
+            detailsText += `\n\nNo parent details available.`;
           }
-        })
-        .catch((error) => {
-          console.error('Error fetching node details:', error);
-          setNodeDetailText('Error loading node details.');
-        });
-    } else {
-      setNodeDetailText('');
-    }
-  }, [selectedNode]);
+          setNodeDetailText(detailsText);
+        } else {
+          setNodeDetailText('No details found for this node.');
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching node details:', error);
+        setNodeDetailText('Error loading node details.');
+      });
+  } else {
+    setNodeDetailText('');
+  }
+}, [selectedNode]);
+
 
 
   return (
@@ -324,17 +383,20 @@ const App = () => {
               }}
             />
           </div>
-          <div style={{ marginLeft: '20px', width: '300px' }}>
+            <div style={{ marginLeft: '20px', width: '300px' }}>
             <h2>Node Information</h2>
             {selectedNode ? (
-              <p>{nodeDetailText}</p>
+                <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+                {nodeDetailText}
+                </pre>
             ) : (
-              <p>Click a node to see details.</p>
+                <p>Click a node to see details.</p>
             )}
             <hr />
-            <button onClick={handleStep}>step</button>
-            <p>Current move: {getPhaseDescription()}</p>
-          </div>
+            <button onClick={handleStep}>Step</button>
+            <p>Current Move: {getPhaseDescription()}</p>
+            </div>
+
         </div>
       ) : (
         <p>Please enter k and click "start" to begin.</p>
