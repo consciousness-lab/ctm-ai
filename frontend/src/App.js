@@ -1,112 +1,57 @@
-// src/App.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 
 const App = () => {
-  // Initialize with n1, n2, and n3
-  const initialElements = [
-    { data: { id: 'n1', label: 'n1' }, position: { x: 100, y: 400 } },
-    { data: { id: 'n2', label: 'n2' }, position: { x: 300, y: 400 } },
-    { data: { id: 'n3', label: 'n3' }, position: { x: 500, y: 400 } },
-  ];
+  const [k, setK] = useState(3);
+  const [pyramidLayers, setPyramidLayers] = useState([]);
+  const [elements, setElements] = useState([]);
+  const [currentLayerIndex, setCurrentLayerIndex] = useState(0);
+  const [currentPhase, setCurrentPhase] = useState('building');
+  const [initialized, setInitialized] = useState(false);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const [nodeDetailText, setNodeDetailText] = useState('');
+  const [totalSteps, setTotalSteps] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
 
-  const [elements, setElements] = useState(initialElements);
-  const [step, setStep] = useState(1);
-  const [reverse, setReverse] = useState(false); // Track if edges should be reversed
-  const [selectedNode, setSelectedNode] = useState(null); // State for selected node
-
-  // Mapping of node IDs to detailed texts
-  const nodeDetails = {
-    n1: 'This is node n1.',
-    n2: 'This is node n2.',
-    n3: 'This is node n3.',
-    n4: 'This is node n4.',
-    n5: 'This is node n5.',
-    n6: 'This is node n6.',
-    n7: 'This is node n7.',
-  };
-
-  const combineNodes = () => {
-    let newElements = [...elements];
-
-    if (!reverse) {
-      // Forward steps
-      if (step === 1) {
-        // Add n4 linked with n1 and n2
-        newElements.push(
-          { data: { id: 'n4', label: 'n4' }, position: { x: 200, y: 300 } },
-          { data: { source: 'n1', target: 'n4' } },
-          { data: { source: 'n2', target: 'n4' } }
-        );
-        setStep(2);
-      } else if (step === 2) {
-        // Add n5 linked with n2 and n3
-        newElements.push(
-          { data: { id: 'n5', label: 'n5' }, position: { x: 400, y: 300 } },
-          { data: { source: 'n2', target: 'n5' } },
-          { data: { source: 'n3', target: 'n5' } }
-        );
-        setStep(3);
-      } else if (step === 3) {
-        // Add n6 linked with n4 and n5
-        newElements.push(
-          { data: { id: 'n6', label: 'n6' }, position: { x: 300, y: 200 } },
-          { data: { source: 'n4', target: 'n6' } },
-          { data: { source: 'n5', target: 'n6' } }
-        );
-        setStep(4);
-      } else if (step === 4) {
-        // Add n7 linked with n6, and prepare for reverse
-        newElements.push(
-          { data: { id: 'n7', label: 'n7' }, position: { x: 300, y: 100 } },
-          { data: { source: 'n6', target: 'n7' } }
-        );
-        setReverse(true); // Next step will reverse all edges
-        setStep(5);
-      }
-    } else {
-      if (step === 5) {
-        // Step 1 of reverse: Reverse all edges at once
-        newElements = newElements.map((el) => {
-          if (el.data.source && el.data.target) {
-            return { data: { source: el.data.target, target: el.data.source } };
-          }
-          return el;
-        });
-        setStep(6);
-      } else if (step === 6) {
-        // Remove all nodes added during forward steps
-        newElements = initialElements;
-        setReverse(false); // Reset reverse state for next loop
-        setStep(1); // Reset step counter to start loop again
-      }
-    }
-
-    setElements(newElements);
-  };
-
-  const layout = {
-    name: 'preset',
-    directed: true,
-    padding: 10,
-  };
-
-  const style = [
+  const layout = { name: 'preset', directed: true, padding: 10 };
+  
+  const stylesheet = [
     {
       selector: 'node',
       style: {
         content: 'data(label)',
         'text-valign': 'center',
         'background-color': '#61bffc',
-        width: 50,
-        height: 50,
+        width: 45,
+        height: 45,
+      },
+    },
+    {
+      selector: 'node.rectangle',
+      style: {
+        shape: 'rectangle',
+        width: 60,
+        height: 40,
+        'background-color': '#9c27b0',
+      },
+    },
+    {
+      selector: 'node.bottom-layer',
+      style: {
+        'background-color': '#4CAF50',
+      },
+    },
+    {
+      selector: 'node.final-node',
+      style: {
+        'background-color': '#FF5722',
       },
     },
     {
       selector: 'edge',
       style: {
         'curve-style': 'bezier',
-        width: 4,
+        width: 3,
         'target-arrow-shape': 'triangle',
         'line-color': '#ddd',
         'target-arrow-color': '#ddd',
@@ -114,39 +59,286 @@ const App = () => {
     },
   ];
 
-  return (
-    <div>
-      {/* Main Content */}
-      <div style={{ display: 'flex' }}>
-        {/* Cytoscape Graph */}
-        <CytoscapeComponent
-          elements={elements}
-          style={{ width: '800px', height: '600px' }}
-          layout={layout}
-          stylesheet={style}
-          cy={(cy) => {
-            cy.on('tap', 'node', (evt) => {
-              var node = evt.target;
-              setSelectedNode(node.id());
+  const buildInitialElements = (kVal) => {
+    const nodes = [];
+    const edges = [];
+    const spacing = 100;
+    const startX = 400 - ((kVal - 1) * spacing) / 2;
+    const startY = 500;
+
+    // Create rectangular init nodes
+    for (let i = 0; i < kVal; i++) {
+      const initNodeId = `init${i + 1}`;
+      nodes.push({
+        data: { id: initNodeId, label: `Init ${i + 1}` },
+        position: { x: startX + i * spacing, y: startY },
+        classes: 'rectangle'
+      });
+    }
+
+    return { nodes, edges };
+  };
+
+  const buildAllLayers = (kVal) => {
+    let layersData = [];
+    let layerNodeIds = [];
+    let currentNodeId = 1;
+    let nodePositions = new Map();
+
+    // Build node IDs for each layer
+    for (let layerIndex = 0; layerIndex < kVal; layerIndex++) {
+      const numNodes = kVal - layerIndex;
+      let nodeIdsThisLayer = [];
+      for (let j = 0; j < numNodes; j++) {
+        nodeIdsThisLayer.push(`n${currentNodeId}`);
+        currentNodeId++;
+      }
+      layerNodeIds.push(nodeIdsThisLayer);
+    }
+
+    const maxNodesInLayer = kVal;
+    const nodeSpacing = 100;
+    const totalWidth = (maxNodesInLayer - 1) * nodeSpacing;
+    const baseX = 400 - (totalWidth / 2);
+
+    // Build layers
+    for (let layerIndex = 0; layerIndex < kVal; layerIndex++) {
+      const nodeIds = layerNodeIds[layerIndex];
+      let layerNodes = [];
+      let layerEdges = [];
+      const yPos = 400 - layerIndex * 100;
+      const nodesInThisLayer = nodeIds.length;
+      const layerWidth = (nodesInThisLayer - 1) * nodeSpacing;
+      const startX = 400 - (layerWidth / 2);
+
+      nodeIds.forEach((nodeId, idx) => {
+        const xPos = startX + idx * nodeSpacing;
+        nodePositions.set(nodeId, { x: xPos, y: yPos });
+        
+        const classes = layerIndex === 0 ? 'node' : '';
+        
+        layerNodes.push({
+          data: { id: nodeId, label: nodeId },
+          position: { x: xPos, y: yPos },
+          classes: classes
+        });
+      });
+
+      if (layerIndex > 0) {
+        const belowIds = layerNodeIds[layerIndex - 1];
+        nodeIds.forEach((targetId, targetIdx) => {
+          if (targetIdx === 0) {
+            layerEdges.push({
+              data: { source: belowIds[0], target: targetId, id: `e${belowIds[0]}-${targetId}` },
             });
-          }}
-        />
+            layerEdges.push({
+              data: { source: belowIds[1], target: targetId, id: `e${belowIds[1]}-${targetId}` },
+            });
+          } else if (targetIdx === nodeIds.length - 1) {
+            layerEdges.push({
+              data: { source: belowIds[belowIds.length - 2], target: targetId, id: `e${belowIds[belowIds.length - 2]}-${targetId}` },
+            });
+            layerEdges.push({
+              data: { source: belowIds[belowIds.length - 1], target: targetId, id: `e${belowIds[belowIds.length - 1]}-${targetId}` },
+            });
+          } else {
+            layerEdges.push({
+              data: { source: belowIds[targetIdx], target: targetId, id: `e${belowIds[targetIdx]}-${targetId}` },
+            });
+            layerEdges.push({
+              data: { source: belowIds[targetIdx + 1], target: targetId, id: `e${belowIds[targetIdx + 1]}-${targetId}` },
+            });
+          }
+        });
+      }
+      layersData.push({ nodes: layerNodes, edges: layerEdges });
+    }
 
-        {/* Right Side Node Information */}
-        <div style={{ marginLeft: '20px', width: '300px', border: '1px solid #ccc', padding: '10px' }}>
-          <h2>Node Information</h2>
-          {selectedNode ? (
-            <p>{nodeDetails[selectedNode]}</p>
-          ) : (
-            <p>Click on a node to see details.</p>
-          )}
+    // Add final output node
+    const topNodeId = layerNodeIds[kVal - 1][0];
+    const topNodePos = nodePositions.get(topNodeId);
+    const finalNodeId = `n${currentNodeId}`;
+    
+    const finalLayer = {
+      nodes: [{
+        data: { id: finalNodeId, label: finalNodeId },
+        position: { x: topNodePos.x, y: topNodePos.y - 100 },
+        classes: 'final-node'
+      }],
+      edges: [{
+        data: { source: topNodeId, target: finalNodeId, id: `e${topNodeId}-${finalNodeId}` }
+      }]
+    };
+    layersData.push(finalLayer);
+
+    // Add initial rectangular nodes
+    const initElements = buildInitialElements(kVal);
+    layersData.unshift({ nodes: initElements.nodes, edges: initElements.edges });
+
+    return layersData;
+  };
+
+  const handleInitialize = () => {
+    const allLayers = buildAllLayers(k);
+    setPyramidLayers(allLayers);
+    setElements([...allLayers[0].nodes]);  // Start with init nodes
+    setCurrentLayerIndex(1);
+    setCurrentPhase('building');
+    setCurrentStep(0);
+    setTotalSteps(k + 4); // +4 for: init, final node, reverse, update
+    setInitialized(true);
+  };
+
+  const reverseEdges = (elements) => {
+    return elements.map(el => {
+      if (el.data.source && el.data.target) {
+        return {
+          ...el,
+          data: {
+            ...el.data,
+            source: el.data.target,
+            target: el.data.source,
+            id: `e${el.data.target}-${el.data.source}`
+          }
+        };
+      }
+      return el;
+    });
+  };
+
+  const getBottomLayerNodes = () => {
+    const bottomLayer = pyramidLayers[0];
+    return bottomLayer.nodes;
+  };
+
+    const handleStep = () => {
+    if (currentStep === totalSteps - 1) {
+        const nextLayer = pyramidLayers[1];
+        setElements([...pyramidLayers[0].nodes, ...nextLayer.nodes, ...nextLayer.edges]);
+        setCurrentLayerIndex(2);
+        setCurrentStep(1);
+    } else if (currentStep === 0) {
+        const nextLayer = pyramidLayers[1];
+
+        // Build edges init{i} -> n{i} here:
+        const initToBottomEdges = [];
+        for (let i = 0; i < k; i++) {
+          const initNodeId = `init${i + 1}`;
+          const bottomNodeId = `n${i + 1}`;
+          initToBottomEdges.push({
+            data: {
+              source: initNodeId,
+              target: bottomNodeId,
+              id: `e${initNodeId}-${bottomNodeId}`
+            }
+          });
+        }
+
+        setElements(prev => [...prev, ...nextLayer.nodes, ...nextLayer.edges, ...initToBottomEdges]);
+        setCurrentLayerIndex(2);
+        setCurrentStep(1);
+    } else if (currentStep > 0 && currentStep < k) {
+        const nextLayer = pyramidLayers[currentLayerIndex];
+        setElements(prev => [...prev, ...nextLayer.nodes, ...nextLayer.edges]);
+        setCurrentLayerIndex(prev => prev + 1);
+        setCurrentStep(prev => prev + 1);
+    } else if (currentStep === k) {
+        const finalLayer = pyramidLayers[k + 1];
+        setElements(prev => [...prev, ...finalLayer.nodes, ...finalLayer.edges]);
+        setCurrentStep(prev => prev + 1);
+    } else if (currentStep === k + 1) {
+        setElements(prev => reverseEdges(prev));
+        setCurrentStep(prev => prev + 1);
+    } else if (currentStep === k + 2) {
+        // Keep only initX nodes, remove all others (and all edges)
+        setElements((prev) => {
+          return prev.filter((el) => {
+            // We keep only those whose ID starts with "init"
+            return el.data?.id?.startsWith('init');
+          });
+        });
+        
+        // Reset the step to 0 so next click restarts the process
+        setCurrentStep(0);
+    }
+    };
+
+
+  const getPhaseDescription = () => {
+    if (currentStep === 0) return "Prepare processors...";
+    if (currentStep > 0 && currentStep <= k) return "Up-tree sampling...";
+    if (currentStep === k + 1) return "Generating final output...";
+    if (currentStep === k + 2) return "Down-tree broadcasting...";
+    return "Update processors...";
+  };
+
+
+  useEffect(() => {
+    if (selectedNode) {
+      fetch(`http://localhost:5000/api/nodes/${selectedNode}`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.details) {
+            setNodeDetailText(data.details);
+          } else {
+            setNodeDetailText('No details found for this node.');
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching node details:', error);
+          setNodeDetailText('Error loading node details.');
+        });
+    } else {
+      setNodeDetailText('');
+    }
+  }, [selectedNode]);
+
+
+  return (
+    <div style={{ margin: '20px' }}>
+      <h1>CTM-AI</h1>
+      <div style={{ marginBottom: '10px' }}>
+        <label>
+          Processor number (k):
+          <input
+            type="number"
+            min="1"
+            value={k}
+            onChange={(e) => setK(parseInt(e.target.value, 10))}
+          />
+        </label>
+        <button onClick={handleInitialize}>start</button>
+      </div>
+      {initialized ? (
+        <div style={{ display: 'flex' }}>
+          <div style={{ width: '800px', height: '600px' }}>
+            <CytoscapeComponent
+              elements={elements}
+              layout={layout}
+              stylesheet={stylesheet}
+              style={{ width: '100%', height: '100%' }}
+              cy={(cy) => {
+                cy.on('tap', 'node', (evt) => {
+                  setSelectedNode(evt.target.id());
+                });
+              }}
+            />
+          </div>
+          <div style={{ marginLeft: '20px', width: '300px' }}>
+            <h2>Node Information</h2>
+            {selectedNode ? (
+              <p>{nodeDetailText}</p>
+            ) : (
+              <p>Click a node to see details.</p>
+            )}
+            <hr />
+            <button onClick={handleStep}>step</button>
+            <p>Current move: {getPhaseDescription()}</p>
+          </div>
         </div>
-      </div>
-
-      {/* Step Button at the Bottom */}
-      <div style={{ textAlign: 'center', marginTop: '10px' }}>
-        <button onClick={combineNodes}>Step</button>
-      </div>
+      ) : (
+        <p>Please enter k and click "start" to begin.</p>
+      )}
     </div>
   );
 };
