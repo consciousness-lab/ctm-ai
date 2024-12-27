@@ -14,7 +14,7 @@ const App = () => {
   const [currentStep, setCurrentStep] = useState(0);
 
   const layout = { name: 'preset', directed: true, padding: 10 };
-  
+
   const stylesheet = [
     {
       selector: 'node',
@@ -114,9 +114,9 @@ const App = () => {
       nodeIds.forEach((nodeId, idx) => {
         const xPos = startX + idx * nodeSpacing;
         nodePositions.set(nodeId, { x: xPos, y: yPos });
-        
+
         const classes = layerIndex === 0 ? 'node' : '';
-        
+
         layerNodes.push({
           data: { id: nodeId, label: nodeId },
           position: { x: xPos, y: yPos },
@@ -158,7 +158,7 @@ const App = () => {
     const topNodeId = layerNodeIds[kVal - 1][0];
     const topNodePos = nodePositions.get(topNodeId);
     const finalNodeId = `n${currentNodeId}`;
-    
+
     const finalLayer = {
       nodes: [{
         data: { id: finalNodeId, label: finalNodeId },
@@ -257,7 +257,7 @@ const App = () => {
             return el.data?.id?.startsWith('init');
           });
         });
-        
+
         // Reset the step to 0 so next click restarts the process
         setCurrentStep(0);
     }
