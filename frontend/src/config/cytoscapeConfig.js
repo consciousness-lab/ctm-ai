@@ -1,9 +1,9 @@
 // src/config/cytoscapeConfig.js
 
-export const layout = { 
-  name: 'preset', 
-  directed: true, 
-  padding: 10 
+export const layout = {
+  name: 'preset',
+  directed: true,
+  padding: 10
 };
 
 export const stylesheet = [

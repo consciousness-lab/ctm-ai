@@ -124,7 +124,7 @@ const App = () => {
         </label>
         <button onClick={handleInitialize}>Start</button>
       </div>
-      
+
       {initialized ? (
         <div className="visualization-container">
           <div className="cytoscape-container">

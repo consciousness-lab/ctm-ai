@@ -90,7 +90,7 @@ export function buildAllLayers(kVal) {
         }
       });
     }
-    
+
     layersData.push({ nodes: layerNodes, edges: layerEdges });
   }
 

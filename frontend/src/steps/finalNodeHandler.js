@@ -1,24 +1,27 @@
-import { PHASES } from '../constants';
-import { updateNodeParents } from '../utils/api';
-
 // steps/finalNodeHandler.js
-export const handleFinalNodeStep = ({
+import { PHASES } from '../constants';
+import { updateFinalNode } from '../utils/api';
+
+export const handleFinalNodeStep = async ({
   k,
   pyramidLayers,
   setElements,
   setCurrentStep,
   setDisplayPhase
 }) => {
-  setDisplayPhase(PHASES.FINAL_NODE);
-  const finalLayer = pyramidLayers[k + 1];
-  const finalNode = finalLayer.nodes[0].data.id;
-  const parentNodes = pyramidLayers[k].nodes.map(node => node.data.id);
+  try {
+    setDisplayPhase(PHASES.FINAL_NODE);
+    const finalLayer = pyramidLayers[k + 1];
+    const finalNode = finalLayer.nodes[0].data.id;
+    const parentNodes = pyramidLayers[k].nodes.map(node => node.data.id);
 
-  updateNodeParents([{
-    node_id: finalNode,
-    parents: parentNodes,
-  }]);
+    // Send update to backend
+    await updateFinalNode(finalNode, parentNodes, 'Final combined gist');
 
-  setElements(prev => [...prev, ...finalLayer.nodes, ...finalLayer.edges]);
-  setCurrentStep(PHASES.REVERSE);
+    // Update visualization
+    setElements(prev => [...prev, ...finalLayer.nodes, ...finalLayer.edges]);
+    setCurrentStep(PHASES.REVERSE);
+  } catch (error) {
+    console.error('Error in final node step:', error);
+  }
 };
