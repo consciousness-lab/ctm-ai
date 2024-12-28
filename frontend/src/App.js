@@ -70,7 +70,7 @@ const App = () => {
     for (let i = 0; i < kVal; i++) {
       const initNodeId = `init${i + 1}`;
       nodes.push({
-        data: { id: initNodeId, label: `Processor ${i + 1}` },
+        data: { id: initNodeId, label: `P${i + 1}` },
         position: { x: startX + i * spacing, y: startY },
         classes: 'rectangle'
       });
@@ -98,7 +98,6 @@ const App = () => {
 
     const maxNodesInLayer = kVal;
     const nodeSpacing = 100;
-    const totalWidth = (maxNodesInLayer - 1) * nodeSpacing;
 
     // Build layers
     for (let layerIndex = 0; layerIndex < kVal; layerIndex++) {
