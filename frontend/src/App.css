@@ -64,3 +64,75 @@
 .tree-view_children {
   margin-left: 20px;
 }
+
+
+/* App.css */
+
+.app-container {
+    margin: 20px;
+}
+
+.controls-container {
+    margin-bottom: 10px;
+}
+
+.visualization-container {
+    display: flex;
+}
+
+.cytoscape-container {
+    width: 800px;
+    height: 600px;
+}
+
+.info-panel {
+    margin-left: 20px;
+    width: 300px;
+}
+
+.node-details {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Cytoscape Styles */
+.cytoscape-styles {
+    /* These will be used as a reference for the JavaScript style object */
+    /* Note: These CSS classes won't directly affect Cytoscape elements */
+    /* They are kept here for documentation and consistency */
+}
+
+/* Base node style */
+.cytoscape-styles .node {
+    background-color: #61bffc;
+    width: 45px;
+    height: 45px;
+    text-valign: center;
+}
+
+/* Rectangle node style */
+.cytoscape-styles .rectangle {
+    background-color: #9c27b0;
+    width: 60px;
+    height: 40px;
+    shape: rectangle;
+}
+
+/* Bottom layer node style */
+.cytoscape-styles .bottom-layer {
+    background-color: #4CAF50;
+}
+
+/* Final node style */
+.cytoscape-styles .final-node {
+    background-color: #FF5722;
+}
+
+/* Edge style */
+.cytoscape-styles .edge {
+    curve-style: bezier;
+    width: 3px;
+    target-arrow-shape: triangle;
+    line-color: #ddd;
+    target-arrow-color: #ddd;
+}
