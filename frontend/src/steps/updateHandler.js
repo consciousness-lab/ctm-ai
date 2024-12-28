@@ -1,14 +1,31 @@
-import { PHASES } from '../constants';
-
 // steps/updateHandler.js
-export const handleUpdateStep = ({
+import { PHASES } from '../constants';
+import { updateProcessors } from '../utils/api';
+
+export const handleUpdateStep = async ({
+  k,
   setElements,
   setCurrentStep,
   setUptreeStep,
   setDisplayPhase
 }) => {
-  setDisplayPhase(PHASES.UPDATE);
-  setElements(prev => prev.filter(el => el.data?.id?.startsWith('init')));
-  setCurrentStep(PHASES.OUTPUT_GIST);
-  setUptreeStep(1);
+  try {
+    setDisplayPhase(PHASES.UPDATE);
+
+    // Prepare processor updates
+    const updates = Array.from({ length: k }, (_, i) => ({
+      processor_id: `init${i + 1}`,
+      new_state: 'READY'
+    }));
+
+    // Send updates to backend
+    await updateProcessors(updates);
+
+    // Update visualization - reset to initial state
+    setElements(prev => prev.filter(el => el.data?.id?.startsWith('init')));
+    setCurrentStep(PHASES.OUTPUT_GIST);
+    setUptreeStep(1);
+  } catch (error) {
+    console.error('Error in update step:', error);
+  }
 };

@@ -1,8 +1,8 @@
-import { PHASES } from '../constants';
-import { updateNodeParents } from '../utils/api';
-
 // steps/uptreeHandler.js
-export const handleUptreeStep = ({
+import { PHASES } from '../constants';
+import { handleUptreeUpdate } from '../utils/api';
+
+export const handleUptreeStep = async ({
   k,
   pyramidLayers,
   currentLayerIndex,
@@ -13,26 +13,35 @@ export const handleUptreeStep = ({
   setUptreeStep,
   setDisplayPhase
 }) => {
-  setDisplayPhase(PHASES.UPTREE);
-  const nextLayer = pyramidLayers[currentLayerIndex];
-  const parentUpdates = [];
+  try {
+    setDisplayPhase(PHASES.UPTREE);
+    const nextLayer = pyramidLayers[currentLayerIndex];
+    const updates = [];
 
-  nextLayer.edges.forEach(edge => {
-    const { source, target } = edge.data;
-    parentUpdates.push({
-      node_id: target,
-      parents: [source],
+    // Create updates for current layer
+    nextLayer.edges.forEach(edge => {
+      const { source, target } = edge.data;
+      updates.push({
+        node_id: target,
+        parents: [source],
+        merged_gist: `Merged gist for ${target}`
+      });
     });
-  });
 
-  updateNodeParents(parentUpdates);
-  setElements(prev => [...prev, ...nextLayer.nodes, ...nextLayer.edges]);
-  setCurrentLayerIndex(prev => prev + 1);
-  
-  if (uptreeStep >= k - 1) {
-    setCurrentStep(PHASES.FINAL_NODE);
-    setUptreeStep(1);
-  } else {
-    setUptreeStep(prev => prev + 1);
+    // Send updates to backend
+    await handleUptreeUpdate(uptreeStep, updates);
+
+    // Update visualization
+    setElements(prev => [...prev, ...nextLayer.nodes, ...nextLayer.edges]);
+    setCurrentLayerIndex(prev => prev + 1);
+
+    if (uptreeStep >= k - 1) {
+      setCurrentStep(PHASES.FINAL_NODE);
+      setUptreeStep(1);
+    } else {
+      setUptreeStep(prev => prev + 1);
+    }
+  } catch (error) {
+    console.error('Error in uptree step:', error);
   }
 };

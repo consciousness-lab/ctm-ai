@@ -1,8 +1,8 @@
-import { PHASES } from '../constants';
-import { updateNodeParents } from '../utils/api';
-
 // steps/outputGistHandler.js
-export const handleOutputGistStep = ({
+import { PHASES } from '../constants';
+import { outputGist } from '../utils/api';
+
+export const handleOutputGistStep = async ({
   k,
   pyramidLayers,
   setElements,
@@ -10,31 +10,39 @@ export const handleOutputGistStep = ({
   setCurrentStep,
   setDisplayPhase
 }) => {
-  setDisplayPhase(PHASES.OUTPUT_GIST);
-  const nextLayer = pyramidLayers[1];
-  const initToBottomEdges = [];
-  const parentUpdates = [];
+  try {
+    setDisplayPhase(PHASES.OUTPUT_GIST);
+    const nextLayer = pyramidLayers[1];
+    const updates = [];
 
-  for (let i = 0; i < k; i++) {
-    const initNodeId = `init${i + 1}`;
-    const bottomNodeId = `n${i + 1}`;
-    
-    initToBottomEdges.push({
+    // Create gist updates from processors to bottom layer
+    for (let i = 0; i < k; i++) {
+      const initNodeId = `init${i + 1}`;
+      const bottomNodeId = `n${i + 1}`;
+
+      updates.push({
+        processor_id: initNodeId,
+        target_id: bottomNodeId,
+        gist: `Gist from processor ${i + 1}`
+      });
+    }
+
+    // Send updates to backend
+    await outputGist(updates);
+
+    // Update visualization
+    const initToBottomEdges = updates.map(update => ({
       data: {
-        source: initNodeId,
-        target: bottomNodeId,
-        id: `e${initNodeId}-${bottomNodeId}`,
+        source: update.processor_id,
+        target: update.target_id,
+        id: `e${update.processor_id}-${update.target_id}`,
       },
-    });
+    }));
 
-    parentUpdates.push({
-      node_id: bottomNodeId,
-      parents: [initNodeId],
-    });
+    setElements(prev => [...prev, ...nextLayer.nodes, ...nextLayer.edges, ...initToBottomEdges]);
+    setCurrentLayerIndex(2);
+    setCurrentStep(PHASES.UPTREE);
+  } catch (error) {
+    console.error('Error in output gist step:', error);
   }
-
-  updateNodeParents(parentUpdates);
-  setElements(prev => [...prev, ...nextLayer.nodes, ...nextLayer.edges, ...initToBottomEdges]);
-  setCurrentLayerIndex(2);
-  setCurrentStep(PHASES.UPTREE);
 };

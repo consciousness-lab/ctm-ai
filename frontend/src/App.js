@@ -14,6 +14,7 @@ import {
 import './App.css';
 
 const App = () => {
+  // State declarations
   const [k, setK] = useState(3);
   const [pyramidLayers, setPyramidLayers] = useState([]);
   const [elements, setElements] = useState([]);
@@ -123,7 +124,7 @@ const App = () => {
         </label>
         <button onClick={handleInitialize}>Start</button>
       </div>
-      
+
       {initialized ? (
         <div className="visualization-container">
           <div className="cytoscape-container">
