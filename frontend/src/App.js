@@ -14,7 +14,6 @@ import {
 import './App.css';
 
 const App = () => {
-  // State declarations
   const [k, setK] = useState(3);
   const [pyramidLayers, setPyramidLayers] = useState([]);
   const [elements, setElements] = useState([]);
