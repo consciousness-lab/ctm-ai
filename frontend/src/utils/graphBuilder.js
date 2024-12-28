@@ -7,9 +7,9 @@ export function buildInitialElements(kVal) {
   const startY = 500;
 
   for (let i = 0; i < kVal; i++) {
-    const initNodeId = `init${i + 1}`;
+    const initNodeId = `p${i + 1}`;
     nodes.push({
-      data: { id: initNodeId, label: `P${i + 1}` },
+      data: { id: initNodeId, label: `p${i + 1}` },
       position: { x: startX + i * spacing, y: startY },
       classes: 'rectangle'
     });

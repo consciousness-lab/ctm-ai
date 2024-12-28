@@ -1,5 +1,9 @@
 from flask import Flask, jsonify, make_response, request
 
+from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
+
+ctm = ConsciousnessTuringMachine()
+
 app = Flask(__name__)
 
 # Data storage
@@ -9,7 +13,7 @@ node_gists = {}
 
 
 @app.route('/api/nodes/<node_id>')
-def get_node_and_parent_details(node_id):
+def get_node_details(node_id):
     print(f'Requested node_id: {node_id}')
     details = {'self': node_details.get(node_id, 'No details available')}
 
@@ -47,10 +51,22 @@ def initialize_processors():
     node_parents.clear()
     node_gists.clear()
 
-    # Initialize processor nodes
-    for i in range(1, k + 1):
-        node_id = f'init{i}'
-        node_details[node_id] = f'Processor {i} initial state'
+    print('Initializing processors')
+    processor_names = [
+        'gpt4v_processor',
+        'gpt4_processor',
+        'search_engine_processor',
+        'wolfram_alpha_processor',
+    ]
+    for i in range(k):
+        processor_name = processor_names[i % len(processor_names)]
+        node_details[f'{processor_name}'] = f'{processor_name}'
+        ctm.add_processor(processor_name=processor_name)
+        print(processor_name)
+    
+    ctm.add_supervisor('gpt4_supervisor')
+    ctm.add_scorer('gpt4_scorer')
+    ctm.add_fuser('gpt4_fuser')
 
     response = jsonify(
         {'message': 'Processors initialized', 'processors': list(node_details.keys())}
@@ -73,11 +89,19 @@ def handle_output_gist():
     data = request.get_json()
     updates = data.get('updates', [])
 
+
+    chunks = ctm.ask_processors('What is the capital of France?')
+    gists = [chunk.gist for chunk in chunks]
+    gists = {}
+    for i, chunk in enumerate(chunks):
+        gists[f"p{i+1}"] = chunk.gist
+    print('handling output gist')
+    import pdb; pdb.set_trace()
     for update in updates:
         proc_id = update.get('processor_id')
         target_id = update.get('target_id')
 
-        node_details[target_id] = f'Bottom layer node receiving from {proc_id}'
+        node_details[target_id] = gists[proc_id]
         if target_id not in node_parents:
             node_parents[target_id] = []
         node_parents[target_id].append(proc_id)
@@ -101,6 +125,8 @@ def handle_uptree():
     data = request.get_json()
     updates = data.get('updates', [])
 
+    print('handling uptree')
+    print(data)
     for update in updates:
         node_id = update.get('node_id')
         parent_nodes = update.get('parents', [])
@@ -135,6 +161,7 @@ def handle_final_node():
     node_id = data.get('node_id')
     parents = data.get('parents', [])
 
+    print('handling final node')
     node_details[node_id] = 'Final output node'
     node_parents[node_id] = parents
 
@@ -158,6 +185,7 @@ def handle_reverse():
     data = request.get_json()
     updates = data.get('updates', [])
 
+    print('handling reverse')
     for node_id in node_details:
         node_details[node_id] = f'Broadcasting to node {node_id}'
 
@@ -180,6 +208,7 @@ def update_processors():
     data = request.get_json()
     updates = data.get('updates', [])
 
+    print('Updating processors')
     for update in updates:
         proc_id = update.get('processor_id')
         if proc_id in node_details:

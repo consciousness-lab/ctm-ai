@@ -67,17 +67,21 @@ const App = () => {
   };
 
   // Initialization handler
-  const handleInitialize = () => {
+  const handleInitialize = async () => {
+    // First call handleInitialStep
+    await handleInitialStep({
+      k,
+      setDisplayPhase,
+      setCurrentStep
+    });
+
+    // Then proceed with the rest of initialization
     const allLayers = buildAllLayers(k);
     setPyramidLayers(allLayers);
     setElements([...allLayers[0].nodes]);
     setCurrentLayerIndex(1);
-    setDisplayPhase(PHASES.INIT);
-    setCurrentStep(PHASES.OUTPUT_GIST);
-    setUptreeStep(1);
     setInitialized(true);
   };
-
   // Node details effect
   useEffect(() => {
     if (!selectedNode) {

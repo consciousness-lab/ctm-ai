@@ -4,6 +4,7 @@ import { initializeProcessors } from '../utils/api';
 
 export const handleInitialStep = async ({ k, setDisplayPhase, setCurrentStep }) => {
   try {
+    console.log('Initializing processors...');
     await initializeProcessors(k);
     setDisplayPhase(PHASES.INIT);
     setCurrentStep(PHASES.OUTPUT_GIST);

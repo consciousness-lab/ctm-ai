@@ -17,7 +17,7 @@ export const handleOutputGistStep = async ({
 
     // Create gist updates from processors to bottom layer
     for (let i = 0; i < k; i++) {
-      const initNodeId = `init${i + 1}`;
+      const initNodeId = `p${i + 1}`;
       const bottomNodeId = `n${i + 1}`;
 
       updates.push({
