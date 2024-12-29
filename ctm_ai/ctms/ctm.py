@@ -51,6 +51,12 @@ class ConsciousnessTuringMachine:
         self.add_scorer(self.config.scorer)
         self.add_fuser(self.config.fuser)
 
+    def add_processor(self, processor_name: str, group_name: Optional[str] = None) -> None:
+        self.processor_graph.add_node(processor_name, group_name)
+    
+    def remove_processor(self, processor_name: str) -> None:
+        self.processor_graph.remove_node(processor_name)
+
     def add_supervisor(self, name: str) -> None:
         self.supervisors.append(BaseSupervisor(name))
 
