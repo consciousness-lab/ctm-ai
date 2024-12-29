@@ -24,7 +24,6 @@ export const handleUptreeStep = async ({
       updates.push({
         node_id: target,
         parents: [source],
-        merged_gist: `Merged gist for ${target}`
       });
     });
 

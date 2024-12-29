@@ -1,24 +1,30 @@
 // utils/graphBuilder.js
 
-export function buildInitialElements(kVal) {
+export function buildInitialElements(kVal, processorNames) {
   const nodes = [];
   const spacing = 100;
   const startX = 400 - ((kVal - 1) * spacing) / 2;
   const startY = 500;
 
   for (let i = 0; i < kVal; i++) {
-    const initNodeId = `p${i + 1}`;
+    // Use the actual processor name if available, fall back to p{i+1} if not
+    const processorId = processorNames?.[i] || `p${i + 1}`;
+    
     nodes.push({
-      data: { id: initNodeId, label: `p${i + 1}` },
+      data: { 
+        id: processorId,
+        // You can customize the label to show a shorter version if needed
+        label: processorId // This will show just the type (e.g., 'gpt4v')
+      },
       position: { x: startX + i * spacing, y: startY },
       classes: 'rectangle'
     });
   }
-
+  
   return { nodes, edges: [] };
 }
 
-export function buildAllLayers(kVal) {
+export function buildAllLayers(kVal, processorNames) {
   let layersData = [];
   let layerNodeIds = [];
   let currentNodeId = 1;
@@ -112,7 +118,7 @@ export function buildAllLayers(kVal) {
   layersData.push(finalLayer);
 
   // Add initial rectangular nodes
-  const initElements = buildInitialElements(kVal);
+  const initElements = buildInitialElements(kVal, processorNames);
   layersData.unshift({ nodes: initElements.nodes, edges: initElements.edges });
 
   return layersData;

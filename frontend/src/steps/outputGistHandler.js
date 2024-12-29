@@ -5,6 +5,7 @@ import { outputGist } from '../utils/api';
 export const handleOutputGistStep = async ({
   k,
   pyramidLayers,
+  processorNames,
   setElements,
   setCurrentLayerIndex,
   setCurrentStep,
@@ -14,23 +15,21 @@ export const handleOutputGistStep = async ({
     setDisplayPhase(PHASES.OUTPUT_GIST);
     const nextLayer = pyramidLayers[1];
     const updates = [];
-
-    // Create gist updates from processors to bottom layer
+    
+    // Create gist updates using actual processor names
     for (let i = 0; i < k; i++) {
-      const initNodeId = `p${i + 1}`;
+      const initNodeId = processorNames[i];  // Use the actual processor name
       const bottomNodeId = `n${i + 1}`;
-
       updates.push({
         processor_id: initNodeId,
         target_id: bottomNodeId,
-        gist: `Gist from processor ${i + 1}`
       });
     }
-
+    
     // Send updates to backend
     await outputGist(updates);
-
-    // Update visualization
+    
+    // Update visualization using actual processor names
     const initToBottomEdges = updates.map(update => ({
       data: {
         source: update.processor_id,
@@ -38,7 +37,7 @@ export const handleOutputGistStep = async ({
         id: `e${update.processor_id}-${update.target_id}`,
       },
     }));
-
+    
     setElements(prev => [...prev, ...nextLayer.nodes, ...nextLayer.edges, ...initToBottomEdges]);
     setCurrentLayerIndex(2);
     setCurrentStep(PHASES.UPTREE);
