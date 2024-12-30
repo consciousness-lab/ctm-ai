@@ -22,7 +22,7 @@ export const handleUpdateStep = async ({
     await updateProcessors(updates);
 
     // Update visualization - reset to initial state
-    setElements(prev => prev.filter(el => el.data?.id?.startsWith('init')));
+    setElements(prev => prev.filter(el => el.data?.id?.endsWith('processor')));
     setCurrentStep(PHASES.OUTPUT_GIST);
     setUptreeStep(1);
   } catch (error) {
