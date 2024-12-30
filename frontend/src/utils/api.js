@@ -1,4 +1,6 @@
 // utils/api.js
+import axios from 'axios';
+
 const BASE_URL = 'http://localhost:5000/api';
 
 const fetchWithError = async (url, options = {}) => {
@@ -80,4 +82,23 @@ export const getNodeDetails = async (nodeId) => {
 
 export const getCurrentState = async () => {
   return fetchWithError(`${BASE_URL}/state`);
+};
+
+export const uploadFiles = async (formData, onUploadProgress) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress,
+    });
+
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.error || 'Upload failed');
+    } else {
+      throw new Error('Network error');
+    }
+  }
 };

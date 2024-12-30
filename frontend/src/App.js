@@ -12,6 +12,7 @@ import {
   handleUpdateStep
 } from './steps/index';
 import './App.css';
+import UploadForm from "./components/UploadForm";
 
 const App = () => {
   // State declarations
@@ -121,6 +122,7 @@ const App = () => {
   return (
     <div className="app-container">
       <h1>CTM-AI</h1>
+      <UploadForm />
       <div className="controls-container">
         <label>
           Processor number (k):

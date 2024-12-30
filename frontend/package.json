@@ -7,12 +7,12 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "react": "^18.3.1",
+    "react-cytoscapejs": "*",
     "react-d3-tree": "^3.6.2",
     "react-dom": "^18.3.1",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "react-treeview": "*",
-    "web-vitals": "^2.1.4",
-    "react-cytoscapejs": "*"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",

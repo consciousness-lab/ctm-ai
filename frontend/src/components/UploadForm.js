@@ -1,6 +1,7 @@
 // src/components/UploadForm.js
 
 import React, { useState } from 'react';
+import { uploadFiles } from '../utils/api';
 
 const UploadForm = () => {
 
@@ -12,7 +13,7 @@ const UploadForm = () => {
     const [videoFiles, setVideoFiles] = useState([]);
 
     const [errorMessage, setErrorMessage] = useState('');
-
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [serverResponse, setServerResponse] = useState(null);
 
     const MAX_FILE_SIZE = 1000 * 1024 * 1024;
@@ -81,6 +82,14 @@ const UploadForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setErrorMessage('');
+        setServerResponse(null);
+        setUploadProgress(0);
+
+        if (imageFiles.length === 0 && audioFiles.length === 0 && videoFiles.length === 0 && !query.trim() && !text.trim()) {
+            setErrorMessage('Please select at least one file or enter a query and text.');
+            return;
+        }
 
         try {
             const formData = new FormData();
@@ -100,16 +109,11 @@ const UploadForm = () => {
                 formData.append('video_frames', file);
             });
 
-            const response = await fetch('http://localhost:5000/api/upload', {
-                method: 'POST',
-                body: formData,
+            const result = await uploadFiles(formData, (progressEvent) => {
+                const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                setUploadProgress(percent);
             });
 
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
-            }
-
-            const result = await response.json();
             setServerResponse(result);
         } catch (error) {
             console.error('Error uploading data:', error);
@@ -241,6 +245,32 @@ const UploadForm = () => {
                         </ul>
                     )}
                 </div>
+
+                {uploadProgress > 0 && uploadProgress < 100 && (
+                    <div style={{ marginBottom: '10px', backgroundColor: '#f3f3f3', borderRadius: '4px' }}>
+                        <div
+                            style={{
+                                width: `${uploadProgress}%`,
+                                height: '20px',
+                                backgroundColor: '#4caf50',
+                                borderRadius: '4px',
+                                textAlign: 'center',
+                                color: 'white',
+                                lineHeight: '20px'
+                            }}
+                        >
+                            {uploadProgress}%
+                        </div>
+                    </div>
+                )}
+
+                {errorMessage && <div style={{ color: 'red', marginBottom: '10px' }}>{errorMessage}</div>}
+                {serverResponse && serverResponse.error && (
+                    <div style={{ color: 'red', marginBottom: '10px' }}>{serverResponse.error}</div>
+                )}
+                {serverResponse && !serverResponse.error && (
+                    <div style={{ color: 'green', marginBottom: '10px' }}>Upload Success！</div>
+                )}
 
                 <button type="submit" style={{marginTop: '10px'}}>
                     Submit to Server
