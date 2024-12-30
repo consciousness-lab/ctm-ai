@@ -1,45 +1,33 @@
-// steps/uptreeHandler.js
-import { PHASES } from '../constants';
 import { handleUptreeUpdate } from '../utils/api';
+import { addUptreeNodes, addUptreeEdges } from '../utils/graphBuilder';
 
 export const handleUptreeStep = async ({
   k,
-  pyramidLayers,
-  currentLayerIndex,
   uptreeStep,
-  setElements,
-  setCurrentLayerIndex,
-  setCurrentStep,
-  setUptreeStep,
-  setDisplayPhase
 }) => {
   try {
-    setDisplayPhase(PHASES.UPTREE);
-    const nextLayer = pyramidLayers[currentLayerIndex];
     const updates = [];
 
-    // Create updates for current layer
-    nextLayer.edges.forEach(edge => {
-      const { source, target } = edge.data;
+    console.log('handleUptreeStep:', k, uptreeStep);
+    const { nodes } = addUptreeNodes(k, uptreeStep+1);
+    const { edges } = addUptreeEdges(k, uptreeStep+1);
+
+    console.log('nodes:', nodes);
+    console.log('edges:', edges);
+    nodes.forEach((node) => {
+      const nodeId = node.data.id;
+
+      const parents = edges
+        .filter((edge) => edge.data.target === nodeId)
+        .map((edge) => edge.data.source);
+
       updates.push({
-        node_id: target,
-        parents: [source],
+        node_id: nodeId,
+        parents,
       });
     });
 
-    // Send updates to backend
     await handleUptreeUpdate(uptreeStep, updates);
-
-    // Update visualization
-    setElements(prev => [...prev, ...nextLayer.nodes, ...nextLayer.edges]);
-    setCurrentLayerIndex(prev => prev + 1);
-
-    if (uptreeStep >= k - 1) {
-      setCurrentStep(PHASES.FINAL_NODE);
-      setUptreeStep(1);
-    } else {
-      setUptreeStep(prev => prev + 1);
-    }
   } catch (error) {
     console.error('Error in uptree step:', error);
   }
