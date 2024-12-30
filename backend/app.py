@@ -77,7 +77,6 @@ def initialize_processors():
         node_details[node_id] = f'{processor_name}'  # Store original type in details
         ctm.add_processor(processor_name=processor_name)
         selected_processors.append(node_id)
-        print(f"Added: {node_id} (type: {processor_name})")
 
         
     ctm.add_supervisor('gpt4_supervisor')
