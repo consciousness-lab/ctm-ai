@@ -34,6 +34,10 @@ class ConsciousnessTuringMachine:
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Tuple[str, float]:
         return self.forward(query, text, image, audio, video_frames)
+    
+
+    def reset(self) -> None:
+        self.load_ctm()
 
     def load_ctm(self) -> None:
         self.processor_graph = ProcessorGraph()
