@@ -1,4 +1,5 @@
 from ..utils import logging_chunk
+from typing import Any, Dict
 
 
 class Chunk:
@@ -54,3 +55,30 @@ class Chunk:
         if not isinstance(other, Chunk):
             return NotImplemented
         return self.__gt__(other) or self.__eq__(other)
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            'time_step': self.time_step,
+            'processor_name': self.processor_name,
+            'gist': self.gist,
+            'relevance': self.relevance,
+            'confidence': self.confidence,
+            'surprise': self.surprise,
+            'weight': self.weight,
+            'intensity': self.intensity,
+            'mood': self.mood,
+        }
+    
+    @staticmethod
+    def deserialize(data: Dict[str, Any]) -> 'Chunk':
+        return Chunk(
+            time_step=data['time_step'],
+            processor_name=data['processor_name'],
+            gist=data['gist'],
+            relevance=data['relevance'],
+            confidence=data['confidence'],
+            surprise=data['surprise'],
+            weight=data['weight'],
+            intensity=data['intensity'],
+            mood=data['mood'],
+        )

@@ -18,10 +18,21 @@ const fetchWithError = async (url, options = {}) => {
 };
 
 export const initializeProcessors = async (k) => {
-  return fetchWithError(`${BASE_URL}/init`, {
-    method: 'POST',
-    body: JSON.stringify({ k }),
-  });
+  try {
+    const response = await fetch('http://localhost:5000/api/init', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ k }),
+    });
+    
+    const data = await response.json();
+    return data.processorNames; // Assuming your API returns processor names
+  } catch (error) {
+    console.error('Error initializing processors:', error);
+    throw error;
+  }
 };
 
 export const outputGist = async (updates) => {

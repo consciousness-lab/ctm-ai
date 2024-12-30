@@ -18,6 +18,7 @@ const App = () => {
   const [k, setK] = useState(3);
   const [pyramidLayers, setPyramidLayers] = useState([]);
   const [elements, setElements] = useState([]);
+  const [processorNames, setProcessorNames] = useState([]);
   const [currentLayerIndex, setCurrentLayerIndex] = useState(0);
   const [initialized, setInitialized] = useState(false);
   const [selectedNode, setSelectedNode] = useState(null);
@@ -33,6 +34,7 @@ const App = () => {
     const stepProps = {
       k,
       pyramidLayers,
+      processorNames,
       currentLayerIndex,
       uptreeStep,
       setElements,
@@ -67,16 +69,23 @@ const App = () => {
   };
 
   // Initialization handler
-  const handleInitialize = () => {
-    const allLayers = buildAllLayers(k);
+  const handleInitialize = async () => {
+    // First call handleInitialStep
+    const processorNames = await handleInitialStep({
+      k,
+      setDisplayPhase,
+      setCurrentStep,
+      setProcessorNames
+    });
+
+    // Then proceed with the rest of initialization
+    const allLayers = buildAllLayers(k, processorNames);
     setPyramidLayers(allLayers);
     setElements([...allLayers[0].nodes]);
     setCurrentLayerIndex(1);
-    setDisplayPhase(PHASES.INIT);
-    setCurrentStep(PHASES.OUTPUT_GIST);
-    setUptreeStep(1);
     setInitialized(true);
   };
+
 
   // Node details effect
   useEffect(() => {
