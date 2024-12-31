@@ -241,52 +241,57 @@ const App = () => {
 
     return (
         <div className="app-container">
-        <h1>CTM-AI</h1>
-        <div className="controls-container">
-            <label>
-            Processor number (k):
-            <input
-                type="number"
-                min="1"
-                value={k}
-                onChange={(e) => setK(parseInt(e.target.value, 10))}
-            />
-            </label>
-            <button onClick={handleStart}>Start</button>
-        </div>
+            <h1>CTM-AI</h1>
+            
+            {/* Upload Form */}
+            <UploadForm />
 
-        {initialized ? (
-            <div className="visualization-container">
-            <div className="cytoscape-container">
-                <CytoscapeComponent
-                elements={elements}
-                layout={layout}
-                stylesheet={stylesheet}
-                style={{ width: '100%', height: '100%' }}
-                cy={(cy) => {
-                    cy.on('tap', 'node', (evt) => {
-                    setSelectedNode(evt.target.id());
-                    });
-                }}
-                />
+            <div className="controls-container">
+                <label>
+                    Processor number (k):
+                    <input
+                        type="number"
+                        min="1"
+                        value={k}
+                        onChange={(e) => setK(parseInt(e.target.value, 10))}
+                    />
+                </label>
+                <button onClick={handleStart}>Start</button>
             </div>
-            <div className="info-panel">
-                <h2>Node Information</h2>
-                {selectedNode ? (
-                <pre className="node-details">{nodeDetailText}</pre>
-                ) : (
-                <p>Click a node to see details.</p>
-                )}
-                <hr />
-                <button onClick={handleStep}>Step</button>
-                <p>Current Move: {PHASE_DESCRIPTIONS[displayPhase]}</p>
-            </div>
-            </div>
-        ) : (
-            <p>Please enter k and click "Start" to begin.</p>
-        )}
+
+            {initialized ? (
+                <div className="visualization-container">
+                    <div className="cytoscape-container">
+                        <CytoscapeComponent
+                            elements={elements}
+                            layout={layout}
+                            stylesheet={stylesheet}
+                            style={{ width: '100%', height: '100%' }}
+                            cy={(cy) => {
+                                cy.on('tap', 'node', (evt) => {
+                                    setSelectedNode(evt.target.id());
+                                });
+                            }}
+                        />
+                    </div>
+                    <div className="info-panel">
+                        <h2>Node Information</h2>
+                        {selectedNode ? (
+                            <pre className="node-details">{nodeDetailText}</pre>
+                        ) : (
+                            <p>Click a node to see details.</p>
+                        )}
+                        <hr />
+                        <button onClick={handleStep}>Step</button>
+                        <p>Current Move: {PHASE_DESCRIPTIONS[displayPhase]}</p>
+                    </div>
+                </div>
+            ) : (
+                <p>Please enter k and click "Start" to begin.</p>
+            )}
         </div>
     );
+
 };
 
 export default App;

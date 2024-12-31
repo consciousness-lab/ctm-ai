@@ -1,10 +1,8 @@
 // steps/fuseGistHandler.js
-import { PHASES } from '../constants';
 import { fuseGist } from '../utils/api';
 
 export const handleFuseGistStep = async ({
   k,
-  setDisplayPhase
 }) => {
   try {
     const updates = [];
