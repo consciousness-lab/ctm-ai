@@ -104,14 +104,14 @@ def initialize_processors():
 
     # Store actual processor names we'll use
     selected_processors = []
-
+    
+    ctm.reset()
     for i in range(k):
         processor_name = processor_names[i % len(processor_names)]
         node_id = f"{processor_name}"  # Create unique name
         node_details[node_id] = f'{processor_name}'  # Store original type in details
         ctm.add_processor(processor_name=processor_name)
         selected_processors.append(node_id)
-        print(f"Added: {node_id} (type: {processor_name})")
 
     ctm.add_supervisor('gpt4_supervisor')
     ctm.add_scorer('gpt4_scorer')
@@ -245,9 +245,6 @@ def handle_reverse():
         response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
         return response
 
-    data = request.get_json()
-    updates = data.get('updates', [])
-
     print('handling reverse')
     ctm.downtree_broadcast(winning_chunk)
 
@@ -291,6 +288,43 @@ def update_processors():
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
 
+@app.route('/api/fuse-gist', methods=['POST', 'OPTIONS'])
+def handle_fuse_gist():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
+
+    data = request.get_json()
+    updates = data.get('updates', [])
+
+    # Process the fused nodes
+    for update in updates:
+        fused_node_id = update.get('fused_node_id')
+        source_nodes = update.get('source_nodes', [])
+        
+        # Create fused chunk from source nodes
+        source_chunks = [node_details[node_id] for node_id in source_nodes]
+
+        #fused_chunk = ctm.fuse_chunks(source_chunks)  # Assuming you have this method
+        fused_chunk = source_chunks[0]
+        
+        # Store the fused result
+        node_details[fused_node_id] = fused_chunk
+        
+        # Update parent relationships
+        node_parents[fused_node_id] = source_nodes
+
+    response = jsonify({
+        'message': 'Fused gists processed',
+        'updates': updates
+    })
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    return response
 
 @app.route('/api/upload', methods=['POST', 'OPTIONS'])
 def upload_files():

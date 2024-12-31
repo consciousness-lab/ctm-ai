@@ -4,13 +4,9 @@ import { updateProcessors } from '../utils/api';
 
 export const handleUpdateStep = async ({
   k,
-  setElements,
-  setCurrentStep,
   setUptreeStep,
-  setDisplayPhase
 }) => {
   try {
-    setDisplayPhase(PHASES.UPDATE);
 
     // Prepare processor updates
     const updates = Array.from({ length: k }, (_, i) => ({
@@ -21,9 +17,6 @@ export const handleUpdateStep = async ({
     // Send updates to backend
     await updateProcessors(updates);
 
-    // Update visualization - reset to initial state
-    setElements(prev => prev.filter(el => el.data?.id?.startsWith('init')));
-    setCurrentStep(PHASES.OUTPUT_GIST);
     setUptreeStep(1);
   } catch (error) {
     console.error('Error in update step:', error);

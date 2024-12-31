@@ -4,3 +4,4 @@ export { handleUptreeStep } from './uptreeHandler';
 export { handleFinalNodeStep } from './finalNodeHandler';
 export { handleReverseStep } from './reverseHandler';
 export { handleUpdateStep } from './updateHandler';
+export { handleFuseGistStep } from './fuseGistHandler';
