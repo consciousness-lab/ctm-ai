@@ -254,6 +254,7 @@ def update_processors():
 
 @app.route('/api/fuse-gist', methods=['POST', 'OPTIONS'])
 def handle_fuse_gist():
+    global chunks
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
