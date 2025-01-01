@@ -1,4 +1,5 @@
 // utils/graphBuilder.js
+import { fetchProcessorNeighborhoods } from './api';
 
 export function addProcessorNodes(kVal, processorNames) {
     const nodes = [];
@@ -20,6 +21,25 @@ export function addProcessorNodes(kVal, processorNames) {
     
     return { nodes, edges: [] };
 }
+
+export const addProcessorEdges = (neighborhoods) => {
+  const edges = [];
+  
+  Object.entries(neighborhoods).forEach(([processorId, connectedProcessors]) => {
+    connectedProcessors.forEach(targetId => {
+      edges.push({
+        data: {
+          id: `${processorId}-${targetId}`,
+          source: processorId,
+          target: targetId,
+        },
+      });
+    });
+  });
+  
+  return edges;
+};
+
 
 // Separate functions for nodes and edges
 export function addGistNodes(kVal) {
@@ -73,21 +93,34 @@ export function addFusedNodes(kVal) {
     return { nodes, edges: [] };
 }
 
-export function addFusedEdges(kVal) {
+export const addFusedEdges = (k, processorNames, neighborhoods) => {
     const edges = [];
-    for (let i = 0; i < kVal; i++) {
-        for (let j = 0; j < kVal; j++) {
-            edges.push({
-                data: {
-                    source: `g${i + 1}`,
-                    target: `n${j + 1}`,
-                    id: `eg${i + 1}-n${j + 1}`,
-                },
-            });
+    console.log('neighborhoods:', neighborhoods);
+    console.log('processorNames:', processorNames);
+    
+    // Create edges between gist nodes and fused nodes
+    for (let i = 0; i < k; i++) {
+        for (let j = 0; j < k; j++) {
+            // Check if indices match or processors are connected
+            const sameIndex = i === j;
+            const processorsConnected = neighborhoods && 
+                neighborhoods[processorNames[i]]?.includes(processorNames[j]);
+            
+            if (sameIndex || processorsConnected) {
+                // Add edge from gist to fused node
+                edges.push({
+                    data: {
+                        id: `g${i+1}-n${j+1}`,
+                        source: `g${i+1}`,
+                        target: `n${j+1}`,
+                    },
+                });
+            }
         }
     }
-    return { nodes: [], edges };
-}
+
+    return { edges };
+};
 
 
 export function addUptreeNodes(kVal, layerIndex) {
@@ -204,3 +237,4 @@ export function addFinalNode(kVal) {
 export function calculateTotalLayers(k) {
     return k - 1;
 }
+

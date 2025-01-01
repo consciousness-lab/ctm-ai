@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 import { PHASES, PHASE_DESCRIPTIONS } from './constants';
-import { addProcessorNodes } from './utils/graphBuilder';
 import { layout, stylesheet } from './config/cytoscapeConfig';
 import {
+    addProcessorNodes,
+    addProcessorEdges,
     addGistNodes,
     addGistEdges,
     addFusedNodes,
@@ -22,6 +23,7 @@ import {
     handleReverseStep,
     handleUpdateStep,
 } from './steps/index';
+import { fetchProcessorNeighborhoods } from './utils/api';
 import './App.css';
 
 const App = () => {
@@ -34,7 +36,8 @@ const App = () => {
     const [currentStep, setCurrentStep] = useState(PHASES.INIT);
     const [uptreeStep, setUptreeStep] = useState(1);
     const [displayPhase, setDisplayPhase] = useState(PHASES.INIT);
-
+    const [neighborhoods, setNeighborhoods] = useState(null);
+    
 
     const modifyGraph = () => {
         const updateElementsForPhase = (newElements) => {
@@ -56,9 +59,11 @@ const App = () => {
             }
 
             case PHASES.FUSE_GIST: {
+                const nodes = addFusedNodes(k).nodes;
+                const edges = addFusedEdges(k, processorNames, neighborhoods);
                 const newElements = {
-                    nodes: addFusedNodes(k).nodes,
-                    edges: addFusedEdges(k).edges,
+                    nodes: nodes,
+                    edges: edges?.edges || []
                 };
                 updateElementsForPhase(newElements);
                 break;
@@ -80,40 +85,55 @@ const App = () => {
             }
 
             case PHASES.REVERSE: {
-                setElements((prevElements) =>
-                    prevElements.map((element) =>
-                        element.data?.source && element.data?.target
-                            ? {
-                                ...element,
-                                data: {
-                                    ...element.data,
-                                    source: element.data.target,
-                                    target: element.data.source,
-                                },
-                            }
-                            : element
-                    )
-                );
-                break;
-            }
-
-            case PHASES.UPDATE: {
                 setElements((prevElements) => {
                     const processorNodes = prevElements.filter((element) =>
                         element.data?.label?.toLowerCase().includes('processor')
                     );
+                    const processorIds = new Set(processorNodes.map(node => node.data.id));
 
-                    const processorNodeIds = processorNodes.map((node) => node.data.id);
-                    const validEdges = prevElements.filter(
-                        (element) =>
-                            element.data?.source &&
-                            element.data?.target &&
-                            processorNodeIds.includes(element.data.source) &&
-                            processorNodeIds.includes(element.data.target)
-                    );
+                    return prevElements.map((element) => {
+                        if (!element.data?.source || !element.data?.target) {
+                            return element;
+                        }
 
-                    return [...processorNodes, ...validEdges];
+                        const isBothProcessors = processorIds.has(element.data.source) && 
+                                            processorIds.has(element.data.target);
+                        
+                        if (isBothProcessors) {
+                            return element;
+                        }
+
+                        return {
+                            ...element,
+                            data: {
+                                ...element.data,
+                                source: element.data.target,
+                                target: element.data.source,
+                            },
+                        };
+                    });
                 });
+                break;
+            }
+
+            case PHASES.UPDATE: {
+                const updateElements = async () => {
+                    const processorNodes = elements.filter((element) =>
+                        element.data?.label?.toLowerCase().includes('processor')
+                    );
+                    
+                    const neighborhoods = await fetchProcessorNeighborhoods();
+                    setNeighborhoods(neighborhoods);
+                    if (neighborhoods) {
+                        const newEdges = addProcessorEdges(neighborhoods);
+                        setElements([...processorNodes, ...newEdges]);
+                    } else {
+                        setElements(processorNodes);
+                    }
+                };
+                
+                // Execute the update
+                updateElements();
                 break;
             }
 
@@ -203,6 +223,14 @@ const App = () => {
         if (processorNames) {
             const initialElements = addProcessorNodes(k, processorNames);
             setElements(initialElements.nodes);
+
+            const neighborhoods = await fetchProcessorNeighborhoods();
+            setNeighborhoods(neighborhoods);
+
+            if (neighborhoods) {
+                const edges = addProcessorEdges(neighborhoods);
+                setElements(prev => [...prev, ...edges]);
+            }
             setInitialized(true);
         }
     };
