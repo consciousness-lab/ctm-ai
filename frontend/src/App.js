@@ -31,7 +31,7 @@ const ProcessPhase = ({ phase, displayPhase, description }) => {
   // Convert phase to number for comparison with displayPhase
   const phaseNumber = Number(phase);
   const isActive = phaseNumber === displayPhase;
-  
+
   return (
     <div className={`phase-item ${isActive ? 'active' : 'inactive'}`}>
       <div className="phase-indicator">
@@ -56,7 +56,7 @@ const App = () => {
     const [uptreeStep, setUptreeStep] = useState(1);
     const [displayPhase, setDisplayPhase] = useState(PHASES.INIT);
     const [neighborhoods, setNeighborhoods] = useState(null);
-    
+
 
     const modifyGraph = () => {
         const updateElementsForPhase = (newElements) => {
@@ -115,9 +115,9 @@ const App = () => {
                             return element;
                         }
 
-                        const isBothProcessors = processorIds.has(element.data.source) && 
+                        const isBothProcessors = processorIds.has(element.data.source) &&
                                             processorIds.has(element.data.target);
-                        
+
                         if (isBothProcessors) {
                             return element;
                         }
@@ -140,7 +140,7 @@ const App = () => {
                     const processorNodes = elements.filter((element) =>
                         element.data?.label?.toLowerCase().includes('processor')
                     );
-                    
+
                     const neighborhoods = await fetchProcessorNeighborhoods();
                     setNeighborhoods(neighborhoods);
                     if (neighborhoods) {
@@ -150,7 +150,7 @@ const App = () => {
                         setElements(processorNodes);
                     }
                 };
-                
+
                 // Execute the update
                 updateElements();
                 break;
@@ -288,7 +288,7 @@ const App = () => {
   return (
     <div className="app-container">
       <h1 className="app-title">CTM-AI Visualization</h1>
-      
+
       <div className="main-grid">
         {/* Left Panel - Process Control */}
         <div className="control-panel">
@@ -305,7 +305,7 @@ const App = () => {
                   className="k-input"
                 />
               </div>
-              <button 
+              <button
                 onClick={handleStart}
                 disabled={initialized}
                 className={`control-button start ${initialized ? 'disabled' : ''}`}
@@ -313,7 +313,7 @@ const App = () => {
                 Start Process
               </button>
               {initialized && (
-                <button 
+                <button
                   onClick={handleStep}
                   className="control-button step"
                 >

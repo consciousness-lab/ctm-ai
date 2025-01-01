@@ -10,7 +10,7 @@ export function addProcessorNodes(kVal, processorNames) {
     for (let i = 0; i < kVal; i++) {
         const processorId = processorNames?.[i] || `p${i + 1}`;
         nodes.push({
-            data: { 
+            data: {
                 id: processorId,
                 label: processorId
             },
@@ -18,13 +18,13 @@ export function addProcessorNodes(kVal, processorNames) {
             classes: 'rectangle'
         });
     }
-    
+
     return { nodes, edges: [] };
 }
 
 export const addProcessorEdges = (neighborhoods) => {
   const edges = [];
-  
+
   Object.entries(neighborhoods).forEach(([processorId, connectedProcessors]) => {
     connectedProcessors.forEach(targetId => {
       edges.push({
@@ -36,7 +36,7 @@ export const addProcessorEdges = (neighborhoods) => {
       });
     });
   });
-  
+
   return edges;
 };
 
@@ -97,15 +97,15 @@ export const addFusedEdges = (k, processorNames, neighborhoods) => {
     const edges = [];
     console.log('neighborhoods:', neighborhoods);
     console.log('processorNames:', processorNames);
-    
+
     // Create edges between gist nodes and fused nodes
     for (let i = 0; i < k; i++) {
         for (let j = 0; j < k; j++) {
             // Check if indices match or processors are connected
             const sameIndex = i === j;
-            const processorsConnected = neighborhoods && 
+            const processorsConnected = neighborhoods &&
                 neighborhoods[processorNames[i]]?.includes(processorNames[j]);
-            
+
             if (sameIndex || processorsConnected) {
                 // Add edge from gist to fused node
                 edges.push({
@@ -213,11 +213,11 @@ export function addFinalNode(kVal) {
     for (let i = 1; i < kVal; i++) {
         topNodeId += (kVal - i + 1);
     }
-    
+
     const totalLayers = calculateTotalLayers(kVal);
     const topUptreeY = 300 - ((totalLayers - 1) * 100);
     const finalNodeY = topUptreeY - 200;
-    
+
     return {
         nodes: [{
             data: { id: 'o', label: 'o' },
@@ -237,4 +237,3 @@ export function addFinalNode(kVal) {
 export function calculateTotalLayers(k) {
     return k - 1;
 }
-
