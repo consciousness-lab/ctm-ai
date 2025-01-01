@@ -80,9 +80,6 @@ def initialize_processors():
         ctm.add_processor(processor_name=processor_name)
         selected_processors.append(node_id)
 
-    ctm.processor_graph.add_link('gpt4v_processor', 'gpt4_processor')
-    ctm.processor_graph.add_link('gpt4v_processor', 'search_engine_processor')
-        
     ctm.add_supervisor('gpt4_supervisor')
     ctm.add_scorer('gpt4_scorer')
     ctm.add_fuser('gpt4_fuser')
@@ -270,7 +267,8 @@ def handle_fuse_gist():
     data = request.get_json()
     updates = data.get('updates', [])
 
-    global chunks = ctm.fuse_processor(chunks)
+    global chunks
+    chunks = ctm.fuse_processor(chunks)
     
 
     # Process the fused nodes
