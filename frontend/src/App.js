@@ -26,6 +26,25 @@ import {
 import { fetchProcessorNeighborhoods } from './utils/api';
 import './App.css';
 
+
+const ProcessPhase = ({ phase, displayPhase, description }) => {
+  // Convert phase to number for comparison with displayPhase
+  const phaseNumber = Number(phase);
+  const isActive = phaseNumber === displayPhase;
+  
+  return (
+    <div className={`phase-item ${isActive ? 'active' : 'inactive'}`}>
+      <div className="phase-indicator">
+        {phaseNumber}
+      </div>
+      <div className="phase-content">
+        <p className="phase-title">{PHASES[phase]}</p>
+        <p className="phase-description">{description}</p>
+      </div>
+    </div>
+  );
+};
+
 const App = () => {
     const [k, setK] = useState(3);
     const [elements, setElements] = useState([]);
@@ -214,7 +233,6 @@ const App = () => {
         const stepProps = {
             k,
             setDisplayPhase,
-            setCurrentStep,
             setProcessorNames,
         };
         const processorNames = await handleInitialStep(stepProps);
@@ -266,54 +284,115 @@ const App = () => {
         });
     }, [selectedNode]);
 
-    return (
-        <div className="app-container">
-        <h1>CTM-AI</h1>
-        <div className="controls-container">
-            <label>
-            Processor number (k):
-            <input
-                type="number"
-                min="1"
-                value={k}
-                onChange={(e) => setK(parseInt(e.target.value, 10))}
-            />
-            </label>
-            <button onClick={handleStart}>Start</button>
+
+  return (
+    <div className="app-container">
+      <h1 className="app-title">CTM-AI Visualization</h1>
+      
+      <div className="main-grid">
+        {/* Left Panel - Process Control */}
+        <div className="control-panel">
+          <div className="panel-card">
+            <h2 className="panel-title">Process Control</h2>
+            <div className="control-content">
+              <div className="input-group">
+                <label>Processor number (k):</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={k}
+                  onChange={(e) => setK(parseInt(e.target.value, 10))}
+                  className="k-input"
+                />
+              </div>
+              <button 
+                onClick={handleStart}
+                disabled={initialized}
+                className={`control-button start ${initialized ? 'disabled' : ''}`}
+              >
+                Start Process
+              </button>
+              {initialized && (
+                <button 
+                  onClick={handleStep}
+                  className="control-button step"
+                >
+                  Next Step
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="panel-card">
+            <h2 className="panel-title">Process Phases</h2>
+            <div className="phases-list">
+                {Object.entries(PHASE_DESCRIPTIONS).map(([phase, description]) => (
+                <ProcessPhase
+                    key={phase}
+                    phase={phase}
+                    displayPhase={displayPhase}
+                    description={description}
+                />
+                ))}
+            </div>
+          </div>
         </div>
 
-        {initialized ? (
-            <div className="visualization-container">
+        {/* Main Visualization */}
+        <div className="visualization-panel">
+          <div className="panel-card">
+            <h2 className="panel-title">CTM Visualization</h2>
             <div className="cytoscape-container">
+              {initialized ? (
                 <CytoscapeComponent
-                elements={elements}
-                layout={layout}
-                stylesheet={stylesheet}
-                style={{ width: '100%', height: '100%' }}
-                cy={(cy) => {
+                  elements={elements}
+                  layout={layout}
+                  stylesheet={stylesheet}
+                  style={{ width: '100%', height: '100%' }}
+                  cy={(cy) => {
                     cy.on('tap', 'node', (evt) => {
-                    setSelectedNode(evt.target.id());
+                      setSelectedNode(evt.target.id());
                     });
-                }}
+                  }}
                 />
+              ) : (
+                <div className="placeholder-text">
+                  Please enter k and click "Start" to begin visualization
+                </div>
+              )}
             </div>
-            <div className="info-panel">
-                <h2>Node Information</h2>
-                {selectedNode ? (
-                <pre className="node-details">{nodeDetailText}</pre>
-                ) : (
-                <p>Click a node to see details.</p>
-                )}
-                <hr />
-                <button onClick={handleStep}>Step</button>
-                <p>Current Move: {PHASE_DESCRIPTIONS[displayPhase]}</p>
-            </div>
-            </div>
-        ) : (
-            <p>Please enter k and click "Start" to begin.</p>
-        )}
+          </div>
         </div>
-    );
+
+        {/* Right Panel - Node Information */}
+        <div className="info-panel">
+          <div className="panel-card">
+            <h2 className="panel-title">Node Information</h2>
+            <div className="info-content">
+              {selectedNode ? (
+                <pre className="node-details">{nodeDetailText}</pre>
+              ) : (
+                <p className="placeholder-text">Click a node to see details</p>
+              )}
+            </div>
+          </div>
+
+          {initialized && (
+            <div className="panel-card">
+              <h2 className="panel-title">Current Status</h2>
+              <div className="status-content">
+                <p><strong>Current Phase:</strong> {displayPhase}</p>
+                {currentStep === PHASES.UPTREE && (
+                  <p><strong>Uptree Step:</strong> {uptreeStep} of {k-1}</p>
+                )}
+                <p><strong>Processors:</strong> {processorNames.join(', ')}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default App;
