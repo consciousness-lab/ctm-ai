@@ -175,19 +175,20 @@ export function addUptreeEdges(kVal, layerIndex) {
     return { nodes: [], edges };
 }
 
-
-
 export function addFinalNode(kVal) {
-    // Calculate the ID of the top node
-    let topNodeId = kVal;    // Start after n1,n2,n3
+    let topNodeId = 1;
     for (let i = 1; i < kVal; i++) {
-        topNodeId += (kVal - i);
+        topNodeId += (kVal - i + 1);
     }
+    
+    const totalLayers = calculateTotalLayers(kVal);
+    const topUptreeY = 300 - ((totalLayers - 1) * 100);
+    const finalNodeY = topUptreeY - 200;
     
     return {
         nodes: [{
             data: { id: 'o', label: 'o' },
-            position: { x: 400, y: 0 },
+            position: { x: 400, y: finalNodeY },
             classes: 'output-node'
         }],
         edges: [{
@@ -200,7 +201,6 @@ export function addFinalNode(kVal) {
     };
 }
 
-// Helper function to calculate total number of layers needed for k
 export function calculateTotalLayers(k) {
-    return k - 1;    // For k=3: 2 layers, for k=4: 3 layers, etc.
+    return k - 1;
 }
