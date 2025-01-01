@@ -34,7 +34,6 @@ class ConsciousnessTuringMachine:
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Tuple[str, float]:
         return self.forward(query, text, image, audio, video_frames)
-    
 
     def reset(self) -> None:
         self.load_ctm()
@@ -55,9 +54,11 @@ class ConsciousnessTuringMachine:
         self.add_scorer(self.config.scorer)
         self.add_fuser(self.config.fuser)
 
-    def add_processor(self, processor_name: str, group_name: Optional[str] = None) -> None:
+    def add_processor(
+        self, processor_name: str, group_name: Optional[str] = None
+    ) -> None:
         self.processor_graph.add_node(processor_name, group_name)
-    
+
     def remove_processor(self, processor_name: str) -> None:
         self.processor_graph.remove_node(processor_name)
 

@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, make_response, request
 
-from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
 from ctm_ai.chunks import Chunk, ChunkManager
+from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
 
 ctm = ConsciousnessTuringMachine()
 
@@ -31,7 +31,7 @@ def get_node_details(node_id):
             parent_details = node_details.get(parent, 'No details available')
             if isinstance(parent_details, Chunk):
                 parent_details = str(parent_details.serialize())
-                details['parents'][parent]  = parent_details
+                details['parents'][parent] = parent_details
     else:
         details['parents'] = {}
 
@@ -55,12 +55,12 @@ def initialize_processors():
 
     data = request.get_json()
     k = data.get('k', 3)
-    
+
     # Clear previous data
     node_details.clear()
     node_parents.clear()
     node_gists.clear()
-    
+
     print('Initializing processors')
     processor_names = [
         'gpt4v_processor',
@@ -68,14 +68,14 @@ def initialize_processors():
         'search_engine_processor',
         'wolfram_alpha_processor',
     ]
-    
+
     # Store actual processor names we'll use
     selected_processors = []
-    
+
     ctm.reset()
     for i in range(k):
         processor_name = processor_names[i % len(processor_names)]
-        node_id = f"{processor_name}"  # Create unique name
+        node_id = f'{processor_name}'  # Create unique name
         node_details[node_id] = f'{processor_name}'  # Store original type in details
         ctm.add_processor(processor_name=processor_name)
         selected_processors.append(node_id)
@@ -83,13 +83,16 @@ def initialize_processors():
     ctm.add_supervisor('gpt4_supervisor')
     ctm.add_scorer('gpt4_scorer')
     ctm.add_fuser('gpt4_fuser')
-    
-    response = jsonify({
-        'message': 'Processors initialized',
-        'processorNames': selected_processors  # Return the actual processor names used
-    })
+
+    response = jsonify(
+        {
+            'message': 'Processors initialized',
+            'processorNames': selected_processors,  # Return the actual processor names used
+        }
+    )
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
+
 
 @app.route('/api/output-gist', methods=['POST', 'OPTIONS'])
 def handle_output_gist():
@@ -104,7 +107,6 @@ def handle_output_gist():
 
     data = request.get_json()
     updates = data.get('updates', [])
-
 
     chunks = ctm.ask_processors('What is the capital of France?')
     gists = [chunk.gist for chunk in chunks]
@@ -153,13 +155,14 @@ def handle_uptree():
         else:
             node_parents[node_id] += parent_nodes
 
-
     print('Current node parents:', node_parents)
 
     for node_id, parents_ids in node_parents.items():
         if node_id not in node_details:
             parent_id1, parent_id2 = parents_ids[0], parents_ids[1]
-            node_details[node_id] = ChunkManager().compete(node_details[parent_id1], node_details[parent_id2]) 
+            node_details[node_id] = ChunkManager().compete(
+                node_details[parent_id1], node_details[parent_id2]
+            )
 
     response = jsonify(
         {'message': 'Uptree updates processed', 'node_parents': node_parents}
@@ -192,8 +195,12 @@ def handle_final_node():
     for node_id, parents_ids in node_parents.items():
         if node_id not in node_details:
             parent_id = parents_ids[0]
-            answer, confidence_score = ctm.ask_supervisor('What is the capital of France?', node_details[parent_id])
-            node_details[node_id] = 'Answer: ' + answer + f'\n\nConfidence score: {confidence_score}'
+            answer, confidence_score = ctm.ask_supervisor(
+                'What is the capital of France?', node_details[parent_id]
+            )
+            node_details[node_id] = (
+                'Answer: ' + answer + f'\n\nConfidence score: {confidence_score}'
+            )
             winning_chunk = node_details[parent_id]
 
     response = jsonify({'message': 'Final node updated', 'node_parents': node_parents})
@@ -252,6 +259,7 @@ def update_processors():
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
 
+
 @app.route('/api/fuse-gist', methods=['POST', 'OPTIONS'])
 def handle_fuse_gist():
     global chunks
@@ -269,29 +277,25 @@ def handle_fuse_gist():
 
     global chunks
     chunks = ctm.fuse_processor(chunks)
-    
 
     # Process the fused nodes
     for update in updates:
         fused_node_id = update.get('fused_node_id')
         source_nodes = update.get('source_nodes', [])
-        
+
         # Create fused chunk from source nodes
         source_chunks = [node_details[node_id] for node_id in source_nodes]
 
-        #fused_chunk = ctm.fuse_chunks(source_chunks)  # Assuming you have this method
+        # fused_chunk = ctm.fuse_chunks(source_chunks)  # Assuming you have this method
         fused_chunk = source_chunks[0]
-        
+
         # Store the fused result
         node_details[fused_node_id] = fused_chunk
-        
+
         # Update parent relationships
         node_parents[fused_node_id] = source_nodes
 
-    response = jsonify({
-        'message': 'Fused gists processed',
-        'updates': updates
-    })
+    response = jsonify({'message': 'Fused gists processed', 'updates': updates})
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
 
@@ -301,16 +305,20 @@ def get_processor_neighborhoods():
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
         response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
         return response
-    
+
     neighborhoods = {}
-    graph = ctm.processor_graph.graph  # Assuming CTM stores processors in this attribute
-    
+    graph = (
+        ctm.processor_graph.graph
+    )  # Assuming CTM stores processors in this attribute
+
     for processor, connected_processors in graph.items():
         neighborhoods[processor.name] = [p.name for p in connected_processors]
-    
+
     response = jsonify(neighborhoods)
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response

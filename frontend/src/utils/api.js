@@ -96,11 +96,11 @@ export const fuseGist = async (updates) => {
       },
       body: JSON.stringify({ updates }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('Error in fuse gist:', error);

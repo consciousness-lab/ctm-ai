@@ -210,4 +210,56 @@
     .visualization-panel {
         height: 500px;
     }
+
+}
+
+.visualization-panel .panel-card {
+    height: 100%;
+}
+
+.cytoscape-container {
+    height: calc(100% - 60px);
+    background: #fff;
+}
+
+/* Info Panel Styles */
+.info-content,
+.status-content {
+    padding: 15px;
+}
+
+.node-details {
+    white-space: pre-wrap;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.placeholder-text {
+    color: #666;
+    text-align: center;
+    padding: 20px;
+}
+
+.status-content p {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.status-content strong {
+    color: #333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .visualization-panel {
+        height: 500px;
+    }
 }

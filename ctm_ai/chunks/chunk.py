@@ -1,5 +1,6 @@
-from ..utils import logging_chunk
 from typing import Any, Dict
+
+from ..utils import logging_chunk
 
 
 class Chunk:
@@ -68,7 +69,7 @@ class Chunk:
             'intensity': self.intensity,
             'mood': self.mood,
         }
-    
+
     @staticmethod
     def deserialize(data: Dict[str, Any]) -> 'Chunk':
         return Chunk(
