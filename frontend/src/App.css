@@ -91,27 +91,24 @@
     cursor: not-allowed;
 }
 
-/* Phase List Styles */
-.phases-list {
-    padding: 15px;
-}
-
 .phase-item {
     display: flex;
     align-items: flex-start;
     margin-bottom: 20px;
     position: relative;
-    padding-left: 15px;
+    padding: 10px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
 }
 
-.phase-item:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    left: 29px;
-    top: 30px;
-    bottom: -10px;
-    width: 2px;
-    background-color: #eee;
+.phase-item.active {
+    background-color: #e0f2fe;
+    border-left-color: #2563eb;
+}
+
+.phase-item.inactive {
+    opacity: 0.7;
 }
 
 .phase-indicator {
@@ -125,21 +122,12 @@
     justify-content: center;
     margin-right: 10px;
     flex-shrink: 0;
-    font-size: 14px;
-    position: relative;
-    z-index: 1;
 }
 
 .phase-item.active .phase-indicator {
     border-color: #2563eb;
-    background-color: #eff6ff;
     color: #2563eb;
-}
-
-.phase-item.completed .phase-indicator {
-    border-color: #059669;
-    background-color: #ecfdf5;
-    color: #059669;
+    font-weight: bold;
 }
 
 .phase-content {
@@ -156,6 +144,15 @@
     margin: 5px 0 0;
     font-size: 14px;
     color: #666;
+}
+
+.phase-item.active .phase-title {
+    color: #2563eb;
+    font-weight: bold;
+}
+
+.phase-item.active .phase-description {
+    color: #1e40af;
 }
 
 /* Visualization Panel Styles */

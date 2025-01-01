@@ -27,17 +27,18 @@ import { fetchProcessorNeighborhoods } from './utils/api';
 import './App.css';
 
 
-const ProcessPhase = ({ phase, currentPhase, description }) => {
-  const isActive = phase === currentPhase;
-  const isCompleted = Object.values(PHASES).indexOf(phase) < Object.values(PHASES).indexOf(currentPhase);
+const ProcessPhase = ({ phase, displayPhase, description }) => {
+  // Convert phase to number for comparison with displayPhase
+  const phaseNumber = Number(phase);
+  const isActive = phaseNumber === displayPhase;
   
   return (
-    <div className={`phase-item ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>
+    <div className={`phase-item ${isActive ? 'active' : 'inactive'}`}>
       <div className="phase-indicator">
-        {isCompleted ? '✓' : Object.values(PHASES).indexOf(phase) + 1}
+        {phaseNumber}
       </div>
       <div className="phase-content">
-        <p className="phase-title">{phase}</p>
+        <p className="phase-title">{PHASES[phase]}</p>
         <p className="phase-description">{description}</p>
       </div>
     </div>
@@ -286,7 +287,7 @@ const App = () => {
 
   return (
     <div className="app-container">
-      <h1 className="app-title">CTM-AI Process Visualization</h1>
+      <h1 className="app-title">CTM-AI Visualization</h1>
       
       <div className="main-grid">
         {/* Left Panel - Process Control */}
@@ -325,14 +326,14 @@ const App = () => {
           <div className="panel-card">
             <h2 className="panel-title">Process Phases</h2>
             <div className="phases-list">
-              {Object.entries(PHASE_DESCRIPTIONS).map(([phase, description]) => (
+                {Object.entries(PHASE_DESCRIPTIONS).map(([phase, description]) => (
                 <ProcessPhase
-                  key={phase}
-                  phase={phase}
-                  currentPhase={currentStep}
-                  description={description}
+                    key={phase}
+                    phase={phase}
+                    displayPhase={displayPhase}
+                    description={description}
                 />
-              ))}
+                ))}
             </div>
           </div>
         </div>
@@ -340,7 +341,7 @@ const App = () => {
         {/* Main Visualization */}
         <div className="visualization-panel">
           <div className="panel-card">
-            <h2 className="panel-title">Graph Visualization</h2>
+            <h2 className="panel-title">CTM Visualization</h2>
             <div className="cytoscape-container">
               {initialized ? (
                 <CytoscapeComponent
