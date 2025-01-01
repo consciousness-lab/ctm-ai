@@ -24,9 +24,9 @@ import {
 } from './steps/index';
 import './App.css';
 import UploadForm from "./components/UploadForm";
+import ProcessorSelector from "./components/ProcessorSelector";
 
 const App = () => {
-    const [k, setK] = useState(3);
     const [elements, setElements] = useState([]);
     const [processorNames, setProcessorNames] = useState([]);
     const [initialized, setInitialized] = useState(false);
@@ -35,9 +35,31 @@ const App = () => {
     const [currentStep, setCurrentStep] = useState(PHASES.INIT);
     const [uptreeStep, setUptreeStep] = useState(1);
     const [displayPhase, setDisplayPhase] = useState(PHASES.INIT);
+    const [processorCounts, setProcessorCounts] = useState({
+        BaseProcessor: 0,
+        GPT4VProcessor: 0,
+        GPT4Processor: 0,
+        SearchEngineProcessor: 0,
+        WolframAlphaProcessor: 0
+    });
+
+    const processorTypes = {
+        BaseProcessor: 'Base Processor',
+        GPT4VProcessor: 'GPT-4V Processor',
+        GPT4Processor: 'GPT-4 Processor',
+        SearchEngineProcessor: 'Search Engine',
+        WolframAlphaProcessor: 'Wolfram Alpha'
+    };
+
+    const handleProcessorCountChange = (type, count) => {
+        setProcessorCounts(prev => ({
+            ...prev,
+            [type]: count
+        }));
+    };
 
 
-    const modifyGraph = () => {
+    const modifyGraph = (totalProcessors) => {
         const updateElementsForPhase = (newElements) => {
             setElements((prevElements) => [
                 ...prevElements,
@@ -49,8 +71,8 @@ const App = () => {
         switch (currentStep) {
             case PHASES.OUTPUT_GIST: {
                 const newElements = {
-                    nodes: addGistNodes(k).nodes,
-                    edges: addGistEdges(k, processorNames).edges,
+                    nodes: addGistNodes(totalProcessors).nodes,
+                    edges: addGistEdges(totalProcessors, processorNames).edges,
                 };
                 updateElementsForPhase(newElements);
                 break;
@@ -58,8 +80,8 @@ const App = () => {
 
             case PHASES.FUSE_GIST: {
                 const newElements = {
-                    nodes: addFusedNodes(k).nodes,
-                    edges: addFusedEdges(k).edges,
+                    nodes: addFusedNodes(totalProcessors).nodes,
+                    edges: addFusedEdges(totalProcessors).edges,
                 };
                 updateElementsForPhase(newElements);
                 break;
@@ -67,15 +89,15 @@ const App = () => {
 
             case PHASES.UPTREE: {
                 const newElements = {
-                    nodes: addUptreeNodes(k, uptreeStep + 1).nodes,
-                    edges: addUptreeEdges(k, uptreeStep + 1).edges,
+                    nodes: addUptreeNodes(totalProcessors, uptreeStep + 1).nodes,
+                    edges: addUptreeEdges(totalProcessors, uptreeStep + 1).edges,
                 };
                 updateElementsForPhase(newElements);
                 break;
             }
 
             case PHASES.FINAL_NODE: {
-                const newElements = addFinalNode(k);
+                const newElements = addFinalNode(totalProcessors);
                 updateElementsForPhase(newElements);
                 break;
             }
@@ -126,13 +148,25 @@ const App = () => {
 
 
     const handleStep = async() => {
+        const totalProcessors = Object.values(processorCounts).reduce((sum, count) => sum + count, 0);
+
+        if (totalProcessors === 0) {
+            alert("Please select at least one processor");
+            return;
+        }
+
+        const selectedProcessors = Object.entries(processorCounts)
+            .filter(([_, count]) => count > 0)
+            .flatMap(([type, count]) => Array(count).fill(type));
+
         const stepProps = {
-            k,
+            k: totalProcessors,
             processorNames,
             uptreeStep,
             setCurrentStep,
             setUptreeStep,
             setDisplayPhase,
+            selectedProcessors,
         };
 
         console.log('Current step:', currentStep);
@@ -140,23 +174,23 @@ const App = () => {
             case PHASES.OUTPUT_GIST:
                 setDisplayPhase(PHASES.OUTPUT_GIST);
                 await handleOutputGistStep(stepProps);
-                modifyGraph();
+                modifyGraph(totalProcessors);
                 setCurrentStep(PHASES.FUSE_GIST);
                 break;
 
             case PHASES.FUSE_GIST:
                 setDisplayPhase(PHASES.FUSE_GIST);
                 await handleFuseGistStep(stepProps);
-                modifyGraph();
+                modifyGraph(totalProcessors);
                 setCurrentStep(PHASES.UPTREE);
                 break
 
             case PHASES.UPTREE:
                 setDisplayPhase(PHASES.UPTREE);
                 await handleUptreeStep(stepProps);
-                modifyGraph();
+                modifyGraph(totalProcessors);
 
-                if (uptreeStep >= k - 1) {
+                if (uptreeStep >= totalProcessors - 1) {
                     setCurrentStep(PHASES.FINAL_NODE);
                     setUptreeStep(1);
                 } else {
@@ -167,21 +201,24 @@ const App = () => {
             case PHASES.FINAL_NODE:
                 setDisplayPhase(PHASES.FINAL_NODE);
                 await handleFinalNodeStep(stepProps);
-                modifyGraph();
+                modifyGraph(totalProcessors);
                 setCurrentStep(PHASES.REVERSE);
                 break;
 
             case PHASES.REVERSE:
                 setDisplayPhase(PHASES.REVERSE);
                 await handleReverseStep(stepProps);
-                modifyGraph();
+                modifyGraph(totalProcessors);
                 setCurrentStep(PHASES.UPDATE);
                 break;
 
             case PHASES.UPDATE:
                 setDisplayPhase(PHASES.UPDATE);
-                await handleUpdateStep(stepProps);
-                modifyGraph();
+                await handleUpdateStep({
+                    processorCounts,
+                    ...stepProps,
+                });
+                modifyGraph(totalProcessors);
                 setCurrentStep(PHASES.OUTPUT_GIST);
                 break;
 
@@ -192,21 +229,47 @@ const App = () => {
 
 
     const handleStart = async () => {
-        const stepProps = {
-            k,
-            setDisplayPhase,
-            setCurrentStep,
-            setProcessorNames,
-        };
+    const totalProcessors = Object.values(processorCounts).reduce((sum, count) => sum + count, 0);
+
+    if (totalProcessors === 0) {
+        alert("Please select at least one processor");
+        return;
+    }
+
+    const selectedProcessors = [];
+    Object.entries(processorCounts).forEach(([type, count]) => {
+        for (let i = 0; i < count; i++) {
+            selectedProcessors.push(type);
+        }
+    });
+
+    const stepProps = {
+        k: totalProcessors,
+        setDisplayPhase,
+        setCurrentStep,
+        setProcessorNames,
+        selectedProcessors,
+    };
+
+    try {
+        console.log('Initializing with processors:', selectedProcessors);
         const processorNames = await handleInitialStep(stepProps);
-        setCurrentStep(PHASES.OUTPUT_GIST);
 
         if (processorNames) {
-            const initialElements = addProcessorNodes(k, processorNames);
+            console.log('Received processor names:', processorNames);
+            const initialElements = addProcessorNodes(totalProcessors, processorNames);
             setElements(initialElements.nodes);
             setInitialized(true);
+            setCurrentStep(PHASES.OUTPUT_GIST);
+        } else {
+            throw new Error('Failed to initialize processor names');
         }
-    };
+    } catch (error) {
+        console.error('Initialization failed:', error);
+        alert('Failed to initialize processors: ' + error.message);
+        setInitialized(false);
+    }
+};
 
 
     useEffect(() => {
@@ -247,15 +310,11 @@ const App = () => {
             <UploadForm />
 
             <div className="controls-container">
-                <label>
-                    Processor number (k):
-                    <input
-                        type="number"
-                        min="1"
-                        value={k}
-                        onChange={(e) => setK(parseInt(e.target.value, 10))}
-                    />
-                </label>
+                <ProcessorSelector
+                    processors={processorTypes}
+                    counts={processorCounts}
+                    onCountChange={handleProcessorCountChange}
+                />
                 <button onClick={handleStart}>Start</button>
             </div>
 

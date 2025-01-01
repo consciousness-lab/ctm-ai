@@ -1,27 +1,37 @@
-import { PHASES } from '../constants';
-import { initializeProcessors } from '../utils/api';
+// steps/index.js
 
-
-export const handleInitialStep = async ({ k, setDisplayPhase, setCurrentStep, setProcessorNames }) => {
-    if (typeof k !== 'number' || k <= 0) {
-        console.error('Invalid input: k must be a positive number.');
-        return null;
-    }
+export const handleInitialStep = async (stepProps) => {
+    const { k, selectedProcessors } = stepProps;
 
     try {
-        setDisplayPhase(PHASES.INIT);
-        const response = await initializeProcessors(k);
-        console.log('Initialize response:', response); // Debug log
+        const response = await fetch('http://localhost:5000/api/init', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                k: k,
+                processors: selectedProcessors || []
+            }),
+        });
 
-        if (response && Array.isArray(response.processorNames) && response.processorNames.length > 0) {
-            setProcessorNames(response.processorNames);
-            return response.processorNames;
-        } else {
-            console.error('Unexpected response format or empty processorNames:', response);
-            return null;
+        if (!response.ok) {
+            console.error('Server response not ok:', response.status);
+            throw new Error('Failed to initialize processors');
         }
+
+        const data = await response.json();
+        console.log('Initialization response:', data);
+
+        if (data.processorNames) {
+            stepProps.setProcessorNames(data.processorNames);
+            return data.processorNames;
+        }
+
+        console.error('Invalid response format:', data);
+        return null;
     } catch (error) {
-        console.error('Error in handleInitialStep:', error.message || error);
+        console.error('Error in handleInitialStep:', error);
         return null;
     }
 };

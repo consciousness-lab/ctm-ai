@@ -11,7 +11,14 @@ ctm = ConsciousnessTuringMachine()
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+# CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"],
+    }
+})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
@@ -67,47 +74,75 @@ def get_node_details(node_id):
     return response
 
 
-@app.route('/api/init', methods=['POST', 'OPTIONS'])
+@app.route('/api/init', methods=['POST'])
 def initialize_processors():
+    print('Received init request')
+    try:
+        data = request.get_json()
+        print('Request data:', data)
 
-    data = request.get_json()
-    k = data.get('k', 3)
+        k = data.get('k', 3)
+        selected_processors = data.get('processors', [])
 
-    # Clear previous data
-    node_details.clear()
-    node_parents.clear()
-    node_gists.clear()
+        print(f'Initializing with k={k} and processors={selected_processors}')
+        print('Received request with:', data)
 
-    print('Initializing processors')
-    processor_names = [
-        'gpt4v_processor',
-        'gpt4_processor',
-        'search_engine_processor',
-        'wolfram_alpha_processor',
-    ]
+        processor_type_map = {
+            'GPT4VProcessor': 'gpt4v_processor',
+            'GPT4Processor': 'gpt4_processor',
+            'SearchEngineProcessor': 'search_engine_processor',
+            'WolframAlphaProcessor': 'wolfram_alpha_processor',
+            'BaseProcessor': 'base_processor'
+        }
 
-    selected_processors = []
-    ctm.reset()
-    for i in range(k):
-        processor_name = processor_names[i % len(processor_names)]
-        node_id = f"{processor_name}"
-        node_details[node_id] = f'{processor_name}'
-        ctm.add_processor(processor_name=processor_name)
-        selected_processors.append(node_id)
+        # Clear previous data
+        node_details.clear()
+        node_parents.clear()
+        node_gists.clear()
 
-    ctm.add_supervisor('gpt4_supervisor')
-    ctm.add_scorer('gpt4_scorer')
-    ctm.add_fuser('gpt4_fuser')
+        processor_counts = {}
+        processor_ids = []
 
-    response = jsonify({
-        'message': 'Processors initialized',
-        'processorNames': selected_processors
-    })
+        for proc_type in selected_processors:
+            if proc_type in processor_type_map:
+                base_name = processor_type_map[proc_type]
 
-    return response
+                if base_name not in processor_counts:
+                    processor_counts[base_name] = 1
+                else:
+                    processor_counts[base_name] += 1
+
+                node_id = f"{base_name}_{processor_counts[base_name]}"
+                node_details[node_id] = base_name
+
+                try:
+                    ctm.add_processor(processor_name=base_name)
+                    processor_ids.append(node_id)
+                    print(f'Added processor: {node_id}')
+                except Exception as e:
+                    print(f'Error adding processor {node_id}: {str(e)}')
+                    continue
+            else:
+                print(f'Warning: Unknown processor type {proc_type}')
+
+        ctm.add_supervisor('gpt4_supervisor')
+        ctm.add_scorer('gpt4_scorer')
+        ctm.add_fuser('gpt4_fuser')
+        print('Initialized processor_ids:', processor_ids)
+
+        response = jsonify({
+            'message': 'Processors initialized',
+            'processorNames': processor_ids
+        })
+
+        return response
+
+    except Exception as e:
+        print('Error during initialization:', str(e))
+        return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/output-gist', methods=['POST', 'OPTIONS'])
+@app.route('/api/output-gist', methods=['POST'])
 def handle_output_gist():
     data = request.get_json()
     updates = data.get('updates', [])
@@ -130,7 +165,7 @@ def handle_output_gist():
     return response
 
 
-@app.route('/api/uptree', methods=['POST', 'OPTIONS'])
+@app.route('/api/uptree', methods=['POST'])
 def handle_uptree():
     data = request.get_json()
     updates = data.get('updates', [])
@@ -156,7 +191,7 @@ def handle_uptree():
     return response
 
 
-@app.route('/api/final-node', methods=['POST', 'OPTIONS'])
+@app.route('/api/final-node', methods=['POST'])
 def handle_final_node():
     global winning_chunk
     data = request.get_json()
@@ -178,7 +213,7 @@ def handle_final_node():
     return response
 
 
-@app.route('/api/reverse', methods=['POST', 'OPTIONS'])
+@app.route('/api/reverse', methods=['POST'])
 def handle_reverse():
     global winning_chunk
     print('handling reverse')
@@ -187,7 +222,7 @@ def handle_reverse():
     return response
 
 
-@app.route('/api/update-processors', methods=['POST', 'OPTIONS'])
+@app.route('/api/update-processors', methods=['POST'])
 def update_processors():
     global winning_chunk
     data = request.get_json()
@@ -213,7 +248,7 @@ def update_processors():
     return response
 
 
-@app.route('/api/fuse-gist', methods=['POST', 'OPTIONS'])
+@app.route('/api/fuse-gist', methods=['POST'])
 def handle_fuse_gist():
     data = request.get_json()
     updates = data.get('updates', [])
@@ -230,7 +265,7 @@ def handle_fuse_gist():
     return response
 
 
-@app.route('/api/upload', methods=['POST', 'OPTIONS'])
+@app.route('/api/upload', methods=['POST'])
 def upload_files():
 
     query = request.form.get('query', '')
