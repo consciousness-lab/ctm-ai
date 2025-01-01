@@ -31,7 +31,6 @@ const ProcessPhase = ({ phase, displayPhase, description }) => {
   // Convert phase to number for comparison with displayPhase
   const phaseNumber = Number(phase);
   const isActive = phaseNumber === displayPhase;
-
   return (
     <div className={`phase-item ${isActive ? 'active' : 'inactive'}`}>
       <div className="phase-indicator">
@@ -288,7 +287,6 @@ const App = () => {
   return (
     <div className="app-container">
       <h1 className="app-title">CTM-AI Visualization</h1>
-
       <div className="main-grid">
         {/* Left Panel - Process Control */}
         <div className="control-panel">
