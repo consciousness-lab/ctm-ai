@@ -12,6 +12,7 @@ node_details = {}
 node_parents = {}
 node_gists = {}
 winning_chunk = None
+chunks = []
 
 
 @app.route('/api/nodes/<node_id>')
@@ -79,6 +80,8 @@ def initialize_processors():
         ctm.add_processor(processor_name=processor_name)
         selected_processors.append(node_id)
 
+    ctm.processor_graph.add_link('gpt4v_processor', 'gpt4_processor')
+    ctm.processor_graph.add_link('gpt4v_processor', 'search_engine_processor')
         
     ctm.add_supervisor('gpt4_supervisor')
     ctm.add_scorer('gpt4_scorer')
@@ -224,6 +227,7 @@ def handle_reverse():
 @app.route('/api/update-processors', methods=['POST', 'OPTIONS'])
 def update_processors():
     global winning_chunk
+    global chunks
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
@@ -236,11 +240,6 @@ def update_processors():
     data = request.get_json()
     updates = data.get('updates', [])
 
-    chunks = []
-    for node in node_details:
-        if isinstance(node_details[node], Chunk):
-            chunks.append(node_details[node])
-    
     ctm.link_form(chunks)
     node_details.clear()
     node_parents.clear()
@@ -258,6 +257,7 @@ def update_processors():
 
 @app.route('/api/fuse-gist', methods=['POST', 'OPTIONS'])
 def handle_fuse_gist():
+    global chunks
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
@@ -269,6 +269,9 @@ def handle_fuse_gist():
 
     data = request.get_json()
     updates = data.get('updates', [])
+
+    global chunks = ctm.fuse_processor(chunks)
+    
 
     # Process the fused nodes
     for update in updates:
@@ -293,6 +296,27 @@ def handle_fuse_gist():
     })
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
+
+
+@app.route('/api/fetch-neighborhood', methods=['GET', 'OPTIONS'])
+def get_processor_neighborhoods():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+        return response
+    
+    neighborhoods = {}
+    graph = ctm.processor_graph.graph  # Assuming CTM stores processors in this attribute
+    
+    for processor, connected_processors in graph.items():
+        neighborhoods[processor.name] = [p.name for p in connected_processors]
+    
+    response = jsonify(neighborhoods)
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    return response
+
 
 if __name__ == '__main__':
     app.run(port=5000)
