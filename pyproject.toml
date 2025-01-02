@@ -19,6 +19,7 @@ beartype = "*"
 requests = "*"
 types-requests = "*"
 wordfreq = "*"
+sockio = "*"
 
 
 [tool.poetry.group.dev.dependencies]
