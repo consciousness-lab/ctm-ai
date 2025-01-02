@@ -14,6 +14,7 @@ export const handleInitialStep = async ({ k, setDisplayPhase, setProcessorNames 
         console.log('Initialize response:', response); // Debug log
 
         if (response && Array.isArray(response.processorNames) && response.processorNames.length > 0) {
+            console.log('Processor names:', response.processorNames); // Debug log
             setProcessorNames(response.processorNames);
             return response.processorNames;
         } else {
