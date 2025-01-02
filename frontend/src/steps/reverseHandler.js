@@ -1,11 +1,7 @@
-// steps/reverseHandler.js
-import { PHASES } from '../constants';
 import { handleReverse } from '../utils/api';
 
 export const handleReverseStep = async ({
   pyramidLayers,
-  setElements,
-  setCurrentStep,
 }) => {
   try {
 

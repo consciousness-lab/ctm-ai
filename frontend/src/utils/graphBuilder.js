@@ -1,5 +1,3 @@
-// utils/graphBuilder.js
-import { fetchProcessorNeighborhoods } from './api';
 
 export function addProcessorNodes(kVal, processorNames) {
     const nodes = [];
@@ -152,7 +150,7 @@ export function addUptreeNodes(kVal, layerIndex) {
 
 
 export function addUptreeEdges(kVal, layerIndex) {
-    if (layerIndex == 1) return { nodes: [], edges: [] };
+    if (layerIndex === 1) return { nodes: [], edges: [] };
     const edges = [];
     const nodesInThisLayer = kVal - layerIndex + 1; // Nodes in the current layer
     const nodesInPrevLayer = kVal - layerIndex + 2; // Nodes in the previous layer

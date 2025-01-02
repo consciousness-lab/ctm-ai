@@ -1,5 +1,3 @@
-// steps/updateHandler.js
-import { PHASES } from '../constants';
 import { updateProcessors } from '../utils/api';
 
 export const handleUpdateStep = async ({
@@ -8,13 +6,11 @@ export const handleUpdateStep = async ({
 }) => {
   try {
 
-    // Prepare processor updates
     const updates = Array.from({ length: k }, (_, i) => ({
       processor_id: `init${i + 1}`,
       new_state: 'READY'
     }));
 
-    // Send updates to backend
     await updateProcessors(updates);
 
     setUptreeStep(1);
