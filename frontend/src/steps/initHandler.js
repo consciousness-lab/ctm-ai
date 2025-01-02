@@ -1,19 +1,30 @@
+// steps/initHandler.js
 import { PHASES } from '../constants';
 import { initializeProcessors } from '../utils/api';
 
-
-export const handleInitialStep = async ({ k, setDisplayPhase, setCurrentStep, setProcessorNames }) => {
-    if (typeof k !== 'number' || k <= 0) {
-        console.error('Invalid input: k must be a positive number.');
+export const handleInitialStep = async ({
+                                            selectedProcessors,
+                                            setDisplayPhase,
+                                            setCurrentStep,
+                                            setProcessorNames,
+                                        }) => {
+    if (!Array.isArray(selectedProcessors) || selectedProcessors.length === 0) {
+        console.error('No processors selected or invalid format for selectedProcessors.');
         return null;
     }
 
     try {
         setDisplayPhase(PHASES.INIT);
-        const response = await initializeProcessors(k);
-        console.log('Initialize response:', response); // Debug log
 
-        if (response && Array.isArray(response.processorNames) && response.processorNames.length > 0) {
+        const response = await initializeProcessors(selectedProcessors);
+
+        console.log('Initialize response:', response);
+
+        if (
+            response &&
+            Array.isArray(response.processorNames) &&
+            response.processorNames.length > 0
+        ) {
             setProcessorNames(response.processorNames);
             return response.processorNames;
         } else {

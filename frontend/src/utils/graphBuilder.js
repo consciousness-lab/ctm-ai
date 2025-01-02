@@ -2,19 +2,31 @@
 
 export function addProcessorNodes(kVal, processorNames) {
     const nodes = [];
-    const spacing = 100;
+    const spacing = Math.min(100, 800 / (kVal + 1));
     const startX = 400 - ((kVal - 1) * spacing) / 2;
     const startY = 500;
 
+    const processorCounts = {};
+
     for (let i = 0; i < kVal; i++) {
         const processorId = processorNames?.[i] || `p${i + 1}`;
+        const processorType = processorId.split('_')[0];
+
+        if (!processorCounts[processorType]) {
+            processorCounts[processorType] = 1;
+        } else {
+            processorCounts[processorType]++;
+        }
+
+        const nodeLabel = `${processorType}_${processorCounts[processorType]}`;
         nodes.push({
             data: { 
                 id: processorId,
-                label: processorId
+                label: processorId,
+                type: processorType
             },
             position: { x: startX + i * spacing, y: startY },
-            classes: 'rectangle'
+            classes: `rectangle processor-${processorType}`
         });
     }
     

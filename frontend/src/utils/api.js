@@ -1,5 +1,4 @@
 // utils/api.js
-import axios from 'axios';
 
 const BASE_URL = 'http://localhost:5000/api';
 
@@ -19,14 +18,14 @@ const fetchWithError = async (url, options = {}) => {
   return await response.json();
 };
 
-export const initializeProcessors = async (k) => {
+export const initializeProcessors = async (selectedProcessors) => {
   try {
     const response = await fetch('http://localhost:5000/api/init', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ k }),
+      body: JSON.stringify({ selected_processors: selectedProcessors }),
     });
 
     if (!response.ok) {
@@ -87,26 +86,6 @@ export const getNodeDetails = async (nodeId) => {
 
 export const getCurrentState = async () => {
   return fetchWithError(`${BASE_URL}/state`);
-};
-
-
-export const uploadFiles = async (formData, onUploadProgress) => {
-  try {
-    const response = await axios.post(`${BASE_URL}/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      onUploadProgress,
-    });
-
-    return response.data;
-  } catch (error) {
-    if (error.response) {
-      throw new Error(error.response.data.error || 'Upload failed');
-    } else {
-      throw new Error('Network error');
-    }
-  }
 };
 
 

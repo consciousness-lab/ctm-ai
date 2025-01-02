@@ -23,10 +23,17 @@ import {
     handleUpdateStep,
 } from './steps/index';
 import './App.css';
-import UploadForm from "./components/UploadForm";
+import ProcessorSelector from "./components/ProcessorSelector";
 
 const App = () => {
-    const [k, setK] = useState(3);
+    const [availableProcessors, setAvailableProcessors] = useState([
+        'BaseProcessor',
+        'GPT4VProcessor',
+        'GPT4Processor',
+        'SearchEngineProcessor',
+        'WolframAlphaProcessor',
+    ]);
+    const [k, setK] = useState(0);
     const [elements, setElements] = useState([]);
     const [processorNames, setProcessorNames] = useState([]);
     const [initialized, setInitialized] = useState(false);
@@ -35,7 +42,16 @@ const App = () => {
     const [currentStep, setCurrentStep] = useState(PHASES.INIT);
     const [uptreeStep, setUptreeStep] = useState(1);
     const [displayPhase, setDisplayPhase] = useState(PHASES.INIT);
+    const [selectedProcessors, setSelectedProcessors] = useState([]);
+    const allProcessors = availableProcessors;
 
+    const toggleProcessor = (proc) => {
+        if (selectedProcessors.includes(proc)) {
+            setSelectedProcessors(selectedProcessors.filter(p => p !== proc));
+        } else {
+            setSelectedProcessors([...selectedProcessors, proc]);
+        }
+    };
 
     const modifyGraph = () => {
         const updateElementsForPhase = (newElements) => {
@@ -192,19 +208,24 @@ const App = () => {
 
 
     const handleStart = async () => {
+        const dynamicK = selectedProcessors.length;
+        setK(dynamicK);
+
         const stepProps = {
-            k,
+            k: dynamicK,
             setDisplayPhase,
             setCurrentStep,
             setProcessorNames,
+            selectedProcessors,
         };
-        const processorNames = await handleInitialStep(stepProps);
+        const namesFromBackend = await handleInitialStep(stepProps);
         setCurrentStep(PHASES.OUTPUT_GIST);
 
-        if (processorNames) {
-            const initialElements = addProcessorNodes(k, processorNames);
+        if (namesFromBackend) {
+            const initialElements = addProcessorNodes(dynamicK, namesFromBackend);
             setElements(initialElements.nodes);
             setInitialized(true);
+            setProcessorNames(namesFromBackend);
         }
     };
 
@@ -239,24 +260,20 @@ const App = () => {
         });
     }, [selectedNode]);
 
+
     return (
         <div className="app-container">
             <h1>CTM-AI</h1>
-            
-            {/* Upload Form */}
-            <UploadForm />
 
             <div className="controls-container">
-                <label>
-                    Processor number (k):
-                    <input
-                        type="number"
-                        min="1"
-                        value={k}
-                        onChange={(e) => setK(parseInt(e.target.value, 10))}
-                    />
-                </label>
-                <button onClick={handleStart}>Start</button>
+                <ProcessorSelector
+                    allProcessors={allProcessors}
+                    selectedProcessors={selectedProcessors}
+                    onChange={setSelectedProcessors}
+                />
+                <button onClick={handleStart} style={{marginTop: '10px'}}>
+                    Start
+                </button>
             </div>
 
             {initialized ? (

@@ -1,5 +1,4 @@
 from flask import Flask, jsonify, make_response, request, send_from_directory
-from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 import uuid
@@ -10,8 +9,6 @@ from ctm_ai.chunks import Chunk, ChunkManager
 ctm = ConsciousnessTuringMachine()
 
 app = Flask(__name__)
-
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
@@ -29,6 +26,14 @@ node_details = {}
 node_parents = {}
 node_gists = {}
 winning_chunk = None
+
+FRONTEND_TO_BACKEND_PROCESSORS = {
+    "BaseProcessor": "base_processor",
+    "GPT4VProcessor": "gpt4v_processor",
+    "GPT4Processor": "gpt4_processor",
+    "SearchEngineProcessor": "search_engine_processor",
+    "WolframAlphaProcessor": "wolfram_alpha_processor",
+}
 
 
 def allowed_file(filename, file_type):
@@ -82,7 +87,14 @@ def initialize_processors():
         return response
 
     data = request.get_json()
-    k = data.get('k', 3)
+    selected_processors = data.get('selected_processors', [])
+
+    if not selected_processors:
+        error_response = jsonify({
+            'error': 'No selected_processors provided or the provided list is empty'
+        })
+        error_response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        return error_response, 400
 
     # Clear previous data
     node_details.clear()
@@ -90,21 +102,20 @@ def initialize_processors():
     node_gists.clear()
 
     print('Initializing processors')
-    processor_names = [
-        'gpt4v_processor',
-        'gpt4_processor',
-        'search_engine_processor',
-        'wolfram_alpha_processor',
-    ]
-
-    selected_processors = []
     ctm.reset()
-    for i in range(k):
-        processor_name = processor_names[i % len(processor_names)]
-        node_id = f"{processor_name}"
-        node_details[node_id] = f'{processor_name}'
-        ctm.add_processor(processor_name=processor_name)
-        selected_processors.append(node_id)
+
+    created_processor_names = []
+
+    for processor_label in selected_processors:
+        backend_processor_name = FRONTEND_TO_BACKEND_PROCESSORS.get(processor_label)
+        if not backend_processor_name:
+            continue
+
+        print(f"Adding processor: {backend_processor_name}")
+        ctm.add_processor(processor_name=backend_processor_name)
+
+        node_details[backend_processor_name] = backend_processor_name
+        created_processor_names.append(backend_processor_name)
 
     ctm.add_supervisor('gpt4_supervisor')
     ctm.add_scorer('gpt4_scorer')
@@ -112,7 +123,7 @@ def initialize_processors():
 
     response = jsonify({
         'message': 'Processors initialized',
-        'processorNames': selected_processors
+        'processorNames': created_processor_names
     })
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
 
@@ -245,6 +256,7 @@ def handle_reverse():
 def update_processors():
     global winning_chunk
     global chunks
+    chunks = []
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
@@ -275,6 +287,12 @@ def update_processors():
 
 @app.route('/api/fuse-gist', methods=['POST', 'OPTIONS'])
 def handle_fuse_gist():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
     data = request.get_json()
     updates = data.get('updates', [])
 
