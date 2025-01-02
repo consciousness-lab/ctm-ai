@@ -63,12 +63,23 @@ def get_node_details(node_id):
         details['parents'] = {}
 
     response = make_response(jsonify(details))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
 
     return response
 
 
 @app.route('/api/init', methods=['POST', 'OPTIONS'])
 def initialize_processors():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
 
     data = request.get_json()
     k = data.get('k', 3)
@@ -103,16 +114,27 @@ def initialize_processors():
         'message': 'Processors initialized',
         'processorNames': selected_processors
     })
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
 
     return response
 
 
 @app.route('/api/output-gist', methods=['POST', 'OPTIONS'])
 def handle_output_gist():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
+
     data = request.get_json()
     updates = data.get('updates', [])
 
     chunks = ctm.ask_processors('What is the capital of France?')
+    gists = [chunk.gist for chunk in chunks]
     gists = {}
     for chunk in chunks:
         gists[chunk.processor_name] = chunk
@@ -127,11 +149,21 @@ def handle_output_gist():
             node_parents[target_id].append(proc_id)
 
     response = jsonify({'message': 'Gist outputs processed', 'updates': updates})
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
 
 
 @app.route('/api/uptree', methods=['POST', 'OPTIONS'])
 def handle_uptree():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
+
     data = request.get_json()
     updates = data.get('updates', [])
     print('handling uptree')
@@ -153,12 +185,22 @@ def handle_uptree():
             node_details[node_id] = ChunkManager().compete(node_details[parent_id1], node_details[parent_id2])
 
     response = jsonify({'message': 'Uptree updates processed', 'node_parents': node_parents})
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
 
 
 @app.route('/api/final-node', methods=['POST', 'OPTIONS'])
 def handle_final_node():
     global winning_chunk
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
+
     data = request.get_json()
     node_id = data.get('node_id')
     parents = data.get('parents', [])
@@ -175,28 +217,45 @@ def handle_final_node():
             winning_chunk = node_details[parent_id]
 
     response = jsonify({'message': 'Final node updated', 'node_parents': node_parents})
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
 
 
 @app.route('/api/reverse', methods=['POST', 'OPTIONS'])
 def handle_reverse():
     global winning_chunk
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
+
     print('handling reverse')
     ctm.downtree_broadcast(winning_chunk)
+
     response = jsonify({'message': 'Reverse broadcast processed'})
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
 
 
 @app.route('/api/update-processors', methods=['POST', 'OPTIONS'])
 def update_processors():
     global winning_chunk
+    global chunks
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
+
     data = request.get_json()
     updates = data.get('updates', [])
-
-    chunks = []
-    for node in node_details:
-        if isinstance(node_details[node], Chunk):
-            chunks.append(node_details[node])
 
     ctm.link_form(chunks)
     node_details.clear()
@@ -210,6 +269,7 @@ def update_processors():
             node_details[proc_id] = f'Updated processor {proc_id}'
 
     response = jsonify({'message': 'Processors updated'})
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
 
 
@@ -227,11 +287,20 @@ def handle_fuse_gist():
         node_parents[fused_node_id] = source_nodes
 
     response = jsonify({'message': 'Fused gists processed', 'updates': updates})
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
 
 
 @app.route('/api/upload', methods=['POST', 'OPTIONS'])
 def upload_files():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
 
     query = request.form.get('query', '')
     text = request.form.get('text', '')
@@ -253,7 +322,9 @@ def upload_files():
                 img.save(image_path)
                 saved_files['images'].append(unique_filename)
             else:
-                return jsonify({'error': f'Invalid image file: {img.filename}'}), 400
+                response = make_response(jsonify({'error': f'Invalid image file: {img.filename}'}), 400)
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+                return response
 
     if 'audios' in request.files:
         audios = request.files.getlist('audios')
@@ -266,6 +337,8 @@ def upload_files():
                 aud.save(audio_path)
                 saved_files['audios'].append(unique_filename)
             else:
+                response = make_response(jsonify({'error': f'Invalid image file: {aud.filename}'}), 400)
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
                 return jsonify({'error': f'Invalid audio file: {aud.filename}'}), 400
 
     if 'video_frames' in request.files:
@@ -279,6 +352,8 @@ def upload_files():
                 vid.save(video_path)
                 saved_files['videos'].append(unique_filename)
             else:
+                response = make_response(jsonify({'error': f'Invalid image file: {vid.filename}'}), 400)
+                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
                 return jsonify({'error': f'Invalid video file: {vid.filename}'}), 400
 
     response_data = {
@@ -296,14 +371,32 @@ def upload_files():
         }
     }
 
-    return jsonify(response_data), 200
+    response = make_response(jsonify(response_data), 200)
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    response.headers.add('Content-Type', 'application/json')
+    return response
 
 
 @app.route('/uploads/<file_type>/<filename>', methods=['GET'])
 def uploaded_file(file_type, filename):
     if file_type not in ['images', 'audios', 'videos']:
-        return jsonify({'error': 'Invalid file type'}), 400
-    return send_from_directory(os.path.join(app.config['UPLOAD_FOLDER'], file_type), filename)
+        error_response = jsonify({'error': 'Invalid file type'})
+        error_response.status_code = 400
+        error_response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        return error_response
+
+    try:
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_type)
+        response = send_from_directory(file_path, filename)
+        response = make_response(response)
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Cache-Control', 'public, max-age=3600')
+        return response
+    except FileNotFoundError:
+        error_response = jsonify({'error': 'File not found'})
+        error_response.status_code = 404
+        error_response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        return error_response
 
 
 if __name__ == '__main__':
