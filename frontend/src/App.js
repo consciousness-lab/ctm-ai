@@ -25,10 +25,10 @@ import {
 } from './steps/index';
 import { fetchProcessorNeighborhoods } from './utils/api';
 import './App.css';
+import UploadForm from "./components/UploadForm";
 
 
 const ProcessPhase = ({ phase, displayPhase, description }) => {
-  // Convert phase to number for comparison with displayPhase
   const phaseNumber = Number(phase);
   const isActive = phaseNumber === displayPhase;
   return (
@@ -287,6 +287,16 @@ const App = () => {
   return (
     <div className="app-container">
       <h1 className="app-title">CTM-AI Visualization</h1>
+
+    <div className="upload-section">
+        <div className="panel-header">
+            <h2 className="panel-title">Upload Files</h2>
+        </div>
+        <div className="panel-card">
+            <UploadForm />
+        </div>
+    </div>
+
       <div className="main-grid">
         {/* Left Panel - Process Control */}
         <div className="control-panel">
