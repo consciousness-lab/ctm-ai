@@ -108,6 +108,7 @@ def handle_output_gist():
     data = request.get_json()
     updates = data.get('updates', [])
 
+    global chunks
     chunks = ctm.ask_processors('What is the capital of France?')
     gists = [chunk.gist for chunk in chunks]
     gists = {}
@@ -275,8 +276,7 @@ def handle_fuse_gist():
     data = request.get_json()
     updates = data.get('updates', [])
 
-    global chunks
-    chunks = ctm.fuse_processor(chunks)
+    ctm.fuse_processor(chunks)
 
     # Process the fused nodes
     for update in updates:
