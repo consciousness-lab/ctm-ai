@@ -4,14 +4,11 @@ import React, { useState } from 'react';
 import { uploadFiles } from '../utils/api';
 
 const UploadForm = () => {
-
     const [query, setQuery] = useState('');
     const [text, setText] = useState('');
-
     const [imageFiles, setImageFiles] = useState([]);
     const [audioFiles, setAudioFiles] = useState([]);
     const [videoFiles, setVideoFiles] = useState([]);
-
     const [errorMessage, setErrorMessage] = useState('');
     const [uploadProgress, setUploadProgress] = useState(0);
     const [serverResponse, setServerResponse] = useState(null);
@@ -123,174 +120,145 @@ const UploadForm = () => {
 
 
     return (
-        <div style={{ maxWidth: 700, margin: '0 auto', padding: '10px' }}>
-            <h2>Upload Files</h2>
+        <div className="upload-form-container">
+            <form onSubmit={handleSubmit} className="upload-form">
+                <div className="form-grid">
+                    <div className="form-group">
+                        <label className="form-label">Query</label>
+                        <input
+                            type="text"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            className="form-input"
+                            placeholder="Enter your query"
+                        />
+                    </div>
 
-            <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: 10 }}>
-                    <label>Query:</label>
-                    <input
-                        type="text"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        style={{ width: '100%', padding: '6px', marginTop: '4px' }}
-                    />
-                </div>
+                    <div className="form-group">
+                        <label className="form-label">Text</label>
+                        <textarea
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            rows={3}
+                            className="form-input"
+                            placeholder="Enter additional text"
+                        />
+                    </div>
 
-                <div style={{ marginBottom: 10 }}>
-                    <label>Text:</label>
-                    <textarea
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        rows={3}
-                        style={{ width: '100%', padding: '6px', marginTop: '4px' }}
-                    />
-                </div>
+                    <div className="file-upload-section">
+                        <div className="file-group">
+                            <label className="form-label">Images</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handleImagesChange}
+                                className="file-input"
+                            />
+                            {imageFiles.length > 0 && (
+                                <ul className="file-list">
+                                    {imageFiles.map((file, idx) => (
+                                        <li key={idx} className="file-item">
+                                            <span className="file-name">{file.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFile(file, imageFiles, setImageFiles)}
+                                                className="remove-button"
+                                            >
+                                                ×
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
 
-                <div style={{ marginBottom: 10 }}>
-                    <label>Images:</label>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImagesChange}
-                        style={{ display: 'block', marginTop: '4px' }}
-                    />
-                    {imageFiles.length > 0 && (
-                        <ul>
-                            {imageFiles.map((file, idx) => (
-                                <li key={idx}>
-                                    {file.name}
-                                    <button
-                                        type="button"
-                                        onClick={() => removeFile(file, imageFiles, setImageFiles)}
-                                        style={{
-                                            marginLeft: '10px',
-                                            color: 'red',
-                                            border: 'none',
-                                            background: 'none',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        Remove
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                        <div className="file-group">
+                            <label className="form-label">Audio</label>
+                            <input
+                                type="file"
+                                accept="audio/*"
+                                multiple
+                                onChange={handleAudioChange}
+                                className="file-input"
+                            />
+                            {audioFiles.length > 0 && (
+                                <ul className="file-list">
+                                    {audioFiles.map((file, idx) => (
+                                        <li key={idx} className="file-item">
+                                            <span className="file-name">{file.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFile(file, audioFiles, setAudioFiles)}
+                                                className="remove-button"
+                                            >
+                                                ×
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
 
-                <div style={{marginBottom: 10}}>
-                    <label>Audios:</label>
-                    <input
-                        type="file"
-                        accept="audio/*"
-                        multiple
-                        onChange={handleAudioChange}
-                        style={{display: 'block', marginTop: '4px'}}
-                    />
-                    {audioFiles.length > 0 && (
-                        <ul>
-                            {audioFiles.map((file, idx) => (
-                                <li key={idx}>
-                                    {file.name}
-                                    <button
-                                        type="button"
-                                        onClick={() => removeFile(file, audioFiles, setAudioFiles)}
-                                        style={{
-                                            marginLeft: '10px',
-                                            color: 'red',
-                                            border: 'none',
-                                            background: 'none',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        Remove
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-
-                <div style={{marginBottom: 10}}>
-                    <label>Videos:</label>
-                    <input
-                        type="file"
-                        accept="video/*"
-                        multiple
-                        onChange={handleVideoChange}
-                        style={{display: 'block', marginTop: '4px'}}
-                    />
-                    {videoFiles.length > 0 && (
-                        <ul>
-                            {videoFiles.map((file, idx) => (
-                                <li key={idx}>
-                                    {file.name}
-                                    <button
-                                        type="button"
-                                        onClick={() => removeFile(file, videoFiles, setVideoFiles)}
-                                        style={{
-                                            marginLeft: '10px',
-                                            color: 'red',
-                                            border: 'none',
-                                            background: 'none',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        Remove
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                        <div className="file-group">
+                            <label className="form-label">Video</label>
+                            <input
+                                type="file"
+                                accept="video/*"
+                                multiple
+                                onChange={handleVideoChange}
+                                className="file-input"
+                            />
+                            {videoFiles.length > 0 && (
+                                <ul className="file-list">
+                                    {videoFiles.map((file, idx) => (
+                                        <li key={idx} className="file-item">
+                                            <span className="file-name">{file.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFile(file, videoFiles, setVideoFiles)}
+                                                className="remove-button"
+                                            >
+                                                ×
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {uploadProgress > 0 && uploadProgress < 100 && (
-                    <div style={{ marginBottom: '10px', backgroundColor: '#f3f3f3', borderRadius: '4px' }}>
-                        <div
-                            style={{
-                                width: `${uploadProgress}%`,
-                                height: '20px',
-                                backgroundColor: '#4caf50',
-                                borderRadius: '4px',
-                                textAlign: 'center',
-                                color: 'white',
-                                lineHeight: '20px'
-                            }}
+                    <div className="progress-bar-container">
+                        <div 
+                            className="progress-bar"
+                            style={{ width: `${uploadProgress}%` }}
                         >
                             {uploadProgress}%
                         </div>
                     </div>
                 )}
 
-                {errorMessage && <div style={{ color: 'red', marginBottom: '10px' }}>{errorMessage}</div>}
-                {serverResponse && serverResponse.error && (
-                    <div style={{ color: 'red', marginBottom: '10px' }}>{serverResponse.error}</div>
-                )}
+                {errorMessage && <div className="error-message">{errorMessage}</div>}
+                {serverResponse?.error && <div className="error-message">{serverResponse.error}</div>}
                 {serverResponse && !serverResponse.error && (
-                    <div style={{ color: 'green', marginBottom: '10px' }}>Upload Success！</div>
+                    <div className="success-message">Upload Success!</div>
                 )}
 
-                <button type="submit" style={{marginTop: '10px'}}>
+                <button type="submit" className="submit-button">
                     Submit to Server
                 </button>
-            </form>
 
-            {serverResponse && (
-                <div style={{marginTop: 20}}>
-                    <h3>Server Response:</h3>
-                    <pre
-                        style={{
-                            backgroundColor: '#f8f8f8',
-                            padding: '10px',
-                            border: '1px solid #ccc',
-                        }}
-                    >
-            {JSON.stringify(serverResponse, null, 2)}
-          </pre>
-                </div>
-            )}
+                {serverResponse && (
+                    <div className="server-response">
+                        <h3>Server Response:</h3>
+                        <pre className="response-content">
+                            {JSON.stringify(serverResponse, null, 2)}
+                        </pre>
+                    </div>
+                )}
+            </form>
         </div>
     );
 };
