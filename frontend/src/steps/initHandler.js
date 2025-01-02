@@ -2,7 +2,7 @@ import { PHASES } from '../constants';
 import { initializeProcessors } from '../utils/api';
 
 
-export const handleInitialStep = async ({ k, setDisplayPhase, setCurrentStep, setProcessorNames }) => {
+export const handleInitialStep = async ({ k, setDisplayPhase, setProcessorNames }) => {
     if (typeof k !== 'number' || k <= 0) {
         console.error('Invalid input: k must be a positive number.');
         return null;
@@ -14,6 +14,7 @@ export const handleInitialStep = async ({ k, setDisplayPhase, setCurrentStep, se
         console.log('Initialize response:', response); // Debug log
 
         if (response && Array.isArray(response.processorNames) && response.processorNames.length > 0) {
+            console.log('Processor names:', response.processorNames); // Debug log
             setProcessorNames(response.processorNames);
             return response.processorNames;
         } else {

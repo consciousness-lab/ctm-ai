@@ -18,7 +18,7 @@ export const handleFuseGistStep = async ({
 
       // Add fused node
       fusedLayer.nodes.push({
-        data: { 
+        data: {
           id: fusedNodeId,
           label: `n${i + 1}`
         }

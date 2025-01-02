@@ -6,7 +6,7 @@ export const PHASES = {
   UPTREE: 3,
   FINAL_NODE: 4,
   REVERSE: 5,
-  UPDATE: 6 
+  UPDATE: 6
 };
 
 export const PHASE_DESCRIPTIONS = {

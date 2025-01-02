@@ -7,7 +7,7 @@ export const handleOutputGistStep = async ({
 }) => {
     try {
         const updates = [];
-        
+
         for (let i = 0; i < k; i++) {
             const initNodeId = processorNames[i];
             const bottomNodeId = `g${i + 1}`;
@@ -16,7 +16,7 @@ export const handleOutputGistStep = async ({
                 target_id: bottomNodeId,
             });
         }
-        
+
         await outputGist(updates);
     } catch (error) {
         console.error('Error in output gist step:', error);
