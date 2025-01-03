@@ -1,8 +1,8 @@
-from flask import Flask, jsonify, make_response, request, send_from_directory
-from flask_cors import CORS
-from werkzeug.utils import secure_filename
 import os
 import uuid
+
+from flask import Flask, jsonify, make_response, request, send_from_directory
+from werkzeug.utils import secure_filename
 
 from ctm_ai.chunks import Chunk, ChunkManager
 from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
@@ -10,8 +10,6 @@ from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
 ctm = ConsciousnessTuringMachine()
 
 app = Flask(__name__)
-
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
@@ -21,9 +19,10 @@ app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024 * 1024
 ALLOWED_EXTENSIONS = {
     'images': {'png', 'jpg', 'jpeg', 'gif', 'bmp'},
     'audios': {'mp3', 'wav', 'aac', 'flac'},
-    'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv'}
+    'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv'},
 }
 
+query = None
 # Data storage
 node_details = {}
 node_parents = {}
@@ -33,14 +32,23 @@ chunks = []
 
 
 def allowed_file(filename, file_type):
-    return '.' in filename and \
-        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS.get(file_type, set())
+    return '.' in filename and filename.rsplit('.', 1)[
+        1
+    ].lower() in ALLOWED_EXTENSIONS.get(file_type, set())
 
 
 def generate_unique_filename(filename):
     ext = filename.rsplit('.', 1)[1].lower()
-    unique_name = f"{uuid.uuid4().hex}.{ext}"
+    unique_name = f'{uuid.uuid4().hex}.{ext}'
     return unique_name
+
+
+FRONTEND_TO_BACKEND_PROCESSORS = {
+    'GPT4VProcessor': 'gpt4v_processor',
+    'GPT4Processor': 'gpt4_processor',
+    'SearchEngineProcessor': 'search_engine_processor',
+    'WolframAlphaProcessor': 'wolfram_alpha_processor',
+}
 
 
 @app.route('/api/nodes/<node_id>')
@@ -67,7 +75,6 @@ def get_node_details(node_id):
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-
     return response
 
 
@@ -83,7 +90,16 @@ def initialize_processors():
         return response
 
     data = request.get_json()
-    k = data.get('k', 3)
+    selected_processors = data.get('selected_processors', [])
+
+    if not selected_processors:
+        error_response = jsonify(
+            {'error': 'No selected_processors provided or the provided list is empty'}
+        )
+        error_response.headers.add(
+            'Access-Control-Allow-Origin', 'http://localhost:3000'
+        )
+        return error_response, 400
 
     # Clear previous data
     node_details.clear()
@@ -91,42 +107,29 @@ def initialize_processors():
     node_gists.clear()
 
     print('Initializing processors')
-    processor_names = [
-        'gpt4v_processor',
-        'gpt4_processor',
-        'search_engine_processor',
-        'wolfram_alpha_processor',
-    ]
-
-    selected_processors = []
     ctm.reset()
-    for i in range(k):
-        processor_name = processor_names[i % len(processor_names)]
-        node_id = f"{processor_name}"
-        node_details[node_id] = f'{processor_name}'
-    # Store actual processor names we'll use
-    selected_processors = []
 
-    ctm.reset()
-    for i in range(k):
-        processor_name = processor_names[i % len(processor_names)]
-        node_id = f'{processor_name}'  # Create unique name
-        node_details[node_id] = f'{processor_name}'  # Store original type in details
-        ctm.add_processor(processor_name=processor_name)
-        selected_processors.append(node_id)
+    created_processor_names = []
+
+    for frontend_label in selected_processors:
+        backend_processor_name = FRONTEND_TO_BACKEND_PROCESSORS.get(frontend_label)
+        if not backend_processor_name:
+            continue
+
+        print(f'Adding processor: {backend_processor_name}')
+        ctm.add_processor(processor_name=backend_processor_name)
+
+        node_details[backend_processor_name] = backend_processor_name
+        created_processor_names.append(backend_processor_name)
 
     ctm.add_supervisor('gpt4_supervisor')
     ctm.add_scorer('gpt4_scorer')
     ctm.add_fuser('gpt4_fuser')
 
     response = jsonify(
-        {
-            'message': 'Processors initialized',
-            'processorNames': selected_processors,  # Return the actual processor names used
-        }
+        {'message': 'Processors initialized', 'processorNames': created_processor_names}
     )
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-
     return response
 
 
@@ -144,7 +147,8 @@ def handle_output_gist():
     data = request.get_json()
     updates = data.get('updates', [])
 
-    chunks = ctm.ask_processors('What is the capital of France?')
+    global query
+    chunks = ctm.ask_processors(query)
     gists = [chunk.gist for chunk in chunks]
     gists = {}
     for chunk in chunks:
@@ -177,12 +181,13 @@ def handle_uptree():
 
     data = request.get_json()
     updates = data.get('updates', [])
+
     print('handling uptree')
     print(data)
-
     for update in updates:
         node_id = update.get('node_id')
         parent_nodes = update.get('parents', [])
+
         if node_id not in node_parents:
             node_parents[node_id] = parent_nodes
         else:
@@ -197,7 +202,9 @@ def handle_uptree():
                 node_details[parent_id1], node_details[parent_id2]
             )
 
-    response = jsonify({'message': 'Uptree updates processed', 'node_parents': node_parents})
+    response = jsonify(
+        {'message': 'Uptree updates processed', 'node_parents': node_parents}
+    )
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
 
@@ -220,13 +227,15 @@ def handle_final_node():
 
     print('handling final node')
     node_parents[node_id] = parents
+
     print('Final node parents:', node_parents)
 
+    global query
     for node_id, parents_ids in node_parents.items():
         if node_id not in node_details:
             parent_id = parents_ids[0]
             answer, confidence_score = ctm.ask_supervisor(
-                'What is the capital of France?', node_details[parent_id]
+                query, node_details[parent_id]
             )
             node_details[node_id] = (
                 'Answer: ' + answer + f'\n\nConfidence score: {confidence_score}'
@@ -262,6 +271,7 @@ def handle_reverse():
 def update_processors():
     global winning_chunk
     global chunks
+    chunks = []
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
@@ -365,14 +375,11 @@ def upload_files():
         response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
         return response
 
+    global query
     query = request.form.get('query', '')
     text = request.form.get('text', '')
 
-    saved_files = {
-        'images': [],
-        'audios': [],
-        'videos': []
-    }
+    saved_files = {'images': [], 'audios': [], 'videos': []}
 
     if 'images' in request.files:
         images = request.files.getlist('images')
@@ -380,13 +387,19 @@ def upload_files():
             if img and allowed_file(img.filename, 'images'):
                 filename = secure_filename(img.filename)
                 unique_filename = generate_unique_filename(filename)
-                image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', unique_filename)
+                image_path = os.path.join(
+                    app.config['UPLOAD_FOLDER'], 'images', unique_filename
+                )
                 os.makedirs(os.path.dirname(image_path), exist_ok=True)
                 img.save(image_path)
                 saved_files['images'].append(unique_filename)
             else:
-                response = make_response(jsonify({'error': f'Invalid image file: {img.filename}'}), 400)
-                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+                response = make_response(
+                    jsonify({'error': f'Invalid image file: {img.filename}'}), 400
+                )
+                response.headers.add(
+                    'Access-Control-Allow-Origin', 'http://localhost:3000'
+                )
                 return response
 
     if 'audios' in request.files:
@@ -395,13 +408,19 @@ def upload_files():
             if aud and allowed_file(aud.filename, 'audios'):
                 filename = secure_filename(aud.filename)
                 unique_filename = generate_unique_filename(filename)
-                audio_path = os.path.join(app.config['UPLOAD_FOLDER'], 'audios', unique_filename)
+                audio_path = os.path.join(
+                    app.config['UPLOAD_FOLDER'], 'audios', unique_filename
+                )
                 os.makedirs(os.path.dirname(audio_path), exist_ok=True)
                 aud.save(audio_path)
                 saved_files['audios'].append(unique_filename)
             else:
-                response = make_response(jsonify({'error': f'Invalid image file: {aud.filename}'}), 400)
-                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+                response = make_response(
+                    jsonify({'error': f'Invalid audios file: {aud.filename}'}), 400
+                )
+                response.headers.add(
+                    'Access-Control-Allow-Origin', 'http://localhost:3000'
+                )
                 return jsonify({'error': f'Invalid audio file: {aud.filename}'}), 400
 
     if 'video_frames' in request.files:
@@ -410,13 +429,19 @@ def upload_files():
             if vid and allowed_file(vid.filename, 'videos'):
                 filename = secure_filename(vid.filename)
                 unique_filename = generate_unique_filename(filename)
-                video_path = os.path.join(app.config['UPLOAD_FOLDER'], 'videos', unique_filename)
+                video_path = os.path.join(
+                    app.config['UPLOAD_FOLDER'], 'videos', unique_filename
+                )
                 os.makedirs(os.path.dirname(video_path), exist_ok=True)
                 vid.save(video_path)
                 saved_files['videos'].append(unique_filename)
             else:
-                response = make_response(jsonify({'error': f'Invalid image file: {vid.filename}'}), 400)
-                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+                response = make_response(
+                    jsonify({'error': f'Invalid video file: {vid.filename}'}), 400
+                )
+                response.headers.add(
+                    'Access-Control-Allow-Origin', 'http://localhost:3000'
+                )
                 return jsonify({'error': f'Invalid video file: {vid.filename}'}), 400
 
     response_data = {
@@ -428,10 +453,16 @@ def upload_files():
         'num_videos': len(saved_files['videos']),
         'saved_files': saved_files,
         'download_links': {
-            'images': [f"/uploads/images/{filename}" for filename in saved_files['images']],
-            'audios': [f"/uploads/audios/{filename}" for filename in saved_files['audios']],
-            'videos': [f"/uploads/videos/{filename}" for filename in saved_files['videos']],
-        }
+            'images': [
+                f'/uploads/images/{filename}' for filename in saved_files['images']
+            ],
+            'audios': [
+                f'/uploads/audios/{filename}' for filename in saved_files['audios']
+            ],
+            'videos': [
+                f'/uploads/videos/{filename}' for filename in saved_files['videos']
+            ],
+        },
     }
 
     response = make_response(jsonify(response_data), 200)
@@ -445,7 +476,9 @@ def uploaded_file(file_type, filename):
     if file_type not in ['images', 'audios', 'videos']:
         error_response = jsonify({'error': 'Invalid file type'})
         error_response.status_code = 400
-        error_response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        error_response.headers.add(
+            'Access-Control-Allow-Origin', 'http://localhost:3000'
+        )
         return error_response
 
     try:
@@ -458,7 +491,9 @@ def uploaded_file(file_type, filename):
     except FileNotFoundError:
         error_response = jsonify({'error': 'File not found'})
         error_response.status_code = 404
-        error_response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        error_response.headers.add(
+            'Access-Control-Allow-Origin', 'http://localhost:3000'
+        )
         return error_response
 
 

@@ -1,4 +1,5 @@
 // utils/api.js
+
 import axios from 'axios';
 
 const BASE_URL = 'http://localhost:5000/api';
@@ -19,14 +20,14 @@ const fetchWithError = async (url, options = {}) => {
   return await response.json();
 };
 
-export const initializeProcessors = async (k) => {
+export const initializeProcessors = async (selectedProcessors) => {
   try {
     const response = await fetch('http://localhost:5000/api/init', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ k }),
+      body: JSON.stringify({ selected_processors: selectedProcessors }),
     });
 
     if (!response.ok) {
@@ -130,6 +131,7 @@ export const fuseGist = async (updates) => {
     throw error;
   }
 };
+
 
 export const fetchProcessorNeighborhoods = async () => {
   try {

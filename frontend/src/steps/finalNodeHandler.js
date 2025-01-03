@@ -6,7 +6,7 @@ export const handleFinalNodeStep = async ({
   k,
 }) => {
   try {
-    const { edges } = addFinalNode(k)[1];
+    const { edges } = addFinalNode(k);
 
     const parentNodes = Array.isArray(edges)
         ? edges.map((edge) => edge.data?.source).filter(Boolean) // Extract valid sources

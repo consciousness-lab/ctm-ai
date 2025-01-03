@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import CytoscapeComponent from 'react-cytoscapejs';
 import { PHASES, PHASE_DESCRIPTIONS } from './constants';
+import { addProcessorNodes } from './utils/graphBuilder';
 import { layout, stylesheet } from './config/cytoscapeConfig';
 import {
-    addProcessorNodes,
     addProcessorEdges,
     addGistNodes,
     addGistEdges,
@@ -23,8 +23,9 @@ import {
     handleReverseStep,
     handleUpdateStep,
 } from './steps/index';
-import { fetchProcessorNeighborhoods } from './utils/api';
 import './App.css';
+import { fetchProcessorNeighborhoods } from './utils/api';
+import ProcessorSelector from "./components/ProcessorSelector";
 import UploadForm from "./components/UploadForm";
 
 
@@ -45,7 +46,13 @@ const ProcessPhase = ({ phase, displayPhase, description }) => {
 };
 
 const App = () => {
-    const [k, setK] = useState(3);
+    const [availableProcessors, setAvailableProcessors] = useState([
+        'GPT4VProcessor',
+        'GPT4Processor',
+        'SearchEngineProcessor',
+        'WolframAlphaProcessor',
+    ]);
+    const [k, setK] = useState(0);
     const [elements, setElements] = useState([]);
     const [processorNames, setProcessorNames] = useState([]);
     const [initialized, setInitialized] = useState(false);
@@ -54,8 +61,17 @@ const App = () => {
     const [currentStep, setCurrentStep] = useState(PHASES.INIT);
     const [uptreeStep, setUptreeStep] = useState(1);
     const [displayPhase, setDisplayPhase] = useState(PHASES.INIT);
+    const [selectedProcessors, setSelectedProcessors] = useState([]);
+    const allProcessors = availableProcessors;
     const [neighborhoods, setNeighborhoods] = useState(null);
 
+    const toggleProcessor = (proc) => {
+        if (selectedProcessors.includes(proc)) {
+            setSelectedProcessors(selectedProcessors.filter(p => p !== proc));
+        } else {
+            setSelectedProcessors([...selectedProcessors, proc]);
+        }
+    };
 
     const modifyGraph = () => {
         const updateElementsForPhase = (newElements) => {
@@ -229,16 +245,21 @@ const App = () => {
 
 
     const handleStart = async () => {
+        const dynamicK = selectedProcessors.length;
+        setK(dynamicK);
+
         const stepProps = {
-            k,
+            k: dynamicK,
             setDisplayPhase,
+            setCurrentStep,
             setProcessorNames,
+            selectedProcessors,
         };
-        const processorNames = await handleInitialStep(stepProps);
+        const namesFromBackend = await handleInitialStep(stepProps);
         setCurrentStep(PHASES.OUTPUT_GIST);
 
-        if (processorNames) {
-            const initialElements = addProcessorNodes(k, processorNames);
+        if (namesFromBackend) {
+            const initialElements = addProcessorNodes(dynamicK, namesFromBackend);
             setElements(initialElements.nodes);
 
             const neighborhoods = await fetchProcessorNeighborhoods();
@@ -249,6 +270,7 @@ const App = () => {
                 setElements(prev => [...prev, ...edges]);
             }
             setInitialized(true);
+            setProcessorNames(namesFromBackend);
         }
     };
 
@@ -303,28 +325,25 @@ const App = () => {
           <div className="panel-card">
             <h2 className="panel-title">Process Control</h2>
             <div className="control-content">
-              <div className="input-group">
-                <label>Processor number (k):</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={k}
-                  onChange={(e) => setK(parseInt(e.target.value, 10))}
-                  className="k-input"
-                />
-              </div>
-              <button
-                onClick={handleStart}
-                disabled={initialized}
-                className={`control-button start ${initialized ? 'disabled' : ''}`}
-              >
-                Start Process
-              </button>
-              {initialized && (
-                <button
-                  onClick={handleStep}
-                  className="control-button step"
-                >
+                <div className="input-group">
+                    <div className="controls-container">
+                        <ProcessorSelector
+                            allProcessors={allProcessors}
+                            selectedProcessors={selectedProcessors}
+                            onChange={setSelectedProcessors}
+                        />
+                        <button onClick={handleStart} disabled={initialized}
+                                className={`control-button start ${initialized ? 'disabled' : ''}`}>
+                            Start
+                        </button>
+                    </div>
+
+                </div>
+                {initialized && (
+                    <button
+                        onClick={handleStep}
+                        className="control-button step"
+                    >
                   Next Step
                 </button>
               )}
