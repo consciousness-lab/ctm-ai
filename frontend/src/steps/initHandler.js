@@ -1,4 +1,3 @@
-// steps/initHandler.js
 import { PHASES } from '../constants';
 import { initializeProcessors } from '../utils/api';
 
@@ -15,8 +14,8 @@ export const handleInitialStep = async ({
 
     try {
         setDisplayPhase(PHASES.INIT);
-
-        const response = await initializeProcessors(selectedProcessors);
+        const response = await initializeProcessors(k);
+        console.log('Initialize response:', response); // Debug log
 
         console.log('Initialize response:', response);
 

@@ -4,6 +4,8 @@ import { PHASES, PHASE_DESCRIPTIONS } from './constants';
 import { addProcessorNodes } from './utils/graphBuilder';
 import { layout, stylesheet } from './config/cytoscapeConfig';
 import {
+    addProcessorNodes,
+    addProcessorEdges,
     addGistNodes,
     addGistEdges,
     addFusedNodes,
@@ -23,7 +25,26 @@ import {
     handleUpdateStep,
 } from './steps/index';
 import './App.css';
+import { fetchProcessorNeighborhoods } from './utils/api';
 import ProcessorSelector from "./components/ProcessorSelector";
+import UploadForm from "./components/UploadForm";
+
+
+const ProcessPhase = ({ phase, displayPhase, description }) => {
+  const phaseNumber = Number(phase);
+  const isActive = phaseNumber === displayPhase;
+  return (
+    <div className={`phase-item ${isActive ? 'active' : 'inactive'}`}>
+      <div className="phase-indicator">
+        {phaseNumber}
+      </div>
+      <div className="phase-content">
+        <p className="phase-title">{PHASES[phase]}</p>
+        <p className="phase-description">{description}</p>
+      </div>
+    </div>
+  );
+};
 
 const App = () => {
     const [availableProcessors, setAvailableProcessors] = useState([
@@ -44,6 +65,7 @@ const App = () => {
     const [displayPhase, setDisplayPhase] = useState(PHASES.INIT);
     const [selectedProcessors, setSelectedProcessors] = useState([]);
     const allProcessors = availableProcessors;
+    const [neighborhoods, setNeighborhoods] = useState(null);
 
     const toggleProcessor = (proc) => {
         if (selectedProcessors.includes(proc)) {
@@ -73,9 +95,11 @@ const App = () => {
             }
 
             case PHASES.FUSE_GIST: {
+                const nodes = addFusedNodes(k).nodes;
+                const edges = addFusedEdges(k, processorNames, neighborhoods);
                 const newElements = {
-                    nodes: addFusedNodes(k).nodes,
-                    edges: addFusedEdges(k).edges,
+                    nodes: nodes,
+                    edges: edges?.edges || []
                 };
                 updateElementsForPhase(newElements);
                 break;
@@ -97,40 +121,55 @@ const App = () => {
             }
 
             case PHASES.REVERSE: {
-                setElements((prevElements) =>
-                    prevElements.map((element) =>
-                        element.data?.source && element.data?.target
-                            ? {
-                                ...element,
-                                data: {
-                                    ...element.data,
-                                    source: element.data.target,
-                                    target: element.data.source,
-                                },
-                            }
-                            : element
-                    )
-                );
-                break;
-            }
-
-            case PHASES.UPDATE: {
                 setElements((prevElements) => {
                     const processorNodes = prevElements.filter((element) =>
                         element.data?.label?.toLowerCase().includes('processor')
                     );
+                    const processorIds = new Set(processorNodes.map(node => node.data.id));
 
-                    const processorNodeIds = processorNodes.map((node) => node.data.id);
-                    const validEdges = prevElements.filter(
-                        (element) =>
-                            element.data?.source &&
-                            element.data?.target &&
-                            processorNodeIds.includes(element.data.source) &&
-                            processorNodeIds.includes(element.data.target)
+                    return prevElements.map((element) => {
+                        if (!element.data?.source || !element.data?.target) {
+                            return element;
+                        }
+
+                        const isBothProcessors = processorIds.has(element.data.source) &&
+                                            processorIds.has(element.data.target);
+
+                        if (isBothProcessors) {
+                            return element;
+                        }
+
+                        return {
+                            ...element,
+                            data: {
+                                ...element.data,
+                                source: element.data.target,
+                                target: element.data.source,
+                            },
+                        };
+                    });
+                });
+                break;
+            }
+
+            case PHASES.UPDATE: {
+                const updateElements = async () => {
+                    const processorNodes = elements.filter((element) =>
+                        element.data?.label?.toLowerCase().includes('processor')
                     );
 
-                    return [...processorNodes, ...validEdges];
-                });
+                    const neighborhoods = await fetchProcessorNeighborhoods();
+                    setNeighborhoods(neighborhoods);
+                    if (neighborhoods) {
+                        const newEdges = addProcessorEdges(neighborhoods);
+                        setElements([...processorNodes, ...newEdges]);
+                    } else {
+                        setElements(processorNodes);
+                    }
+                };
+
+                // Execute the update
+                updateElements();
                 break;
             }
 
@@ -224,6 +263,14 @@ const App = () => {
         if (namesFromBackend) {
             const initialElements = addProcessorNodes(dynamicK, namesFromBackend);
             setElements(initialElements.nodes);
+
+            const neighborhoods = await fetchProcessorNeighborhoods();
+            setNeighborhoods(neighborhoods);
+
+            if (neighborhoods) {
+                const edges = addProcessorEdges(neighborhoods);
+                setElements(prev => [...prev, ...edges]);
+            }
             setInitialized(true);
             setProcessorNames(namesFromBackend);
         }
@@ -261,11 +308,19 @@ const App = () => {
     }, [selectedNode]);
 
 
-    return (
-        <div className="app-container">
-            <h1>CTM-AI</h1>
+  return (
+    <div className="app-container">
+      <h1 className="app-title">CTM-AI Visualization</h1>
 
-            <div className="controls-container">
+    <div className="upload-section">
+        <div className="panel-header">
+            <h2 className="panel-title">Upload Files</h2>
+        </div>
+        <div className="panel-card">
+            <UploadForm />
+        </div>
+    </div>
+        <div className="controls-container">
                 <ProcessorSelector
                     allProcessors={allProcessors}
                     selectedProcessors={selectedProcessors}
@@ -276,39 +331,110 @@ const App = () => {
                 </button>
             </div>
 
-            {initialized ? (
-                <div className="visualization-container">
-                    <div className="cytoscape-container">
-                        <CytoscapeComponent
-                            elements={elements}
-                            layout={layout}
-                            stylesheet={stylesheet}
-                            style={{ width: '100%', height: '100%' }}
-                            cy={(cy) => {
-                                cy.on('tap', 'node', (evt) => {
-                                    setSelectedNode(evt.target.id());
-                                });
-                            }}
-                        />
-                    </div>
-                    <div className="info-panel">
-                        <h2>Node Information</h2>
-                        {selectedNode ? (
-                            <pre className="node-details">{nodeDetailText}</pre>
-                        ) : (
-                            <p>Click a node to see details.</p>
-                        )}
-                        <hr />
-                        <button onClick={handleStep}>Step</button>
-                        <p>Current Move: {PHASE_DESCRIPTIONS[displayPhase]}</p>
-                    </div>
-                </div>
-            ) : (
-                <p>Please enter k and click "Start" to begin.</p>
-            )}
-        </div>
-    );
+      <div className="main-grid">
+        {/* Left Panel - Process Control */}
+        <div className="control-panel">
+          <div className="panel-card">
+            <h2 className="panel-title">Process Control</h2>
+            <div className="control-content">
+              <div className="input-group">
+                <label>Processor number (k):</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={k}
+                  onChange={(e) => setK(parseInt(e.target.value, 10))}
+                  className="k-input"
+                />
+              </div>
+              <button
+                onClick={handleStart}
+                disabled={initialized}
+                className={`control-button start ${initialized ? 'disabled' : ''}`}
+              >
+                Start Process
+              </button>
+              {initialized && (
+                <button
+                  onClick={handleStep}
+                  className="control-button step"
+                >
+                  Next Step
+                </button>
+              )}
+            </div>
+          </div>
 
+          <div className="panel-card">
+            <h2 className="panel-title">Process Phases</h2>
+            <div className="phases-list">
+                {Object.entries(PHASE_DESCRIPTIONS).map(([phase, description]) => (
+                <ProcessPhase
+                    key={phase}
+                    phase={phase}
+                    displayPhase={displayPhase}
+                    description={description}
+                />
+                ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Visualization */}
+        <div className="visualization-panel">
+          <div className="panel-card">
+            <h2 className="panel-title">CTM Visualization</h2>
+            <div className="cytoscape-container">
+              {initialized ? (
+                <CytoscapeComponent
+                  elements={elements}
+                  layout={layout}
+                  stylesheet={stylesheet}
+                  style={{ width: '100%', height: '100%' }}
+                  cy={(cy) => {
+                    cy.on('tap', 'node', (evt) => {
+                      setSelectedNode(evt.target.id());
+                    });
+                  }}
+                />
+              ) : (
+                <div className="placeholder-text">
+                  Please enter k and click "Start" to begin visualization
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Panel - Node Information */}
+        <div className="info-panel">
+          <div className="panel-card">
+            <h2 className="panel-title">Node Information</h2>
+            <div className="info-content">
+              {selectedNode ? (
+                <pre className="node-details">{nodeDetailText}</pre>
+              ) : (
+                <p className="placeholder-text">Click a node to see details</p>
+              )}
+            </div>
+          </div>
+
+          {initialized && (
+            <div className="panel-card">
+              <h2 className="panel-title">Current Status</h2>
+              <div className="status-content">
+                <p><strong>Current Phase:</strong> {displayPhase}</p>
+                {currentStep === PHASES.UPTREE && (
+                  <p><strong>Uptree Step:</strong> {uptreeStep} of {k-1}</p>
+                )}
+                <p><strong>Processors:</strong> {processorNames.join(', ')}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default App;

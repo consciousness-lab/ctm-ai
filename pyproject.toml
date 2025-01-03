@@ -13,12 +13,13 @@ huggingface_hub = "0.25.2"
 openai = "^1.35.13"
 scikit_learn = "1.3.2"
 mypy = "^1.8.0"
-pydantic = "^2.7.4"
+pydantic = "^2.10.4"
 termcolor = "*"
 beartype = "*"
 requests = "*"
 types-requests = "*"
 wordfreq = "*"
+sockio = "*"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -1,138 +1,495 @@
-.App {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  color: white;
-  padding: 10px;
-  height: 10vh; /* Takes up 10% of the viewport height */
-  display: flex;
-  align-items: center;
-}
-
-.App-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.App-main {
-  flex-grow: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-}
-
-/* Adjust the tree view size */
-.App-main > div {
-  width: 80%;
-  max-width: 800px;
-}
-
-/* Style for TreeView nodes (if using react-treeview) */
-.tree-view_item {
-  padding: 5px 0;
-}
-
-.tree-view_children {
-  margin-left: 20px;
-}
-
-
-/* App.css */
-
 .app-container {
-    margin: 20px;
+    min-height: 100vh;
+    padding: 20px;
+    background-color: #f5f5f5;
 }
 
-.controls-container {
+.app-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.panel-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.panel-title {
+    padding: 15px;
+    margin: 0;
+    font-size: 18px;
+    border-bottom: 1px solid #eee;
+    background-color: #fafafa;
+}
+
+/* Control Panel Styles */
+.control-panel .control-content {
+    padding: 15px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #666;
+}
+
+.k-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.control-button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
     margin-bottom: 10px;
 }
 
-.visualization-container {
+.control-button.start {
+    background-color: #2563eb;
+    color: white;
+}
+
+.control-button.start:hover {
+    background-color: #1d4ed8;
+}
+
+.control-button.step {
+    background-color: #059669;
+    color: white;
+}
+
+.control-button.step:hover {
+    background-color: #047857;
+}
+
+.control-button.disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.phase-item {
     display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    position: relative;
+    padding: 10px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.phase-item.active {
+    background-color: #e0f2fe;
+    border-left-color: #2563eb;
+}
+
+.phase-item.inactive {
+    opacity: 0.7;
+}
+
+.phase-indicator {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.phase-item.active .phase-indicator {
+    border-color: #2563eb;
+    color: #2563eb;
+    font-weight: bold;
+}
+
+.phase-content {
+    flex-grow: 1;
+}
+
+.phase-title {
+    margin: 0;
+    font-weight: 500;
+    color: #333;
+}
+
+.phase-description {
+    margin: 5px 0 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.phase-item.active .phase-title {
+    color: #2563eb;
+    font-weight: bold;
+}
+
+.phase-item.active .phase-description {
+    color: #1e40af;
+}
+
+/* Visualization Panel Styles */
+.visualization-panel {
+    height: calc(100vh - 100px);
+    min-height: 600px;
+}
+
+.visualization-panel .panel-card {
+    height: 100%;
 }
 
 .cytoscape-container {
-    width: 800px;
-    height: 600px;
+    height: calc(100% - 60px);
+    background: #fff;
 }
 
-.info-panel {
-    margin-left: 20px;
-    width: 300px;
+/* Info Panel Styles */
+.info-content,
+.status-content {
+    padding: 15px;
 }
 
 .node-details {
     white-space: pre-wrap;
-    word-wrap: break-word;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
-/* Cytoscape Styles */
-.cytoscape-styles {
-    /* These will be used as a reference for the JavaScript style object */
-    /* Note: These CSS classes won't directly affect Cytoscape elements */
-    /* They are kept here for documentation and consistency */
+.placeholder-text {
+    color: #666;
+    text-align: center;
+    padding: 20px;
 }
 
-/* Base node style */
-.cytoscape-styles .node {
-    background-color: #61bffc;
-    width: 45px;
-    height: 45px;
-    text-valign: center;
+.status-content p {
+    margin: 8px 0;
+    font-size: 14px;
 }
 
-/* Rectangle node style */
-.cytoscape-styles .rectangle {
-    background-color: #9c27b0;
-    width: 60px;
-    height: 40px;
-    shape: rectangle;
+.status-content strong {
+    color: #333;
 }
 
-/* Bottom layer node style */
-.cytoscape-styles .bottom-layer {
-    background-color: #4CAF50;
+.upload-section {
+    margin: 20px;
 }
 
-/* Final node style */
-.cytoscape-styles .final-node {
-    background-color: #FF5722;
+.upload-section .panel-header {
+    display: inline-block;
+    background: white;
+    padding: 8px 16px;
+    margin-bottom: -1px;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+    z-index: 1;
 }
 
-/* Edge style */
-.cytoscape-styles .edge {
-    curve-style: bezier;
-    width: 3px;
-    target-arrow-shape: triangle;
-    line-color: #ddd;
-    target-arrow-color: #ddd;
+.upload-section .panel-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.upload-section .panel-card {
+    background: white;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.upload-section form {
+    display: grid;
+    gap: 16px;
+}
+
+.upload-section .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.upload-section label {
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.upload-section input,
+.upload-section textarea {
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    transition: border-color 0.2s;
+}
+
+.upload-section input:focus,
+.upload-section textarea:focus {
+    border-color: #4a90e2;
+    outline: none;
+}
+
+.upload-section button {
+    background-color: #4a90e2;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.upload-section button:hover {
+    background-color: #357abd;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .visualization-panel {
+        height: 500px;
+    }
+
+}
+
+.visualization-panel .panel-card {
+    height: 100%;
+}
+
+.cytoscape-container {
+    height: calc(100% - 60px);
+    background: #fff;
+}
+
+/* Info Panel Styles */
+.info-content,
+.status-content {
+    padding: 15px;
+}
+
+.node-details {
+    white-space: pre-wrap;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 14px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.placeholder-text {
+    color: #666;
+    text-align: center;
+    padding: 20px;
+}
+
+.status-content p {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.status-content strong {
+    color: #333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .visualization-panel {
+        height: 500px;
+    }
+}
+
+.upload-form-container {
+    width: 100%;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background: #f9fafb;
+    transition: all 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    background: white;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.file-upload-section {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.file-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.file-input {
+    padding: 0.5rem;
+    border: 1px dashed #e5e7eb;
+    border-radius: 0.5rem;
+    background: #f9fafb;
+}
+
+.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: #f3f4f6;
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+}
+
+.file-name {
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.remove-button {
+    color: #ef4444;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0 0.5rem;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 0.5rem;
+    background: #f3f4f6;
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: #3b82f6;
+    transition: width 0.2s;
+    text-align: center;
+    color: white;
+    font-size: 0.75rem;
+    line-height: 0.5rem;
+}
+
+.error-message {
+    color: #ef4444;
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    background: #fee2e2;
+    border-radius: 0.375rem;
+}
+
+.success-message {
+    color: #059669;
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    background: #d1fae5;
+    border-radius: 0.375rem;
+}
+
+.submit-button {
+    background: #3b82f6;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    align-self: flex-end;
+}
+
+.submit-button:hover {
+    background: #2563eb;
+}
+
+.server-response {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+}
+
+.response-content {
+    margin: 0.5rem 0 0;
+    padding: 1rem;
+    background: white;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+    overflow-x: auto;
 }

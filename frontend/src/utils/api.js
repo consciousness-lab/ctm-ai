@@ -1,5 +1,7 @@
 // utils/api.js
 
+import axios from 'axios';
+
 const BASE_URL = 'http://localhost:5000/api';
 
 const fetchWithError = async (url, options = {}) => {
@@ -89,6 +91,26 @@ export const getCurrentState = async () => {
 };
 
 
+export const uploadFiles = async (formData, onUploadProgress) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress,
+    });
+
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.error || 'Upload failed');
+    } else {
+      throw new Error('Network error');
+    }
+  }
+};
+
+
 export const fuseGist = async (updates) => {
   try {
     const response = await fetch('http://localhost:5000/api/fuse-gist', {
@@ -98,14 +120,28 @@ export const fuseGist = async (updates) => {
       },
       body: JSON.stringify({ updates }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('Error in fuse gist:', error);
     throw error;
+  }
+};
+
+
+export const fetchProcessorNeighborhoods = async () => {
+  try {
+    const response = await fetch('http://localhost:5000/api/fetch-neighborhood');
+    if (!response.ok) {
+      throw new Error('Failed to fetch processor neighborhoods');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching processor neighborhoods:', error);
+    return null;
   }
 };
