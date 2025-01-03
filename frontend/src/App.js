@@ -4,7 +4,6 @@ import { PHASES, PHASE_DESCRIPTIONS } from './constants';
 import { addProcessorNodes } from './utils/graphBuilder';
 import { layout, stylesheet } from './config/cytoscapeConfig';
 import {
-    addProcessorNodes,
     addProcessorEdges,
     addGistNodes,
     addGistEdges,
@@ -48,7 +47,6 @@ const ProcessPhase = ({ phase, displayPhase, description }) => {
 
 const App = () => {
     const [availableProcessors, setAvailableProcessors] = useState([
-        'BaseProcessor',
         'GPT4VProcessor',
         'GPT4Processor',
         'SearchEngineProcessor',
@@ -320,16 +318,6 @@ const App = () => {
             <UploadForm />
         </div>
     </div>
-        <div className="controls-container">
-                <ProcessorSelector
-                    allProcessors={allProcessors}
-                    selectedProcessors={selectedProcessors}
-                    onChange={setSelectedProcessors}
-                />
-                <button onClick={handleStart} style={{marginTop: '10px'}}>
-                    Start
-                </button>
-            </div>
 
       <div className="main-grid">
         {/* Left Panel - Process Control */}
@@ -337,28 +325,25 @@ const App = () => {
           <div className="panel-card">
             <h2 className="panel-title">Process Control</h2>
             <div className="control-content">
-              <div className="input-group">
-                <label>Processor number (k):</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={k}
-                  onChange={(e) => setK(parseInt(e.target.value, 10))}
-                  className="k-input"
-                />
-              </div>
-              <button
-                onClick={handleStart}
-                disabled={initialized}
-                className={`control-button start ${initialized ? 'disabled' : ''}`}
-              >
-                Start Process
-              </button>
-              {initialized && (
-                <button
-                  onClick={handleStep}
-                  className="control-button step"
-                >
+                <div className="input-group">
+                    <div className="controls-container">
+                        <ProcessorSelector
+                            allProcessors={allProcessors}
+                            selectedProcessors={selectedProcessors}
+                            onChange={setSelectedProcessors}
+                        />
+                        <button onClick={handleStart} disabled={initialized}
+                                className={`control-button start ${initialized ? 'disabled' : ''}`}>
+                            Start
+                        </button>
+                    </div>
+
+                </div>
+                {initialized && (
+                    <button
+                        onClick={handleStep}
+                        className="control-button step"
+                    >
                   Next Step
                 </button>
               )}

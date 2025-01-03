@@ -8,8 +8,10 @@ export const handleReverseStep = async ({
   try {
 
     // Prepare updates for reverse broadcasting
-    const updates = pyramidLayers.flatMap(layer =>
-      layer.nodes.map(node => ({
+    const safeLayers = pyramidLayers || [];
+
+    const updates = safeLayers.flatMap(layer =>
+      (layer.nodes || []).map(node => ({
         node_id: node.data.id,
         broadcast_value: `Broadcast from ${node.data.id}`
       }))

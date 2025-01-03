@@ -14,7 +14,7 @@ export const handleInitialStep = async ({
 
     try {
         setDisplayPhase(PHASES.INIT);
-        const response = await initializeProcessors(k);
+        const response = await initializeProcessors(selectedProcessors);
         console.log('Initialize response:', response); // Debug log
 
         console.log('Initialize response:', response);

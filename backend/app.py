@@ -39,24 +39,13 @@ def generate_unique_filename(filename):
     unique_name = f"{uuid.uuid4().hex}.{ext}"
     return unique_name
 
+
 FRONTEND_TO_BACKEND_PROCESSORS = {
-    "BaseProcessor": "base_processor",
     "GPT4VProcessor": "gpt4v_processor",
     "GPT4Processor": "gpt4_processor",
     "SearchEngineProcessor": "search_engine_processor",
     "WolframAlphaProcessor": "wolfram_alpha_processor",
 }
-
-
-def allowed_file(filename, file_type):
-    return '.' in filename and \
-        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS.get(file_type, set())
-
-
-def generate_unique_filename(filename):
-    ext = filename.rsplit('.', 1)[1].lower()
-    unique_name = f"{uuid.uuid4().hex}.{ext}"
-    return unique_name
 
 
 @app.route('/api/nodes/<node_id>')
@@ -111,7 +100,7 @@ def initialize_processors():
     node_details.clear()
     node_parents.clear()
     node_gists.clear()
-    
+
     print('Initializing processors')
     ctm.reset()
 
@@ -241,7 +230,7 @@ def handle_final_node():
                 'What is the capital of France?', node_details[parent_id]
             )
             node_details[node_id] = (
-                'Answer: ' + answer + f'\n\nConfidence score: {confidence_score}'
+                    'Answer: ' + answer + f'\n\nConfidence score: {confidence_score}'
             )
             winning_chunk = node_details[parent_id]
 
@@ -287,11 +276,6 @@ def update_processors():
     data = request.get_json()
     updates = data.get('updates', [])
 
-    chunks = []
-    for node in node_details:
-        if isinstance(node_details[node], Chunk):
-            chunks.append(node_details[node])
-    
     ctm.link_form(chunks)
     node_details.clear()
     node_parents.clear()
@@ -306,6 +290,7 @@ def update_processors():
     response = jsonify({'message': 'Processors updated'})
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     return response
+
 
 @app.route('/api/fuse-gist', methods=['POST', 'OPTIONS'])
 def handle_fuse_gist():
@@ -344,93 +329,6 @@ def handle_fuse_gist():
 
     response = jsonify({'message': 'Fused gists processed', 'updates': updates})
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-    return response
-
-
-@app.route('/api/upload', methods=['POST', 'OPTIONS'])
-def upload_files():
-    if request.method == 'OPTIONS':
-        response = make_response()
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        response.headers.add(
-            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
-        )
-        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
-        return response
-
-    query = request.form.get('query', '')
-    text = request.form.get('text', '')
-
-    saved_files = {
-        'images': [],
-        'audios': [],
-        'videos': []
-    }
-
-    if 'images' in request.files:
-        images = request.files.getlist('images')
-        for img in images:
-            if img and allowed_file(img.filename, 'images'):
-                filename = secure_filename(img.filename)
-                unique_filename = generate_unique_filename(filename)
-                image_path = os.path.join(app.config['UPLOAD_FOLDER'], 'images', unique_filename)
-                os.makedirs(os.path.dirname(image_path), exist_ok=True)
-                img.save(image_path)
-                saved_files['images'].append(unique_filename)
-            else:
-                response = make_response(jsonify({'error': f'Invalid image file: {img.filename}'}), 400)
-                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-                return response
-
-    if 'audios' in request.files:
-        audios = request.files.getlist('audios')
-        for aud in audios:
-            if aud and allowed_file(aud.filename, 'audios'):
-                filename = secure_filename(aud.filename)
-                unique_filename = generate_unique_filename(filename)
-                audio_path = os.path.join(app.config['UPLOAD_FOLDER'], 'audios', unique_filename)
-                os.makedirs(os.path.dirname(audio_path), exist_ok=True)
-                aud.save(audio_path)
-                saved_files['audios'].append(unique_filename)
-            else:
-                response = make_response(jsonify({'error': f'Invalid image file: {aud.filename}'}), 400)
-                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-                return jsonify({'error': f'Invalid audio file: {aud.filename}'}), 400
-
-    if 'video_frames' in request.files:
-        videos = request.files.getlist('video_frames')
-        for vid in videos:
-            if vid and allowed_file(vid.filename, 'videos'):
-                filename = secure_filename(vid.filename)
-                unique_filename = generate_unique_filename(filename)
-                video_path = os.path.join(app.config['UPLOAD_FOLDER'], 'videos', unique_filename)
-                os.makedirs(os.path.dirname(video_path), exist_ok=True)
-                vid.save(video_path)
-                saved_files['videos'].append(unique_filename)
-            else:
-                response = make_response(jsonify({'error': f'Invalid image file: {vid.filename}'}), 400)
-                response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-                return jsonify({'error': f'Invalid video file: {vid.filename}'}), 400
-
-    response_data = {
-        'message': 'Files uploaded successfully',
-        'query': query,
-        'text': text,
-        'num_images': len(saved_files['images']),
-        'num_audios': len(saved_files['audios']),
-        'num_videos': len(saved_files['videos']),
-        'saved_files': saved_files,
-        'download_links': {
-            'images': [f"/uploads/images/{filename}" for filename in saved_files['images']],
-            'audios': [f"/uploads/audios/{filename}" for filename in saved_files['audios']],
-            'videos': [f"/uploads/videos/{filename}" for filename in saved_files['videos']],
-        }
-    }
-
-    response = make_response(jsonify(response_data), 200)
-    response = jsonify({'message': 'Fused gists processed', 'updates': updates})
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-    response.headers.add('Content-Type', 'application/json')
     return response
 
 
@@ -504,7 +402,7 @@ def upload_files():
                 aud.save(audio_path)
                 saved_files['audios'].append(unique_filename)
             else:
-                response = make_response(jsonify({'error': f'Invalid image file: {aud.filename}'}), 400)
+                response = make_response(jsonify({'error': f'Invalid audios file: {aud.filename}'}), 400)
                 response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
                 return jsonify({'error': f'Invalid audio file: {aud.filename}'}), 400
 
@@ -519,7 +417,7 @@ def upload_files():
                 vid.save(video_path)
                 saved_files['videos'].append(unique_filename)
             else:
-                response = make_response(jsonify({'error': f'Invalid image file: {vid.filename}'}), 400)
+                response = make_response(jsonify({'error': f'Invalid video file: {vid.filename}'}), 400)
                 response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
                 return jsonify({'error': f'Invalid video file: {vid.filename}'}), 400
 
@@ -542,29 +440,6 @@ def upload_files():
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     response.headers.add('Content-Type', 'application/json')
     return response
-
-
-@app.route('/uploads/<file_type>/<filename>', methods=['GET'])
-def uploaded_file(file_type, filename):
-    if file_type not in ['images', 'audios', 'videos']:
-        error_response = jsonify({'error': 'Invalid file type'})
-        error_response.status_code = 400
-        error_response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        return error_response
-
-    try:
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_type)
-        response = send_from_directory(file_path, filename)
-        response = make_response(response)
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        response.headers.add('Cache-Control', 'public, max-age=3600')
-        return response
-    except FileNotFoundError:
-        error_response = jsonify({'error': 'File not found'})
-        error_response.status_code = 404
-        error_response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        return error_response
-
 
 
 @app.route('/uploads/<file_type>/<filename>', methods=['GET'])
