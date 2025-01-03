@@ -21,6 +21,7 @@ ALLOWED_EXTENSIONS = {
     'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv'}
 }
 
+query = None
 # Data storage
 node_details = {}
 node_parents = {}
@@ -143,7 +144,8 @@ def handle_output_gist():
     data = request.get_json()
     updates = data.get('updates', [])
 
-    chunks = ctm.ask_processors('What is the capital of France?')
+    global query
+    chunks = ctm.ask_processors(query)
     gists = [chunk.gist for chunk in chunks]
     gists = {}
     for chunk in chunks:
@@ -223,11 +225,12 @@ def handle_final_node():
 
     print('Final node parents:', node_parents)
 
+    global query
     for node_id, parents_ids in node_parents.items():
         if node_id not in node_details:
             parent_id = parents_ids[0]
             answer, confidence_score = ctm.ask_supervisor(
-                'What is the capital of France?', node_details[parent_id]
+                query, node_details[parent_id]
             )
             node_details[node_id] = (
                     'Answer: ' + answer + f'\n\nConfidence score: {confidence_score}'
@@ -367,6 +370,7 @@ def upload_files():
         response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
         return response
 
+    global query
     query = request.form.get('query', '')
     text = request.form.get('text', '')
 
