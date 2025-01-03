@@ -231,7 +231,7 @@ const UploadForm = () => {
 
                 {uploadProgress > 0 && uploadProgress < 100 && (
                     <div className="progress-bar-container">
-                        <div 
+                        <div
                             className="progress-bar"
                             style={{ width: `${uploadProgress}%` }}
                         >
