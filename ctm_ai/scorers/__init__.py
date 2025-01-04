@@ -1,7 +1,7 @@
 from .scorer_base import BaseScorer
-from .scorer_gpt4 import GPT4Scorer
+from .scorer_language import LanguageScorer
 
 __all__ = [
     'BaseScorer',
-    'GPT4Scorer',
+    'LanguageScorer',
 ]

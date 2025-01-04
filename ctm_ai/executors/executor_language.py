@@ -12,8 +12,8 @@ from ..utils import message_exponential_backoff
 from .executor_base import BaseExecutor
 
 
-@BaseExecutor.register_executor('gpt4_executor')
-class GPT4Executor(BaseExecutor):
+@BaseExecutor.register_executor('language_executor')
+class LanguageExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         self.model = OpenAI()
 

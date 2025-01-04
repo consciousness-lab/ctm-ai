@@ -1,13 +1,11 @@
-from typing import List, Optional, TypeVar
+from typing import List, Optional
 
 from .message import Message
 from .messenger_base import BaseMessenger
 
-T = TypeVar('T', bound='BaseMessenger')
 
-
-@BaseMessenger.register_messenger('search_engine_messenger')
-class SearchEngineMessenger(BaseMessenger):
+@BaseMessenger.register_messenger('language_messenger')
+class LanguageMessenger(BaseMessenger):
     def collect_executor_messages(
         self,
         query: str,
@@ -16,9 +14,12 @@ class SearchEngineMessenger(BaseMessenger):
         audio: Optional[str] = None,
         video_frames: Optional[List[str]] = None,
     ) -> List[Message]:
+        content = 'Query: {}\n'.format(query)
+        if text is not None:
+            content += 'Text: {}\n'.format(text)
         message = Message(
             role='user',
-            content=query,
+            content=content,
         )
         self.executor_messages.append(message)
         return self.executor_messages
@@ -33,8 +34,10 @@ class SearchEngineMessenger(BaseMessenger):
         video_frames: Optional[List[str]] = None,
     ) -> List[Message]:
         message = Message(
-            role='assistant',
+            role='user',
+            query=query,
             gist=executor_output.gist,
+            gists=executor_output.gists,
         )
         self.scorer_messages.append(message)
         return self.scorer_messages

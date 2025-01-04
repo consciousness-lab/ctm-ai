@@ -7,8 +7,8 @@ from ..utils import info_exponential_backoff
 from .fuser_base import BaseFuser
 
 
-@BaseFuser.register_fuser('gpt4_fuser')
-class GPT4Fuser(BaseFuser):
+@BaseFuser.register_fuser('language_fuser')
+class LanguageFuser(BaseFuser):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.init_fuser()
 

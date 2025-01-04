@@ -7,8 +7,8 @@ from ..utils import logprobs_to_softmax, score_exponential_backoff
 from .scorer_base import BaseScorer
 
 
-@BaseScorer.register_scorer('gpt4_scorer')
-class GPT4Scorer(BaseScorer):
+@BaseScorer.register_scorer('language_scorer')
+class LanguageScorer(BaseScorer):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.init_scorer()
 

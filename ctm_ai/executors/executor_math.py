@@ -8,8 +8,8 @@ from ..utils import logger, message_exponential_backoff
 from .executor_base import BaseExecutor
 
 
-@BaseExecutor.register_executor('wolfram_alpha_executor')
-class WolframAlphaExecutor(BaseExecutor):
+@BaseExecutor.register_executor('math_executor')
+class MathExecutor(BaseExecutor):
     def init_model(self) -> None:
         self.api_key = os.environ.get('WOLFRAM_API_KEY')
         self.url = 'http://api.wolframalpha.com/v2/query'

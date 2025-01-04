@@ -12,8 +12,8 @@ from ..utils import message_exponential_backoff
 from .executor_base import BaseExecutor
 
 
-@BaseExecutor.register_executor('gpt4v_executor')
-class GPT4VExecutor(BaseExecutor):
+@BaseExecutor.register_executor('vision_executor')
+class VisionExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         self.model = OpenAI()
 
