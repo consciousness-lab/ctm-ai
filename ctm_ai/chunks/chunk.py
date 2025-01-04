@@ -70,6 +70,19 @@ class Chunk:
             'mood': self.mood,
         }
 
+    def format_readable(self) -> str:
+        return (
+            f"Time Step: {self.time_step}\n"
+            f"Processor Name: {self.processor_name}\n"
+            f"Gist: {self.gist}\n"
+            f"Relevance: {self.relevance:.2f}\n"
+            f"Confidence: {self.confidence:.2f}\n"
+            f"Surprise: {self.surprise:.2f}\n"
+            f"Weight: {self.weight:.2f}\n"
+            f"Intensity: {self.intensity:.2f}\n"
+            f"Mood: {self.mood:.2f}"
+        )
+
     @staticmethod
     def deserialize(data: Dict[str, Any]) -> 'Chunk':
         return Chunk(

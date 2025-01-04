@@ -55,23 +55,26 @@ FRONTEND_TO_BACKEND_PROCESSORS = {
 def get_node_details(node_id):
     print(f'Requested node_id: {node_id}')
 
-    details = node_details.get(node_id, 'No details available')
-    if isinstance(details, Chunk):
-        details = {'self': str(details.serialize())}
+    raw_detail = node_details.get(node_id, 'No details available')
+    if isinstance(raw_detail, Chunk):
+        node_self = raw_detail.format_readable()
     else:
-        details = {'self': details}
+        node_self = str(raw_detail)
 
+    parent_data = {}
     if node_id in node_parents:
-        details['parents'] = {}
-        for parent in node_parents[node_id]:
-            parent_details = node_details.get(parent, 'No details available')
-            if isinstance(parent_details, Chunk):
-                parent_details = str(parent_details.serialize())
-                details['parents'][parent] = parent_details
-    else:
-        details['parents'] = {}
+        for parent_id in node_parents[node_id]:
+            raw_parent_detail = node_details.get(parent_id, 'No details available')
+            if isinstance(raw_parent_detail, Chunk):
+                parent_data[parent_id] = raw_parent_detail.format_readable()
+            else:
+                parent_data[parent_id] = str(raw_parent_detail)
 
-    response = make_response(jsonify(details))
+    response = {
+        'self': node_self,
+        'parents': parent_data
+    }
+    response = make_response(jsonify(response))
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
