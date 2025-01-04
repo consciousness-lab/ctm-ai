@@ -4,13 +4,13 @@ from ..scorers.scorer_base import BaseScorer
 from .processor_base import BaseProcessor
 
 
-@BaseProcessor.register_processor('search_engine_processor')
-class SearchEngineProcessor(BaseProcessor):
+@BaseProcessor.register_processor('math_processor')
+class MathProcessor(BaseProcessor):
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='search_engine_messenger')
+        return BaseMessenger(name='math_messenger')
 
     def init_executor(self) -> BaseExecutor:
-        return BaseExecutor(name='search_engine_executor')
+        return BaseExecutor(name='math_executor')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='gpt4_scorer')
+        return BaseScorer(name='language_scorer')

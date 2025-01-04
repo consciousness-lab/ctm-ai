@@ -8,8 +8,8 @@ from ..utils import logger, message_exponential_backoff
 from .executor_base import BaseExecutor
 
 
-@BaseExecutor.register_executor('search_engine_executor')
-class SearchEngineExecutor(BaseExecutor):
+@BaseExecutor.register_executor('search_executor')
+class SearchExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         self.api_key = os.environ['GOOGLE_API_KEY']
         self.cse_id = os.environ['GOOGLE_CSE_ID']

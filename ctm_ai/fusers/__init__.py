@@ -1,7 +1,7 @@
 from .fuser_base import BaseFuser
-from .fuser_gpt4 import GPT4Fuser
+from .fuser_language import LanguageFuser
 
 __all__ = [
-    'GPT4Fuser',
+    'LanguageFuser',
     'BaseFuser',
 ]

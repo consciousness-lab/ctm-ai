@@ -30,7 +30,7 @@ export const stylesheet = [
     selector: 'node.rectangle',
     style: {
       shape: 'rectangle',
-      width: 70,
+      width: 90,
       height: 35,
       'background-color': '#9b59b6',  // Purple for processors
       'text-valign': 'center',

@@ -48,10 +48,10 @@ const ProcessPhase = ({ phase, displayPhase, description }) => {
 
 const App = () => {
     const [availableProcessors, setAvailableProcessors] = useState([
-        'GPT4VProcessor',
-        'GPT4Processor',
-        'SearchEngineProcessor',
-        'WolframAlphaProcessor',
+        'VisionProcessor',
+        'LanguageProcessor',
+        'SearchProcessor',
+        'MathProcessor',
     ]);
     const [nodeDetailJSX, setNodeDetailJSX] = useState(null);
     const [k, setK] = useState(0);

@@ -4,13 +4,13 @@ from ..scorers.scorer_base import BaseScorer
 from .processor_base import BaseProcessor
 
 
-@BaseProcessor.register_processor('gpt4v_processor')
-class GPT4VProcessor(BaseProcessor):
+@BaseProcessor.register_processor('language_processor')
+class LanguageProcessor(BaseProcessor):
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='gpt4_messenger')
+        return BaseMessenger(name='language_messenger')
 
     def init_executor(self) -> BaseExecutor:
-        return BaseExecutor(name='gpt4v_executor')
+        return BaseExecutor(name='language_executor')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='gpt4_scorer')
+        return BaseScorer(name='language_scorer')

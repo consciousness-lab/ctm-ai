@@ -10,8 +10,8 @@ from ..utils import (
 from .supervisor_base import BaseSupervisor
 
 
-@BaseSupervisor.register_supervisor('gpt4_supervisor')
-class GPT4Supervisor(BaseSupervisor):
+@BaseSupervisor.register_supervisor('language_supervisor')
+class LanguageSupervisor(BaseSupervisor):
     def init_supervisor(self) -> None:
         self.model = OpenAI()
 

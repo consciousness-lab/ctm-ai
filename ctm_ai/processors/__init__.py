@@ -1,13 +1,13 @@
 from .processor_base import BaseProcessor
-from .processor_gpt4 import GPT4Processor
-from .processor_gpt4v import GPT4VProcessor
-from .processor_search_engine import SearchEngineProcessor
-from .processor_wolfram_alpha import WolframAlphaProcessor
+from .processor_language import LanguageProcessor
+from .processor_vision import VisionProcessor
+from .processor_search import SearchProcessor
+from .processor_math import MathProcessor
 
 __all__ = [
     'BaseProcessor',
-    'GPT4VProcessor',
-    'GPT4Processor',
-    'SearchEngineProcessor',
-    'WolframAlphaProcessor',
+    'VisionProcessor',
+    'LanguageProcessor',
+    'SearchProcessor',
+    'MathProcessor',
 ]

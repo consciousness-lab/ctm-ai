@@ -6,8 +6,8 @@ from .messenger_base import BaseMessenger
 T = TypeVar('T', bound='BaseMessenger')
 
 
-@BaseMessenger.register_messenger('wolfram_alpha_messenger')
-class WolframAlphaMessenger(BaseMessenger):
+@BaseMessenger.register_messenger('search_messenger')
+class SearchMessenger(BaseMessenger):
     def collect_executor_messages(
         self,
         query: str,

@@ -46,13 +46,13 @@ class BaseProcessor(object):
         self.scorer = self.init_scorer()
 
     def init_executor(self) -> BaseExecutor:
-        return BaseExecutor(name='gpt4_executor')
+        return BaseExecutor(name='language_executor')
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='gpt4_messenger')
+        return BaseMessenger(name='language_messenger')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='gpt4_scorer')
+        return BaseScorer(name='language_scorer')
 
     def ask(
         self,

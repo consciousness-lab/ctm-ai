@@ -44,10 +44,10 @@ def generate_unique_filename(filename):
 
 
 FRONTEND_TO_BACKEND_PROCESSORS = {
-    'GPT4VProcessor': 'gpt4v_processor',
-    'GPT4Processor': 'gpt4_processor',
-    'SearchEngineProcessor': 'search_engine_processor',
-    'WolframAlphaProcessor': 'wolfram_alpha_processor',
+    'VisionProcessor': 'vision_processor',
+    'LanguageProcessor': 'language_processor',
+    'SearchProcessor': 'search_processor',
+    'MathProcessor': 'math_processor',
 }
 
 
@@ -125,9 +125,9 @@ def initialize_processors():
         node_details[backend_processor_name] = backend_processor_name
         created_processor_names.append(backend_processor_name)
 
-    ctm.add_supervisor('gpt4_supervisor')
-    ctm.add_scorer('gpt4_scorer')
-    ctm.add_fuser('gpt4_fuser')
+    ctm.add_supervisor('language_supervisor')
+    ctm.add_scorer('language_scorer')
+    ctm.add_fuser('language_fuser')
 
     response = jsonify(
         {'message': 'Processors initialized', 'processorNames': created_processor_names}
