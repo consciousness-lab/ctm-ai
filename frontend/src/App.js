@@ -25,6 +25,7 @@ import {
 } from './steps/index';
 import './App.css';
 import { fetchProcessorNeighborhoods } from './utils/api';
+import {parseDetailString} from './utils/parseDetailString'
 import ProcessorSelector from "./components/ProcessorSelector";
 import UploadForm from "./components/UploadForm";
 
@@ -52,6 +53,7 @@ const App = () => {
         'SearchEngineProcessor',
         'WolframAlphaProcessor',
     ]);
+    const [nodeDetailJSX, setNodeDetailJSX] = useState(null);
     const [k, setK] = useState(0);
     const [elements, setElements] = useState([]);
     const [processorNames, setProcessorNames] = useState([]);
@@ -274,36 +276,59 @@ const App = () => {
         }
     };
 
-
     useEffect(() => {
         if (!selectedNode) {
-            setNodeDetailText('');
+            setNodeDetailJSX(null);
             return;
         }
 
         fetch(`http://localhost:5000/api/nodes/${selectedNode}`)
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.self) {
-            let detailsText = `Node Details:\n${data.self}`;
-            if (data.parents && Object.keys(data.parents).length > 0) {
-                detailsText += `\n\nParent Details:\n`;
-                Object.entries(data.parents).forEach(([parentId, parentDetails]) => {
-                detailsText += `Parent ${parentId}: ${parentDetails}\n`;
-                });
-            } else {
-                detailsText += `\n\nNo parent details available.`;
-            }
-            setNodeDetailText(detailsText);
-            } else {
-            setNodeDetailText('No details found for this node.');
-            }
-        })
-        .catch((error) => {
-            console.error('Error fetching node details:', error);
-            setNodeDetailText('Error loading node details.');
-        });
+            .then((response) => response.json())
+            .then((data) => {
+                if (!data.self) {
+                    setNodeDetailJSX(<div>No details found for this node.</div>);
+                    return;
+                }
+
+                const nodeSelfLines = parseDetailString(data.self);
+
+                let parentLines = null;
+                if (data.parents && Object.keys(data.parents).length > 0) {
+                    parentLines = [];
+                    parentLines.push(<h3 key="parents-header">Parent Details:</h3>);
+
+                    Object.entries(data.parents).forEach(([parentId, parentText]) => {
+                        parentLines.push(
+                            <div key={`title-${parentId}`} className="parent-id">
+                                <p><strong>Parent {parentId}:</strong></p>
+                            </div>
+                        );
+                        const parsed = parseDetailString(parentText);
+                        parentLines.push(
+                            <div key={`content-${parentId}`}>
+                                {parsed}
+                            </div>
+                        );
+                    });
+                }
+
+                const finalJSX = (
+                    <div>
+                        <h3>Node Details:</h3>
+                        {nodeSelfLines}
+
+                        {parentLines ? parentLines : <p>No parent details available.</p>}
+                    </div>
+                );
+
+                setNodeDetailJSX(finalJSX);
+            })
+            .catch((error) => {
+                console.error('Error fetching node details:', error);
+                setNodeDetailJSX(<div>Error loading node details.</div>);
+            });
     }, [selectedNode]);
+
 
 
   return (
@@ -396,11 +421,7 @@ const App = () => {
           <div className="panel-card">
             <h2 className="panel-title">Node Information</h2>
             <div className="info-content">
-              {selectedNode ? (
-                <pre className="node-details">{nodeDetailText}</pre>
-              ) : (
-                <p className="placeholder-text">Click a node to see details</p>
-              )}
+                {nodeDetailJSX ? nodeDetailJSX : <p>Click a node to see details</p>}
             </div>
           </div>
 

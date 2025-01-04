@@ -493,3 +493,14 @@
     font-size: 0.875rem;
     overflow-x: auto;
 }
+
+.detail-title {
+    font-weight: bold;
+    color: #666;
+}
+
+.detail-content {
+    font-weight: normal;
+    color: #333;
+}
+
