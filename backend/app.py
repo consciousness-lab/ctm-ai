@@ -18,7 +18,7 @@ app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {
     'images': {'png', 'jpg', 'jpeg', 'gif', 'bmp'},
-    'audios': {'mp3', 'wav', 'aac', 'flac'},
+    'audios': {'mp3', 'wav', 'aac', 'flac', 'mp4'},
     'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv'},
 }
 
@@ -48,6 +48,8 @@ FRONTEND_TO_BACKEND_PROCESSORS = {
     'LanguageProcessor': 'language_processor',
     'SearchProcessor': 'search_processor',
     'MathProcessor': 'math_processor',
+    'CodeProcessor': 'code_processor',
+    'AudioProcessor': 'audio_processor'
 }
 
 
@@ -150,8 +152,17 @@ def handle_output_gist():
     data = request.get_json()
     updates = data.get('updates', [])
 
-    global query
-    chunks = ctm.ask_processors(query)
+    global query, saved_files
+    image_path = saved_files['images'][0] if saved_files['images'] else None
+    audio_path = saved_files['audios'][0] if saved_files['audios'] else None
+    video_path = saved_files['videos'][0] if saved_files['videos'] else None
+
+    chunks = ctm.ask_processors(
+        query,
+        image_path=image_path,
+        audio_path=audio_path,
+        video_path=video_path
+    )
     gists = [chunk.gist for chunk in chunks]
     gists = {}
     for chunk in chunks:
@@ -379,6 +390,7 @@ def upload_files():
         return response
 
     global query
+    global saved_files
     query = request.form.get('query', '')
     text = request.form.get('text', '')
 
@@ -395,7 +407,7 @@ def upload_files():
                 )
                 os.makedirs(os.path.dirname(image_path), exist_ok=True)
                 img.save(image_path)
-                saved_files['images'].append(unique_filename)
+                saved_files['images'].append(image_path)
             else:
                 response = make_response(
                     jsonify({'error': f'Invalid image file: {img.filename}'}), 400
@@ -416,7 +428,7 @@ def upload_files():
                 )
                 os.makedirs(os.path.dirname(audio_path), exist_ok=True)
                 aud.save(audio_path)
-                saved_files['audios'].append(unique_filename)
+                saved_files['audios'].append(audio_path)
             else:
                 response = make_response(
                     jsonify({'error': f'Invalid audios file: {aud.filename}'}), 400
@@ -424,7 +436,7 @@ def upload_files():
                 response.headers.add(
                     'Access-Control-Allow-Origin', 'http://localhost:3000'
                 )
-                return jsonify({'error': f'Invalid audio file: {aud.filename}'}), 400
+                return response
 
     if 'video_frames' in request.files:
         videos = request.files.getlist('video_frames')
@@ -437,7 +449,7 @@ def upload_files():
                 )
                 os.makedirs(os.path.dirname(video_path), exist_ok=True)
                 vid.save(video_path)
-                saved_files['videos'].append(unique_filename)
+                saved_files['videos'].append(video_path)
             else:
                 response = make_response(
                     jsonify({'error': f'Invalid video file: {vid.filename}'}), 400
@@ -445,7 +457,7 @@ def upload_files():
                 response.headers.add(
                     'Access-Control-Allow-Origin', 'http://localhost:3000'
                 )
-                return jsonify({'error': f'Invalid video file: {vid.filename}'}), 400
+                return response
 
     response_data = {
         'message': 'Files uploaded successfully',

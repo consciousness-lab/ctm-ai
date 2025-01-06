@@ -14,7 +14,7 @@ class MathMessenger(BaseMessenger):
         text: Optional[str] = None,
         image: Optional[str] = None,
         audio: Optional[str] = None,
-        video_frames: Optional[List[str]] = None,
+        video_frames: Optional[str] = None,
     ) -> List[Message]:
         message = Message(
             role='user',
@@ -30,7 +30,7 @@ class MathMessenger(BaseMessenger):
         text: Optional[str] = None,
         image: Optional[str] = None,
         audio: Optional[str] = None,
-        video_frames: Optional[List[str]] = None,
+        video_frames: Optional[str] = None,
     ) -> List[Message]:
         message = Message(
             role='assistant',

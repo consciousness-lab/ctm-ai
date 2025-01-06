@@ -8,13 +8,13 @@ from .processor_base import BaseProcessor
 from ..chunks import Chunk
 
 
-@BaseProcessor.register_processor('vision_processor')
-class VisionProcessor(BaseProcessor):
+@BaseProcessor.register_processor('audio_processor')
+class AudioProcessor(BaseProcessor):
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='language_messenger')
+        return BaseMessenger(name='audio_messenger')
 
     def init_executor(self) -> BaseExecutor:
-        return BaseExecutor(name='vision_executor')
+        return BaseExecutor(name='audio_executor')
 
     def init_scorer(self) -> BaseScorer:
         return BaseScorer(name='language_scorer')
@@ -36,7 +36,7 @@ class VisionProcessor(BaseProcessor):
         )
         executor_output = self.executor.ask(
             messages=executor_messages,
-            image_path=image,
+            audio_path=audio,
         )
         scorer_messages = self.messenger.collect_scorer_messages(
             query=query,
@@ -58,3 +58,4 @@ class VisionProcessor(BaseProcessor):
             scorer_output=scorer_output,
             executor_output=executor_output
         )
+

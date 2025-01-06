@@ -1,13 +1,11 @@
-from typing import List, Optional, TypeVar
+from typing import List, Optional
 
 from .message import Message
 from .messenger_base import BaseMessenger
 
-T = TypeVar('T', bound='BaseMessenger')
 
-
-@BaseMessenger.register_messenger('vision_messenger')
-class VisionMessenger(BaseMessenger):
+@BaseMessenger.register_messenger('code_messenger')
+class CodeMessenger(BaseMessenger):
     def collect_executor_messages(
         self,
         query: str,
@@ -36,7 +34,7 @@ class VisionMessenger(BaseMessenger):
         video_frames: Optional[str] = None,
     ) -> List[Message]:
         message = Message(
-            role='assistant',
+            role='user',
             query=query,
             gist=executor_output.gist,
             gists=executor_output.gists,

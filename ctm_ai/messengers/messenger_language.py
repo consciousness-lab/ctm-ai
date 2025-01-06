@@ -12,7 +12,7 @@ class LanguageMessenger(BaseMessenger):
         text: Optional[str] = None,
         image: Optional[str] = None,
         audio: Optional[str] = None,
-        video_frames: Optional[List[str]] = None,
+        video_frames: Optional[str] = None,
     ) -> List[Message]:
         content = 'Query: {}\n'.format(query)
         if text is not None:
@@ -31,7 +31,7 @@ class LanguageMessenger(BaseMessenger):
         text: Optional[str] = None,
         image: Optional[str] = None,
         audio: Optional[str] = None,
-        video_frames: Optional[List[str]] = None,
+        video_frames: Optional[str] = None,
     ) -> List[Message]:
         message = Message(
             role='user',

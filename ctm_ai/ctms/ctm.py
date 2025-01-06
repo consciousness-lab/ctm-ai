@@ -26,14 +26,14 @@ class ConsciousnessTuringMachine:
         self.load_ctm()
 
     def __call__(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+            self,
+            query: str,
+            text: Optional[str] = None,
+            image_path: Optional[str] = None,
+            audio_path: Optional[str] = None,
+            video_path: Optional[str] = None,
     ) -> Tuple[str, float]:
-        return self.forward(query, text, image, audio, video_frames)
+        return self.forward(query, text, image_path, audio_path, video_path)
 
     def reset(self) -> None:
         self.load_ctm()
@@ -55,7 +55,7 @@ class ConsciousnessTuringMachine:
         self.add_fuser(self.config.fuser)
 
     def add_processor(
-        self, processor_name: str, group_name: Optional[str] = None
+            self, processor_name: str, group_name: Optional[str] = None
     ) -> None:
         self.processor_graph.add_node(processor_name, group_name)
 
@@ -84,23 +84,29 @@ class ConsciousnessTuringMachine:
 
     @staticmethod
     def ask_processor(
-        processor: BaseProcessor,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+            processor: BaseProcessor,
+            query: str,
+            text: Optional[str] = None,
+            image_path: Optional[str] = None,
+            audio_path: Optional[str] = None,
+            video_path: Optional[str] = None,
     ) -> Chunk:
-        return processor.ask(query, text, image, audio, video_frames)
+        return processor.ask(
+            query,
+            text,
+            image_path,
+            audio_path,
+            video_path,
+        )
 
     @logging_func
     def ask_processors(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+            self,
+            query: str,
+            text: Optional[str] = None,
+            image_path: Optional[str] = None,
+            audio_path: Optional[str] = None,
+            video_path: Optional[str] = None,
     ) -> List[Chunk]:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
@@ -109,9 +115,9 @@ class ConsciousnessTuringMachine:
                     processor,
                     query,
                     text,
-                    image,
-                    audio,
-                    video_frames,
+                    image_path,
+                    audio_path,
+                    video_path,
                 )
                 for processor in self.processor_graph.nodes
             ]
@@ -124,7 +130,7 @@ class ConsciousnessTuringMachine:
 
     @logging_func
     def ask_supervisor(
-        self, query: str, chunk: Chunk
+            self, query: str, chunk: Chunk
     ) -> Tuple[Union[str, None], float]:
         final_answer, score = self.supervisors[0].ask(query, chunk.gist)
         return final_answer, score
@@ -185,14 +191,14 @@ class ConsciousnessTuringMachine:
 
     @logging_func_with_count
     def go_up(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+            self,
+            query: str,
+            text: Optional[str] = None,
+            image_path: Optional[str] = None,
+            audio_path: Optional[str] = None,
+            video_path: Optional[str] = None,
     ) -> Tuple[Chunk, List[Chunk]]:
-        chunks = self.ask_processors(query, text, image, audio, video_frames)
+        chunks = self.ask_processors(query, text, image_path, audio_path, video_path)
         chunks = self.fuse_processor(chunks)
         winning_chunk = self.uptree_competition(chunks)
         return winning_chunk, chunks
@@ -203,15 +209,15 @@ class ConsciousnessTuringMachine:
         self.link_form(chunks)
 
     def forward(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+            self,
+            query: str,
+            text: Optional[str] = None,
+            image_path: Optional[str] = None,
+            audio_path: Optional[str] = None,
+            video_path: Optional[str] = None,
     ) -> Tuple[str, float]:
         for _ in range(self.config.max_iter_num):
-            winning_chunk, chunks = self.go_up(query, text, image, audio, video_frames)
+            winning_chunk, chunks = self.go_up(query, text, image_path, audio_path, video_path)
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
             confidence_score = 0
             if confidence_score > self.config.output_threshold:
