@@ -66,6 +66,7 @@ const App = () => {
     const [selectedProcessors, setSelectedProcessors] = useState([]);
     const allProcessors = availableProcessors;
     const [neighborhoods, setNeighborhoods] = useState(null);
+    const [uploadKey, setUploadKey] = useState(Date.now());
 
     const toggleProcessor = (proc) => {
         if (selectedProcessors.includes(proc)) {
@@ -276,6 +277,34 @@ const App = () => {
         }
     };
 
+    const handleRefresh = async () => {
+        try {
+            await fetch('http://localhost:5000/api/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        } catch (error) {
+            console.error("Error calling /api/refresh:", error);
+        }
+
+        setSelectedProcessors([]);
+        setInitialized(false);
+        setElements([]);
+        setProcessorNames([]);
+        setSelectedNode(null);
+        setNodeDetailJSX(null);
+        setNodeDetailText('');
+        setCurrentStep(PHASES.INIT);
+        setDisplayPhase(PHASES.INIT);
+        setUptreeStep(1);
+        setK(0);
+        setNeighborhoods(null);
+
+        setUploadKey(Date.now());
+    };
+
     useEffect(() => {
         if (!selectedNode) {
             setNodeDetailJSX(null);
@@ -340,45 +369,55 @@ const App = () => {
             <h2 className="panel-title">Upload Files</h2>
         </div>
         <div className="panel-card">
-            <UploadForm />
+            <UploadForm key={uploadKey} />
         </div>
     </div>
 
       <div className="main-grid">
         {/* Left Panel - Process Control */}
         <div className="control-panel">
-          <div className="panel-card">
-            <h2 className="panel-title">Process Control</h2>
-            <div className="control-content">
-                <div className="input-group">
-                    <div className="controls-container">
-                        <ProcessorSelector
-                            allProcessors={allProcessors}
-                            selectedProcessors={selectedProcessors}
-                            onChange={setSelectedProcessors}
-                        />
-                        <button onClick={handleStart} disabled={initialized}
-                                className={`control-button start ${initialized ? 'disabled' : ''}`}>
-                            Start
-                        </button>
+            <div className="panel-card">
+                <h2 className="panel-title">Process Control</h2>
+
+                <div className="control-content">
+                    <div className="input-group">
+                        <div className="controls-container">
+                            <ProcessorSelector
+                                allProcessors={allProcessors}
+                                selectedProcessors={selectedProcessors}
+                                onChange={setSelectedProcessors}
+                            />
+
+                            <button
+                                onClick={handleRefresh}
+                                className="control-button refresh"
+                            >
+                                Refresh
+                            </button>
+                            <button onClick={handleStart} disabled={initialized}
+                                    className={`control-button start ${initialized ? 'disabled' : ''}`}>
+                                Start
+                            </button>
+
+
+                        </div>
+
                     </div>
-
+                    {initialized && (
+                        <button
+                            onClick={handleStep}
+                            className="control-button step"
+                        >
+                            Next Step
+                        </button>
+                    )}
                 </div>
-                {initialized && (
-                    <button
-                        onClick={handleStep}
-                        className="control-button step"
-                    >
-                  Next Step
-                </button>
-              )}
             </div>
-          </div>
 
-          <div className="panel-card">
-            <h2 className="panel-title">Process Phases</h2>
-            <div className="phases-list">
-                {Object.entries(PHASE_DESCRIPTIONS).map(([phase, description]) => (
+            <div className="panel-card">
+                <h2 className="panel-title">Process Phases</h2>
+                <div className="phases-list">
+                    {Object.entries(PHASE_DESCRIPTIONS).map(([phase, description]) => (
                 <ProcessPhase
                     key={phase}
                     phase={phase}

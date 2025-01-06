@@ -51,6 +51,31 @@ FRONTEND_TO_BACKEND_PROCESSORS = {
 }
 
 
+@app.route('/api/refresh', methods=['POST', 'OPTIONS'])
+def handle_refresh():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
+
+    global saved_files, node_details, node_parents, node_gists, query, winning_chunk, chunks
+
+    saved_files = {'images': [], 'audios': [], 'videos': []}
+
+    node_details.clear()
+    node_parents.clear()
+    node_gists.clear()
+
+    query = None
+    winning_chunk = None
+    chunks = []
+
+    return jsonify({'message': 'Server data refreshed'}), 200
+
+
+
 @app.route('/api/nodes/<node_id>')
 def get_node_details(node_id):
     print(f'Requested node_id: {node_id}')
@@ -241,7 +266,7 @@ def handle_final_node():
                 query, node_details[parent_id]
             )
             node_details[node_id] = (
-                'Answer: ' + answer + f'\n\nConfidence score: {confidence_score}'
+                    'Answer: ' + answer + f'\n\nConfidence score: {confidence_score}'
             )
             winning_chunk = node_details[parent_id]
 
