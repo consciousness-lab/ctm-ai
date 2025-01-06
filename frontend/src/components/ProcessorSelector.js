@@ -16,7 +16,7 @@ function ProcessorSelector({ allProcessors, selectedProcessors, onChange }) {
     return (
         <div style={{marginTop: '10px'}}>
             <strong>Processors:</strong>
-            <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px'}}>
+            <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '5px', marginBottom: '5px'}}>
                 {allProcessors.map((proc) => {
                     const isSelected = selectedProcessors.includes(proc);
                     return (
@@ -36,8 +36,8 @@ function ProcessorSelector({ allProcessors, selectedProcessors, onChange }) {
                     );
                 })}
             </div>
-            <div style={{marginTop: '10px'}}>
-                <strong>Selected Processors:</strong> {selectedProcessors.join(', ') || 'NAN'}
+            <div style={{marginTop: '15px', marginBottom: '15px'}}>
+                <strong>Selected Processors:</strong> {selectedProcessors.join(', ') || 'None'}
             </div>
         </div>
     );

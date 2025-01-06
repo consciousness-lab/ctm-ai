@@ -335,11 +335,32 @@ const App = () => {
     <div className="app-container">
       <h1 className="app-title">CTM-AI Visualization</h1>
 
-    <div className="upload-section">
-        <div className="panel-header">
-            <h2 className="panel-title">Upload Files</h2>
+    <div className="panel-card">
+        <h2 className="panel-title">Instructions</h2>
+        <div className="info-content">
+            <p className="intro-text">
+                Welcome to the CTM-AI System Visualization Tool. Follow these steps to explore how the system processes and analyzes data to answer your questions.
+            </p>
+            <ol className="instruction-list">
+                <li>Input your query (what you'd like the CTM-AI system to answer)</li>
+                <li>Upload your multimodal data (images, text, etc.)</li>
+                <li>Select your desired processors</li>
+                <li>Click "Start" to begin visualization</li>
+                <li>Monitor the current phase and its description in the Process Phases section</li>
+                <li>View the system's graph structure in the CTM Visualization area</li>
+                <li>Interact with nodes (processors or data points) by clicking on nodes to view detailed information</li>
+                <li>Use "Next Step" to progress through phases</li>
+                <li>Find your final answer in the details of the last node</li>
+            </ol>
+            <p className="intro-text">
+                Our CTM-AI system iteratively refines its answer.
+            </p>
         </div>
+    </div>
+
+    <div className="upload-section">
         <div className="panel-card">
+        <h2 className="panel-title">Upload Files</h2>
             <UploadForm />
         </div>
     </div>
