@@ -246,8 +246,8 @@ const UploadForm = () => {
                     <div className="success-message">Upload Success!</div>
                 )}
 
-                <button type="submit" className="submit-button">
-                    Submit to Server
+                <button type="submit" className={`control-button start`}>
+                    Submit
                 </button>
 
                 {serverResponse && (
