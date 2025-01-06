@@ -336,25 +336,60 @@ const App = () => {
       <h1 className="app-title">CTM-AI Visualization</h1>
 
     <div className="panel-card">
-        <h2 className="panel-title">Instructions</h2>
+        <h2 className="panel-title">
+            Instructions
+        </h2>
         <div className="info-content">
             <p className="intro-text">
                 Welcome to the CTM-AI System Visualization Tool. Follow these steps to explore how the system processes and analyzes data to answer your questions.
             </p>
             <ol className="instruction-list">
-                <li>Input your query (what you'd like the CTM-AI system to answer)</li>
-                <li>Upload your multimodal data (images, text, etc.)</li>
-                <li>Select your desired processors</li>
-                <li>Click "Start" to begin visualization</li>
-                <li>Monitor the current phase and its description in the Process Phases section</li>
-                <li>View the system's graph structure in the CTM Visualization area</li>
-                <li>Interact with nodes (processors or data points) by clicking on nodes to view detailed information</li>
-                <li>Use "Next Step" to progress through phases</li>
-                <li>Find your final answer in the details of the last node</li>
+                <li>
+                    <span className="step-content">
+                        <strong>Input your query</strong> - What you'd like the CTM-AI system to answer
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Upload your data</strong> - Support for images, text, and other formats
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Select processors</strong> - Choose the analysis modules to use
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Start visualization</strong> - Begin the analysis process
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Monitor phases</strong> - Track progress in the Process Phases section
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>View system graph</strong> - Examine the CTM Visualization structure
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Interact with nodes</strong> - Click on nodes to view detailed information
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Progress steps</strong> - Use "Next Step" to advance through phases
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>View results</strong> - Find your answer in the final node details
+                    </span>
+                </li>
             </ol>
-            <p className="intro-text">
-                Our CTM-AI system iteratively refines its answer.
-            </p>
         </div>
     </div>
 
