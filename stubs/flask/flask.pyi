@@ -1,5 +1,5 @@
 # stubs/flask/flask.pyi
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, Type
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, Type, Tuple
 from werkzeug.wrappers import Response as BaseResponse
 from werkzeug.datastructures import Headers
 
