@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Optional
+from typing import Dict, List, Optional, Set
 
 from ..processors import BaseProcessor
 from ..utils import logger
@@ -8,7 +8,9 @@ class ProcessorGraph(object):
     def __init__(self) -> None:
         self.graph: Dict[BaseProcessor, Set[BaseProcessor]] = {}
 
-    def add_node(self, processor_name: str, processor_group_name: Optional[str] = None) -> None:
+    def add_node(
+        self, processor_name: str, processor_group_name: Optional[str] = None
+    ) -> None:
         processor = BaseProcessor(name=processor_name, group_name=processor_group_name)
         self.graph[processor] = set()
         logger.info(f'Added processor {processor_name} to graph')
