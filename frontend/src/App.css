@@ -69,6 +69,7 @@
     margin-bottom: 10px;
 }
 
+
 .control-button.start {
     background-color: #2563eb;
     color: white;
@@ -79,9 +80,15 @@
 }
 
 .control-button.step {
+
+    padding: 10px;
     background-color: #059669;
     color: white;
 }
+.control-button.refresh {
+     background-color: #059669;
+     color: white;
+ }
 
 .control-button.step:hover {
     background-color: #047857;
@@ -373,7 +380,7 @@
     padding: 1rem;
     display: grid;
     gap: 1.5rem;
-    
+
 }
 
 .form-group {
@@ -537,4 +544,3 @@
     font-weight: normal;
     color: #333;
 }
-

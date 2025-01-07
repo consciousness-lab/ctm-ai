@@ -51,6 +51,39 @@ FRONTEND_TO_BACKEND_PROCESSORS = {
 }
 
 
+@app.route('/api/refresh', methods=['POST', 'OPTIONS'])
+def handle_refresh():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        return response
+
+    global \
+        saved_files, \
+        node_details, \
+        node_parents, \
+        node_gists, \
+        query, \
+        winning_chunk, \
+        chunks
+
+    saved_files = {'images': [], 'audios': [], 'videos': []}
+
+    node_details.clear()
+    node_parents.clear()
+    node_gists.clear()
+
+    query = None
+    winning_chunk = None
+    chunks = []
+
+    return jsonify({'message': 'Server data refreshed'}), 200
+
+
 @app.route('/api/nodes/<node_id>')
 def get_node_details(node_id):
     print(f'Requested node_id: {node_id}')
@@ -70,10 +103,7 @@ def get_node_details(node_id):
             else:
                 parent_data[parent_id] = str(raw_parent_detail)
 
-    response = {
-        'self': node_self,
-        'parents': parent_data
-    }
+    response = {'self': node_self, 'parents': parent_data}
     response = make_response(jsonify(response))
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')

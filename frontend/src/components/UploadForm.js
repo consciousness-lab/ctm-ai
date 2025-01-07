@@ -249,15 +249,6 @@ const UploadForm = () => {
                 <button type="submit" className={`control-button start`}>
                     Submit
                 </button>
-
-                {serverResponse && (
-                    <div className="server-response">
-                        <h3>Server Response:</h3>
-                        <pre className="response-content">
-                            {JSON.stringify(serverResponse, null, 2)}
-                        </pre>
-                    </div>
-                )}
             </form>
         </div>
     );
