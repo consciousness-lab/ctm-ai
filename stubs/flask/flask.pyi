@@ -1,7 +1,6 @@
 # stubs/flask/flask.pyi
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, Type, Text, Iterable, Mapping
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, Type
 from werkzeug.wrappers import Response as BaseResponse
-from werkzeug.local import Local
 from werkzeug.datastructures import Headers
 
 # Flask types
@@ -12,7 +11,7 @@ Response = BaseResponse
 class Flask:
     config: Dict[str, Any]
     debug: bool
-    
+
     def __init__(
         self,
         import_name: str,
@@ -24,22 +23,17 @@ class Flask:
         template_folder: Optional[str] = None,
         instance_path: Optional[str] = None,
         instance_relative_config: bool = False,
-        root_path: Optional[str] = None
+        root_path: Optional[str] = None,
     ) -> None: ...
-
     def route(
-        self,
-        rule: str,
-        methods: Optional[List[str]] = None,
-        **options: Any
+        self, rule: str, methods: Optional[List[str]] = None, **options: Any
     ) -> Callable[[F], F]: ...
-
     def run(
         self,
         host: Optional[str] = None,
         port: Optional[int] = None,
         debug: Optional[bool] = None,
-        **options: Any
+        **options: Any,
     ) -> None: ...
 
 # Global request object
@@ -49,19 +43,17 @@ class Request:
     form: Dict[str, Any]
     files: Dict[str, Any]
     headers: Headers
-    
-    def get_json(self, force: bool = False, silent: bool = False, cache: bool = True) -> Any: ...
+
+    def get_json(
+        self, force: bool = False, silent: bool = False, cache: bool = True
+    ) -> Any: ...
 
 request: Request
 
 # Response functions
 def jsonify(*args: Any, **kwargs: Any) -> Response: ...
 def make_response(*args: Any) -> Response: ...
-def send_from_directory(
-    directory: str,
-    filename: str,
-    **kwargs: Any
-) -> Response: ...
+def send_from_directory(directory: str, filename: str, **kwargs: Any) -> Response: ...
 
 # Other Flask exports
 def json(
