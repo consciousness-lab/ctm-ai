@@ -56,11 +56,20 @@ def handle_refresh():
     if request.method == 'OPTIONS':
         response = make_response()
         response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
+        )
         response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
         return response
 
-    global saved_files, node_details, node_parents, node_gists, query, winning_chunk, chunks
+    global \
+        saved_files, \
+        node_details, \
+        node_parents, \
+        node_gists, \
+        query, \
+        winning_chunk, \
+        chunks
 
     saved_files = {'images': [], 'audios': [], 'videos': []}
 
@@ -73,7 +82,6 @@ def handle_refresh():
     chunks = []
 
     return jsonify({'message': 'Server data refreshed'}), 200
-
 
 
 @app.route('/api/nodes/<node_id>')
@@ -95,10 +103,7 @@ def get_node_details(node_id):
             else:
                 parent_data[parent_id] = str(raw_parent_detail)
 
-    response = {
-        'self': node_self,
-        'parents': parent_data
-    }
+    response = {'self': node_self, 'parents': parent_data}
     response = make_response(jsonify(response))
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
@@ -266,7 +271,7 @@ def handle_final_node():
                 query, node_details[parent_id]
             )
             node_details[node_id] = (
-                    'Answer: ' + answer + f'\n\nConfidence score: {confidence_score}'
+                'Answer: ' + answer + f'\n\nConfidence score: {confidence_score}'
             )
             winning_chunk = node_details[parent_id]
 
