@@ -1,7 +1,6 @@
-# stubs/flask/flask.pyi
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-from werkzeug.datastructures import Headers, FileStorage, MultiDict
+from werkzeug.datastructures import FileStorage, Headers, MultiDict
 from werkzeug.wrappers import Response as BaseResponse
 
 # Flask types
