@@ -364,11 +364,67 @@ const App = () => {
     <div className="app-container">
       <h1 className="app-title">CTM-AI Visualization</h1>
 
-    <div className="upload-section">
-        <div className="panel-header">
-            <h2 className="panel-title">Upload Files</h2>
+    <div className="panel-card">
+        <h2 className="panel-title">
+            Instructions
+        </h2>
+        <div className="info-content">
+            <p className="intro-text">
+                Welcome to the CTM-AI System Visualization Tool. Follow these steps to explore how the system processes and analyzes data to answer your questions.
+            </p>
+            <ol className="instruction-list">
+                <li>
+                    <span className="step-content">
+                        <strong>Input your query</strong> - What you'd like the CTM-AI system to answer
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Upload your data</strong> - Support for images, text, and other formats
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Select processors</strong> - Choose the analysis modules to use
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Start visualization</strong> - Begin the analysis process
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Monitor phases</strong> - Track progress in the Process Phases section
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>View system graph</strong> - Examine the CTM Visualization structure
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Interact with nodes</strong> - Click on nodes to view detailed information
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Progress steps</strong> - Use "Next Step" to advance through phases
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>View results</strong> - Find your answer in the final node details
+                    </span>
+                </li>
+            </ol>
         </div>
+    </div>
+
+    <div className="upload-section">
         <div className="panel-card">
+        <h2 className="panel-title">Upload Files</h2>
             <UploadForm key={uploadKey} />
         </div>
     </div>
