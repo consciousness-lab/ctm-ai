@@ -7,8 +7,8 @@ from werkzeug.wrappers import Response as BaseResponse
 F = TypeVar('F', bound=Callable[..., Any])
 ResponseValue = Union[str, bytes, BaseResponse, Dict[str, Any]]
 
-# Define Response as a proper type alias
-Response = TypeVar('Response', bound=BaseResponse)
+# Define Response as a proper type alias instead of TypeVar
+Response = BaseResponse
 
 class Flask:
     config: Dict[str, Any]
@@ -58,13 +58,13 @@ class Request:
 request: Request
 
 # Response functions
-def jsonify(*args: Any, **kwargs: Any) -> BaseResponse: ...
-def make_response(*args: Any) -> BaseResponse: ...
+def jsonify(*args: Any, **kwargs: Any) -> Response: ...
+def make_response(*args: Any) -> Response: ...
 def send_from_directory(
     directory: str,
     filename: str,
     **kwargs: Any
-) -> BaseResponse: ...
+) -> Response: ...
 
 # Other Flask exports
 def json(
