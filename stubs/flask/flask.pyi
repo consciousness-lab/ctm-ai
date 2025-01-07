@@ -1,7 +1,7 @@
-# stubs/flask/flask.pyi
-from typing import Any, Callable, Dict, List, Optional, TypeVar, Union, Type, Tuple
-from werkzeug.wrappers import Response as BaseResponse
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union
+
 from werkzeug.datastructures import Headers
+from werkzeug.wrappers import Response as BaseResponse
 
 # Flask types
 F = TypeVar('F', bound=Callable[..., Any])
