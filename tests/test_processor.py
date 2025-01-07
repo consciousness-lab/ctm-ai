@@ -2,13 +2,13 @@ from ctm_ai.processors import BaseProcessor
 
 
 def test_gpt4_processor() -> None:
-    processor = BaseProcessor(name='gpt4_processor')
+    processor = BaseProcessor(name='language_processor')
     chunk = processor.ask(
         query='what is 1+1?',
         text='1+1=2',
     )
 
-    assert chunk.processor_name == 'gpt4_processor'
+    assert chunk.processor_name == 'language_processor'
     assert chunk.time_step == 0
     assert chunk.gist is not None
     assert chunk.confidence >= 0 and chunk.confidence <= 1
