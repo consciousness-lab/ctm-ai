@@ -2,21 +2,21 @@ from typing import List, Optional, Any, Union, TypeVar
 import numpy as np
 from numpy.typing import NDArray
 
-from ..chunks import Chunk
-
 from ..executors.executor_base import BaseExecutor
 from ..messengers.messenger_base import BaseMessenger
 from ..scorers.scorer_base import BaseScorer
 from .processor_base import BaseProcessor
 
+from ..chunks import Chunk
 
-@BaseProcessor.register_processor('vision_processor')
-class VisionProcessor(BaseProcessor):
+
+@BaseProcessor.register_processor('audio_processor')
+class AudioProcessor(BaseProcessor):
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='language_messenger')
+        return BaseMessenger(name='audio_messenger')
 
     def init_executor(self) -> BaseExecutor:
-        return BaseExecutor(name='vision_executor')
+        return BaseExecutor(name='audio_executor')
 
     def init_scorer(self) -> BaseScorer:
         return BaseScorer(name='language_scorer')
@@ -38,7 +38,7 @@ class VisionProcessor(BaseProcessor):
         )
         executor_output = self.executor.ask(
             messages=executor_messages,
-            image_path=image,
+            audio_path=audio,
         )
         scorer_messages = self.messenger.collect_scorer_messages(
             query=query,

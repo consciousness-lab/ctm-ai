@@ -3,6 +3,8 @@ from .executor_language import LanguageExecutor
 from .executor_vision import VisionExecutor
 from .executor_search import SearchExecutor
 from .executor_math import MathExecutor
+from .executor_code import CodeExecutor
+from .executor_audio import AudioExecutor
 
 __all__ = [
     'BaseExecutor',
@@ -10,4 +12,6 @@ __all__ = [
     'VisionExecutor',
     'SearchExecutor',
     'MathExecutor',
+    'CodeExecutor',
+    'AudioExecutor'
 ]
