@@ -68,6 +68,7 @@ const App = () => {
     const [selectedProcessors, setSelectedProcessors] = useState([]);
     const allProcessors = availableProcessors;
     const [neighborhoods, setNeighborhoods] = useState(null);
+    const [uploadKey, setUploadKey] = useState(Date.now());
 
     const toggleProcessor = (proc) => {
         if (selectedProcessors.includes(proc)) {
@@ -278,6 +279,34 @@ const App = () => {
         }
     };
 
+    const handleRefresh = async () => {
+        try {
+            await fetch('http://localhost:5000/api/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        } catch (error) {
+            console.error("Error calling /api/refresh:", error);
+        }
+
+        setSelectedProcessors([]);
+        setInitialized(false);
+        setElements([]);
+        setProcessorNames([]);
+        setSelectedNode(null);
+        setNodeDetailJSX(null);
+        setNodeDetailText('');
+        setCurrentStep(PHASES.INIT);
+        setDisplayPhase(PHASES.INIT);
+        setUptreeStep(1);
+        setK(0);
+        setNeighborhoods(null);
+
+        setUploadKey(Date.now());
+    };
+
     useEffect(() => {
         if (!selectedNode) {
             setNodeDetailJSX(null);
@@ -337,50 +366,116 @@ const App = () => {
     <div className="app-container">
       <h1 className="app-title">CTM-AI Visualization</h1>
 
-    <div className="upload-section">
-        <div className="panel-header">
-            <h2 className="panel-title">Upload Files</h2>
+    <div className="panel-card">
+        <h2 className="panel-title">
+            Instructions
+        </h2>
+        <div className="info-content">
+            <p className="intro-text">
+                Welcome to the CTM-AI System Visualization Tool. Follow these steps to explore how the system processes and analyzes data to answer your questions.
+            </p>
+            <ol className="instruction-list">
+                <li>
+                    <span className="step-content">
+                        <strong>Input your query</strong> - What you'd like the CTM-AI system to answer
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Upload your data</strong> - Support for images, text, and other formats
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Select processors</strong> - Choose the analysis modules to use
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Start visualization</strong> - Begin the analysis process
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Monitor phases</strong> - Track progress in the Process Phases section
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>View system graph</strong> - Examine the CTM Visualization structure
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Interact with nodes</strong> - Click on nodes to view detailed information
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>Progress steps</strong> - Use "Next Step" to advance through phases
+                    </span>
+                </li>
+                <li>
+                    <span className="step-content">
+                        <strong>View results</strong> - Find your answer in the final node details
+                    </span>
+                </li>
+            </ol>
         </div>
+    </div>
+
+    <div className="upload-section">
         <div className="panel-card">
-            <UploadForm />
+        <h2 className="panel-title">Upload Files</h2>
+            <UploadForm key={uploadKey} />
         </div>
     </div>
 
       <div className="main-grid">
         {/* Left Panel - Process Control */}
         <div className="control-panel">
-          <div className="panel-card">
-            <h2 className="panel-title">Process Control</h2>
-            <div className="control-content">
-                <div className="input-group">
-                    <div className="controls-container">
-                        <ProcessorSelector
-                            allProcessors={allProcessors}
-                            selectedProcessors={selectedProcessors}
-                            onChange={setSelectedProcessors}
-                        />
-                        <button onClick={handleStart} disabled={initialized}
-                                className={`control-button start ${initialized ? 'disabled' : ''}`}>
-                            Start
-                        </button>
+            <div className="panel-card">
+                <h2 className="panel-title">Process Control</h2>
+
+                <div className="control-content">
+                    <div className="input-group">
+                        <div className="controls-container">
+                            <ProcessorSelector
+                                allProcessors={allProcessors}
+                                selectedProcessors={selectedProcessors}
+                                onChange={setSelectedProcessors}
+                            />
+
+                            <button
+                                onClick={handleRefresh}
+                                className="control-button refresh"
+                            >
+                                Refresh
+                            </button>
+                            <button onClick={handleStart} disabled={initialized}
+                                    className={`control-button start ${initialized ? 'disabled' : ''}`}>
+                                Start
+                            </button>
+
+
+                        </div>
+
                     </div>
-
+                    {initialized && (
+                        <button
+                            onClick={handleStep}
+                            className="control-button step"
+                        >
+                            Next Step
+                        </button>
+                    )}
                 </div>
-                {initialized && (
-                    <button
-                        onClick={handleStep}
-                        className="control-button step"
-                    >
-                  Next Step
-                </button>
-              )}
             </div>
-          </div>
 
-          <div className="panel-card">
-            <h2 className="panel-title">Process Phases</h2>
-            <div className="phases-list">
-                {Object.entries(PHASE_DESCRIPTIONS).map(([phase, description]) => (
+            <div className="panel-card">
+                <h2 className="panel-title">Process Phases</h2>
+                <div className="phases-list">
+                    {Object.entries(PHASE_DESCRIPTIONS).map(([phase, description]) => (
                 <ProcessPhase
                     key={phase}
                     phase={phase}

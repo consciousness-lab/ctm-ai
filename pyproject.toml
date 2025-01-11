@@ -9,8 +9,8 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.8, <3.12"
-huggingface_hub = "0.27.0"
-openai = "^1.35.13"
+huggingface_hub = "0.27.1"
+openai = "^1.59.4"
 scikit_learn = "1.3.2"
 mypy = "^1.8.0"
 pydantic = "^2.10.4"

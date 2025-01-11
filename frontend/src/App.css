@@ -2,6 +2,7 @@
     min-height: 100vh;
     padding: 20px;
     background-color: #f5f5f5;
+    font-family: 'Arial', sans-serif;
 }
 
 .app-title {
@@ -68,6 +69,7 @@
     margin-bottom: 10px;
 }
 
+
 .control-button.start {
     background-color: #2563eb;
     color: white;
@@ -78,9 +80,15 @@
 }
 
 .control-button.step {
+
+    padding: 10px;
     background-color: #059669;
     color: white;
 }
+.control-button.refresh {
+     background-color: #059669;
+     color: white;
+ }
 
 .control-button.step:hover {
     background-color: #047857;
@@ -90,6 +98,28 @@
     background-color: #ccc;
     cursor: not-allowed;
 }
+
+.intro-text {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    color: #2d3748;
+}
+
+.instruction-list {
+    padding-left: 1.25rem;
+    list-style-position: outside;
+}
+
+.instruction-list li {
+    margin-bottom: 1rem;
+    padding-left: 0.5rem;
+}
+
+.instruction-list li::marker {
+    color: #4a5568;
+    font-weight: 600;
+}
+
 
 .phase-item {
     display: flex;
@@ -201,9 +231,6 @@
     color: #333;
 }
 
-.upload-section {
-    margin: 20px;
-}
 
 .upload-section .panel-header {
     display: inline-block;
@@ -224,8 +251,9 @@
 .upload-section .panel-card {
     background: white;
     border-radius: 8px;
-    padding: 24px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    overflow: hidden;
 }
 
 .upload-section form {
@@ -337,18 +365,22 @@
 }
 
 .upload-form-container {
-    width: 100%;
+    width: calc(100% - 3rem);
+    margin: 0 1.5rem;
+    box-sizing: border-box;
 }
 
 .upload-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+    width: 100%;
+    margin-bottom: 15px;
+    margin-top: 15px;
 }
 
 .form-grid {
+    padding: 1rem;
     display: grid;
     gap: 1.5rem;
+
 }
 
 .form-group {
@@ -365,11 +397,12 @@
 
 .form-input {
     width: 100%;
-    padding: 0.75rem;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem;
     border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    background: #f9fafb;
-    transition: all 0.2s;
+    border-radius: 0.375rem;
+    resize: vertical;
 }
 
 .form-input:focus {
@@ -380,6 +413,7 @@
 }
 
 .file-upload-section {
+    width: 100%;
     display: grid;
     gap: 1.5rem;
 }
@@ -392,9 +426,9 @@
 
 .file-input {
     padding: 0.5rem;
-    border: 1px dashed #e5e7eb;
+    border: none;
     border-radius: 0.5rem;
-    background: #f9fafb;
+    background: transparent;
 }
 
 .file-list {
@@ -462,15 +496,22 @@
 }
 
 .submit-button {
+    padding: 2rem;
     background: #3b82f6;
     color: white;
-    padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 0.5rem;
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s;
     align-self: flex-end;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 10px;
 }
 
 .submit-button:hover {
@@ -503,4 +544,3 @@
     font-weight: normal;
     color: #333;
 }
-

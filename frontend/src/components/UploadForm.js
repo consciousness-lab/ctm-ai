@@ -124,18 +124,18 @@ const UploadForm = () => {
             <form onSubmit={handleSubmit} className="upload-form">
                 <div className="form-grid">
                     <div className="form-group">
-                        <label className="form-label">Query</label>
-                        <input
-                            type="text"
+                        <label className="form-label"><strong>Query</strong></label>
+                        <textarea
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
+                            rows={1}
                             className="form-input"
                             placeholder="Enter your query"
                         />
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Text</label>
+                        <label className="form-label"><strong>Text</strong></label>
                         <textarea
                             value={text}
                             onChange={(e) => setText(e.target.value)}
@@ -147,7 +147,7 @@ const UploadForm = () => {
 
                     <div className="file-upload-section">
                         <div className="file-group">
-                            <label className="form-label">Images</label>
+                            <label className="form-label"><strong>Image</strong></label>
                             <input
                                 type="file"
                                 accept="image/*"
@@ -174,7 +174,7 @@ const UploadForm = () => {
                         </div>
 
                         <div className="file-group">
-                            <label className="form-label">Audio</label>
+                            <label className="form-label"><strong>Audio</strong></label>
                             <input
                                 type="file"
                                 accept="audio/*"
@@ -201,7 +201,7 @@ const UploadForm = () => {
                         </div>
 
                         <div className="file-group">
-                            <label className="form-label">Video</label>
+                            <label className="form-label"><strong>Video</strong></label>
                             <input
                                 type="file"
                                 accept="video/*"
@@ -246,18 +246,9 @@ const UploadForm = () => {
                     <div className="success-message">Upload Success!</div>
                 )}
 
-                <button type="submit" className="submit-button">
-                    Submit to Server
+                <button type="submit" className={`control-button start`}>
+                    Submit
                 </button>
-
-                {serverResponse && (
-                    <div className="server-response">
-                        <h3>Server Response:</h3>
-                        <pre className="response-content">
-                            {JSON.stringify(serverResponse, null, 2)}
-                        </pre>
-                    </div>
-                )}
             </form>
         </div>
     );
