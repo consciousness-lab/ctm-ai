@@ -1,6 +1,4 @@
-from typing import List, Optional, Any, Union
-import numpy as np
-from numpy.typing import NDArray
+from typing import List, Optional
 
 from .message import Message
 from .messenger_base import BaseMessenger
@@ -13,8 +11,8 @@ class LanguageMessenger(BaseMessenger):
         query: str,
         text: Optional[str] = None,
         image: Optional[str] = None,
-        audio: Optional[Union[NDArray[np.float32], str]] = None,
-        video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        audio: Optional[str] = None,
+        video_frames: Optional[List[str]] = None,
     ) -> List[Message]:
         content = 'Query: {}\n'.format(query)
         if text is not None:
@@ -32,8 +30,8 @@ class LanguageMessenger(BaseMessenger):
         query: str,
         text: Optional[str] = None,
         image: Optional[str] = None,
-        audio: Optional[Union[NDArray[np.float32], str]] = None,
-        video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        audio: Optional[str] = None,
+        video_frames: Optional[List[str]] = None,
     ) -> List[Message]:
         message = Message(
             role='user',

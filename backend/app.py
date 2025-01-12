@@ -16,7 +16,7 @@ class Config:
     MAX_CONTENT_LENGTH: int = 1 * 1024 * 1024 * 1024  # 1GB
     ALLOWED_EXTENSIONS: Dict[str, Set[str]] = {
         'images': {'png', 'jpg', 'jpeg', 'gif', 'bmp'},
-        'audios': {'mp3', 'wav', 'aac', 'flac', 'mp4'},
+        'audios': {'mp3', 'wav', 'aac', 'flac'},
         'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv'},
     }
     FRONTEND_TO_BACKEND_PROCESSORS: Dict[str, str] = {
@@ -24,8 +24,6 @@ class Config:
         'LanguageProcessor': 'language_processor',
         'SearchProcessor': 'search_processor',
         'MathProcessor': 'math_processor',
-        'CodeProcessor': 'code_processor',
-        'AudioProcessor': 'audio_processor'
     }
 
 
@@ -118,7 +116,7 @@ class FlaskAppWrapper:
         response.headers.add(
             'Access-Control-Allow-Headers', 'Content-Type,Authorization'
         )
-        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
         return response
 
     def handle_options_request(self) -> Response:
@@ -213,20 +211,6 @@ class FlaskAppWrapper:
             gists = ChunkProcessor.process_chunks(
                 self.ctm, self.state.query, self.state.chunks
             )
-    global query, saved_files
-    image_path = saved_files['images'][0] if saved_files['images'] else None
-    audio_path = saved_files['audios'][0] if saved_files['audios'] else None
-    video_path = saved_files['videos'][0] if saved_files['videos'] else None
-
-    chunks = ctm.ask_processors(
-        query,
-        image=image_path,
-        audio=audio_path,
-        video_frames=video_path
-    )
-    gists = {}
-    for chunk in chunks:
-        gists[chunk.processor_name] = chunk
 
             for update in updates:
                 proc_id = update.get('processor_id', '')
@@ -422,11 +406,8 @@ class FlaskAppWrapper:
                         unique_filename = FileHandler.save_file(
                             file, file_type, self.app
                         )
-                        file_path = os.path.join(
-                        app.config['UPLOAD_FOLDER'], file_type, unique_filename
-                        )
                         if unique_filename:
-                            saved_files[file_type].append(file_path)
+                            saved_files[file_type].append(unique_filename)
                         else:
                             return self.add_cors_headers(
                                 jsonify(

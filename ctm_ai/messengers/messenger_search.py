@@ -1,6 +1,4 @@
-from typing import List, Optional, Any, Union, TypeVar
-import numpy as np
-from numpy.typing import NDArray
+from typing import List, Optional, TypeVar
 
 from .message import Message
 from .messenger_base import BaseMessenger
@@ -15,8 +13,8 @@ class SearchMessenger(BaseMessenger):
         query: str,
         text: Optional[str] = None,
         image: Optional[str] = None,
-        audio: Optional[Union[NDArray[np.float32], str]] = None,
-        video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        audio: Optional[str] = None,
+        video_frames: Optional[List[str]] = None,
     ) -> List[Message]:
         message = Message(
             role='user',
@@ -31,8 +29,8 @@ class SearchMessenger(BaseMessenger):
         query: str,
         text: Optional[str] = None,
         image: Optional[str] = None,
-        audio: Optional[Union[NDArray[np.float32], str]] = None,
-        video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        audio: Optional[str] = None,
+        video_frames: Optional[List[str]] = None,
     ) -> List[Message]:
         message = Message(
             role='assistant',
