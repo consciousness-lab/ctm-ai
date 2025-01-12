@@ -30,8 +30,8 @@ class ConsciousnessTuringMachine:
         query: str,
         text: Optional[str] = None,
         image: Optional[str] = None,
-        audio: Optional[Union[NDArray[np.float32], str]] = None,
-        video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Tuple[str, float]:
         return self.forward(query, text, image, audio, video_frames)
 
@@ -88,8 +88,8 @@ class ConsciousnessTuringMachine:
         query: str,
         text: Optional[str] = None,
         image: Optional[str] = None,
-        audio: Optional[Union[NDArray[np.float32], str]] = None,
-        video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Chunk:
         return processor.ask(query, text, image, audio, video_frames)
 
@@ -99,8 +99,8 @@ class ConsciousnessTuringMachine:
         query: str,
         text: Optional[str] = None,
         image: Optional[str] = None,
-        audio: Optional[Union[NDArray[np.float32], str]] = None,
-        video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> List[Chunk]:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
@@ -189,8 +189,8 @@ class ConsciousnessTuringMachine:
         query: str,
         text: Optional[str] = None,
         image: Optional[str] = None,
-        audio: Optional[Union[NDArray[np.float32], str]] = None,
-        video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Tuple[Chunk, List[Chunk]]:
         chunks = self.ask_processors(query, text, image, audio, video_frames)
         chunks = self.fuse_processor(chunks)
@@ -207,8 +207,8 @@ class ConsciousnessTuringMachine:
         query: str,
         text: Optional[str] = None,
         image: Optional[str] = None,
-        audio: Optional[Union[NDArray[np.float32], str]] = None,
-        video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
     ) -> Tuple[str, float]:
         for _ in range(self.config.max_iter_num):
             winning_chunk, chunks = self.go_up(query, text, image, audio, video_frames)
