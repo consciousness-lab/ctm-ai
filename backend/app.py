@@ -1,8 +1,10 @@
 import os
 import uuid
-from typing import Any, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
+import numpy as np
 from flask import Flask, Response, jsonify, make_response, request, send_from_directory
+from numpy.typing import NDArray
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
@@ -16,7 +18,7 @@ class Config:
     MAX_CONTENT_LENGTH: int = 1 * 1024 * 1024 * 1024  # 1GB
     ALLOWED_EXTENSIONS: Dict[str, Set[str]] = {
         'images': {'png', 'jpg', 'jpeg', 'gif', 'bmp'},
-        'audios': {'mp3', 'wav', 'aac', 'flac'},
+        'audios': {'mp3', 'wav', 'aac', 'flac', 'mp4'},
         'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv'},
     }
     FRONTEND_TO_BACKEND_PROCESSORS: Dict[str, str] = {
@@ -24,6 +26,8 @@ class Config:
         'LanguageProcessor': 'language_processor',
         'SearchProcessor': 'search_processor',
         'MathProcessor': 'math_processor',
+        'CodeProcessor': 'code_processor',
+        'AudioProcessor': 'audio_processor'
     }
 
 
@@ -74,24 +78,26 @@ class FileHandler:
 class ChunkProcessor:
     @staticmethod
     def process_chunks(
-        ctm_instance: ConsciousnessTuringMachine,
-        query: Optional[str],
-        chunks: List[Chunk],
+            ctm_instance: ConsciousnessTuringMachine,
+            query: Optional[str],
+            image: Optional[str],
+            audio: Optional[Union[NDArray[np.float32], str]],
+            video_frames: Optional[Union[List[NDArray[np.uint8]], str]]
     ) -> Dict[str, Chunk]:
         if query is None:
             return {}
-        new_chunks = ctm_instance.ask_processors(query)
+        new_chunks = ctm_instance.ask_processors(query=query, image=image, audio=audio, video_frames=video_frames)
         return {chunk.processor_name: chunk for chunk in new_chunks}
 
     @staticmethod
     def fuse_chunks(
-        ctm_instance: ConsciousnessTuringMachine, chunks: List[Chunk]
+            ctm_instance: ConsciousnessTuringMachine, chunks: List[Chunk]
     ) -> List[Chunk]:
         return cast(List[Chunk], ctm_instance.fuse_processor(chunks))
 
     @staticmethod
     def compete_chunks(
-        chunk_manager: ChunkManager, chunk1: Chunk, chunk2: Chunk
+            chunk_manager: ChunkManager, chunk1: Chunk, chunk2: Chunk
     ) -> Chunk:
         if isinstance(chunk1, Chunk) and isinstance(chunk2, Chunk):
             return cast(Chunk, chunk_manager.compete(chunk1, chunk2))
@@ -116,7 +122,7 @@ class FlaskAppWrapper:
         response.headers.add(
             'Access-Control-Allow-Headers', 'Content-Type,Authorization'
         )
-        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
         return response
 
     def handle_options_request(self) -> Response:
@@ -208,8 +214,26 @@ class FlaskAppWrapper:
             data = request.get_json() or {}
             updates: List[Dict[str, str]] = data.get('updates', [])
 
+            image_filename = self.state.saved_files['images'][0] if self.state.saved_files['images'] else None
+            image_absolute_path = (
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'images', image_filename)
+                if image_filename else None
+            )
+
+            audio_filename = self.state.saved_files['audios'][0] if self.state.saved_files['audios'] else None
+            audio_absolute_path = (
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'audios', audio_filename)
+                if audio_filename else None
+            )
+
+            video_filename = self.state.saved_files['videos'][0] if self.state.saved_files['videos'] else None
+            video_absolute_path = (
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'videos', video_filename)
+                if video_filename else None
+            )
             gists = ChunkProcessor.process_chunks(
-                self.ctm, self.state.query, self.state.chunks
+                ctm_instance=self.ctm, query=self.state.query, image=image_absolute_path, audio=audio_absolute_path,
+                video_frames=video_absolute_path
             )
 
             for update in updates:
@@ -223,9 +247,9 @@ class FlaskAppWrapper:
                     else:
                         self.state.node_parents[target_id].append(proc_id)
 
-            return self.add_cors_headers(
-                jsonify({'message': 'Gist outputs processed', 'updates': updates})
-            )
+                return self.add_cors_headers(
+                    jsonify({'message': 'Gist outputs processed', 'updates': updates})
+                )
 
         @self.app.route('/api/uptree', methods=['POST', 'OPTIONS'])
         def handle_uptree() -> Response:
@@ -249,8 +273,8 @@ class FlaskAppWrapper:
                 if node_id not in self.state.node_details and len(parents_ids) >= 2:
                     parent_id1, parent_id2 = parents_ids[0], parents_ids[1]
                     if (
-                        parent_id1 in self.state.node_details
-                        and parent_id2 in self.state.node_details
+                            parent_id1 in self.state.node_details
+                            and parent_id2 in self.state.node_details
                     ):
                         self.state.node_details[node_id] = (
                             ChunkProcessor.compete_chunks(
@@ -285,8 +309,8 @@ class FlaskAppWrapper:
                     if curr_node_id not in self.state.node_details and parents_ids:
                         parent_id = parents_ids[0]
                         if (
-                            parent_id in self.state.node_details
-                            and self.state.query is not None
+                                parent_id in self.state.node_details
+                                and self.state.query is not None
                         ):
                             answer, confidence_score = self.ctm.ask_supervisor(
                                 self.state.query, self.state.node_details[parent_id]
@@ -416,6 +440,7 @@ class FlaskAppWrapper:
                                     }
                                 )
                             ), 400
+            self.state.saved_files = saved_files
 
             response_data = {
                 'message': 'Files uploaded successfully',

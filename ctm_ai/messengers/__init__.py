@@ -1,5 +1,7 @@
 from .message import Message
+from .messenger_audio import AudioMessenger
 from .messenger_base import BaseMessenger
+from .messenger_code import CodeMessenger
 from .messenger_language import LanguageMessenger
 from .messenger_math import MathMessenger
 from .messenger_search import SearchMessenger
@@ -12,4 +14,6 @@ __all__ = [
     'SearchMessenger',
     'MathMessenger',
     'Message',
+    'CodeMessenger',
+    'AudioMessenger'
 ]
