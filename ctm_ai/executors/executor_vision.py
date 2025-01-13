@@ -9,9 +9,9 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam,
 )
 
-from .executor_base import BaseExecutor
 from ..messengers import Message
 from ..utils import message_exponential_backoff
+from .executor_base import BaseExecutor
 
 
 def encode_image(image_path):
