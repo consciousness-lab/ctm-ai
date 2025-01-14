@@ -99,11 +99,10 @@ const UploadForm = () => {
             });
 
             audioFiles.forEach((file) => {
-                formData.append('audios', file);
             });
 
             videoFiles.forEach((file) => {
-                formData.append('video_frames', file);
+                formData.append('videos', file);
             });
 
             const result = await uploadFiles(formData, (progressEvent) => {

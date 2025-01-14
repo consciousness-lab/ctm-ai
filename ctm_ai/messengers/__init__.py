@@ -5,6 +5,7 @@ from .messenger_code import CodeMessenger
 from .messenger_language import LanguageMessenger
 from .messenger_math import MathMessenger
 from .messenger_search import SearchMessenger
+from .messenger_video import VideoMessenger
 from .messenger_vision import VisionMessenger
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     'MathMessenger',
     'Message',
     'CodeMessenger',
-    'AudioMessenger'
+    'AudioMessenger',
+    'VideoMessenger'
 ]

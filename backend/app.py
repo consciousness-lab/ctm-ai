@@ -2,6 +2,7 @@ import os
 import uuid
 from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
+import cv2
 import numpy as np
 from flask import Flask, Response, jsonify, make_response, request, send_from_directory
 from numpy.typing import NDArray
@@ -19,7 +20,7 @@ class Config:
     ALLOWED_EXTENSIONS: Dict[str, Set[str]] = {
         'images': {'png', 'jpg', 'jpeg', 'gif', 'bmp'},
         'audios': {'mp3', 'wav', 'aac', 'flac', 'mp4'},
-        'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv'},
+        'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv', 'MP4'},
     }
     FRONTEND_TO_BACKEND_PROCESSORS: Dict[str, str] = {
         'VisionProcessor': 'vision_processor',
@@ -27,7 +28,8 @@ class Config:
         'SearchProcessor': 'search_processor',
         'MathProcessor': 'math_processor',
         'CodeProcessor': 'code_processor',
-        'AudioProcessor': 'audio_processor'
+        'AudioProcessor': 'audio_processor',
+        'VideoProcessor': 'video_processor'
     }
 
 
@@ -46,6 +48,7 @@ class AppState:
             'images': [],
             'audios': [],
             'videos': [],
+            'video_frames': [],
         }
 
 
@@ -74,6 +77,39 @@ class FileHandler:
             return unique_filename
         return None
 
+    @staticmethod
+    def extract_frames(
+            video_path: str,
+            output_dir: str,
+            max_frames: Optional[int] = None,
+            sample_rate: int = 1
+    ) -> List[str]:
+        cap = cv2.VideoCapture(video_path)
+        frame_list = []
+        os.makedirs(output_dir, exist_ok=True)
+
+        frame_index = 0
+        extracted_frames = 0
+
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            if frame_index % sample_rate == 0:
+                frame_filename = os.path.join(output_dir, f"frame_{frame_index:05d}.jpg")
+                cv2.imwrite(frame_filename, frame)
+                frame_list.append(frame_filename)
+                extracted_frames += 1
+
+                if max_frames is not None and extracted_frames >= max_frames:
+                    break
+
+            frame_index += 1
+
+        cap.release()
+        return frame_list
+
 
 class ChunkProcessor:
     @staticmethod
@@ -82,7 +118,7 @@ class ChunkProcessor:
             query: Optional[str],
             image: Optional[str],
             audio: Optional[Union[NDArray[np.float32], str]],
-            video_frames: Optional[Union[List[NDArray[np.uint8]], str]]
+            video_frames: Optional[Union[List[NDArray[np.uint8]], List[str]]]
     ) -> Dict[str, Chunk]:
         if query is None:
             return {}
@@ -226,14 +262,14 @@ class FlaskAppWrapper:
                 if audio_filename else None
             )
 
-            video_filename = self.state.saved_files['videos'][0] if self.state.saved_files['videos'] else None
-            video_absolute_path = (
-                os.path.join(self.app.config['UPLOAD_FOLDER'], 'videos', video_filename)
-                if video_filename else None
-            )
+            video_frame_filenames = [
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'video_frames', frame_filename)
+                for frame_filename in self.state.saved_files['video_frames']
+            ] if self.state.saved_files['video_frames'] else []
+
             gists = ChunkProcessor.process_chunks(
                 ctm_instance=self.ctm, query=self.state.query, image=image_absolute_path, audio=audio_absolute_path,
-                video_frames=video_absolute_path
+                video_frames=video_frame_filenames
             )
 
             for update in updates:
@@ -409,6 +445,7 @@ class FlaskAppWrapper:
 
         @self.app.route('/api/upload', methods=['POST', 'OPTIONS'])
         def upload_files() -> Tuple[Response, int]:
+            print("Uploaded file keys: %s", list(request.files.keys()))
             if request.method == 'OPTIONS':
                 return self.handle_options_request(), 200
 
@@ -420,18 +457,30 @@ class FlaskAppWrapper:
                 'images': [],
                 'audios': [],
                 'videos': [],
+                'video_frames': [],
             }
+
+            print("Uploaded file keys: %s", list(request.files.keys()))
 
             # Process each file type
             for file_type in ['images', 'audios', 'videos']:
                 if file_type in request.files:
                     files = request.files.getlist(file_type)
                     for file in files:
-                        unique_filename = FileHandler.save_file(
-                            file, file_type, self.app
-                        )
+                        unique_filename = FileHandler.save_file(file, file_type, self.app)
+                        file_saved_path = os.path.join(self.app.config['UPLOAD_FOLDER'], file_type, unique_filename)
+                        print("Saved file: %s", file_saved_path)
                         if unique_filename:
-                            saved_files[file_type].append(unique_filename)
+                            if file_type == 'videos':
+                                saved_files['videos'].append(unique_filename)
+                                video_path = file_saved_path
+                                print(("Video saved at: %s", video_path))
+                                frame_output_dir = os.path.join(self.app.config['UPLOAD_FOLDER'], 'video_frames')
+                                frame_filenames = FileHandler.extract_frames(video_path, frame_output_dir, 100, 5)
+                                print("Extracted frames: %s", frame_filenames)
+                                saved_files['video_frames'].extend(frame_filenames)
+                            else:
+                                saved_files[file_type].append(unique_filename)
                         else:
                             return self.add_cors_headers(
                                 jsonify(
@@ -464,6 +513,7 @@ class FlaskAppWrapper:
 
             try:
                 file_path = os.path.join(self.app.config['UPLOAD_FOLDER'], file_type)
+
                 response = send_from_directory(file_path, filename)
                 return self.add_cors_headers(response), 200
             except FileNotFoundError:

@@ -4,6 +4,7 @@ from .processor_code import CodeProcessor
 from .processor_language import LanguageProcessor
 from .processor_math import MathProcessor
 from .processor_search import SearchProcessor
+from .processor_video import VideoProcessor
 from .processor_vision import VisionProcessor
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     'SearchProcessor',
     'MathProcessor',
     'CodeProcessor',
-    'AudioProcessor'
+    'AudioProcessor',
+    'VideoProcessor'
 ]

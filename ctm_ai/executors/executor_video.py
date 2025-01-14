@@ -1,4 +1,5 @@
 import base64
+import io
 import os
 from typing import Any, Union
 
@@ -8,6 +9,7 @@ from openai.types.chat import (
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
+from PIL import Image
 
 from ..messengers import Message
 from ..utils import message_exponential_backoff
@@ -15,12 +17,14 @@ from .executor_base import BaseExecutor
 
 
 def encode_image(image_path):
-    with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read()).decode("utf-8")
+    image = Image.open(image_path).convert("RGB")
+    buffered = io.BytesIO()
+    image.save(buffered, format="JPEG")
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
-@BaseExecutor.register_executor('vision_executor')
-class VisionExecutor(BaseExecutor):
+@BaseExecutor.register_executor('video_executor')
+class VideoExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         self.model = OpenAI()
 
@@ -59,14 +63,21 @@ class VisionExecutor(BaseExecutor):
             self.convert_message_to_param(message) for message in messages
         ]
 
-        image_path = kwargs.get("image")
-        if not image_path:
-            raise ValueError(f"No image path provided in kwargs, kwargs: {kwargs}")
+        video_paths = kwargs.get("video_frames")
+        if not video_paths:
+            raise ValueError(f"No video frames provided in kwargs, kwargs: {kwargs}")
 
-        if not os.path.exists(image_path):
-            raise FileNotFoundError(f"Image file not found: {image_path}")
+        if not all(os.path.exists(path) for path in video_paths):
+            missing_files = [path for path in video_paths if not os.path.exists(path)]
+            raise FileNotFoundError(f"Some video frames not found: {missing_files}")
 
-        base64_image = encode_image(image_path)
+        base64_images = [
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{encode_image(path)}"},
+            }
+            for path in video_paths
+        ]
 
         serialized_messages = "\n".join(
             [
@@ -84,12 +95,9 @@ class VisionExecutor(BaseExecutor):
                     "content": [
                         {
                             "type": "text",
-                            "text": f"{serialized_messages}\n\n[Attached Image]",
+                            "text": f"{serialized_messages}\n\n[Attached Video Frames]",
                         },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
-                        },
+                        *base64_images,
                     ],
                 }
             ],

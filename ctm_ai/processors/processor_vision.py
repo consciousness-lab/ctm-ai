@@ -13,7 +13,7 @@ from .processor_base import BaseProcessor
 @BaseProcessor.register_processor('vision_processor')
 class VisionProcessor(BaseProcessor):
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='language_messenger')
+        return BaseMessenger(name='vision_messenger')
 
     def init_executor(self) -> BaseExecutor:
         return BaseExecutor(name='vision_executor')
@@ -38,7 +38,7 @@ class VisionProcessor(BaseProcessor):
         )
         executor_output = self.executor.ask(
             messages=executor_messages,
-            image_path=image,
+            image=image,
         )
         scorer_messages = self.messenger.collect_scorer_messages(
             query=query,

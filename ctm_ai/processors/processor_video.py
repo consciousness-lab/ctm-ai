@@ -10,24 +10,24 @@ from ..scorers.scorer_base import BaseScorer
 from .processor_base import BaseProcessor
 
 
-@BaseProcessor.register_processor('audio_processor')
-class AudioProcessor(BaseProcessor):
+@BaseProcessor.register_processor('video_processor')
+class VideoProcessor(BaseProcessor):
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='audio_messenger')
+        return BaseMessenger(name='video_messenger')
 
     def init_executor(self) -> BaseExecutor:
-        return BaseExecutor(name='audio_executor')
+        return BaseExecutor(name='video_executor')
 
     def init_scorer(self) -> BaseScorer:
         return BaseScorer(name='language_scorer')
 
     def ask(
-            self,
-            query: str,
-            text: Optional[str] = None,
-            image: Optional[str] = None,
-            audio: Optional[Union[NDArray[np.float32], str]] = None,
-            video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[str] = None,
+        audio: Optional[Union[NDArray[np.float32], str]] = None,
+        video_frames: Optional[Union[List[NDArray[np.uint8]], List[str]]] = None,
     ) -> Chunk:
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
@@ -38,7 +38,7 @@ class AudioProcessor(BaseProcessor):
         )
         executor_output = self.executor.ask(
             messages=executor_messages,
-            audio=audio,
+            video_frames=video_frames,
         )
         scorer_messages = self.messenger.collect_scorer_messages(
             query=query,

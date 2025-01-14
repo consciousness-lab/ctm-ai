@@ -3,9 +3,9 @@ from typing import Any, List
 
 import google.generativeai as genai
 
-from .executor_base import BaseExecutor
 from ..messengers import Message
 from ..utils import message_exponential_backoff
+from .executor_base import BaseExecutor
 
 
 @BaseExecutor.register_executor('audio_executor')
