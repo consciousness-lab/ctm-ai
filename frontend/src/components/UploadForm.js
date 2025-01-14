@@ -99,6 +99,7 @@ const UploadForm = () => {
             });
 
             audioFiles.forEach((file) => {
+                formData.append('audios', file);
             });
 
             videoFiles.forEach((file) => {
