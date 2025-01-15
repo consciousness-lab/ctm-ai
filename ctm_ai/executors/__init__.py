@@ -15,5 +15,5 @@ __all__ = [
     'MathExecutor',
     'CodeExecutor',
     'AudioExecutor',
-    'VideoExecutor'
+    'VideoExecutor',
 ]

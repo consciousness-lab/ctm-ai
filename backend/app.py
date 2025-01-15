@@ -482,7 +482,9 @@ class FlaskAppWrapper:
                         )
                         if unique_filename:
                             file_saved_path = os.path.join(
-                                self.app.config['UPLOAD_FOLDER'], file_type, unique_filename
+                                self.app.config['UPLOAD_FOLDER'],
+                                file_type,
+                                unique_filename,
                             )
                             if file_type == 'videos':
                                 saved_files['videos'].append(unique_filename)
