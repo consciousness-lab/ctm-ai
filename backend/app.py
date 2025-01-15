@@ -24,7 +24,7 @@ class Config:
     ALLOWED_EXTENSIONS: Dict[str, Set[str]] = {
         'images': {'png', 'jpg', 'jpeg', 'gif', 'bmp'},
         'audios': {'mp3', 'wav', 'aac', 'flac', 'mp4'},
-        'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv', 'MP4'},
+        'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv'},
     }
     FRONTEND_TO_BACKEND_PROCESSORS: Dict[str, str] = {
         'VisionProcessor': 'vision_processor',
@@ -94,6 +94,7 @@ class ChunkProcessor:
         audio_path: Optional[str] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
     ) -> Dict[str, Chunk]:
         if query is None:
             return {}
@@ -106,6 +107,7 @@ class ChunkProcessor:
             audio_path=audio_path,
             video_frames=video_frames,
             video_frames_path=video_frames_path,
+            video_path=video_path,
         )
         return {chunk.processor_name: chunk for chunk in new_chunks}
 
@@ -255,6 +257,16 @@ class FlaskAppWrapper:
                 if audio_filename
                 else None
             )
+            video_filename = (
+                self.state.saved_files['videos'][0]
+                if self.state.saved_files['videos']
+                else None
+            )
+            video_absolute_path = (
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'videos', video_filename)
+                if video_filename
+                else None
+            )
 
             video_frames_path = (
                 [
@@ -273,6 +285,7 @@ class FlaskAppWrapper:
                 image_path=image_absolute_path,
                 audio_path=audio_absolute_path,
                 video_frames_path=video_frames_path,
+                video_path=video_absolute_path,
             )
 
             for update in updates:
