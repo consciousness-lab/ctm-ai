@@ -1,5 +1,8 @@
 from typing import List, Optional, TypeVar
 
+import numpy as np
+from numpy.typing import NDArray
+
 from .message import Message
 from .messenger_base import BaseMessenger
 
@@ -12,9 +15,13 @@ class MathMessenger(BaseMessenger):
         self,
         query: str,
         text: Optional[str] = None,
-        image: Optional[str] = None,
-        audio: Optional[str] = None,
-        video_frames: Optional[List[str]] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
     ) -> List[Message]:
         message = Message(
             role='user',
@@ -28,9 +35,13 @@ class MathMessenger(BaseMessenger):
         executor_output: Message,
         query: str,
         text: Optional[str] = None,
-        image: Optional[str] = None,
-        audio: Optional[str] = None,
-        video_frames: Optional[List[str]] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
     ) -> List[Message]:
         message = Message(
             role='assistant',

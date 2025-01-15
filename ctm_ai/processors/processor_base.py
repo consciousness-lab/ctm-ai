@@ -1,4 +1,7 @@
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+
+import numpy as np
+from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..executors import BaseExecutor
@@ -58,26 +61,44 @@ class BaseProcessor(object):
         self,
         query: str,
         text: Optional[str] = None,
-        image: Optional[Any] = None,
-        audio: Optional[Any] = None,
-        video_frames: Optional[Any] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
     ) -> Chunk:
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
             text=text,
             image=image,
+            image_path=image_path,
             audio=audio,
+            audio_path=audio_path,
             video_frames=video_frames,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
         )
 
-        executor_output = self.executor.ask(messages=executor_messages)
+        executor_output = self.executor.ask(
+            messages=executor_messages,
+            image_path=image_path,
+            audio_path=audio_path,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
+        )
 
         scorer_messages = self.messenger.collect_scorer_messages(
             query=query,
             text=text,
             image=image,
+            image_path=image_path,
             audio=audio,
+            audio_path=audio_path,
             video_frames=video_frames,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
             executor_output=executor_output,
         )
 

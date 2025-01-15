@@ -1,6 +1,8 @@
 import base64
-from typing import Any, List, Tuple
+import os
+from typing import Any, List, Optional, Tuple
 
+import cv2
 import numpy as np
 from numpy.typing import NDArray
 
@@ -39,3 +41,40 @@ def load_video(video_path: str, frame_num: int = 5) -> List[NDArray[np.uint8]]:
         step = len(frames) // frame_num
         frames = [frames[i] for i in range(0, len(frames), step)]
     return frames
+
+
+def extract_video_frames(
+    video_path: str,
+    output_dir: str,
+    max_frames: Optional[int] = None,
+    sample_rate: int = 1,
+) -> List[str]:
+    cap = cv2.VideoCapture(video_path)
+    frame_list = []
+    os.makedirs(output_dir, exist_ok=True)
+
+    frame_index = 0
+    extracted_frames = 0
+
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            if frame_index % sample_rate == 0:
+                frame_filename = os.path.join(
+                    output_dir, f'frame_{frame_index:05d}.jpg'
+                )
+                cv2.imwrite(frame_filename, frame)  # type: ignore[attr-defined]
+                frame_list.append(frame_filename)
+                extracted_frames += 1
+
+                if max_frames is not None and extracted_frames >= max_frames:
+                    break
+
+            frame_index += 1
+
+    finally:
+        cap.release()
+    return frame_list

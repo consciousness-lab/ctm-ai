@@ -1,3 +1,4 @@
+import os
 from typing import Any, Union
 
 from openai import OpenAI
@@ -12,10 +13,13 @@ from ..utils import message_exponential_backoff
 from .executor_base import BaseExecutor
 
 
-@BaseExecutor.register_executor('language_executor')
-class LanguageExecutor(BaseExecutor):
+@BaseExecutor.register_executor('code_executor')
+class CodeExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
-        self.model = OpenAI()
+        self.model = OpenAI(
+            api_key=os.getenv('DASHSCOPE_API_KEY'),
+            base_url='https://dashscope.aliyuncs.com/compatible-mode/v1',
+        )
 
     def convert_message_to_param(
         self, message: Message
@@ -52,7 +56,7 @@ class LanguageExecutor(BaseExecutor):
             self.convert_message_to_param(message) for message in messages
         ]
         response = self.model.chat.completions.create(
-            model='gpt-4-turbo',
+            model='qwen-plus',
             messages=model_messages,
             max_tokens=max_token,
             n=return_num,

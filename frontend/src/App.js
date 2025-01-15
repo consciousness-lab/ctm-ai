@@ -52,6 +52,9 @@ const App = () => {
         'LanguageProcessor',
         'SearchProcessor',
         'MathProcessor',
+        'CodeProcessor',
+        'AudioProcessor',
+        'VideoProcessor'
     ]);
     const [nodeDetailJSX, setNodeDetailJSX] = useState(null);
     const [k, setK] = useState(0);

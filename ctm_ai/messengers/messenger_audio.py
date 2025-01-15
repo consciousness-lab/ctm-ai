@@ -7,8 +7,8 @@ from .message import Message
 from .messenger_base import BaseMessenger
 
 
-@BaseMessenger.register_messenger('language_messenger')
-class LanguageMessenger(BaseMessenger):
+@BaseMessenger.register_messenger('audio_messenger')
+class AudioMessenger(BaseMessenger):
     def collect_executor_messages(
         self,
         query: str,
@@ -21,13 +21,15 @@ class LanguageMessenger(BaseMessenger):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
     ) -> List[Message]:
-        content = 'Query: {}\n'.format(query)
-        if text is not None:
-            content += 'Text: {}\n'.format(text)
+        content = f'Query: {query}\n'
+        if text:
+            content += f'Additional context: {text}\n'
+
         message = Message(
             role='user',
             content=content,
         )
+
         self.executor_messages.append(message)
         return self.executor_messages
 

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, TypeVar
 
 import numpy as np
 from numpy.typing import NDArray
@@ -6,9 +6,11 @@ from numpy.typing import NDArray
 from .message import Message
 from .messenger_base import BaseMessenger
 
+T = TypeVar('T', bound='BaseMessenger')
 
-@BaseMessenger.register_messenger('language_messenger')
-class LanguageMessenger(BaseMessenger):
+
+@BaseMessenger.register_messenger('video_messenger')
+class VideoMessenger(BaseMessenger):
     def collect_executor_messages(
         self,
         query: str,
@@ -24,6 +26,10 @@ class LanguageMessenger(BaseMessenger):
         content = 'Query: {}\n'.format(query)
         if text is not None:
             content += 'Text: {}\n'.format(text)
+        if (video_frames or video_frames_path) and video_frames_path:
+            content += 'Note: The input contains {} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n'.format(
+                len(video_frames_path)
+            )
         message = Message(
             role='user',
             content=content,
@@ -45,7 +51,7 @@ class LanguageMessenger(BaseMessenger):
         video_path: Optional[str] = None,
     ) -> List[Message]:
         message = Message(
-            role='user',
+            role='assistant',
             query=query,
             gist=executor_output.gist,
             gists=executor_output.gists,

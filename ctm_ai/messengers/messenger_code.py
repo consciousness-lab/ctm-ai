@@ -7,8 +7,8 @@ from .message import Message
 from .messenger_base import BaseMessenger
 
 
-@BaseMessenger.register_messenger('language_messenger')
-class LanguageMessenger(BaseMessenger):
+@BaseMessenger.register_messenger('code_messenger')
+class CodeMessenger(BaseMessenger):
     def collect_executor_messages(
         self,
         query: str,

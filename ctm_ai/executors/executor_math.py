@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import Any, List
 
 import requests
 
@@ -15,7 +15,14 @@ class MathExecutor(BaseExecutor):
         self.url = 'http://api.wolframalpha.com/v2/query'
 
     @message_exponential_backoff()
-    def ask(self, messages: List[Message]) -> Message:
+    def ask(
+        self,
+        messages: List[Message],
+        max_token: int = 300,
+        return_num: int = 5,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Message:
         input = messages[-1].content
         params = {'input': input, 'appid': self.api_key, 'output': 'json'}
         try:

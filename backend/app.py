@@ -1,13 +1,20 @@
 import os
 import uuid
-from typing import Any, Dict, List, Optional, Set, Tuple, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
 
-from flask import Flask, Response, jsonify, make_response, request, send_from_directory
+import numpy as np
+from flask import Flask, jsonify, make_response, request, send_from_directory
+from flask.wrappers import Response as FlaskResponse
+from numpy.typing import NDArray
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
+from werkzeug.wrappers.response import Response as WerkzeugResponse
 
 from ctm_ai.chunks import Chunk, ChunkManager
 from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
+from ctm_ai.utils.loader import extract_video_frames
+
+ResponseType = Union[FlaskResponse, WerkzeugResponse]
 
 
 class Config:
@@ -16,7 +23,7 @@ class Config:
     MAX_CONTENT_LENGTH: int = 1 * 1024 * 1024 * 1024  # 1GB
     ALLOWED_EXTENSIONS: Dict[str, Set[str]] = {
         'images': {'png', 'jpg', 'jpeg', 'gif', 'bmp'},
-        'audios': {'mp3', 'wav', 'aac', 'flac'},
+        'audios': {'mp3', 'wav', 'aac', 'flac', 'mp4'},
         'videos': {'mp4', 'avi', 'mov', 'wmv', 'flv'},
     }
     FRONTEND_TO_BACKEND_PROCESSORS: Dict[str, str] = {
@@ -24,6 +31,9 @@ class Config:
         'LanguageProcessor': 'language_processor',
         'SearchProcessor': 'search_processor',
         'MathProcessor': 'math_processor',
+        'CodeProcessor': 'code_processor',
+        'AudioProcessor': 'audio_processor',
+        'VideoProcessor': 'video_processor',
     }
 
 
@@ -42,6 +52,7 @@ class AppState:
             'images': [],
             'audios': [],
             'videos': [],
+            'video_frames': [],
         }
 
 
@@ -76,11 +87,28 @@ class ChunkProcessor:
     def process_chunks(
         ctm_instance: ConsciousnessTuringMachine,
         query: Optional[str],
-        chunks: List[Chunk],
+        text: Optional[str] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
     ) -> Dict[str, Chunk]:
         if query is None:
             return {}
-        new_chunks = ctm_instance.ask_processors(query)
+        new_chunks = ctm_instance.ask_processors(
+            query=query,
+            text=text,
+            image=image,
+            image_path=image_path,
+            audio=audio,
+            audio_path=audio_path,
+            video_frames=video_frames,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
+        )
         return {chunk.processor_name: chunk for chunk in new_chunks}
 
     @staticmethod
@@ -111,20 +139,20 @@ class FlaskAppWrapper:
         self.app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
         self.app.config['MAX_CONTENT_LENGTH'] = Config.MAX_CONTENT_LENGTH
 
-    def add_cors_headers(self, response: Response) -> Response:
+    def add_cors_headers(self, response: ResponseType) -> ResponseType:
         response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
         response.headers.add(
             'Access-Control-Allow-Headers', 'Content-Type,Authorization'
         )
-        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
         return response
 
-    def handle_options_request(self) -> Response:
+    def handle_options_request(self) -> ResponseType:
         return self.add_cors_headers(make_response())
 
     def register_routes(self) -> None:
         @self.app.route('/api/refresh', methods=['POST', 'OPTIONS'])
-        def handle_refresh() -> Response:
+        def handle_refresh() -> ResponseType:
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
@@ -132,7 +160,7 @@ class FlaskAppWrapper:
             return self.add_cors_headers(jsonify({'message': 'Server data refreshed'}))
 
         @self.app.route('/api/nodes/<node_id>')
-        def get_node_details(node_id: str) -> Response:
+        def get_node_details(node_id: str) -> ResponseType:
             raw_detail = self.state.node_details.get(node_id, 'No details available')
             node_self = (
                 raw_detail.format_readable()
@@ -157,7 +185,7 @@ class FlaskAppWrapper:
             )
 
         @self.app.route('/api/init', methods=['POST', 'OPTIONS'])
-        def initialize_processors() -> Tuple[Response, int]:
+        def initialize_processors() -> Tuple[ResponseType, int]:
             if request.method == 'OPTIONS':
                 return self.handle_options_request(), 200
 
@@ -201,15 +229,63 @@ class FlaskAppWrapper:
             ), 200
 
         @self.app.route('/api/output-gist', methods=['POST', 'OPTIONS'])
-        def handle_output_gist() -> Response:
+        def handle_output_gist() -> ResponseType:
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
             data = request.get_json() or {}
             updates: List[Dict[str, str]] = data.get('updates', [])
 
+            image_filename = (
+                self.state.saved_files['images'][0]
+                if self.state.saved_files['images']
+                else None
+            )
+            image_absolute_path = (
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'images', image_filename)
+                if image_filename
+                else None
+            )
+
+            audio_filename = (
+                self.state.saved_files['audios'][0]
+                if self.state.saved_files['audios']
+                else None
+            )
+            audio_absolute_path = (
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'audios', audio_filename)
+                if audio_filename
+                else None
+            )
+            video_filename = (
+                self.state.saved_files['videos'][0]
+                if self.state.saved_files['videos']
+                else None
+            )
+            video_absolute_path = (
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'videos', video_filename)
+                if video_filename
+                else None
+            )
+
+            video_frames_path = (
+                [
+                    os.path.join(
+                        self.app.config['UPLOAD_FOLDER'], 'video_frames', frame_filename
+                    )
+                    for frame_filename in self.state.saved_files['video_frames']
+                ]
+                if self.state.saved_files['video_frames']
+                else []
+            )
+
             gists = ChunkProcessor.process_chunks(
-                self.ctm, self.state.query, self.state.chunks
+                ctm_instance=self.ctm,
+                query=self.state.query,
+                image_path=image_absolute_path,
+                audio_path=audio_absolute_path,
+                video_frames_path=video_frames_path,
+                video_path=video_absolute_path,
             )
 
             for update in updates:
@@ -228,7 +304,7 @@ class FlaskAppWrapper:
             )
 
         @self.app.route('/api/uptree', methods=['POST', 'OPTIONS'])
-        def handle_uptree() -> Response:
+        def handle_uptree() -> ResponseType:
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
@@ -270,7 +346,7 @@ class FlaskAppWrapper:
             )
 
         @self.app.route('/api/final-node', methods=['POST', 'OPTIONS'])
-        def handle_final_node() -> Response:
+        def handle_final_node() -> ResponseType:
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
@@ -284,10 +360,7 @@ class FlaskAppWrapper:
                 for curr_node_id, parents_ids in self.state.node_parents.items():
                     if curr_node_id not in self.state.node_details and parents_ids:
                         parent_id = parents_ids[0]
-                        if (
-                            parent_id in self.state.node_details
-                            and self.state.query is not None
-                        ):
+                        if parent_id in self.state.node_details:
                             answer, confidence_score = self.ctm.ask_supervisor(
                                 self.state.query, self.state.node_details[parent_id]
                             )
@@ -308,7 +381,7 @@ class FlaskAppWrapper:
             )
 
         @self.app.route('/api/reverse', methods=['POST', 'OPTIONS'])
-        def handle_reverse() -> Response:
+        def handle_reverse() -> ResponseType:
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
@@ -320,7 +393,7 @@ class FlaskAppWrapper:
             )
 
         @self.app.route('/api/update-processors', methods=['POST', 'OPTIONS'])
-        def update_processors() -> Response:
+        def update_processors() -> ResponseType:
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
@@ -341,7 +414,7 @@ class FlaskAppWrapper:
             return self.add_cors_headers(jsonify({'message': 'Processors updated'}))
 
         @self.app.route('/api/fuse-gist', methods=['POST', 'OPTIONS'])
-        def handle_fuse_gist() -> Response:
+        def handle_fuse_gist() -> ResponseType:
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
@@ -371,7 +444,7 @@ class FlaskAppWrapper:
             )
 
         @self.app.route('/api/fetch-neighborhood', methods=['GET', 'OPTIONS'])
-        def get_processor_neighborhoods() -> Response:
+        def get_processor_neighborhoods() -> ResponseType:
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
@@ -384,18 +457,19 @@ class FlaskAppWrapper:
             return self.add_cors_headers(jsonify(neighborhoods))
 
         @self.app.route('/api/upload', methods=['POST', 'OPTIONS'])
-        def upload_files() -> Tuple[Response, int]:
+        def upload_files() -> Tuple[ResponseType, int]:
             if request.method == 'OPTIONS':
                 return self.handle_options_request(), 200
 
             # Get form data
-            self.state.query = request.form.get('query', '')
-            text = request.form.get('text', '')
+            self.state.query = request.form.get('query', '') or ''
+            text = request.form.get('text', '') or ''
 
             saved_files: Dict[str, List[str]] = {
                 'images': [],
                 'audios': [],
                 'videos': [],
+                'video_frames': [],
             }
 
             # Process each file type
@@ -407,7 +481,21 @@ class FlaskAppWrapper:
                             file, file_type, self.app
                         )
                         if unique_filename:
-                            saved_files[file_type].append(unique_filename)
+                            file_saved_path = os.path.join(
+                                self.app.config['UPLOAD_FOLDER'], file_type, unique_filename
+                            )
+                            if file_type == 'videos':
+                                saved_files['videos'].append(unique_filename)
+                                video_path = file_saved_path
+                                frame_output_dir = os.path.join(
+                                    self.app.config['UPLOAD_FOLDER'], 'video_frames'
+                                )
+                                frame_filenames = extract_video_frames(
+                                    video_path, frame_output_dir, 20, 5
+                                )
+                                saved_files['video_frames'].extend(frame_filenames)
+                            else:
+                                saved_files[file_type].append(unique_filename)
                         else:
                             return self.add_cors_headers(
                                 jsonify(
@@ -416,6 +504,7 @@ class FlaskAppWrapper:
                                     }
                                 )
                             ), 400
+            self.state.saved_files = saved_files
 
             response_data = {
                 'message': 'Files uploaded successfully',
@@ -431,7 +520,7 @@ class FlaskAppWrapper:
             return self.add_cors_headers(jsonify(response_data)), 200
 
         @self.app.route('/uploads/<file_type>/<filename>')
-        def uploaded_file(file_type: str, filename: str) -> Tuple[Response, int]:
+        def uploaded_file(file_type: str, filename: str) -> Tuple[ResponseType, int]:
             if file_type not in ['images', 'audios', 'videos']:
                 return self.add_cors_headers(
                     jsonify({'error': 'Invalid file type'})
@@ -439,6 +528,7 @@ class FlaskAppWrapper:
 
             try:
                 file_path = os.path.join(self.app.config['UPLOAD_FOLDER'], file_type)
+
                 response = send_from_directory(file_path, filename)
                 return self.add_cors_headers(response), 200
             except FileNotFoundError:
