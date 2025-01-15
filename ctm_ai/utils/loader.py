@@ -56,21 +56,25 @@ def extract_video_frames(
     frame_index = 0
     extracted_frames = 0
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        if frame_index % sample_rate == 0:
-            frame_filename = os.path.join(output_dir, f'frame_{frame_index:05d}.jpg')
-            cv2.imwrite(frame_filename, frame)
-            frame_list.append(frame_filename)
-            extracted_frames += 1
-
-            if max_frames is not None and extracted_frames >= max_frames:
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
                 break
 
-        frame_index += 1
+            if frame_index % sample_rate == 0:
+                frame_filename = os.path.join(
+                    output_dir, f'frame_{frame_index:05d}.jpg'
+                )
+                cv2.imwrite(frame_filename, frame)  # type: ignore[attr-defined]
+                frame_list.append(frame_filename)
+                extracted_frames += 1
 
-    cap.release()
+                if max_frames is not None and extracted_frames >= max_frames:
+                    break
+
+            frame_index += 1
+
+    finally:
+        cap.release()
     return frame_list
