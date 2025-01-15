@@ -445,8 +445,8 @@ class FlaskAppWrapper:
                 return self.handle_options_request(), 200
 
             # Get form data
-            self.state.query = request.form.get('query', '')
-            text = request.form.get('text', '')
+            self.state.query = request.form.get('query', '') or ''
+            text = request.form.get('text', '') or ''
 
             saved_files: Dict[str, List[str]] = {
                 'images': [],
