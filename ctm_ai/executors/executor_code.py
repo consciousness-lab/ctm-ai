@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, Union
+from typing import Any, Union
 
 from openai import OpenAI
 from openai.types.chat import (
@@ -17,12 +17,12 @@ from .executor_base import BaseExecutor
 class CodeExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         self.model = OpenAI(
-            api_key=os.getenv("DASHSCOPE_API_KEY"),
-            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+            api_key=os.getenv('DASHSCOPE_API_KEY'),
+            base_url='https://dashscope.aliyuncs.com/compatible-mode/v1',
         )
 
     def convert_message_to_param(
-            self, message: Message
+        self, message: Message
     ) -> Union[
         ChatCompletionAssistantMessageParam,
         ChatCompletionSystemMessageParam,
@@ -45,10 +45,12 @@ class CodeExecutor(BaseExecutor):
 
     @message_exponential_backoff()
     def ask(
-            self,
-            messages: List[Message],
-            max_token: int = 300,
-            return_num: int = 5,
+        self,
+        messages: list[Message],
+        max_token: int = 300,
+        return_num: int = 5,
+        *args: Any,
+        **kwargs: Any,
     ) -> Message:
         model_messages = [
             self.convert_message_to_param(message) for message in messages

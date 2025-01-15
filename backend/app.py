@@ -1,8 +1,7 @@
 import os
 import uuid
-from typing import Any, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
-import cv2
 import numpy as np
 from flask import Flask, Response, jsonify, make_response, request, send_from_directory
 from numpy.typing import NDArray
@@ -11,6 +10,7 @@ from werkzeug.utils import secure_filename
 
 from ctm_ai.chunks import Chunk, ChunkManager
 from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
+from ctm_ai.utils.loader import extract_video_frames
 
 
 class Config:
@@ -29,7 +29,7 @@ class Config:
         'MathProcessor': 'math_processor',
         'CodeProcessor': 'code_processor',
         'AudioProcessor': 'audio_processor',
-        'VideoProcessor': 'video_processor'
+        'VideoProcessor': 'video_processor',
     }
 
 
@@ -77,63 +77,43 @@ class FileHandler:
             return unique_filename
         return None
 
-    @staticmethod
-    def extract_frames(
-            video_path: str,
-            output_dir: str,
-            max_frames: Optional[int] = None,
-            sample_rate: int = 1
-    ) -> List[str]:
-        cap = cv2.VideoCapture(video_path)
-        frame_list = []
-        os.makedirs(output_dir, exist_ok=True)
-
-        frame_index = 0
-        extracted_frames = 0
-
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-
-            if frame_index % sample_rate == 0:
-                frame_filename = os.path.join(output_dir, f"frame_{frame_index:05d}.jpg")
-                cv2.imwrite(frame_filename, frame)
-                frame_list.append(frame_filename)
-                extracted_frames += 1
-
-                if max_frames is not None and extracted_frames >= max_frames:
-                    break
-
-            frame_index += 1
-
-        cap.release()
-        return frame_list
-
 
 class ChunkProcessor:
     @staticmethod
     def process_chunks(
-            ctm_instance: ConsciousnessTuringMachine,
-            query: Optional[str],
-            image: Optional[str],
-            audio: Optional[Union[NDArray[np.float32], str]],
-            video_frames: Optional[Union[List[NDArray[np.uint8]], List[str]]]
+        ctm_instance: ConsciousnessTuringMachine,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
     ) -> Dict[str, Chunk]:
         if query is None:
             return {}
-        new_chunks = ctm_instance.ask_processors(query=query, image=image, audio=audio, video_frames=video_frames)
+        new_chunks = ctm_instance.ask_processors(
+            query=query,
+            text=text,
+            image=image,
+            image_path=image_path,
+            audio=audio,
+            audio_path=audio_path,
+            video_frames=video_frames,
+            video_frames_path=video_frames_path,
+        )
         return {chunk.processor_name: chunk for chunk in new_chunks}
 
     @staticmethod
     def fuse_chunks(
-            ctm_instance: ConsciousnessTuringMachine, chunks: List[Chunk]
+        ctm_instance: ConsciousnessTuringMachine, chunks: List[Chunk]
     ) -> List[Chunk]:
         return cast(List[Chunk], ctm_instance.fuse_processor(chunks))
 
     @staticmethod
     def compete_chunks(
-            chunk_manager: ChunkManager, chunk1: Chunk, chunk2: Chunk
+        chunk_manager: ChunkManager, chunk1: Chunk, chunk2: Chunk
     ) -> Chunk:
         if isinstance(chunk1, Chunk) and isinstance(chunk2, Chunk):
             return cast(Chunk, chunk_manager.compete(chunk1, chunk2))
@@ -250,26 +230,45 @@ class FlaskAppWrapper:
             data = request.get_json() or {}
             updates: List[Dict[str, str]] = data.get('updates', [])
 
-            image_filename = self.state.saved_files['images'][0] if self.state.saved_files['images'] else None
+            image_filename = (
+                self.state.saved_files['images'][0]
+                if self.state.saved_files['images']
+                else None
+            )
             image_absolute_path = (
                 os.path.join(self.app.config['UPLOAD_FOLDER'], 'images', image_filename)
-                if image_filename else None
+                if image_filename
+                else None
             )
 
-            audio_filename = self.state.saved_files['audios'][0] if self.state.saved_files['audios'] else None
+            audio_filename = (
+                self.state.saved_files['audios'][0]
+                if self.state.saved_files['audios']
+                else None
+            )
             audio_absolute_path = (
                 os.path.join(self.app.config['UPLOAD_FOLDER'], 'audios', audio_filename)
-                if audio_filename else None
+                if audio_filename
+                else None
             )
 
-            video_frame_filenames = [
-                os.path.join(self.app.config['UPLOAD_FOLDER'], 'video_frames', frame_filename)
-                for frame_filename in self.state.saved_files['video_frames']
-            ] if self.state.saved_files['video_frames'] else []
+            video_frames_path = (
+                [
+                    os.path.join(
+                        self.app.config['UPLOAD_FOLDER'], 'video_frames', frame_filename
+                    )
+                    for frame_filename in self.state.saved_files['video_frames']
+                ]
+                if self.state.saved_files['video_frames']
+                else []
+            )
 
             gists = ChunkProcessor.process_chunks(
-                ctm_instance=self.ctm, query=self.state.query, image=image_absolute_path, audio=audio_absolute_path,
-                video_frames=video_frame_filenames
+                ctm_instance=self.ctm,
+                query=self.state.query,
+                image_path=image_absolute_path,
+                audio_path=audio_absolute_path,
+                video_frames_path=video_frames_path,
             )
 
             for update in updates:
@@ -309,8 +308,8 @@ class FlaskAppWrapper:
                 if node_id not in self.state.node_details and len(parents_ids) >= 2:
                     parent_id1, parent_id2 = parents_ids[0], parents_ids[1]
                     if (
-                            parent_id1 in self.state.node_details
-                            and parent_id2 in self.state.node_details
+                        parent_id1 in self.state.node_details
+                        and parent_id2 in self.state.node_details
                     ):
                         self.state.node_details[node_id] = (
                             ChunkProcessor.compete_chunks(
@@ -345,8 +344,8 @@ class FlaskAppWrapper:
                     if curr_node_id not in self.state.node_details and parents_ids:
                         parent_id = parents_ids[0]
                         if (
-                                parent_id in self.state.node_details
-                                and self.state.query is not None
+                            parent_id in self.state.node_details
+                            and self.state.query is not None
                         ):
                             answer, confidence_score = self.ctm.ask_supervisor(
                                 self.state.query, self.state.node_details[parent_id]
@@ -445,7 +444,6 @@ class FlaskAppWrapper:
 
         @self.app.route('/api/upload', methods=['POST', 'OPTIONS'])
         def upload_files() -> Tuple[Response, int]:
-            print("Uploaded file keys: %s", list(request.files.keys()))
             if request.method == 'OPTIONS':
                 return self.handle_options_request(), 200
 
@@ -460,24 +458,27 @@ class FlaskAppWrapper:
                 'video_frames': [],
             }
 
-            print("Uploaded file keys: %s", list(request.files.keys()))
-
             # Process each file type
             for file_type in ['images', 'audios', 'videos']:
                 if file_type in request.files:
                     files = request.files.getlist(file_type)
                     for file in files:
-                        unique_filename = FileHandler.save_file(file, file_type, self.app)
-                        file_saved_path = os.path.join(self.app.config['UPLOAD_FOLDER'], file_type, unique_filename)
-                        print("Saved file: %s", file_saved_path)
+                        unique_filename = FileHandler.save_file(
+                            file, file_type, self.app
+                        )
+                        file_saved_path = os.path.join(
+                            self.app.config['UPLOAD_FOLDER'], file_type, unique_filename
+                        )
                         if unique_filename:
                             if file_type == 'videos':
                                 saved_files['videos'].append(unique_filename)
                                 video_path = file_saved_path
-                                print(("Video saved at: %s", video_path))
-                                frame_output_dir = os.path.join(self.app.config['UPLOAD_FOLDER'], 'video_frames')
-                                frame_filenames = FileHandler.extract_frames(video_path, frame_output_dir, 100, 5)
-                                print("Extracted frames: %s", frame_filenames)
+                                frame_output_dir = os.path.join(
+                                    self.app.config['UPLOAD_FOLDER'], 'video_frames'
+                                )
+                                frame_filenames = extract_video_frames(
+                                    video_path, frame_output_dir, 20, 5
+                                )
                                 saved_files['video_frames'].extend(frame_filenames)
                             else:
                                 saved_files[file_type].append(unique_filename)

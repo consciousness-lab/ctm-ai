@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -25,38 +25,20 @@ class VideoProcessor(BaseProcessor):
         self,
         query: str,
         text: Optional[str] = None,
-        image: Optional[str] = None,
-        audio: Optional[Union[NDArray[np.float32], str]] = None,
-        video_frames: Optional[Union[List[NDArray[np.uint8]], List[str]]] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
     ) -> Chunk:
-        executor_messages = self.messenger.collect_executor_messages(
-            query=query,
-            text=text,
-            image=image,
-            audio=audio,
-            video_frames=video_frames,
-        )
-        executor_output = self.executor.ask(
-            messages=executor_messages,
-            video_frames=video_frames,
-        )
-        scorer_messages = self.messenger.collect_scorer_messages(
-            query=query,
-            text=text,
-            image=image,
-            audio=audio,
-            video_frames=video_frames,
-            executor_output=executor_output,
-        )
-        scorer_output = self.scorer.ask(messages=scorer_messages)
-
-        self.messenger.update(
-            executor_output=executor_output,
-            scorer_output=scorer_output,
-        )
-
-        return self.merge_outputs_into_chunk(
-            name=self.name,
-            scorer_output=scorer_output,
-            executor_output=executor_output
+        return super().ask(
+            query,
+            text,
+            image,
+            image_path,
+            audio,
+            audio_path,
+            video_frames,
+            video_frames_path,
         )

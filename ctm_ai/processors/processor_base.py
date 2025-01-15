@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import numpy as np
 from numpy.typing import NDArray
@@ -14,10 +14,10 @@ class BaseProcessor(object):
 
     @classmethod
     def register_processor(
-            cls, name: str
+        cls, name: str
     ) -> Callable[[Type['BaseProcessor']], Type['BaseProcessor']]:
         def decorator(
-                subclass: Type['BaseProcessor'],
+            subclass: Type['BaseProcessor'],
         ) -> Type['BaseProcessor']:
             cls._processor_registry[name] = subclass
             return subclass
@@ -25,11 +25,11 @@ class BaseProcessor(object):
         return decorator
 
     def __new__(
-            cls,
-            name: str,
-            group_name: Optional[str] = None,
-            *args: Any,
-            **kwargs: Any,
+        cls,
+        name: str,
+        group_name: Optional[str] = None,
+        *args: Any,
+        **kwargs: Any,
     ) -> 'BaseProcessor':
         if name not in cls._processor_registry:
             raise ValueError(f"No processor registered with name '{name}'")
@@ -40,7 +40,7 @@ class BaseProcessor(object):
         return instance
 
     def __init__(
-            self, name: str, group_name: Optional[str] = None, *args: Any, **kwargs: Any
+        self, name: str, group_name: Optional[str] = None, *args: Any, **kwargs: Any
     ) -> None:
         self.name = name
         self.group_name = group_name
@@ -58,29 +58,43 @@ class BaseProcessor(object):
         return BaseScorer(name='language_scorer')
 
     def ask(
-            self,
-            query: str,
-            text: Optional[str] = None,
-            image: Optional[str] = None,
-            audio: Optional[Union[NDArray[np.float32], str]] = None,
-            video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
     ) -> Chunk:
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
             text=text,
             image=image,
+            image_path=image_path,
             audio=audio,
+            audio_path=audio_path,
             video_frames=video_frames,
+            video_frames_path=video_frames_path,
         )
 
-        executor_output = self.executor.ask(messages=executor_messages)
+        executor_output = self.executor.ask(
+            messages=executor_messages,
+            image_path=image_path,
+            audio_path=audio_path,
+            video_frames_path=video_frames_path,
+        )
 
         scorer_messages = self.messenger.collect_scorer_messages(
             query=query,
             text=text,
             image=image,
+            image_path=image_path,
             audio=audio,
+            audio_path=audio_path,
             video_frames=video_frames,
+            video_frames_path=video_frames_path,
             executor_output=executor_output,
         )
 
@@ -105,7 +119,7 @@ class BaseProcessor(object):
             )
 
     def merge_outputs_into_chunk(
-            self, name: str, scorer_output: Message, executor_output: Message
+        self, name: str, scorer_output: Message, executor_output: Message
     ) -> Chunk:
         return Chunk(
             time_step=0,

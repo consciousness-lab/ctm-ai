@@ -1,5 +1,5 @@
 import os
-from typing import Any, List
+from typing import Any
 
 import google.generativeai as genai
 
@@ -11,7 +11,7 @@ from .executor_base import BaseExecutor
 @BaseExecutor.register_executor('audio_executor')
 class AudioExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
-        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.api_key = os.getenv('GEMINI_API_KEY')
         genai.configure(api_key=self.api_key)
         self.model = genai.GenerativeModel('models/gemini-1.5-flash')
         self.supported_formats = {'mp3', 'wav', 'aac', 'flac', 'mp4'}
@@ -26,27 +26,29 @@ class AudioExecutor(BaseExecutor):
     def get_mime_type(self, file_path: str) -> str:
         extension = file_path.split('.')[-1].lower()
         if extension not in self.mime_types:
-            raise ValueError(f"Unsupported audio format: {extension}")
+            raise ValueError(f'Unsupported audio format: {extension}')
         return self.mime_types[extension]
 
     @message_exponential_backoff()
     def ask(
-            self,
-            messages: List[Message],
-            *args: Any,
-            **kwargs: Any
+        self,
+        messages: list[Message],
+        max_token: int = 300,
+        return_num: int = 5,
+        *args: Any,
+        **kwargs: Any,
     ) -> Message:
         if not messages:
-            raise ValueError("No messages provided")
+            raise ValueError('No messages provided')
 
-        audio_path = kwargs.get('audio')
+        audio_path = kwargs.get('audio_path')
         if not audio_path:
-            raise ValueError(f"No audio path provided in kwargs, kwargs: {kwargs}")
+            raise ValueError(f'No audio path provided in kwargs, kwargs: {kwargs}')
 
         query = messages[-1].content
 
         if not os.path.exists(audio_path):
-            raise FileNotFoundError(f"Audio file not found: {audio_path}")
+            raise FileNotFoundError(f'Audio file not found: {audio_path}')
 
         try:
             mime_type = self.get_mime_type(audio_path)
@@ -54,13 +56,9 @@ class AudioExecutor(BaseExecutor):
             with open(audio_path, 'rb') as f:
                 audio_data = f.read()
 
-            response = self.model.generate_content([
-                query,
-                {
-                    "mime_type": mime_type,
-                    "data": audio_data
-                }
-            ])
+            response = self.model.generate_content(
+                [query, {'mime_type': mime_type, 'data': audio_data}]
+            )
 
             return Message(
                 role='assistant',
@@ -70,4 +68,4 @@ class AudioExecutor(BaseExecutor):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Error processing audio: {str(e)}")
+            raise RuntimeError(f'Error processing audio: {str(e)}')

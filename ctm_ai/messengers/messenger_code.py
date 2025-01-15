@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -10,12 +10,15 @@ from .messenger_base import BaseMessenger
 @BaseMessenger.register_messenger('code_messenger')
 class CodeMessenger(BaseMessenger):
     def collect_executor_messages(
-            self,
-            query: str,
-            text: Optional[str] = None,
-            image: Optional[str] = None,
-            audio: Optional[Union[NDArray[np.float32], str]] = None,
-            video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
     ) -> List[Message]:
         content = 'Query: {}\n'.format(query)
         if text is not None:
@@ -28,13 +31,16 @@ class CodeMessenger(BaseMessenger):
         return self.executor_messages
 
     def collect_scorer_messages(
-            self,
-            executor_output: Message,
-            query: str,
-            text: Optional[str] = None,
-            image: Optional[str] = None,
-            audio: Optional[Union[NDArray[np.float32], str]] = None,
-            video_frames: Optional[Union[List[NDArray[np.uint8]], str]] = None,
+        self,
+        executor_output: Message,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
     ) -> List[Message]:
         message = Message(
             role='user',

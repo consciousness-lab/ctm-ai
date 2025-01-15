@@ -11,5 +11,5 @@ if __name__ == '__main__':
     text = 'You have no idea what you are talking about!'
     image_path = '../assets/sarcasm_example1.png'
     image = load_image(image_path)
-    answer = ctm(query=query, text=text, image=image)
+    answer = ctm(query=query, text=text, image_path=image_path)
     print(answer)

@@ -1,4 +1,4 @@
-from typing import Any, List, Union
+from typing import Any, Union
 
 from openai import OpenAI
 from openai.types.chat import (
@@ -42,9 +42,11 @@ class LanguageExecutor(BaseExecutor):
     @message_exponential_backoff()
     def ask(
         self,
-        messages: List[Message],
+        messages: list[Message],
         max_token: int = 300,
         return_num: int = 5,
+        *args: Any,
+        **kwargs: Any,
     ) -> Message:
         model_messages = [
             self.convert_message_to_param(message) for message in messages
