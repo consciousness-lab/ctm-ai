@@ -21,6 +21,7 @@ types-requests = "*"
 wordfreq = "*"
 sockio = "*"
 google-generativeai = "*"
+opencv-python = "*"
 
 
 [tool.poetry.group.dev.dependencies]
