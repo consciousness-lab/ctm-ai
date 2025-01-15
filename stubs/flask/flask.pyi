@@ -13,7 +13,7 @@ Response = Type[BaseResponse]
 class Flask:
     config: Dict[str, Any]
     debug: bool
-    
+
     def __init__(
         self,
         import_name: str,
@@ -25,22 +25,17 @@ class Flask:
         template_folder: Optional[str] = None,
         instance_path: Optional[str] = None,
         instance_relative_config: bool = False,
-        root_path: Optional[str] = None
+        root_path: Optional[str] = None,
     ) -> None: ...
-
     def route(
-        self,
-        rule: str,
-        methods: Optional[List[str]] = None,
-        **options: Any
+        self, rule: str, methods: Optional[List[str]] = None, **options: Any
     ) -> Callable[[F], F]: ...
-
     def run(
         self,
         host: Optional[str] = None,
         port: Optional[int] = None,
         debug: Optional[bool] = None,
-        **options: Any
+        **options: Any,
     ) -> None: ...
 
 # Global request object
@@ -50,9 +45,10 @@ class Request:
     form: MultiDict[str, str]
     files: MultiDict[str, FileStorage]
     headers: Headers
-    
-    def get_json(self, force: bool = False, silent: bool = False, cache: bool = True) -> Any: ...
-    
+
+    def get_json(
+        self, force: bool = False, silent: bool = False, cache: bool = True
+    ) -> Any: ...
     def getlist(self, key: str) -> List[Any]: ...
 
 request: Request
@@ -61,9 +57,7 @@ request: Request
 def jsonify(*args: Any, **kwargs: Any) -> BaseResponse: ...
 def make_response(*args: Any) -> BaseResponse: ...
 def send_from_directory(
-    directory: str,
-    filename: str,
-    **kwargs: Any
+    directory: str, filename: str, **kwargs: Any
 ) -> BaseResponse: ...
 
 # Other Flask exports

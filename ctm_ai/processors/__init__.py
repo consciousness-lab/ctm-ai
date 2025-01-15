@@ -15,5 +15,5 @@ __all__ = [
     'MathProcessor',
     'CodeProcessor',
     'AudioProcessor',
-    'VideoProcessor'
+    'VideoProcessor',
 ]

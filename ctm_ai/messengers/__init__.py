@@ -17,5 +17,5 @@ __all__ = [
     'Message',
     'CodeMessenger',
     'AudioMessenger',
-    'VideoMessenger'
+    'VideoMessenger',
 ]
