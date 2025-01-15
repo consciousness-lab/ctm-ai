@@ -282,9 +282,9 @@ class FlaskAppWrapper:
                     else:
                         self.state.node_parents[target_id].append(proc_id)
 
-                return self.add_cors_headers(
-                    jsonify({'message': 'Gist outputs processed', 'updates': updates})
-                )
+            return self.add_cors_headers(
+                jsonify({'message': 'Gist outputs processed', 'updates': updates})
+            )
 
         @self.app.route('/api/uptree', methods=['POST', 'OPTIONS'])
         def handle_uptree() -> Response:
