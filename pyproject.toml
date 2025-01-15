@@ -8,7 +8,7 @@ readme = "README.md"
 
 
 [tool.poetry.dependencies]
-python = ">=3.8, <3.12"
+python = ">=3.9, <3.12"
 huggingface_hub = "0.27.1"
 openai = "^1.59.4"
 scikit_learn = "1.3.2"
@@ -20,6 +20,7 @@ requests = "*"
 types-requests = "*"
 wordfreq = "*"
 sockio = "*"
+google-generativeai = "*"
 
 
 [tool.poetry.group.dev.dependencies]
