@@ -74,7 +74,7 @@ class VisionExecutor(BaseExecutor):
                 },
             ],
         }
-        model_messages.append(image_message)
+        model_messages.append(image_message)  # type: ignore[arg-type]
         response = self.model.chat.completions.create(
             model='gpt-4o',
             messages=model_messages,

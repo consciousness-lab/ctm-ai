@@ -81,7 +81,7 @@ class VideoExecutor(BaseExecutor):
                     },
                 ],
             }
-            model_messages.append(video_message)
+            model_messages.append(video_message)  # type: ignore[arg-type]
 
         response = self.model.chat.completions.create(
             model='gpt-4o',

@@ -67,6 +67,7 @@ class BaseProcessor(object):
         audio_path: Optional[str] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
     ) -> Chunk:
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
@@ -77,6 +78,7 @@ class BaseProcessor(object):
             audio_path=audio_path,
             video_frames=video_frames,
             video_frames_path=video_frames_path,
+            video_path=video_path,
         )
 
         executor_output = self.executor.ask(
@@ -84,6 +86,7 @@ class BaseProcessor(object):
             image_path=image_path,
             audio_path=audio_path,
             video_frames_path=video_frames_path,
+            video_path=video_path,
         )
 
         scorer_messages = self.messenger.collect_scorer_messages(
@@ -95,6 +98,7 @@ class BaseProcessor(object):
             audio_path=audio_path,
             video_frames=video_frames,
             video_frames_path=video_frames_path,
+            video_path=video_path,
             executor_output=executor_output,
         )
 

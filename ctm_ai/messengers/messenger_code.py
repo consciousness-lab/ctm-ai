@@ -19,6 +19,7 @@ class CodeMessenger(BaseMessenger):
         audio_path: Optional[str] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
     ) -> List[Message]:
         content = 'Query: {}\n'.format(query)
         if text is not None:
@@ -41,6 +42,7 @@ class CodeMessenger(BaseMessenger):
         audio_path: Optional[str] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
     ) -> List[Message]:
         message = Message(
             role='user',

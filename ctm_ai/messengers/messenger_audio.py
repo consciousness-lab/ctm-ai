@@ -19,6 +19,7 @@ class AudioMessenger(BaseMessenger):
         audio_path: Optional[str] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
     ) -> List[Message]:
         content = f'Query: {query}\n'
         if text:
@@ -43,6 +44,7 @@ class AudioMessenger(BaseMessenger):
         audio_path: Optional[str] = None,
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
     ) -> List[Message]:
         message = Message(
             role='user',
