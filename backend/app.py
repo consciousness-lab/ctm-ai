@@ -343,10 +343,7 @@ class FlaskAppWrapper:
                 for curr_node_id, parents_ids in self.state.node_parents.items():
                     if curr_node_id not in self.state.node_details and parents_ids:
                         parent_id = parents_ids[0]
-                        if (
-                            parent_id in self.state.node_details
-                            and self.state.query is not None
-                        ):
+                        if parent_id in self.state.node_details:
                             answer, confidence_score = self.ctm.ask_supervisor(
                                 self.state.query, self.state.node_details[parent_id]
                             )
@@ -466,10 +463,10 @@ class FlaskAppWrapper:
                         unique_filename = FileHandler.save_file(
                             file, file_type, self.app
                         )
-                        file_saved_path = os.path.join(
-                            self.app.config['UPLOAD_FOLDER'], file_type, unique_filename
-                        )
                         if unique_filename:
+                            file_saved_path = os.path.join(
+                                self.app.config['UPLOAD_FOLDER'], file_type, unique_filename
+                            )
                             if file_type == 'videos':
                                 saved_files['videos'].append(unique_filename)
                                 video_path = file_saved_path
