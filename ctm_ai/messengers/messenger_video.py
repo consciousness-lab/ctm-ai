@@ -24,8 +24,6 @@ class VideoMessenger(BaseMessenger):
         video_path: Optional[str] = None,
     ) -> List[Message]:
         content = 'Query: {}\n'.format(query)
-        if text is not None:
-            content += 'Text: {}\n'.format(text)
         if (video_frames or video_frames_path) and video_frames_path:
             content += 'Note: The input contains {} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n'.format(
                 len(video_frames_path)

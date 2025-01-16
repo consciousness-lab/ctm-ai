@@ -21,13 +21,9 @@ class AudioMessenger(BaseMessenger):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
     ) -> List[Message]:
-        content = f'Query: {query}\n'
-        if text:
-            content += f'Additional context: {text}\n'
-
         message = Message(
             role='user',
-            content=content,
+            content=query,
         )
 
         self.executor_messages.append(message)

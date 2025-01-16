@@ -23,12 +23,9 @@ class VisionMessenger(BaseMessenger):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
     ) -> List[Message]:
-        content = 'Query: {}\n'.format(query)
-        if text is not None:
-            content += 'Text: {}\n'.format(text)
         message = Message(
             role='user',
-            content=content,
+            content=query,
         )
         self.executor_messages.append(message)
         return self.executor_messages
