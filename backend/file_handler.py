@@ -2,11 +2,10 @@ import os
 import uuid
 from typing import Optional
 
+from config import Config
 from flask import Flask
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
-
-from backend.config import Config
 
 
 class FileHandler:

@@ -1,11 +1,12 @@
 import os
 from typing import Any, Dict, List, Tuple, Union
 
+from chunk_processor import ChunkProcessor
 from config import Config
+from file_handler import FileHandler
 from flask import Flask, jsonify, make_response, request, send_from_directory
 from flask.wrappers import Response as FlaskResponse
 from state import AppState
-from utils import ChunkProcessor, FileHandler
 from werkzeug.wrappers.response import Response as WerkzeugResponse
 
 from ctm_ai.chunks import Chunk, ChunkManager
