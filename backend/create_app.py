@@ -1,6 +1,5 @@
-from flask import Flask
-
 from app_wrapper import FlaskAppWrapper
+from flask import Flask
 
 
 def create_app() -> Flask:
