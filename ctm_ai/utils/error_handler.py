@@ -139,3 +139,14 @@ def score_exponential_backoff(
         return wrapper
 
     return decorator
+
+
+class MissingAPIKeyError(Exception):
+    def __init__(self, processor_name: str, missing_keys: List[str]):
+        self.processor_name = processor_name
+        self.missing_keys = missing_keys
+        message = (
+            f"Processor '{processor_name}' dose not have an API key: "
+            f"{', '.join(missing_keys)}"
+        )
+        super().__init__(message)

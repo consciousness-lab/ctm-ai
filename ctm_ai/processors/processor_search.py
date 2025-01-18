@@ -6,6 +6,8 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor('search_processor')
 class SearchProcessor(BaseProcessor):
+    REQUIRED_KEYS = ['GOOGLE_API_KEY', 'GOOGLE_CSE_ID']
+
     def init_messenger(self) -> BaseMessenger:
         return BaseMessenger(name='search_messenger')
 

@@ -6,6 +6,8 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor('vision_processor')
 class VisionProcessor(BaseProcessor):
+    REQUIRED_KEYS = ['OPENAI_API_KEY']
+
     def init_messenger(self) -> BaseMessenger:
         return BaseMessenger(name='vision_messenger')
 
