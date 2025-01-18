@@ -1,9 +1,10 @@
 import base64
 import os
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
+from moviepy import VideoFileClip
 from numpy.typing import NDArray
 
 
@@ -27,7 +28,7 @@ def load_video(video_path: str, frame_num: int = 5) -> List[NDArray[np.uint8]]:
     import cv2
 
     cap = cv2.VideoCapture(video_path)
-    frames: List[np.ndarray[np.uint8, Any]] = []
+    frames: List[NDArray[np.uint8]] = []
     try:
         while True:
             ret, frame = cap.read()
@@ -78,3 +79,30 @@ def extract_video_frames(
     finally:
         cap.release()
     return frame_list
+
+
+def extract_audio_from_video(
+    video_path: str, output_dir: str, audio_format: str = 'mp3'
+) -> str:
+    if not os.path.isfile(video_path):
+        raise FileNotFoundError(f'Video not found: {video_path}')
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    video = VideoFileClip(video_path)
+    audio = video.audio
+
+    if audio is None:
+        raise ValueError('This video has no audio')
+
+    base_filename = os.path.splitext(os.path.basename(video_path))[0]
+    audio_filename = f'{base_filename}_audio.{audio_format}'
+    audio_path = os.path.join(output_dir, audio_filename)
+
+    audio.write_audiofile(audio_path, logger=None)
+
+    audio.close()
+    video.close()
+
+    return audio_filename
