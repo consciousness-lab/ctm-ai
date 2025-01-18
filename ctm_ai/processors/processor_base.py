@@ -1,3 +1,4 @@
+import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import numpy as np
@@ -11,6 +12,7 @@ from ..scorers import BaseScorer
 
 class BaseProcessor(object):
     _processor_registry: Dict[str, Type['BaseProcessor']] = {}
+    REQUIRED_KEYS: List[str] = []
 
     @classmethod
     def register_processor(
@@ -42,11 +44,19 @@ class BaseProcessor(object):
     def __init__(
         self, name: str, group_name: Optional[str] = None, *args: Any, **kwargs: Any
     ) -> None:
+        self.check_required_env_vars()
         self.name = name
         self.group_name = group_name
         self.executor = self.init_executor()
         self.messenger = self.init_messenger()
         self.scorer = self.init_scorer()
+
+    def check_required_env_vars(self) -> None:
+        missing_vars = [var for var in self.REQUIRED_KEYS if var not in os.environ]
+        if missing_vars:
+            raise EnvironmentError(
+                f'[{self.name}] Missing required environment variables: {missing_vars}'
+            )
 
     def init_executor(self) -> BaseExecutor:
         return BaseExecutor(name='language_executor')

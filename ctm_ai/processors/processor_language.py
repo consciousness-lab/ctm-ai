@@ -6,6 +6,8 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor('language_processor')
 class LanguageProcessor(BaseProcessor):
+    REQUIRED_KEYS = ['OPENAI_API_KEY']
+
     def init_messenger(self) -> BaseMessenger:
         return BaseMessenger(name='language_messenger')
 
