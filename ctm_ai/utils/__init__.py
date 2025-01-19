@@ -5,7 +5,13 @@ from .error_handler import (
     multi_info_exponential_backoff,
     score_exponential_backoff,
 )
-from .loader import load_audio, load_image, load_video
+from .loader import (
+    extract_audio_from_video,
+    extract_video_frames,
+    load_audio,
+    load_image,
+    load_video,
+)
 from .logger import (
     logger,
     logging_ask,
@@ -32,4 +38,6 @@ __all__ = [
     'logging_chunk_compete',
     'logprobs_to_softmax',
     'MissingAPIKeyError',
+    'extract_audio_from_video',
+    'extract_video_frames',
 ]
