@@ -19,7 +19,7 @@ class LanguageFuser(BaseFuser):
     def fuse_info(self, chunk1: Chunk, chunk2: Chunk) -> str | None:
         gist1, gist2 = chunk1.gist, chunk2.gist
         responses = self.model.chat.completions.create(
-            model='gpt-4-turbo-preview',
+            model='gpt-4o',
             messages=[
                 {
                     'role': 'user',

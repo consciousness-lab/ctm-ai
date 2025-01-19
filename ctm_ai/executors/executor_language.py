@@ -52,7 +52,7 @@ class LanguageExecutor(BaseExecutor):
             self.convert_message_to_param(message) for message in messages
         ]
         response = self.model.chat.completions.create(
-            model='gpt-4-turbo',
+            model='gpt-4o',
             messages=model_messages,
             max_tokens=max_token,
             n=return_num,
