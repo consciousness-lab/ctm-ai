@@ -22,6 +22,7 @@ wordfreq = "*"
 sockio = "*"
 google-generativeai = "*"
 opencv-python = "*"
+moviepy = "*"
 
 
 [tool.poetry.group.dev.dependencies]

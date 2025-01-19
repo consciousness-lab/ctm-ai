@@ -2,9 +2,7 @@ import base64
 import os
 from typing import List, Optional, Tuple
 
-import cv2
 import numpy as np
-from moviepy import VideoFileClip
 from numpy.typing import NDArray
 
 
@@ -12,9 +10,6 @@ def load_audio(audio_path: str) -> Tuple[NDArray[np.float32], int]:
     import librosa
 
     audio, sr = librosa.load(audio_path, sr=None)
-    import pdb
-
-    pdb.set_trace()  # Debugging breakpoint
     return (audio.astype(np.float32), int(sr))
 
 
@@ -50,6 +45,8 @@ def extract_video_frames(
     max_frames: Optional[int] = None,
     sample_rate: int = 1,
 ) -> List[str]:
+    import cv2
+
     cap = cv2.VideoCapture(video_path)
     frame_list = []
     os.makedirs(output_dir, exist_ok=True)
@@ -84,6 +81,8 @@ def extract_video_frames(
 def extract_audio_from_video(
     video_path: str, output_dir: str, audio_format: str = 'mp3'
 ) -> str:
+    from moviepy import VideoFileClip
+    
     if not os.path.isfile(video_path):
         raise FileNotFoundError(f'Video not found: {video_path}')
 
