@@ -11,7 +11,7 @@ from werkzeug.wrappers.response import Response as WerkzeugResponse
 
 from ctm_ai.chunks import Chunk, ChunkManager
 from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
-from ctm_ai.utils.loader import extract_video_frames
+from ctm_ai.utils import extract_audio_from_video, extract_video_frames
 
 ResponseType = Union[FlaskResponse, WerkzeugResponse]
 
@@ -396,6 +396,29 @@ class FlaskAppWrapper:
                                     }
                                 )
                             ), 400
+
+            if saved_files['videos'] and not saved_files['audios']:
+                for video_filename in saved_files['videos']:
+                    video_path = os.path.join(
+                        self.app.config['UPLOAD_FOLDER'], 'videos', video_filename
+                    )
+                    audio_output_dir = os.path.join(
+                        self.app.config['UPLOAD_FOLDER'], 'audios'
+                    )
+                    try:
+                        extracted_audio = extract_audio_from_video(
+                            video_path, audio_output_dir, audio_format='mp3'
+                        )
+                        saved_files['audios'].append(extracted_audio)
+                    except Exception as e:
+                        return self.add_cors_headers(
+                            jsonify(
+                                {
+                                    'error': f'Extracting {video_filename} error: {str(e)}'
+                                }
+                            )
+                        ), 500
+
             self.state.saved_files = saved_files
 
             response_data = {

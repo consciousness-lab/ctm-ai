@@ -13,8 +13,7 @@
     "react-dom": "^18.3.1",
     "react-scripts": "^5.0.1",
     "react-treeview": "*",
-    "web-vitals": "^2.1.4",
-    "react-cytoscapejs": "*"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
