@@ -1,4 +1,5 @@
 from .error_handler import (
+    MissingAPIKeyError,
     info_exponential_backoff,
     message_exponential_backoff,
     multi_info_exponential_backoff,
@@ -36,6 +37,7 @@ __all__ = [
     'logging_func_with_count',
     'logging_chunk_compete',
     'logprobs_to_softmax',
+    'MissingAPIKeyError',
     'extract_audio_from_video',
     'extract_video_frames',
 ]

@@ -6,6 +6,8 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor('math_processor')
 class MathProcessor(BaseProcessor):
+    REQUIRED_KEYS = ['GOOGLE_API_KEY']
+
     def init_messenger(self) -> BaseMessenger:
         return BaseMessenger(name='math_messenger')
 

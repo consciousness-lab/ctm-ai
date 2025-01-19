@@ -6,6 +6,8 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor('audio_processor')
 class AudioProcessor(BaseProcessor):
+    REQUIRED_KEYS = ['DASHSCOPE_API_KEY']
+
     def init_messenger(self) -> BaseMessenger:
         return BaseMessenger(name='audio_messenger')
 

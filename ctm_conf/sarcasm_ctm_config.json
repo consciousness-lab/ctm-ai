@@ -8,12 +8,12 @@
     "synergy_weight_threshold": 0.6,
     "groups_of_processors": {
         "group_1": [
-            "gpt4v_processor",
-            "gpt4_processor",
-            "search_engine_processor",
-            "wolfram_alpha_processor"
+            "vision_processor",
+            "language_processor",
+            "search_processor",
+            "math_processor"
         ]
     },
-    "supervisor": "gpt4_supervisor",
-    "fuser": "gpt4_fuser"
+    "supervisor": "language_supervisor",
+    "fuser": "language_fuser"
 }
