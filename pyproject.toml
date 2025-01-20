@@ -23,13 +23,13 @@ sockio = "*"
 google-generativeai = "*"
 opencv-python = "*"
 moviepy = "*"
-types-pillow = "^10.2.0.20240822"
 
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
 nbmake = "*"
 types-setuptools = "*"
+types-pillow = "^10.2.0.20240822"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
