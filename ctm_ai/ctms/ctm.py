@@ -8,6 +8,7 @@ from ..configs import ConsciousnessTuringMachineConfig
 from ..utils import logging_func_with_count
 from .ctm_base import BaseConsciousnessTuringMachine
 
+
 class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     def __init__(self, ctm_name: Optional[str] = None) -> None:
         super().__init__()

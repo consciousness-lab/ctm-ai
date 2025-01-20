@@ -1,5 +1,6 @@
 import concurrent.futures
 import random
+from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -12,10 +13,10 @@ from ..graphs import ProcessorGraph
 from ..processors import BaseProcessor
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-from ..utils import logging_func, logging_func_with_count
+from ..utils import logging_func
 
 
-class BaseConsciousnessTuringMachine:
+class BaseConsciousnessTuringMachine(ABC):
     def __init__(self, ctm_name: Optional[str] = None) -> None:
         super().__init__()
         self.config = (
@@ -218,3 +219,18 @@ class BaseConsciousnessTuringMachine:
 
         random.shuffle(chunks)
         return chunks
+
+    @abstractmethod
+    def forward(
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
+    ) -> Tuple[str, float]:
+        pass
