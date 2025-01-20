@@ -3,13 +3,13 @@ from typing import List, Optional, Tuple
 import numpy as np
 from numpy.typing import NDArray
 
-from ctm_ai.ctms.ctm_base import BaseConsciousnessTuringMachine
+from ctm_ai.ctms import BaseCTM
 from ctm_ai.graphs import ProcessorGraph
 from ctm_ai.supervisors import BaseSupervisor
 from ctm_ai.utils import logging_func
 
 
-class ConsciousnessTuringMachineBaseline(BaseConsciousnessTuringMachine):
+class ConsciousnessTuringMachineBaseline(BaseCTM):
     def load_ctm(self) -> None:
         self.processor_graph = ProcessorGraph()
         self.supervisors: List[BaseSupervisor] = []
