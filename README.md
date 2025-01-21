@@ -5,9 +5,10 @@
 <h1 align="center">CTM-AI: A Blueprint for Implementing a General AI System Inspired by Consciousness Theory</h1>
 
 <div align="center">
-  [![pypi](https://img.shields.io/pypi/v/ctm-ai.svg)](https://pypi.org/project/ctm-ai/)
-  [![Python 3.10](https://img.shields.io/badge/python-%E2%89%A53.10-blue)](https://www.python.org/downloads/release/python-3109/)
-  [![GitHub pull request](https://img.shields.io/badge/PRs-welcome-red)](https://github.com/hiyouga/LLaMA-Factory/pulls)
+  
+[![pypi](https://img.shields.io/pypi/v/ctm-ai.svg)](https://pypi.org/project/ctm-ai/)
+[![Python 3.10](https://img.shields.io/badge/python-%E2%89%A53.10-blue)](https://www.python.org/downloads/release/python-3109/)
+[![GitHub pull request](https://img.shields.io/badge/PRs-welcome-red)](https://github.com/hiyouga/LLaMA-Factory/pulls)
 
 </div>
 
