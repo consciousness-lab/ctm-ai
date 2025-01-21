@@ -82,7 +82,7 @@ def extract_audio_from_video(
     video_path: str, output_dir: str, audio_format: str = 'mp3'
 ) -> str:
     from moviepy import VideoFileClip
-    
+
     if not os.path.isfile(video_path):
         raise FileNotFoundError(f'Video not found: {video_path}')
 
