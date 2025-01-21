@@ -77,7 +77,7 @@ Follow the installation instruction above and then, instead of running `python -
 
 ```
 python -m pip install -e ".[dev]"
-mypy --install-types --non-interactive research_town
+mypy --install-types --non-interactive ctm-ai
 python -m pip install pre-commit
 pre-commit clean
 pre-commit install
