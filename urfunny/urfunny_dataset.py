@@ -1,12 +1,12 @@
 import json
 import os
-from typing import Union
+from typing import Dict, Union
 
 import torch
 from torch.utils.data import Dataset
 
 
-class URFunnyDataset(Dataset):  # type: ignore[type-arg]
+class URFunnyDataset(Dataset[Dict[str, Union[str, torch.Tensor]]]):
     def __init__(self, dataset_path: str, video_frames_root: str, audio_root: str):
         with open(dataset_path, 'r', encoding='utf-8') as file:
             self.dataset = json.load(file)
