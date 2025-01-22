@@ -383,7 +383,7 @@ class FlaskAppWrapper:
                                     self.app.config['UPLOAD_FOLDER'], 'video_frames'
                                 )
                                 frame_filenames = extract_video_frames(
-                                    video_path, frame_output_dir, 20, 5
+                                    video_path, frame_output_dir, 10
                                 )
                                 saved_files['video_frames'].extend(frame_filenames)
                             else:

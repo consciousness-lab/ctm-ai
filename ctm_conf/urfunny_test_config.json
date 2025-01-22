@@ -1,0 +1,19 @@
+{
+    "ctm_name": "urfunny_test",
+    "max_iter_num": 3,
+    "output_threshold": 0.5,
+    "redundant_text_sim_threshold": 0.5,
+    "synergy_text_sim_threshold": 0.4,
+    "redundant_weight_threshold": 0.6,
+    "synergy_weight_threshold": 0.6,
+    "groups_of_processors": {
+        "group_1": [
+            "video_processor",
+            "language_processor",
+            "search_processor",
+            "audio_processor"
+        ]
+    },
+    "supervisor": "language_supervisor",
+    "fuser": "language_fuser"
+}
