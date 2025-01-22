@@ -1,25 +1,23 @@
 import json
 import os
+from typing import Dict, Union
 
+import torch
 from torch.utils.data import Dataset
 
 
-def load_data(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        return json.load(file)
-
-
-class URFunnyDataset(Dataset):
-    def __init__(self, dataset_path, video_frames_root, audio_root):
-        self.dataset = load_data(dataset_path)
+class URFunnyDataset(Dataset[Dict[str, Union[str, torch.Tensor]]]):
+    def __init__(self, dataset_path: str, video_frames_root: str, audio_root: str):
+        with open(dataset_path, 'r', encoding='utf-8') as file:
+            self.dataset = json.load(file)
         self.video_frames_root = video_frames_root
         self.audio_root = audio_root
         self.keys = list(self.dataset.keys())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.keys)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> dict[str, Union[str, torch.Tensor]]:
         key = self.keys[idx]
         sample = self.dataset[key]
 

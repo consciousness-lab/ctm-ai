@@ -2,24 +2,12 @@ import json
 import random
 
 
-def extract_wrong_data(data_list):
-    wrong_data_list = []
-    for data in data_list:
-        if data['logits'][1] > data['logits'][0] and data['target'] == 0:
-            wrong_data_list.append(data)
-        elif data['logits'][1] < data['logits'][0] and data['target'] == 1:
-            wrong_data_list.append(data)
-        else:
-            continue
-    return wrong_data_list
-
-
 def generate_urfunny_data(
     baseline_res_path: str,
     origin_dataset_path: str,
     sample_dataset_path: str,
     sample_num: int,
-):
+) -> None:
     predicted_data_list = []
     with open(baseline_res_path, 'r', encoding='utf-8') as file:
         for line in file:
@@ -27,7 +15,14 @@ def generate_urfunny_data(
                 predicted_data_list.append(json.loads(line))
     with open(origin_dataset_path, 'r', encoding='utf-8') as json_file:
         origin_dataset = json.load(json_file)
-    predicted_wrong_data_list = extract_wrong_data(predicted_data_list)
+    predicted_wrong_data_list = []
+    for data in predicted_data_list:
+        if data['logits'][1] > data['logits'][0] and data['target'] == 0:
+            predicted_wrong_data_list.append(data)
+        elif data['logits'][1] < data['logits'][0] and data['target'] == 1:
+            predicted_wrong_data_list.append(data)
+        else:
+            continue
     sample_list = []
     count_0 = 0
     count_1 = 0

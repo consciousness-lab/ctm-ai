@@ -5,7 +5,9 @@ import subprocess
 from ctm_ai.utils import extract_video_frames
 
 
-def prepare_frames(file_list_path, source_folder, target_folder, max_frames):
+def prepare_frames(
+    file_list_path: str, source_folder: str, target_folder: str, max_frames: int
+) -> None:
     with open(file_list_path, 'r', encoding='utf-8') as json_file:
         sample_list = json.load(json_file)
     file_list = []
@@ -20,7 +22,7 @@ def prepare_frames(file_list_path, source_folder, target_folder, max_frames):
         extract_video_frames(video_path, video_frames_path, max_frames)
 
 
-def prepare_audios(file_list_path, input_folder, output_folder):
+def prepare_audios(file_list_path: str, input_folder: str, output_folder: str) -> None:
     with open(file_list_path, 'r', encoding='utf-8') as json_file:
         sample_list = json.load(json_file)
     file_list = []
