@@ -1,5 +1,4 @@
 import os
-import re
 from typing import Any, List
 
 import requests
@@ -8,12 +7,6 @@ from newspaper import Article
 from ..messengers import Message
 from ..utils import logger, message_exponential_backoff
 from .executor_base import BaseExecutor
-
-
-def remove_html_tags(text: str) -> str:
-    cleanr = re.compile('<.*?>')
-    cleantext = re.sub(cleanr, '', text)
-    return cleantext
 
 
 @BaseExecutor.register_executor('search_executor')
