@@ -23,6 +23,8 @@ sockio = "*"
 google-generativeai = "*"
 opencv-python = "*"
 moviepy = "*"
+newspaper3k = "^0.2.8"
+lxml-html-clean = "^0.4.1"
 
 
 [tool.poetry.group.dev.dependencies]
