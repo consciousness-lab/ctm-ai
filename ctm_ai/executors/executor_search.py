@@ -39,7 +39,6 @@ class SearchExecutor(BaseExecutor):
                     article.parse()
                     article.nlp()
                     page_summary = article.summary
-                    print(page_summary)
 
                 except Exception as e:
                     logger.error(f'Failed to fetch the page {link}: {e}')
