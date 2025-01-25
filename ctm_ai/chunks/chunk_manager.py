@@ -97,7 +97,7 @@ class ChunkManager:
                     > redundant_weight_quantile
                 ):
                     interaction_type_matrix[i][j] = 1
-                    # interaction_type_matrix[j][i] = 1
+                    interaction_type_matrix[j][i] = 1
                 # Check for synergy interaction
                 elif (
                     sim[i][j] < synergy_text_sim_quantile
@@ -105,7 +105,7 @@ class ChunkManager:
                     and self._sanitize_weight(chunk_j.weight) > synergy_weight_quantile
                 ):
                     interaction_type_matrix[i][j] = -1
-                    # interaction_type_matrix[j][i] = -1
+                    interaction_type_matrix[j][i] = -1
         return interaction_type_matrix
 
     def reset(self) -> None:

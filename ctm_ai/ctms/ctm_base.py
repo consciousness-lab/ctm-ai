@@ -185,6 +185,11 @@ class BaseConsciousnessTuringMachine(ABC):
             for j in range(i + 1, len(interaction_matrix)):
                 interaction_type = interaction_matrix[i][j]
 
+                if not self.processor_graph.has_node(
+                    chunks[i].processor_name
+                ) or not self.processor_graph.has_node(chunks[j].processor_name):
+                    continue
+
                 if interaction_type != 0:
                     self.processor_graph.add_link(
                         processor1_name=chunks[i].processor_name,

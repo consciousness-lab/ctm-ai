@@ -62,3 +62,9 @@ class ProcessorGraph(object):
 
     def __len__(self) -> int:
         return len(self.graph)
+
+    def has_node(self, processor_name: str) -> bool:
+        for processor in self.graph.keys():
+            if processor.name == processor_name:
+                return True
+        return False
