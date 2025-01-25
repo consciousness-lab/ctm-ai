@@ -1,3 +1,4 @@
+import math
 import random
 from typing import List, Optional
 
@@ -42,6 +43,11 @@ class ChunkManager:
         else:
             self.tfidf_matrix = None
 
+    def _sanitize_weight(self, weight: float) -> float:
+        if math.isnan(weight):
+            return 0.0
+        return weight
+
     def _get_similarity_matrix(self) -> NDArray[np.float32]:
         if self.tfidf_matrix is not None:
             return cosine_similarity(self.tfidf_matrix)
@@ -56,24 +62,50 @@ class ChunkManager:
                 'Config must be provided for interaction type calculation.'
             )
 
+        sim_vals = []
+        weight_vals = [self._sanitize_weight(chunk.weight) for chunk in self.chunks]
+
+        for i in range(len(sim)):
+            for j in range(i + 1, len(sim)):
+                sim_vals.append(sim[i][j])
+
+        if len(sim_vals) < 2:
+            return interaction_type_matrix
+
+        synergy_text_sim_quantile = np.quantile(
+            sim_vals, self.config.synergy_text_sim_threshold
+        )
+        synergy_weight_quantile = np.quantile(
+            weight_vals, self.config.synergy_weight_threshold
+        )
+        redundant_text_sim_quantile = np.quantile(
+            sim_vals, self.config.redundant_text_sim_threshold
+        )
+        redundant_weight_quantile = np.quantile(
+            weight_vals, self.config.redundant_weight_threshold
+        )
         for i in range(len(sim)):
             for j in range(i + 1, len(sim)):
                 chunk_i, chunk_j = self.chunks[i], self.chunks[j]
 
                 # Check for redundant interaction
                 if (
-                    sim[i][j] > self.config.redundant_text_sim_threshold
-                    and chunk_i.weight > self.config.redundant_weight_threshold
-                    and chunk_j.weight > self.config.redundant_weight_threshold
+                    sim[i][j] > redundant_text_sim_quantile
+                    and self._sanitize_weight(chunk_i.weight)
+                    > redundant_weight_quantile
+                    and self._sanitize_weight(chunk_j.weight)
+                    > redundant_weight_quantile
                 ):
                     interaction_type_matrix[i][j] = 1
+                    # interaction_type_matrix[j][i] = 1
                 # Check for synergy interaction
                 elif (
-                    sim[i][j] < self.config.synergy_text_sim_threshold
-                    and chunk_i.weight > self.config.synergy_weight_threshold
-                    and chunk_j.weight > self.config.synergy_weight_threshold
+                    sim[i][j] < synergy_text_sim_quantile
+                    and self._sanitize_weight(chunk_i.weight) > synergy_weight_quantile
+                    and self._sanitize_weight(chunk_j.weight) > synergy_weight_quantile
                 ):
                     interaction_type_matrix[i][j] = -1
+                    # interaction_type_matrix[j][i] = -1
         return interaction_type_matrix
 
     def reset(self) -> None:
