@@ -23,12 +23,16 @@ sockio = "*"
 google-generativeai = "*"
 opencv-python = "*"
 moviepy = "*"
+newspaper3k = "^0.2.8"
+lxml-html-clean = "^0.4.1"
 
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
 nbmake = "*"
 types-setuptools = "*"
+types-pillow = "^10.2.0.20240822"
+torch = "^2.5.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"

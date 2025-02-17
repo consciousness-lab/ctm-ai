@@ -32,11 +32,15 @@ class ProcessorGraph(object):
     def remove_link(self, processor1_name: str, processor2_name: str) -> None:
         processor1 = self.get_node(processor1_name)
         processor2 = self.get_node(processor2_name)
+        removed = False
         if processor2 in self.graph[processor1]:
             self.graph[processor1].remove(processor2)
+            removed = True
         if processor1 in self.graph[processor2]:
             self.graph[processor2].remove(processor1)
-        logger.info(f'Removed link between {processor1_name} and {processor2_name}')
+            removed = True
+        if removed:
+            logger.info(f'Removed link between {processor1_name} and {processor2_name}')
 
     def get_node(self, processor_name: str) -> BaseProcessor:
         for processor in self.graph.keys():
@@ -58,3 +62,9 @@ class ProcessorGraph(object):
 
     def __len__(self) -> int:
         return len(self.graph)
+
+    def has_node(self, processor_name: str) -> bool:
+        for processor in self.graph.keys():
+            if processor.name == processor_name:
+                return True
+        return False

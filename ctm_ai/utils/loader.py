@@ -43,33 +43,36 @@ def extract_video_frames(
     video_path: str,
     output_dir: str,
     max_frames: Optional[int] = None,
-    sample_rate: int = 1,
 ) -> List[str]:
+    import os
+
     import cv2
 
     cap = cv2.VideoCapture(video_path)
     frame_list = []
     os.makedirs(output_dir, exist_ok=True)
 
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))  # type: ignore[attr-defined]
+
+    if max_frames is not None:
+        sample_indices = [int(total_frames * i / max_frames) for i in range(max_frames)]
+    else:
+        sample_indices = list(range(total_frames))
+
     frame_index = 0
-    extracted_frames = 0
 
     try:
         while True:
             ret, frame = cap.read()
-            if not ret:
+            if not ret or frame_index >= total_frames:
                 break
 
-            if frame_index % sample_rate == 0:
+            if frame_index in sample_indices:
                 frame_filename = os.path.join(
                     output_dir, f'frame_{frame_index:05d}.jpg'
                 )
                 cv2.imwrite(frame_filename, frame)  # type: ignore[attr-defined]
                 frame_list.append(frame_filename)
-                extracted_frames += 1
-
-                if max_frames is not None and extracted_frames >= max_frames:
-                    break
 
             frame_index += 1
 
@@ -82,7 +85,7 @@ def extract_audio_from_video(
     video_path: str, output_dir: str, audio_format: str = 'mp3'
 ) -> str:
     from moviepy import VideoFileClip
-    
+
     if not os.path.isfile(video_path):
         raise FileNotFoundError(f'Video not found: {video_path}')
 

@@ -2,6 +2,7 @@ import os
 from typing import Any, List
 
 import requests
+from newspaper import Article
 
 from ..messengers import Message
 from ..utils import logger, message_exponential_backoff
@@ -23,9 +24,29 @@ class SearchExecutor(BaseExecutor):
             response = requests.get(self.url, params=params)
             response.raise_for_status()
             search_results = response.json()
+
             content = ''
             for item in search_results.get('items', []):
-                content += item.get('snippet', '') + '\n'
+                title = item.get('title', '')
+                link = item.get('link', '')
+
+                try:
+                    page_response = requests.get(link, params=params)
+                    page_response.raise_for_status()
+
+                    article = Article(link)
+                    article.download()
+                    article.parse()
+                    article.nlp()
+                    page_summary = article.summary
+
+                except Exception as e:
+                    logger.error(f'Failed to fetch the page {link}: {e}')
+                    page_summary = ''
+
+                info_str = f'Title: {title}\n Summary:\n{page_summary}\n\n'
+                content += info_str
+
             return Message(role='assistant', content=content, gist=content)
         except requests.exceptions.HTTPError as err:
             logger.error(f'HTTP error occurred: {err}')
