@@ -15,6 +15,7 @@ from ..supervisors import BaseSupervisor
 from ..utils import logging_func, logging_func_with_count
 
 
+
 class ConsciousnessTuringMachine:
     def __init__(self, ctm_name: Optional[str] = None) -> None:
         super().__init__()
