@@ -26,6 +26,11 @@ newspaper3k = "^0.2.8"
 lxml-html-clean = "^0.4.1"
 numpy = "^2.2.3"
 flask = "^3.1.0"
+flask-cors = "*"
+torch = { version = "^2.5.1+cpu", optional = true, source = "torchcpu" }
+
+[tool.poetry.extras]
+exp = ["torch"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "*"
@@ -36,9 +41,6 @@ types-pillow = "^10.2.0.20240822"
 [tool.poetry.group.test.dependencies]
 pytest = "*"
 pytest-asyncio = "*"
-
-[tool.poetry.group.exp.dependencies]
-torch = { version = "^2.5.1+cpu", source = "torchcpu" }
 
 [build-system]
 requires = ["poetry-core"]

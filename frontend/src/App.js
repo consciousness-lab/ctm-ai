@@ -46,6 +46,8 @@ const ProcessPhase = ({ phase, displayPhase, description }) => {
   );
 };
 
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://18.224.61.142:5000/api';
+
 const App = () => {
     const [availableProcessors, setAvailableProcessors] = useState([
         'VisionProcessor',
@@ -282,11 +284,12 @@ const App = () => {
 
     const handleRefresh = async () => {
         try {
-            await fetch('http://localhost:5000/api/refresh', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+            await fetch(`${BASE_URL}/refresh`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
             });
         } catch (error) {
             console.error("Error calling /api/refresh:", error);
@@ -314,7 +317,7 @@ const App = () => {
             return;
         }
 
-        fetch(`http://localhost:5000/api/nodes/${selectedNode}`)
+        fetch(`${BASE_URL}/nodes/${selectedNode}`)
             .then((response) => response.json())
             .then((data) => {
                 if (!data.self) {
