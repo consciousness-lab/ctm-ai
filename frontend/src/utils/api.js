@@ -2,13 +2,15 @@
 
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://18.224.61.142:5000/api';
+
 
 const fetchWithError = async (url, options = {}) => {
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       ...options.headers,
     },
   });
@@ -22,10 +24,11 @@ const fetchWithError = async (url, options = {}) => {
 
 export const initializeProcessors = async (selectedProcessors) => {
   try {
-    const response = await fetch('http://localhost:5000/api/init', {
+    const response = await fetch(`${BASE_URL}/init`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Accept: 'application/json',
       },
       body: JSON.stringify({ selected_processors: selectedProcessors }),
     });
@@ -96,6 +99,7 @@ export const uploadFiles = async (formData, onUploadProgress) => {
     const response = await axios.post(`${BASE_URL}/upload`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'Accept': 'application/json',
       },
       onUploadProgress,
     });
@@ -113,10 +117,11 @@ export const uploadFiles = async (formData, onUploadProgress) => {
 
 export const fuseGist = async (updates) => {
   try {
-    const response = await fetch('http://localhost:5000/api/fuse-gist', {
+    const response = await fetch(`${BASE_URL}/fuse-gist`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({ updates }),
     });
@@ -135,7 +140,7 @@ export const fuseGist = async (updates) => {
 
 export const fetchProcessorNeighborhoods = async () => {
   try {
-    const response = await fetch('http://localhost:5000/api/fetch-neighborhood');
+    const response = await fetch(`${BASE_URL}/fetch-neighborhood`);
     if (!response.ok) {
       throw new Error('Failed to fetch processor neighborhoods');
     }

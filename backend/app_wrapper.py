@@ -30,7 +30,11 @@ class FlaskAppWrapper:
         self.app.config['MAX_CONTENT_LENGTH'] = Config.MAX_CONTENT_LENGTH
 
     def add_cors_headers(self, response: ResponseType) -> ResponseType:
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        allowed_origins = ['http://localhost:3000', 'http://18.224.61.142']
+        origin = request.headers.get('Origin', '')
+
+        if origin in allowed_origins:
+            response.headers.add('Access-Control-Allow-Origin', origin)
         response.headers.add(
             'Access-Control-Allow-Headers', 'Content-Type,Authorization'
         )
@@ -83,9 +87,10 @@ class FlaskAppWrapper:
             selected_processors: List[str] = data.get('selected_processors', [])
 
             if not selected_processors:
-                return self.add_cors_headers(
-                    jsonify({'error': 'No processors provided'})
-                ), 400
+                return (
+                    self.add_cors_headers(jsonify({'error': 'No processors provided'})),
+                    400,
+                )
 
             self.state.node_details.clear()
             self.state.node_parents.clear()
@@ -109,14 +114,17 @@ class FlaskAppWrapper:
             self.ctm.add_scorer('language_scorer')
             self.ctm.add_fuser('language_fuser')
 
-            return self.add_cors_headers(
-                jsonify(
-                    {
-                        'message': 'Processors initialized',
-                        'processorNames': created_processor_names,
-                    }
-                )
-            ), 200
+            return (
+                self.add_cors_headers(
+                    jsonify(
+                        {
+                            'message': 'Processors initialized',
+                            'processorNames': created_processor_names,
+                        }
+                    )
+                ),
+                200,
+            )
 
         @self.app.route('/api/output-gist', methods=['POST', 'OPTIONS'])
         def handle_output_gist() -> ResponseType:
@@ -389,13 +397,16 @@ class FlaskAppWrapper:
                             else:
                                 saved_files[file_type].append(unique_filename)
                         else:
-                            return self.add_cors_headers(
-                                jsonify(
-                                    {
-                                        'error': f'Invalid {file_type} file: {file.filename}'
-                                    }
-                                )
-                            ), 400
+                            return (
+                                self.add_cors_headers(
+                                    jsonify(
+                                        {
+                                            'error': f'Invalid {file_type} file: {file.filename}'
+                                        }
+                                    )
+                                ),
+                                400,
+                            )
 
             if saved_files['videos'] and not saved_files['audios']:
                 for video_filename in saved_files['videos']:
@@ -411,13 +422,16 @@ class FlaskAppWrapper:
                         )
                         saved_files['audios'].append(extracted_audio)
                     except Exception as e:
-                        return self.add_cors_headers(
-                            jsonify(
-                                {
-                                    'error': f'Extracting {video_filename} error: {str(e)}'
-                                }
-                            )
-                        ), 500
+                        return (
+                            self.add_cors_headers(
+                                jsonify(
+                                    {
+                                        'error': f'Extracting {video_filename} error: {str(e)}'
+                                    }
+                                )
+                            ),
+                            500,
+                        )
 
             self.state.saved_files = saved_files
 
@@ -437,9 +451,10 @@ class FlaskAppWrapper:
         @self.app.route('/uploads/<file_type>/<filename>')
         def uploaded_file(file_type: str, filename: str) -> Tuple[ResponseType, int]:
             if file_type not in ['images', 'audios', 'videos']:
-                return self.add_cors_headers(
-                    jsonify({'error': 'Invalid file type'})
-                ), 400
+                return (
+                    self.add_cors_headers(jsonify({'error': 'Invalid file type'})),
+                    400,
+                )
 
             try:
                 file_path = os.path.join(self.app.config['UPLOAD_FOLDER'], file_type)
