@@ -1,3 +1,5 @@
+import React from 'react';
+
 // src/utils/parseDetailString.js
 
 export function parseDetailString(detailString) {
