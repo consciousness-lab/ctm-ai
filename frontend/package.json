@@ -11,7 +11,7 @@
     "react-cytoscapejs": "*",
     "react-d3-tree": "^3.6.2",
     "react-dom": "^18.3.1",
-    "react-scripts": "^5.0.1",
+    "react-scripts": "^3.0.1",
     "react-treeview": "*",
     "web-vitals": "^2.1.4"
   },

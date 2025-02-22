@@ -1,4 +1,4 @@
-// src/utils/parseDetailString.js
+import React from 'react';
 
 export function parseDetailString(detailString) {
     if (!detailString) return null;
