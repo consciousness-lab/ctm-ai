@@ -57,7 +57,7 @@ class VideoExecutor(BaseExecutor):
 
         video_frames_path = kwargs.get('video_frames_path')
         if not video_frames_path:
-            raise ValueError(f'No video frames provided in kwargs, kwargs: {kwargs}')
+            return
 
         if not all(os.path.exists(path) for path in video_frames_path):
             missing_files = [
