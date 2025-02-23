@@ -116,6 +116,9 @@ poetry install
 Start your backend server with Gunicorn:
 
 ```bash
+export GOOGLE_API_KEY=xxx
+export OPENAI_API_KEY=xxx
+export GOOGLE_CSE_ID=xxx
 poetry run gunicorn app:app --bind 0.0.0.0:5000
 ```
 
