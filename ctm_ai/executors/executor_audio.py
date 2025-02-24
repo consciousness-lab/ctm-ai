@@ -43,7 +43,7 @@ class AudioExecutor(BaseExecutor):
 
         audio_path = kwargs.get('audio_path')
         if not audio_path:
-            return
+            return Message(role='assistant', content='', gist='', gists=[])
 
         query = messages[-1].content
 

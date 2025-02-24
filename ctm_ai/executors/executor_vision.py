@@ -57,7 +57,7 @@ class VisionExecutor(BaseExecutor):
 
         image_path = kwargs.get('image_path')
         if not image_path:
-            return
+            return Message(role='assistant', content='', gist='', gists=[])
 
         if not os.path.exists(image_path):
             raise FileNotFoundError(f'Image file not found: {image_path}')
