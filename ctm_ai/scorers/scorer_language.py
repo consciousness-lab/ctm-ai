@@ -20,7 +20,7 @@ class LanguageScorer(BaseScorer):
         query = messages[-1].query
         gist = messages[-1].gist
         response = self.scorer.chat.completions.create(
-            model='gpt-4o',
+            model='gpt-4o-mini',
             messages=[
                 {
                     'role': 'user',
