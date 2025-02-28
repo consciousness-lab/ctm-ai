@@ -72,6 +72,19 @@ logger = logging.getLogger('CTM-AI')
 logger.setLevel(logging.DEBUG)
 logger.addHandler(get_console_handler())
 
+log_file = 'ctm_log_output.log'
+file_handler = logging.FileHandler(log_file, encoding='utf-8')
+file_handler.setLevel(logging.DEBUG)
+
+file_formatter = logging.Formatter(
+    '%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s',
+    datefmt='%H:%M:%S',
+)
+file_handler.setFormatter(file_formatter)
+
+if not any(isinstance(h, logging.FileHandler) for h in logger.handlers):
+    logger.addHandler(file_handler)
+
 
 def logging_decorator(
     func: Callable[..., LogType],
