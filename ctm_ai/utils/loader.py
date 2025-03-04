@@ -1,6 +1,7 @@
 import base64
 import os
 from typing import List, Optional, Tuple
+from PIL import Image
 
 import numpy as np
 from numpy.typing import NDArray
@@ -17,6 +18,21 @@ def load_image(image_path: str) -> str:
     with open(image_path, 'rb') as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
         return encoded_image
+
+def load_images(image_paths: List[str]) -> List[Image.Image]:
+    if not image_paths:
+        raise ValueError('No images provided')
+
+    image_paths_sorted = sorted(image_paths)
+
+    images = []
+    for img_path in image_paths_sorted:
+        try:
+            image = Image.open(img_path)
+            images.append(image)
+        except Exception as e:
+            raise RuntimeError(f'Failed to load image {img_path}: {e}')
+    return images
 
 
 def load_video(video_path: str, frame_num: int = 5) -> List[NDArray[np.uint8]]:

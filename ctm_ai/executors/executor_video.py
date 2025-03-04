@@ -2,27 +2,12 @@ import os
 from typing import Any, List
 
 import google.generativeai as genai
-from PIL import Image
+
 
 from ..messengers import Message
 from ..utils import message_exponential_backoff
 from .executor_base import BaseExecutor
-
-
-def load_images(image_paths: List[str]) -> List[Image.Image]:
-    if not image_paths:
-        raise ValueError('No images provided')
-
-    image_paths_sorted = sorted(image_paths)
-
-    images = []
-    for img_path in image_paths_sorted:
-        try:
-            image = Image.open(img_path)
-            images.append(image)
-        except Exception as e:
-            raise RuntimeError(f'Failed to load image {img_path}: {e}')
-    return images
+from ..utils.loader import load_images
 
 
 @BaseExecutor.register_executor('video_executor')
