@@ -1,13 +1,12 @@
 import os
-from typing import Any, List
+from typing import Any
 
 import google.generativeai as genai
 
-
 from ..messengers import Message
 from ..utils import message_exponential_backoff
-from .executor_base import BaseExecutor
 from ..utils.loader import load_images
+from .executor_base import BaseExecutor
 
 
 @BaseExecutor.register_executor('video_executor')
