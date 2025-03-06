@@ -15,13 +15,13 @@ This guide walks you through setting up your EC2 server for both the frontend an
 
 ## Server Side Setup
 
-1. **Launch Your EC2 Instance:**  
+1. **Launch Your EC2 Instance:**
    Create a t2.micro instance using your preferred AMI (e.g., Ubuntu).
 
-2. **Configure Security Group Inbound Rules:**  
+2. **Configure Security Group Inbound Rules:**
    In the EC2 Management Console, go to **Security Groups** → **Inbound Rules** and add a rule:
-   - **Type:** Custom TCP  
-   - **Port Range:** 5000  
+   - **Type:** Custom TCP
+   - **Port Range:** 5000
    - **Source:** 0.0.0.0/0
    - make sure you can visit URL like `http://18.224.61.142:5000/api/upload`that are shown as `Method Not Allowed` instead of keeping waiting to load
 
@@ -52,7 +52,7 @@ npm run build
 
 ### Step 2: Configure Nginx for the Frontend
 
-1. **Edit the Nginx Configuration:**  
+1. **Edit the Nginx Configuration:**
    Open the configuration file for your site:
    ```bash
    sudo nano /etc/nginx/sites-available/frontend
@@ -84,7 +84,7 @@ npm run build
    }
    ```
 
-3. **Set Correct Permissions:**  
+3. **Set Correct Permissions:**
    Ensure Nginx can read your frontend files. If necessary, change the ownership and permissions:
    ```bash
    sudo chown -R www-data:www-data /var/www/ctm-ai/frontend
@@ -92,7 +92,7 @@ npm run build
    ```
    *(If you want to deploy from your current directory, adjust the root path accordingly.)*
 
-4. **Test and Reload Nginx:**  
+4. **Test and Reload Nginx:**
    Test the configuration and reload Nginx:
    ```bash
    sudo nginx -t && sudo systemctl reload nginx
@@ -124,19 +124,19 @@ export DASHSCOPE_API_KEY=xxx # for code
 poetry run gunicorn app:app --bind 0.0.0.0:5000
 ```
 
-> **Note:**  
+> **Note:**
 > Ensure that your `app.py` exposes a callable WSGI application. For example, if you use a wrapper, set it as follows:
 >
 > ```python
 > from app_wrapper import FlaskAppWrapper
 > from flask_cors import CORS
-> 
+>
 > flask_wrapper = FlaskAppWrapper()
 > CORS(flask_wrapper.app, origins=['http://localhost:3000', 'http://18.224.61.142'])
-> 
+>
 > # Expose the underlying Flask app as the WSGI application
 > app = flask_wrapper.app
-> 
+>
 > if __name__ == '__main__':
 >  app.run(port=5000, debug=True)
 > ```
@@ -145,13 +145,13 @@ poetry run gunicorn app:app --bind 0.0.0.0:5000
 
 ## Final Verification
 
-- **Frontend:**  
+- **Frontend:**
   Open your browser and navigate to `http://18.224.61.142`. Verify that the application loads correctly and static assets are served without redirection errors.
-  
-- **Backend:**  
+
+- **Backend:**
   Use tools like `curl`, Postman, or your browser’s network tab to test the API endpoints (e.g., `http://18.224.61.142/api/upload`).
 
-- **Logs:**  
+- **Logs:**
   Check Nginx and backend logs for any errors:
   ```bash
   sudo tail -f /var/log/nginx/error.log

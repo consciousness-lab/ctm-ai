@@ -1,46 +1,25 @@
 import os
-from typing import Any, Union
+from typing import Any
 
-from openai import OpenAI
-from openai.types.chat import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam,
-)
-
-from ctm_ai.utils.loader import load_image
+import google.generativeai as genai
 
 from ..messengers import Message
 from ..utils import message_exponential_backoff
+from ..utils.loader import load_images
 from .executor_base import BaseExecutor
 
 
 @BaseExecutor.register_executor('video_executor')
 class VideoExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
-        self.model = OpenAI()
+        self.api_key = os.getenv('GEMINI_API_KEY')
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel('gemini-1.5-flash-8b')
 
-    def convert_message_to_param(
-        self, message: Message
-    ) -> Union[
-        ChatCompletionAssistantMessageParam,
-        ChatCompletionSystemMessageParam,
-        ChatCompletionUserMessageParam,
-    ]:
+    def convert_message_to_param(self, message: Message) -> str:
         if message.content is None:
             raise ValueError('Message content cannot be None')
-        if message.role == 'system':
-            return ChatCompletionSystemMessageParam(
-                role='system', content=message.content
-            )
-        elif message.role == 'user':
-            return ChatCompletionUserMessageParam(role='user', content=message.content)
-        elif message.role == 'assistant':
-            return ChatCompletionAssistantMessageParam(
-                role='assistant', content=message.content
-            )
-        else:
-            raise ValueError(f'Unsupported message role: {message.role}')
+        return message.content
 
     @message_exponential_backoff()
     def ask(
@@ -59,38 +38,21 @@ class VideoExecutor(BaseExecutor):
         if not video_frames_path:
             return Message(role='assistant', content='', gist='', gists=[])
 
-        if not all(os.path.exists(path) for path in video_frames_path):
-            missing_files = [
-                path for path in video_frames_path if not os.path.exists(path)
-            ]
-            raise FileNotFoundError(f'Some video frames not found: {missing_files}')
+        images = load_images(video_frames_path)
 
-        for path in video_frames_path:
-            video_message = {
-                'role': 'user',
-                'content': [
-                    {
-                        'type': 'text',
-                        'text': 'Here is the relevant image frames of the video:',
-                    },
-                    {
-                        'type': 'image_url',
-                        'image_url': {
-                            'url': f'data:image/jpeg;base64,{load_image(path)}'
-                        },
-                    },
-                ],
-            }
-            model_messages.append(video_message)  # type: ignore[arg-type]
+        prompt = f'{model_messages}. Here are the relevant image frames of the video:'
 
-        response = self.model.chat.completions.create(
-            model='gpt-4o',
-            messages=model_messages,
-            max_tokens=max_token,
-            n=return_num,
+        inputs = [prompt] + images
+
+        gen_config = genai.types.GenerationConfig(
+            candidate_count=return_num, max_output_tokens=max_token
+        )
+        response = self.model.generate_content(
+            inputs,
+            generation_config=gen_config,
         )
 
-        gists = [response.choices[i].message.content for i in range(return_num)]
+        gists = [candidate.content.parts[0].text for candidate in response.candidates]
         return Message(
             role='assistant',
             content=gists[0],
