@@ -1,11 +1,7 @@
-from typing import Any, Union
+import os
+from typing import Any
 
-from openai import OpenAI
-from openai.types.chat import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam,
-)
+import google.generativeai as genai
 
 from ..messengers import Message
 from ..utils import message_exponential_backoff
@@ -15,29 +11,14 @@ from .executor_base import BaseExecutor
 @BaseExecutor.register_executor('language_executor')
 class LanguageExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
-        self.model = OpenAI()
+        self.api_key = os.getenv('GEMINI_API_KEY')
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel('gemini-1.5-flash-8b')
 
-    def convert_message_to_param(
-        self, message: Message
-    ) -> Union[
-        ChatCompletionAssistantMessageParam,
-        ChatCompletionSystemMessageParam,
-        ChatCompletionUserMessageParam,
-    ]:
+    def convert_message_to_param(self, message: Message) -> str:
         if message.content is None:
             raise ValueError('Message content cannot be None')
-        if message.role == 'system':
-            return ChatCompletionSystemMessageParam(
-                role='system', content=message.content
-            )
-        elif message.role == 'user':
-            return ChatCompletionUserMessageParam(role='user', content=message.content)
-        elif message.role == 'assistant':
-            return ChatCompletionAssistantMessageParam(
-                role='assistant', content=message.content
-            )
-        else:
-            raise ValueError(f'Unsupported message role: {message.role}')
+        return message.content
 
     @message_exponential_backoff()
     def ask(
@@ -51,13 +32,15 @@ class LanguageExecutor(BaseExecutor):
         model_messages = [
             self.convert_message_to_param(message) for message in messages
         ]
-        response = self.model.chat.completions.create(
-            model='gpt-4o',
-            messages=model_messages,
-            max_tokens=max_token,
-            n=return_num,
+
+        gen_config = genai.types.GenerationConfig(
+            candidate_count=return_num, max_output_tokens=max_token
         )
-        gists = [response.choices[i].message.content for i in range(return_num)]
+        response = self.model.generate_content(
+            model_messages,
+            generation_config=gen_config,
+        )
+        gists = [candidate.content.parts[0].text for candidate in response.candidates]
         return Message(
             role='assistant',
             content=gists[0],
