@@ -31,6 +31,7 @@ __all__ = [
     'load_audio',
     'load_image',
     'load_video',
+    'load_images',
     'logging_ask',
     'logger',
     'logging_chunk',

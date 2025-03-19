@@ -4,6 +4,7 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
+from PIL import Image
 
 
 def load_audio(audio_path: str) -> Tuple[NDArray[np.float32], int]:
