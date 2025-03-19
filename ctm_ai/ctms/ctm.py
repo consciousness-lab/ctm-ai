@@ -77,5 +77,8 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
                 video_path,
             )
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
+            confidence_score = 0
+            if confidence_score > self.config.output_threshold:
+                return answer, confidence_score
             self.go_down(winning_chunk, chunks)
         return answer, confidence_score
