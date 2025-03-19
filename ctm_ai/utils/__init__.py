@@ -10,6 +10,7 @@ from .loader import (
     extract_video_frames,
     load_audio,
     load_image,
+    load_images,
     load_video,
 )
 from .logger import (
@@ -30,6 +31,7 @@ __all__ = [
     'load_audio',
     'load_image',
     'load_video',
+    'load_images',
     'logging_ask',
     'logger',
     'logging_chunk',

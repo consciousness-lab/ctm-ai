@@ -21,7 +21,7 @@ class SearchExecutor(BaseExecutor):
         query = messages[-1].content
         params = {'key': self.api_key, 'cx': self.cse_id, 'q': query}
         try:
-            response = requests.get(self.url, params=params)
+            response = requests.get(self.url, params=params, timeout=1)
             response.raise_for_status()
             search_results = response.json()
 
@@ -31,7 +31,7 @@ class SearchExecutor(BaseExecutor):
                 link = item.get('link', '')
 
                 try:
-                    page_response = requests.get(link, params=params)
+                    page_response = requests.get(link, params=params, timeout=1)
                     page_response.raise_for_status()
 
                     article = Article(link)
