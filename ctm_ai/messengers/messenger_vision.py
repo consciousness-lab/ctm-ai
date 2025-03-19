@@ -23,7 +23,10 @@ class VisionMessenger(BaseMessenger):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
     ) -> List[Message]:
-        sys_message = Message(role='system', content='Please answer conditioning on the following information with one or two short sentences and explain the reason what information you think is useful for answering the query. If you need more information, please ask a question for what type of information you need.')
+        sys_message = Message(
+            role='system',
+            content='Please answer conditioning on the following information with one or two short sentences and explain the reason what information you think is useful for answering the query. If you need more information, please ask a question for what type of information you need.',
+        )
         self.executor_messages.append(sys_message)
         message = Message(
             role='user',

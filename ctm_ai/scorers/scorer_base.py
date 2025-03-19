@@ -85,7 +85,6 @@ class BaseScorer(object):
         self,
         messages: List[Message],
     ) -> Message:
-        
         relevance = self.ask_relevance(messages)
         confidence = self.ask_confidence(messages)
         surprise = self.ask_surprise(messages)
