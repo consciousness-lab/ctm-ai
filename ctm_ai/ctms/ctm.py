@@ -43,14 +43,12 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
             video_frames_path,
             video_path,
         )
-        chunks = self.fuse_processor(chunks)
         winning_chunk = self.uptree_competition(chunks)
         return winning_chunk, chunks
 
     @logging_func_with_count
     def go_down(self, winning_chunk: Chunk, chunks: List[Chunk]) -> None:
         self.downtree_broadcast(winning_chunk)
-        self.link_form(chunks)
 
     def forward(
         self,

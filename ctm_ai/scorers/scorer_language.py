@@ -19,6 +19,8 @@ class LanguageScorer(BaseScorer):
     def ask_relevance(self, messages: List[Message]) -> float:
         query = messages[-1].query
         gist = messages[-1].gist
+        if gist is None or gist == '':
+            return 0.0
         response = self.scorer.chat.completions.create(
             model='gpt-4o-mini',
             messages=[

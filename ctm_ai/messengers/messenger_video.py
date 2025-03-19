@@ -23,6 +23,8 @@ class VideoMessenger(BaseMessenger):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
     ) -> List[Message]:
+        sys_message = Message(role='system', content='Please answer conditioning on the following information with one or two short sentences and explain the reason what information you think is useful for answering the query. If you need more information, please ask a question for what type of information you need.')
+        self.executor_messages.append(sys_message)
         content = 'Query: {}\n'.format(query)
         if (video_frames or video_frames_path) and video_frames_path:
             content += 'Note: The input contains {} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n'.format(

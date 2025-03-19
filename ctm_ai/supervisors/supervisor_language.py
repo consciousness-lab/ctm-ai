@@ -40,7 +40,7 @@ class LanguageSupervisor(BaseSupervisor):
             messages=[
                 {
                     'role': 'user',
-                    'content': f'Is the information ({gist}) related to the query ({query})? Answer with "Yes" or "No".',
+                    'content': f'Can the information ({gist}) be used to provide a deterministic and confident answer to the query ({query})? Answer with "Yes" or "No".',
                 },
             ],
             max_tokens=50,

@@ -47,10 +47,12 @@ class BaseScorer(object):
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_confidence(self, messages: List[Message]) -> float:
-        if messages[-1].gists == []:
+        gist = messages[-1].gist
+        gists = messages[-1].gists
+        if gist is None or gist == '':
+            return 0.0
+        if gists == []:
             return 1.0
-        else:
-            gists = messages[-1].gists
 
         vectorizer = TfidfVectorizer()
         tfidf_matrix = vectorizer.fit_transform(gists)
@@ -70,21 +72,20 @@ class BaseScorer(object):
         messages: List[Message],
         lang: str = 'en',
     ) -> float:
-        if messages[-1].gist is None:
+        if messages[-1].gist is None or messages[-1].gist == '':
             return 0.0
         gist_words = messages[-1].gist.split()
-        print(gist_words)
         word_freqs = [
             float(word_frequency(gist_word, lang)) for gist_word in gist_words
         ]
         surprise = sum(word_freqs) / len(word_freqs) if word_freqs else 0
-        print(surprise)
         return surprise
 
     def ask(
         self,
         messages: List[Message],
     ) -> Message:
+        
         relevance = self.ask_relevance(messages)
         confidence = self.ask_confidence(messages)
         surprise = self.ask_surprise(messages)
