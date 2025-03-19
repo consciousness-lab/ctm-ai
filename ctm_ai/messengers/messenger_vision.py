@@ -48,10 +48,12 @@ class VisionMessenger(BaseMessenger):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
     ) -> List[Message]:
-        self.scorer_messages = [Message(
-            role='user',
-            query=query,
-            gist=executor_output.gist,
-            gists=executor_output.gists,
-        )]
+        self.scorer_messages = [
+            Message(
+                role='user',
+                query=query,
+                gist=executor_output.gist,
+                gists=executor_output.gists,
+            )
+        ]
         return self.scorer_messages
