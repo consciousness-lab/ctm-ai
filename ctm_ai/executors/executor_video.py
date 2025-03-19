@@ -1,28 +1,11 @@
 import os
-from typing import Any, List
+from typing import Any
 
 import google.generativeai as genai
-from PIL import Image
 
 from ..messengers import Message
-from ..utils import message_exponential_backoff
+from ..utils import load_images, message_exponential_backoff
 from .executor_base import BaseExecutor
-
-
-def load_images(image_paths: List[str]) -> List[Image.Image]:
-    if not image_paths:
-        raise ValueError('No images provided')
-
-    image_paths_sorted = sorted(image_paths)
-
-    images = []
-    for img_path in image_paths_sorted:
-        try:
-            image = Image.open(img_path)
-            images.append(image)
-        except Exception as e:
-            raise RuntimeError(f'Failed to load image {img_path}: {e}')
-    return images
 
 
 @BaseExecutor.register_executor('video_executor')
@@ -53,6 +36,12 @@ class VideoExecutor(BaseExecutor):
         video_frames_path = kwargs.get('video_frames_path')
         if not video_frames_path:
             return Message(role='assistant', content='', gist='', gists=[])
+
+        if not all(os.path.exists(path) for path in video_frames_path):
+            missing_files = [
+                path for path in video_frames_path if not os.path.exists(path)
+            ]
+            raise FileNotFoundError(f'Some video frames not found: {missing_files}')
 
         images = load_images(video_frames_path)
 

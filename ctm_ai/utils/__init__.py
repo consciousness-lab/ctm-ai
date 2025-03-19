@@ -10,6 +10,7 @@ from .loader import (
     extract_video_frames,
     load_audio,
     load_image,
+    load_images,
     load_video,
 )
 from .logger import (
