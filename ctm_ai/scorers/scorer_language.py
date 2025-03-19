@@ -32,6 +32,7 @@ class LanguageScorer(BaseScorer):
             max_tokens=50,
             logprobs=True,
             top_logprobs=20,
+            temperature=0.0,
         )
         if (
             response.choices

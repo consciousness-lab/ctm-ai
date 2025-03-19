@@ -31,6 +31,7 @@ class SearchExecutor(BaseExecutor):
                     }
                 ],
                 max_tokens=100,
+                temperature=0.0,
             )
             .choices[0]
             .message.content
@@ -74,6 +75,7 @@ class SearchExecutor(BaseExecutor):
                             }
                         ],
                         max_tokens=100,
+                        temperature=0.0,
                     )
                     .choices[0]
                     .message.content
