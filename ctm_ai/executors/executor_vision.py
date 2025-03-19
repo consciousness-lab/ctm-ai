@@ -51,6 +51,10 @@ class VisionExecutor(BaseExecutor):
         *args: Any,
         **kwargs: Any,
     ) -> Message:
+        print('='*50)
+        print(len(messages))
+        print([message.content for message in messages])
+        print('='*50)
         model_messages = [
             self.convert_message_to_param(message) for message in messages
         ]
