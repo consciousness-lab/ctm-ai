@@ -27,6 +27,7 @@ class LanguageSupervisor(BaseSupervisor):
             ],
             max_tokens=300,
             n=1,
+            temperature=0.0,
         )
         return responses.choices[0].message.content or None
 
@@ -40,12 +41,13 @@ class LanguageSupervisor(BaseSupervisor):
             messages=[
                 {
                     'role': 'user',
-                    'content': f'Is the information ({gist}) related to the query ({query})? Answer with "Yes" or "No".',
+                    'content': f'Can the information ({gist}) be used to provide a deterministic and confident answer to the query ({query})? Answer with "Yes" or "No".',
                 },
             ],
             max_tokens=50,
             logprobs=True,
             top_logprobs=20,
+            temperature=0.0,
         )
         if (
             response.choices

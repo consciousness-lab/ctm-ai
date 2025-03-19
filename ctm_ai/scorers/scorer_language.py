@@ -19,17 +19,20 @@ class LanguageScorer(BaseScorer):
     def ask_relevance(self, messages: List[Message]) -> float:
         query = messages[-1].query
         gist = messages[-1].gist
+        if gist is None or gist == '':
+            return 0.0
         response = self.scorer.chat.completions.create(
             model='gpt-4o-mini',
             messages=[
                 {
                     'role': 'user',
-                    'content': f"Is the information ({gist}) related with the query ({query})? Answer with 'Yes' or 'No'.",
+                    'content': f"Is the information ({gist}) useful for providing an answer to the query ({query})? Answer with 'Yes' or 'No'.",
                 }
             ],
             max_tokens=50,
             logprobs=True,
             top_logprobs=20,
+            temperature=0.0,
         )
         if (
             response.choices
