@@ -28,6 +28,7 @@ class LanguageFuser(BaseFuser):
             ],
             max_tokens=300,
             n=1,
+            temperature=0.0,
         )
         answer = (
             responses.choices[0].message.content
