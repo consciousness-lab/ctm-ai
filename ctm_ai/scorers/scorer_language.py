@@ -33,7 +33,6 @@ class LanguageScorer(BaseScorer):
             logprobs=True,
             top_logprobs=20,
         )
-        import pdb; pdb.set_trace()
         if (
             response.choices
             and response.choices[0].logprobs
