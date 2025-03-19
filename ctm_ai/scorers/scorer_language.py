@@ -26,13 +26,14 @@ class LanguageScorer(BaseScorer):
             messages=[
                 {
                     'role': 'user',
-                    'content': f"Can the information ({gist}) provide deterministic answer to the query ({query})? Answer with 'Yes' or 'No'.",
+                    'content': f"Is the information ({gist}) useful for providing an answer to the query ({query})? Answer with 'Yes' or 'No'.",
                 }
             ],
             max_tokens=50,
             logprobs=True,
             top_logprobs=20,
         )
+        import pdb; pdb.set_trace()
         if (
             response.choices
             and response.choices[0].logprobs
