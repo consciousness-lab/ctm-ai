@@ -102,22 +102,18 @@ class BaseProcessor(object):
             video_path=video_path,
         )
 
-        if len(self.messenger.scorer_messages) == 0:
-            scorer_messages = self.messenger.collect_scorer_messages(
-                query=query,
-                text=text,
-                image=image,
-                image_path=image_path,
-                audio=audio,
-                audio_path=audio_path,
-                video_frames=video_frames,
-                video_frames_path=video_frames_path,
-                video_path=video_path,
-                executor_output=executor_output,
-            )
-        else:
-            scorer_messages = self.messenger.scorer_messages
-
+        scorer_messages = self.messenger.collect_scorer_messages(
+            query=query,
+            text=text,
+            image=image,
+            image_path=image_path,
+            audio=audio,
+            audio_path=audio_path,
+            video_frames=video_frames,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
+            executor_output=executor_output,
+        )
         scorer_output = self.scorer.ask(messages=scorer_messages)
 
         chunk = self.merge_outputs_into_chunk(

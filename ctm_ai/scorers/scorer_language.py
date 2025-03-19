@@ -26,7 +26,7 @@ class LanguageScorer(BaseScorer):
             messages=[
                 {
                     'role': 'user',
-                    'content': f"Is the information ({gist}) related with the query ({query})? Answer with 'Yes' or 'No'.",
+                    'content': f"Can the information ({gist}) provide deterministic answer to the query ({query})? Answer with 'Yes' or 'No'.",
                 }
             ],
             max_tokens=50,

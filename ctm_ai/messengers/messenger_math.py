@@ -43,9 +43,10 @@ class MathMessenger(BaseMessenger):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
     ) -> List[Message]:
-        message = Message(
-            role='assistant',
+        self.scorer_messages = [Message(
+            role='user',
+            query=query,
             gist=executor_output.gist,
-        )
-        self.scorer_messages.append(message)
+            gists=executor_output.gists,
+        )]
         return self.scorer_messages

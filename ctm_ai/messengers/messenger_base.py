@@ -41,7 +41,6 @@ class BaseMessenger(object):
 
     def update(self, executor_output: Message, scorer_output: Message) -> None:
         self.executor_messages.append(executor_output)
-        self.scorer_messages.append(scorer_output)
 
     def collect_executor_messages(self, *args: Any, **kwargs: Any) -> Any:
         raise NotImplementedError(
