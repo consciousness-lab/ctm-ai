@@ -10,8 +10,7 @@
         "group_1": [
             "vision_processor",
             "language_processor",
-            "search_processor",
-            "math_processor"
+            "search_processor"
         ]
     },
     "supervisor": "language_supervisor",

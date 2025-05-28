@@ -7,24 +7,25 @@ from wordfreq import word_frequency
 
 from ..messengers import Message
 from ..utils import score_exponential_backoff
+import math
 
 
 class BaseScorer(object):
-    _scorer_registry: Dict[str, Type['BaseScorer']] = {}
+    _scorer_registry: Dict[str, Type["BaseScorer"]] = {}
 
     @classmethod
     def register_scorer(
         cls, name: str
-    ) -> Callable[[Type['BaseScorer']], Type['BaseScorer']]:
+    ) -> Callable[[Type["BaseScorer"]], Type["BaseScorer"]]:
         def decorator(
-            subclass: Type['BaseScorer'],
-        ) -> Type['BaseScorer']:
+            subclass: Type["BaseScorer"],
+        ) -> Type["BaseScorer"]:
             cls._scorer_registry[name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> 'BaseScorer':
+    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> "BaseScorer":
         if name not in cls._scorer_registry:
             raise ValueError(f"No scorer registered with name '{name}'")
         instance = super(BaseScorer, cls).__new__(cls._scorer_registry[name])
@@ -68,18 +69,20 @@ class BaseScorer(object):
     def ask_surprise(
         self,
         messages: List[Message],
-        lang: str = 'en',
+        lang: str = "en",
     ) -> float:
         if messages[-1].gist is None:
             return 0.0
+
         gist_words = messages[-1].gist.split()
-        print(gist_words)
-        word_freqs = [
-            float(word_frequency(gist_word, lang)) for gist_word in gist_words
+        log_freqs = [
+            -math.log(max(word_frequency(word, lang), 1e-6)) for word in gist_words
         ]
-        surprise = sum(word_freqs) / len(word_freqs) if word_freqs else 0
-        print(surprise)
-        return surprise
+
+        avg_surprise = sum(log_freqs) / len(log_freqs) if log_freqs else 0.0
+
+        normalized_surprise = avg_surprise / 14.0
+        return float(np.clip(normalized_surprise, 0.0, 1.0))
 
     def ask(
         self,

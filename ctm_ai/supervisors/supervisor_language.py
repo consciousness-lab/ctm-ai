@@ -10,7 +10,7 @@ from ..utils import (
 from .supervisor_base import BaseSupervisor
 
 
-@BaseSupervisor.register_supervisor('language_supervisor')
+@BaseSupervisor.register_supervisor("language_supervisor")
 class LanguageSupervisor(BaseSupervisor):
     def init_supervisor(self) -> None:
         self.model = OpenAI()
@@ -18,11 +18,11 @@ class LanguageSupervisor(BaseSupervisor):
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def ask_info(self, query: str, context: Optional[str] = None) -> Optional[str]:
         responses = self.model.chat.completions.create(
-            model='gpt-4o-mini',
+            model="gpt-4o-mini",
             messages=[
                 {
-                    'role': 'user',
-                    'content': f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a few words:',
+                    "role": "user",
+                    "content": f"The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a few words:",
                 }
             ],
             max_tokens=300,
@@ -36,11 +36,11 @@ class LanguageSupervisor(BaseSupervisor):
             return 0.0
 
         response = self.model.chat.completions.create(
-            model='gpt-4o-mini',
+            model="gpt-4o-mini",
             messages=[
                 {
-                    'role': 'user',
-                    'content': f'Is the information ({gist}) related to the query ({query})? Answer with "Yes" or "No".',
+                    "role": "user",
+                    "content": f'Is the information ({gist}) related to the query ({query})? Answer with "Yes" or "No".',
                 },
             ],
             max_tokens=50,
@@ -57,7 +57,7 @@ class LanguageSupervisor(BaseSupervisor):
             top_logprobs = response.choices[0].logprobs.content[0].top_logprobs
             logprob_dict = {logprob.token: logprob.logprob for logprob in top_logprobs}
             probs = logprobs_to_softmax(
-                [logprob_dict.get('Yes', 0), logprob_dict.get('No', 0)]
+                [logprob_dict.get("Yes", 0), logprob_dict.get("No", 0)]
             )
             return probs[0]
         else:
