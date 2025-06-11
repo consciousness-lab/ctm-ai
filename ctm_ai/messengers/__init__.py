@@ -7,6 +7,7 @@ from .messenger_math import MathMessenger
 from .messenger_search import SearchMessenger
 from .messenger_video import VideoMessenger
 from .messenger_vision import VisionMessenger
+from .messenger_tool import ToolMessenger
 
 __all__ = [
     'BaseMessenger',
@@ -18,4 +19,5 @@ __all__ = [
     'CodeMessenger',
     'AudioMessenger',
     'VideoMessenger',
+    'ToolMessenger',
 ]

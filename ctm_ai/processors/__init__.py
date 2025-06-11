@@ -6,6 +6,7 @@ from .processor_math import MathProcessor
 from .processor_search import SearchProcessor
 from .processor_video import VideoProcessor
 from .processor_vision import VisionProcessor
+from .processor_tool import ToolProcessor
 
 __all__ = [
     'BaseProcessor',
@@ -16,4 +17,5 @@ __all__ = [
     'CodeProcessor',
     'AudioProcessor',
     'VideoProcessor',
+    'ToolProcessor',
 ]
