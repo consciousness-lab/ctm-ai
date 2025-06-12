@@ -9,15 +9,23 @@ from ..graphs import ProcessorGraph
 from ..processors import BaseProcessor
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-
+import sys
+import os
+toolbench_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../ToolBench"))
+if toolbench_root not in sys.path:
+    sys.path.insert(0, toolbench_root)
+from toolbench.inference.Downstream_tasks.base_env import base_env
+from ..processors import ToolProcessor
 
 class ToolConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     def __init__(
         self,
-        tool_map: Dict[str, Callable[[dict], dict]],
+        tool_env: base_env,
+        tool_names: List[str],
         config: Optional[ConsciousnessTuringMachineConfig] = None
     ) -> None:
-        self._tool_map = tool_map
+        self.tool_env = tool_env
+        self.tool_names = tool_names
         self.config = config or ConsciousnessTuringMachineConfig()
         super().__init__()
 
