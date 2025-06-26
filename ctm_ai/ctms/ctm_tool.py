@@ -11,6 +11,7 @@ from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
 import sys
 import os
+import concurrent.futures
 
 import numpy as np
 from numpy.typing import NDArray
@@ -22,6 +23,7 @@ if toolbench_root not in sys.path:
     sys.path.insert(0, toolbench_root)
 from toolbench.inference.Downstream_tasks.base_env import base_env
 from ..processors import ToolProcessor
+from ..utils import logging_func
 
 
 class ToolConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
@@ -67,3 +69,25 @@ class ToolConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         self.add_supervisor(self.config.supervisor)
         self.add_scorer(self.config.scorer)
         self.add_fuser(self.config.fuser)
+
+    @staticmethod
+    def ask_processor(
+        processor: BaseProcessor,
+        query: str,
+        io_function: base_env,
+    ) -> Chunk:
+        tool_name = processor.name.replace("tool_processor_", "")
+        return processor.ask(query, io_function, tool_name)
+
+    @logging_func
+    def ask_processors(self, query: str, io_function: base_env) -> List[Chunk]:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(self.ask_processor, processor, query, io_function)
+                for processor in self.processor_graph.nodes
+            ]
+            chunks = [
+                future.result() for future in concurrent.futures.as_completed(futures)
+            ]
+        assert len(chunks) == len(self.processor_graph.nodes)
+        return chunks
