@@ -10,8 +10,7 @@
         "group_1": [
             "video_processor",
             "language_processor",
-            "search_processor",
-            "audio_processor"
+            "search_processor"
         ]
     },
     "supervisor": "language_supervisor",

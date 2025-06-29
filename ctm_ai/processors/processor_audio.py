@@ -15,4 +15,4 @@ class AudioProcessor(BaseProcessor):
         return BaseExecutor(name='audio_executor')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='language_scorer')
+        return BaseScorer(name='hybrid_scorer')
