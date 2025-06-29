@@ -341,7 +341,7 @@ You have access of the following tools:\n"""
         if action_name == 'Finish':
             try:
                 json_data = json.loads(action_input, strict=False)
-            except:
+            except json.JSONDecodeError:
                 json_data = {}
                 if '"return_type": "' in action_input:
                     if '"return_type": "give_answer"' in action_input:
@@ -414,7 +414,7 @@ You have access of the following tools:\n"""
                             )
                         try:
                             response = response.json()
-                        except:
+                        except json.JSONDecodeError:
                             print(response)
                             return (
                                 json.dumps(
@@ -522,7 +522,7 @@ class pipeline_runner:
                     standardize(cont['tool_name']) for cont in data_dict['api_list']
                 ]
                 tool_des = contain(origin_tool_names, white_list)
-                if tool_des == False:
+                if not tool_des:
                     continue
                 tool_des = [
                     [cont['standard_tool_name'], cont['description']]
@@ -575,7 +575,7 @@ class pipeline_runner:
         elif method.startswith('DFS'):
             pattern = r'.+_w(\d+)'
             re_result = re.match(pattern, method)
-            assert re_result != None
+            assert re_result is not None
             width = int(re_result.group(1))
             with_filter = True
             if 'woFilter' in method:
@@ -694,6 +694,6 @@ class pipeline_runner:
             print(
                 f'process[{self.process_id}] doing task {k}/{len(task_list)}: real_task_id_{task[2]}'
             )
-            result = self.run_single_task(
+            self.run_single_task(
                 *task, retriever=retriever, process_id=self.process_id
             )

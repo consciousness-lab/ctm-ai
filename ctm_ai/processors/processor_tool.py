@@ -2,6 +2,8 @@ import os
 import sys
 from typing import List
 
+from toolbench.inference.Downstream_tasks.base_env import base_env
+
 from ..chunks import Chunk
 from ..executors import BaseExecutor
 from ..messengers import BaseMessenger
@@ -13,7 +15,6 @@ toolbench_root = os.path.abspath(
 )
 if toolbench_root not in sys.path:
     sys.path.insert(0, toolbench_root)
-from toolbench.inference.Downstream_tasks.base_env import base_env
 
 
 @BaseProcessor.register_processor('tool_processor')

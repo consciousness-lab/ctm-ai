@@ -2,6 +2,8 @@ import os
 import sys
 from typing import List, TypeVar
 
+from toolbench.inference.Downstream_tasks.base_env import base_env
+
 from .message import Message
 from .messenger_base import BaseMessenger
 
@@ -11,7 +13,6 @@ toolbench_root = os.path.abspath(
 if toolbench_root not in sys.path:
     sys.path.insert(0, toolbench_root)
 
-from toolbench.inference.Downstream_tasks.base_env import base_env
 
 T = TypeVar('T', bound='BaseMessenger')
 FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION = """You are an expert at using tools, you can use the tool {openai_function_name} to do the following task.

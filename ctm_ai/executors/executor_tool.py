@@ -1,5 +1,10 @@
 import os
 import sys
+import time
+
+import openai
+from tenacity import retry, stop_after_attempt, wait_random_exponential
+from toolbench.inference.Downstream_tasks.base_env import base_env
 
 from ..executors.executor_base import BaseExecutor
 from ..messengers.message import Message
@@ -9,12 +14,6 @@ toolbench_root = os.path.abspath(
 )
 if toolbench_root not in sys.path:
     sys.path.insert(0, toolbench_root)
-
-import time
-
-import openai
-from tenacity import retry, stop_after_attempt, wait_random_exponential
-from toolbench.inference.Downstream_tasks.base_env import base_env
 
 
 @retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))

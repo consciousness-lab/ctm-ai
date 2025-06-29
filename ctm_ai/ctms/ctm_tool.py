@@ -3,6 +3,8 @@ import os
 import sys
 from typing import List, Optional, Tuple
 
+from toolbench.inference.Downstream_tasks.base_env import base_env
+
 from ..chunks import Chunk
 from ..configs import ConsciousnessTuringMachineConfig
 from ..fusers import BaseFuser
@@ -10,6 +12,7 @@ from ..graphs import ProcessorGraph
 from ..processors import BaseProcessor, register_tool_processors
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
+from ..utils import logging_func
 from .ctm_base import BaseConsciousnessTuringMachine
 
 toolbench_root = os.path.abspath(
@@ -17,9 +20,6 @@ toolbench_root = os.path.abspath(
 )
 if toolbench_root not in sys.path:
     sys.path.insert(0, toolbench_root)
-from toolbench.inference.Downstream_tasks.base_env import base_env
-
-from ..utils import logging_func
 
 
 class ToolConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
