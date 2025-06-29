@@ -3,7 +3,7 @@ from typing import Any, List
 from openai import OpenAI
 
 from ..messengers import Message
-from ..utils import logprobs_to_softmax, score_exponential_backoff
+from ..utils import score_exponential_backoff
 from .scorer_base import BaseScorer
 
 
