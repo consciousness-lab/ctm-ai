@@ -1,3 +1,4 @@
+import math
 from typing import Any, Callable, Dict, List, Type
 
 import numpy as np
@@ -7,25 +8,24 @@ from wordfreq import word_frequency
 
 from ..messengers import Message
 from ..utils import score_exponential_backoff
-import math
 
 
 class BaseScorer(object):
-    _scorer_registry: Dict[str, Type["BaseScorer"]] = {}
+    _scorer_registry: Dict[str, Type['BaseScorer']] = {}
 
     @classmethod
     def register_scorer(
         cls, name: str
-    ) -> Callable[[Type["BaseScorer"]], Type["BaseScorer"]]:
+    ) -> Callable[[Type['BaseScorer']], Type['BaseScorer']]:
         def decorator(
-            subclass: Type["BaseScorer"],
-        ) -> Type["BaseScorer"]:
+            subclass: Type['BaseScorer'],
+        ) -> Type['BaseScorer']:
             cls._scorer_registry[name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> "BaseScorer":
+    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> 'BaseScorer':
         if name not in cls._scorer_registry:
             raise ValueError(f"No scorer registered with name '{name}'")
         instance = super(BaseScorer, cls).__new__(cls._scorer_registry[name])
@@ -69,7 +69,7 @@ class BaseScorer(object):
     def ask_surprise(
         self,
         messages: List[Message],
-        lang: str = "en",
+        lang: str = 'en',
     ) -> float:
         if messages[-1].gist is None:
             return 0.0

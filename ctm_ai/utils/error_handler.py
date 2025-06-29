@@ -147,6 +147,6 @@ class MissingAPIKeyError(Exception):
         self.missing_keys = missing_keys
         message = (
             f"Processor '{processor_name}' dose not have an API key: "
-            f"{', '.join(missing_keys)}"
+            f'{", ".join(missing_keys)}'
         )
         super().__init__(message)
