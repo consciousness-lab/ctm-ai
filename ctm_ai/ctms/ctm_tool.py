@@ -1,28 +1,24 @@
-from typing import Callable, Dict, List, Optional, Tuple, Union
-from .ctm_base import BaseConsciousnessTuringMachine
+import concurrent.futures
+import os
+import sys
+from typing import List, Optional, Tuple
+
 from ..chunks import Chunk
-from ..processors import BaseProcessor
 from ..configs import ConsciousnessTuringMachineConfig
-from ..utils import logging_func_with_count
 from ..fusers import BaseFuser
 from ..graphs import ProcessorGraph
 from ..processors import BaseProcessor, register_tool_processors
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-import sys
-import os
-import concurrent.futures
-
-import numpy as np
-from numpy.typing import NDArray
+from .ctm_base import BaseConsciousnessTuringMachine
 
 toolbench_root = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../ToolBench")
+    os.path.join(os.path.dirname(__file__), '../../ToolBench')
 )
 if toolbench_root not in sys.path:
     sys.path.insert(0, toolbench_root)
 from toolbench.inference.Downstream_tasks.base_env import base_env
-from ..processors import ToolProcessor
+
 from ..utils import logging_func
 
 
@@ -53,17 +49,16 @@ class ToolConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         self.scorers: List[BaseScorer] = []
         self.fusers: List[BaseFuser] = []
 
-        standard_tool_names = self.io_fucntion.functions
-        tool_names = [api[0] for api in standard_tool_names]
-        register_tool_processors(tool_names)
+        openai_function_names = self.io_fucntion.openai_function_names
+        openai_function_names = [name for name in openai_function_names]
+        register_tool_processors(openai_function_names)
 
         self.processor_graph = ProcessorGraph()
-
-        for standard_tool_name in standard_tool_names:
-            processor_name = f"tool_processor_{standard_tool_name}"
+        for openai_function_name in openai_function_names:
+            processor_name = openai_function_name
             self.processor_graph.add_node(
                 processor_name=processor_name,
-                processor_group_name="tools",
+                processor_group_name='tools',
             )
 
         self.add_supervisor(self.config.supervisor)
@@ -76,8 +71,7 @@ class ToolConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         query: str,
         io_function: base_env,
     ) -> Chunk:
-        tool_name = processor.name.replace("tool_processor_", "")
-        return processor.ask(query, io_function, tool_name)
+        return processor.ask(query, io_function, processor.name)
 
     @logging_func
     def ask_processors(self, query: str, io_function: base_env) -> List[Chunk]:
