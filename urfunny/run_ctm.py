@@ -34,11 +34,11 @@ if __name__ == '__main__':
         for i in range(len(batch['label'])):
             print(batch['video_frames_path'][i])
             logging.info(
-                f"======================{batch['filename'][i]} starting ======================"
+                f'======================{batch["filename"][i]} starting ======================'
             )
-            logging.info(f"Query: {batch['punchline'][i]}")
-            logging.info(f"Ground truth: {batch['label'][i]}")
-            query = f"{SYS_PROMPT}\n\n punchline: {batch['punchline'][i]}"
+            logging.info(f'Query: {batch["punchline"][i]}')
+            logging.info(f'Ground truth: {batch["label"][i]}')
+            query = f'{SYS_PROMPT}\n\n punchline: {batch["punchline"][i]}'
             file_paths = []
             for root, dirs, files in os.walk(batch['video_frames_path'][i]):
                 for file in files:

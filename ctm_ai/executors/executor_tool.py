@@ -78,7 +78,7 @@ class ChatGPTFunction:
 
             except Exception as e:
                 print(
-                    f'[process({process_id})] Attempt {attempt+1}/{self.TRY_TIMES} failed with error: {repr(e)}'
+                    f'[process({process_id})] Attempt {attempt + 1}/{self.TRY_TIMES} failed with error: {repr(e)}'
                 )
 
         return (

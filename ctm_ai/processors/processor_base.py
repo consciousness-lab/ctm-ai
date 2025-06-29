@@ -11,16 +11,16 @@ from ..scorers import BaseScorer
 
 
 class BaseProcessor(object):
-    _processor_registry: Dict[str, Type["BaseProcessor"]] = {}
+    _processor_registry: Dict[str, Type['BaseProcessor']] = {}
     REQUIRED_KEYS: List[str] = []
 
     @classmethod
     def register_processor(
         cls, name: str
-    ) -> Callable[[Type["BaseProcessor"]], Type["BaseProcessor"]]:
+    ) -> Callable[[Type['BaseProcessor']], Type['BaseProcessor']]:
         def decorator(
-            subclass: Type["BaseProcessor"],
-        ) -> Type["BaseProcessor"]:
+            subclass: Type['BaseProcessor'],
+        ) -> Type['BaseProcessor']:
             cls._processor_registry[name] = subclass
             return subclass
 
@@ -32,7 +32,7 @@ class BaseProcessor(object):
         group_name: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> "BaseProcessor":
+    ) -> 'BaseProcessor':
         if name not in cls._processor_registry:
             raise ValueError(f"No processor registered with name '{name}'")
         subclass = cls._processor_registry[name]
@@ -55,17 +55,17 @@ class BaseProcessor(object):
         missing_vars = [var for var in self.REQUIRED_KEYS if var not in os.environ]
         if missing_vars:
             raise EnvironmentError(
-                f"[{self.name}] Missing required environment variables: {missing_vars}"
+                f'[{self.name}] Missing required environment variables: {missing_vars}'
             )
 
     def init_executor(self) -> BaseExecutor:
-        return BaseExecutor(name="language_executor")
+        return BaseExecutor(name='language_executor')
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name="language_messenger")
+        return BaseMessenger(name='language_messenger')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name="language_scorer")
+        return BaseScorer(name='language_scorer')
 
     def ask(
         self,
@@ -149,7 +149,7 @@ class BaseProcessor(object):
 
     def split_chunk_into_outputs(self, chunk: Chunk) -> Tuple[Message, Message]:
         executor_output = Message(
-            role="assistant",
+            role='assistant',
             content=chunk.gist,
         )
         scorer_output = Message(

@@ -140,7 +140,7 @@ You have access of the following tools:\n"""
             striped = tool_des[:512].replace('\n', '').strip()
             if striped == '':
                 striped = 'None'
-            self.task_description += f'{k+1}.{standardize_tool_name}: {striped}\n'
+            self.task_description += f'{k + 1}.{standardize_tool_name}: {striped}\n'
 
         self.success = 0
 

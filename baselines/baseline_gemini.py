@@ -65,7 +65,7 @@ class GeminiMultimodalLLM:
             raise RuntimeError(f'Failed to upload audio {self.audio_file_path}: {e}')
 
     def generate_response(self) -> Optional[str]:
-        prompt = f'### Query:\n{self.query}\n\n' f'### Context:\n{self.context}\n\n'
+        prompt = f'### Query:\n{self.query}\n\n### Context:\n{self.context}\n\n'
 
         inputs: List[Union[str, Image.Image, Dict[str, Union[str, bytes]]]] = [prompt]
 

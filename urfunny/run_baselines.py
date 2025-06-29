@@ -33,11 +33,11 @@ def run_baseline(name: str) -> None:
     for batch in dataloader:
         for i in range(len(batch['label'])):
             logging.info(
-                f"======================{batch['filename'][i]} starting ======================"
+                f'======================{batch["filename"][i]} starting ======================'
             )
-            logging.info(f"Query: {batch['punchline'][i]}")
-            logging.info(f"Ground truth: {batch['label'][i]}")
-            query = f"{SYS_PROMPT}\n\n punchline: {batch['punchline'][i]}"
+            logging.info(f'Query: {batch["punchline"][i]}')
+            logging.info(f'Ground truth: {batch["label"][i]}')
+            query = f'{SYS_PROMPT}\n\n punchline: {batch["punchline"][i]}'
             if name == 'gemini':
                 gemini_llm = GeminiMultimodalLLM(
                     file_name=batch['filename'][i],
