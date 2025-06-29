@@ -1,3 +1,4 @@
+import math
 from typing import Any, Callable, Dict, List, Type
 
 import numpy as np
@@ -73,13 +74,12 @@ class BaseScorer(object):
         if messages[-1].gist is None:
             return 0.0
         gist_words = messages[-1].gist.split()
-        print(gist_words)
-        word_freqs = [
-            float(word_frequency(gist_word, lang)) for gist_word in gist_words
+        log_freqs = [
+            -math.log(max(word_frequency(word, lang), 1e-6)) for word in gist_words
         ]
-        surprise = sum(word_freqs) / len(word_freqs) if word_freqs else 0
-        print(surprise)
-        return surprise
+        avg_surprise = sum(log_freqs) / len(log_freqs) if log_freqs else 0.0
+        normalized_surprise = avg_surprise / 14.0
+        return float(np.clip(normalized_surprise, 0.0, 1.0))
 
     def ask(
         self,

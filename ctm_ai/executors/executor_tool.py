@@ -47,8 +47,7 @@ class ChatGPTFunction:
         self.openai_key = openai_key
         self.TRY_TIMES = try_times
 
-    def call(self, prompt, functions=None, function_call=None, process_id=0):
-        messages = [{'role': 'user', 'content': prompt}]
+    def call(self, messages, functions=None, function_call=None, process_id=0):
         for attempt in range(self.TRY_TIMES):
             if attempt > 0:
                 time.sleep(15)
@@ -107,14 +106,18 @@ class ToolExecutor(BaseExecutor):
         openai_function_name: str = '',
         *args,
         **kwargs,
-    ) -> dict:
+    ) -> Message:
         function = io_function.openai_name_reflect_all_info[openai_function_name][0]
         new_message, error_code, total_tokens = self.llm.call(
             messages, functions=function, function_call=openai_function_name
         )
         assert new_message['role'] == 'assistant'
-        if 'content' in new_message.keys() and new_message['content'] != None:
-            return Message(role='assistant', content=new_message['content'])
+        if 'content' in new_message.keys() and new_message['content'] is not None:
+            return Message(
+                role='assistant',
+                content=new_message['content'],
+                gist=new_message['content'],
+            )
 
         if 'function_call' in new_message.keys():
             assert new_message['function_call']['name'] == openai_function_name
@@ -122,4 +125,4 @@ class ToolExecutor(BaseExecutor):
             observation, status = io_function.step(
                 action_name=openai_function_name, action_input=function_input
             )
-            return Message(role='function', content=observation)
+            return Message(role='function', content=observation, gist=observation)

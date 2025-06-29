@@ -43,12 +43,24 @@ class ToolMessenger(BaseMessenger):
             '{task_description}',
             io_function.standard_tool_name_reflect_all_info[openai_function_name][1],
         )
-        self.executor_messages = [
+        message = [
             Message(role='system', content=system),
             Message(role='user', query=query),
         ]
+        self.executor_messages.append(message)
 
         return self.executor_messages
 
-    def collect_scorer_messages(self, *args, **kwargs) -> List[Message]:
-        return self.executor_messages
+    def collect_scorer_messages(
+        self,
+        query: str,
+        io_function: base_env,
+        openai_function: str,
+        executor_output: Message,
+    ) -> List[Message]:
+        message = Message(
+            role='assistant',
+            gist=executor_output.gist,
+        )
+        self.scorer_messages.append(message)
+        return self.scorer_messages
