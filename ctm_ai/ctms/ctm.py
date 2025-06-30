@@ -13,7 +13,6 @@ from .ctm_base import BaseConsciousnessTuringMachine
 
 try:
     from toolbench.inference.Downstream_tasks.base_env import base_env
-
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False
@@ -29,13 +28,14 @@ if TOOLBENCH_AVAILABLE:
 
 
 class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
-    def __init__(self, ctm_name: Optional[str] = None) -> None:
+    def __init__(self, ctm_name: Optional[str] = None, io_function=None) -> None:
         super().__init__()
         self.config = (
             ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
             if ctm_name
             else ConsciousnessTuringMachineConfig()
         )
+        self.io_function = io_function
         self.load_ctm()
 
     def __call__(
@@ -185,6 +185,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
             video_frames,
             video_frames_path,
             video_path,
+            io_function,
         )
         chunks = self.fuse_processor(chunks)
         winning_chunk = self.uptree_competition(chunks)
@@ -206,7 +207,12 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        io_function=None,
     ) -> Tuple[str, float]:
+        """Forward pass supporting both standard and tool-based processing"""
+        # Use provided io_function or fall back to instance io_function
+        current_io_function = io_function or self.io_function
+        
         for _ in range(self.config.max_iter_num):
             winning_chunk, chunks = self.go_up(
                 query,
@@ -218,6 +224,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
                 video_frames,
                 video_frames_path,
                 video_path,
+                current_io_function,
             )
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
             confidence_score = 0
@@ -225,3 +232,15 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
                 return answer, confidence_score
             self.go_down(winning_chunk, chunks)
         return answer, confidence_score
+
+    # Convenience method for tool-only usage (backward compatibility)
+    def forward_tool(
+        self,
+        query: str,
+        io_function: base_env,
+    ) -> Tuple[str, float]:
+        """Forward pass for tool-only processing (backward compatibility)"""
+        if not TOOLBENCH_AVAILABLE:
+            raise ImportError("ToolBench is not available. Please install ToolBench to use tool functionality.")
+        
+        return self.forward(query=query, io_function=io_function)
