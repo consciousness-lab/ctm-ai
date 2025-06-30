@@ -2,7 +2,7 @@ import json
 import sys
 import time
 
-from baselines import GeminiMultimodalLLM
+from exp_baselines import GeminiMultimodalLLM
 
 sys.path.append("..")
 
