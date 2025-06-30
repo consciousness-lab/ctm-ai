@@ -159,3 +159,9 @@ class BaseProcessor(object):
             weight=chunk.weight,
         )
         return executor_output, scorer_output
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        return isinstance(other, BaseProcessor) and self.name == other.name
