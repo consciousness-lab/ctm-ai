@@ -73,11 +73,14 @@ class BaseScorer(object):
     ) -> float:
         if messages[-1].gist is None:
             return 0.0
+
         gist_words = messages[-1].gist.split()
         log_freqs = [
             -math.log(max(word_frequency(word, lang), 1e-6)) for word in gist_words
         ]
+
         avg_surprise = sum(log_freqs) / len(log_freqs) if log_freqs else 0.0
+
         normalized_surprise = avg_surprise / 14.0
         return float(np.clip(normalized_surprise, 0.0, 1.0))
 
