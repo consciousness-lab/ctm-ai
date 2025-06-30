@@ -1,4 +1,6 @@
 import concurrent.futures
+import os
+import sys
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -8,6 +10,22 @@ from ..chunks import Chunk
 from ..configs import ConsciousnessTuringMachineConfig
 from ..utils import logging_func_with_count
 from .ctm_base import BaseConsciousnessTuringMachine
+
+try:
+    from toolbench.inference.Downstream_tasks.base_env import base_env
+
+    TOOLBENCH_AVAILABLE = True
+except ImportError:
+    TOOLBENCH_AVAILABLE = False
+    base_env = None
+
+# Add ToolBench to path if available
+if TOOLBENCH_AVAILABLE:
+    toolbench_root = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '../../ToolBench')
+    )
+    if toolbench_root not in sys.path:
+        sys.path.insert(0, toolbench_root)
 
 
 class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
