@@ -13,6 +13,7 @@ from .ctm_base import BaseConsciousnessTuringMachine
 
 try:
     from toolbench.inference.Downstream_tasks.base_env import base_env
+
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False
@@ -28,7 +29,9 @@ if TOOLBENCH_AVAILABLE:
 
 
 class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
-    def __init__(self, ctm_name: Optional[str] = None, io_function=None) -> None:
+    def __init__(
+        self, ctm_name: Optional[str] = None, io_function: Optional[base_env] = None
+    ) -> None:
         super().__init__()
         self.config = (
             ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
@@ -67,10 +70,13 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     def load_ctm(self) -> None:
         """Load CTM with support for both standard processors and tool processors"""
         super().load_ctm()
+        # breakpoint()
 
         # Add tool processors if io_function is provided and ToolBench is available
         if self.io_function and TOOLBENCH_AVAILABLE:
             self._load_tool_processors()
+        else:
+            print('Warning: io_function is not provided or TOOLBENCH is not available.')
 
     def _load_tool_processors(self) -> None:
         """Load tool processors from io_function"""
@@ -212,7 +218,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         """Forward pass supporting both standard and tool-based processing"""
         # Use provided io_function or fall back to instance io_function
         current_io_function = io_function or self.io_function
-        
+
         for _ in range(self.config.max_iter_num):
             winning_chunk, chunks = self.go_up(
                 query,
@@ -241,6 +247,8 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     ) -> Tuple[str, float]:
         """Forward pass for tool-only processing (backward compatibility)"""
         if not TOOLBENCH_AVAILABLE:
-            raise ImportError("ToolBench is not available. Please install ToolBench to use tool functionality.")
-        
+            raise ImportError(
+                'ToolBench is not available. Please install ToolBench to use tool functionality.'
+            )
+
         return self.forward(query=query, io_function=io_function)

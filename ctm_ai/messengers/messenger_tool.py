@@ -40,9 +40,12 @@ class ToolMessenger(BaseMessenger):
     ) -> List[Message]:
         system = FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
         system = system.replace('{openai_function_name}', openai_function_name)
+        task_description = io_function.openai_name_reflect_all_info[
+            openai_function_name
+        ][1]
         system = system.replace(
             '{task_description}',
-            io_function.standard_tool_name_reflect_all_info[openai_function_name][1],
+            task_description,
         )
         message = [
             Message(role='system', content=system),

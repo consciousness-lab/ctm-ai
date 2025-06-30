@@ -32,8 +32,8 @@ class ToolProcessor(BaseProcessor):
 
     def ask(
         self,
-        io_function: base_env,
         query: str,
+        io_function: base_env,
         openai_function_name: str,
     ) -> Chunk:
         executor_messages = self.messenger.collect_executor_messages(
