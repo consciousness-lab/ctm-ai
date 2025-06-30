@@ -38,6 +38,7 @@ Open a terminal and run the following commands:
 ```bash
 # Navigate to your frontend directory
 cd ~/ctm-ai/frontend
+sudo su
 export NODE_OPTIONS=--openssl-legacy-provider
 
 # Remove old build artifacts and lock files
@@ -51,6 +52,9 @@ npm install
 
 # Build the project
 npm run build
+
+# Move the react built things into /var/www
+cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
 ```
 
 ### Step 2: Configure Nginx for the Frontend
