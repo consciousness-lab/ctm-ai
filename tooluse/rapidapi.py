@@ -694,6 +694,4 @@ class pipeline_runner:
             print(
                 f'process[{self.process_id}] doing task {k}/{len(task_list)}: real_task_id_{task[2]}'
             )
-            self.run_single_task(
-                *task, retriever=retriever, process_id=self.process_id
-            )
+            self.run_single_task(*task, retriever=retriever, process_id=self.process_id)

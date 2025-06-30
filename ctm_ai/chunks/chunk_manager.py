@@ -116,6 +116,10 @@ class ChunkManager:
                 ):
                     interaction_type_matrix[i][j] = -1
                     interaction_type_matrix[j][i] = -1
+        print(interaction_type_matrix)
+        return interaction_type_matrix
+
+        return interaction_type_matrix
 
     def reset(self) -> None:
         """Clears all chunks and resets the TF-IDF matrix."""
