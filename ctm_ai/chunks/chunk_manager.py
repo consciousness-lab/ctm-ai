@@ -59,7 +59,7 @@ class ChunkManager:
 
         if self.config is None:
             raise ValueError(
-                "Config must be provided for interaction type calculation."
+                'Config must be provided for interaction type calculation.'
             )
 
         sim_vals = []
