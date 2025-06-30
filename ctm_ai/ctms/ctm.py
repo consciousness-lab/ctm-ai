@@ -1,3 +1,4 @@
+import concurrent.futures
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -7,7 +8,6 @@ from ..chunks import Chunk
 from ..configs import ConsciousnessTuringMachineConfig
 from ..utils import logging_func_with_count
 from .ctm_base import BaseConsciousnessTuringMachine
-import concurrent.futures
 
 
 class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
@@ -49,7 +49,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     def load_ctm(self) -> None:
         """Load CTM with support for both standard processors and tool processors"""
         super().load_ctm()
-        
+
         # Add tool processors if io_function is provided and ToolBench is available
         if self.io_function and TOOLBENCH_AVAILABLE:
             self._load_tool_processors()
@@ -58,7 +58,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         """Load tool processors from io_function"""
         try:
             from ..processors import register_tool_processors
-            
+
             openai_function_names = self.io_function.openai_function_names
             openai_function_names = [name for name in openai_function_names]
             register_tool_processors(openai_function_names)
@@ -70,7 +70,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
                     processor_group_name='tools',
                 )
         except Exception as e:
-            print(f"Warning: Failed to load tool processors: {e}")
+            print(f'Warning: Failed to load tool processors: {e}')
 
     @staticmethod
     def ask_processor(
