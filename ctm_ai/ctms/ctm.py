@@ -13,7 +13,6 @@ from .ctm_base import BaseConsciousnessTuringMachine
 
 try:
     from toolbench.inference.Downstream_tasks.base_env import base_env
-
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False
