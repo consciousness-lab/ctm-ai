@@ -7,7 +7,7 @@ license = "Apache 2.0 License"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.10, <=3.12"
+python = ">=3.10, <=3.13"
 huggingface_hub = "0.27.1"
 openai = "^1.59.7"
 scikit_learn = "1.6.1"

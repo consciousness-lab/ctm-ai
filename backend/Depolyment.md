@@ -11,6 +11,8 @@ This guide walks you through setting up your EC2 server for both the frontend an
   - **Port 80** for HTTP (Nginx)
   - **Port 5000** for the backend (custom TCP with source `0.0.0.0/0`)
 
+- **EC2 software**: need to install poetry, nginx, npm, tmux on the server.
+
 ---
 
 ## Server Side Setup
@@ -36,6 +38,8 @@ Open a terminal and run the following commands:
 ```bash
 # Navigate to your frontend directory
 cd ~/ctm-ai/frontend
+sudo su
+export NODE_OPTIONS=--openssl-legacy-provider
 
 # Remove old build artifacts and lock files
 rm -rf node_modules package-lock.json build
@@ -48,6 +52,9 @@ npm install
 
 # Build the project
 npm run build
+
+# Move the react built things into /var/www
+cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
 ```
 
 ### Step 2: Configure Nginx for the Frontend
@@ -87,8 +94,8 @@ npm run build
 3. **Set Correct Permissions:**
    Ensure Nginx can read your frontend files. If necessary, change the ownership and permissions:
    ```bash
-   sudo chown -R www-data:www-data /var/www/ctm-ai/frontend
-   sudo chmod -R 755 /var/www/ctm-ai/frontend
+   sudo chown -R www-data:www-data path-to-dir/ctm-ai/frontend
+   sudo chmod -R 755 path-to-dir/ctm-ai/frontend
    ```
    *(If you want to deploy from your current directory, adjust the root path accordingly.)*
 
