@@ -3,7 +3,7 @@ import os
 import sys
 import time
 
-from baselines import ConsciousnessTuringMachineBaseline
+from exp_baselines import ConsciousnessTuringMachineBaseline
 
 sys.path.append("..")
 

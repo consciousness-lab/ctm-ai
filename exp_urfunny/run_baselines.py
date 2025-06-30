@@ -4,7 +4,7 @@ import os
 from torch.utils.data import DataLoader
 from urfunny_dataset import URFunnyDataset
 
-from baselines import ConsciousnessTuringMachineBaseline, GeminiMultimodalLLM
+from exp_baselines import ConsciousnessTuringMachineBaseline, GeminiMultimodalLLM
 
 SYS_PROMPT = (
     'Please analyze the inputs provided to determine the punchline provided humor or not.'
