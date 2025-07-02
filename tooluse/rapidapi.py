@@ -1,22 +1,24 @@
 import json
 import os
 import random
-import re
+import sys
 import time
 
 import requests
 from termcolor import colored
-from toolbench.inference.Algorithms.DFS import DFS_tree_search
-from toolbench.inference.Algorithms.single_chain import single_chain
 from toolbench.inference.Downstream_tasks.base_env import base_env
-from toolbench.inference.LLM.chatgpt_function_model import ChatGPTFunction
-from toolbench.inference.LLM.davinci_model import Davinci
-from toolbench.inference.LLM.retriever import ToolRetriever
-from toolbench.inference.LLM.tool_llama_lora_model import ToolLLaMALoRA
-from toolbench.inference.LLM.tool_llama_model import ToolLLaMA
 from toolbench.inference.server import get_rapidapi_response
-from toolbench.utils import change_name, replace_llama_with_condense, standardize
+from toolbench.utils import change_name, standardize
 from tqdm import tqdm
+
+from ctm_ai.ctms import ToolCTM
+
+# Add ToolBench to path if available
+ctm_base = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../../../ctm-ai')
+)
+if ctm_base not in sys.path:
+    sys.path.insert(0, ctm_base)
 
 
 # For pipeline environment preparation
@@ -75,6 +77,7 @@ class rapidapi_wrapper(base_env):
         self.api_name_reflect = {}
         self.standard_tool_name_reflect_all_info = {}
         self.openai_function_names = []
+        self.openai_name_reflect_all_info = {}
 
         if self.retriever is not None:
             query_json = self.retrieve_rapidapi_tools(
@@ -140,7 +143,7 @@ You have access of the following tools:\n"""
             striped = tool_des[:512].replace('\n', '').strip()
             if striped == '':
                 striped = 'None'
-            self.task_description += f'{k + 1}.{standardize_tool_name}: {striped}\n'
+            self.task_description += f'{k+1}.{standardize_tool_name}: {striped}\n'
 
         self.success = 0
 
@@ -475,30 +478,7 @@ class pipeline_runner:
 
     def get_backbone_model(self):
         args = self.args
-        if args.backbone_model == 'toolllama':
-            # ratio = 4 means the sequence length is expanded by 4, remember to change the model_max_length to 8192 (2048 * ratio) for ratio = 4
-            ratio = int(args.max_sequence_length / args.max_source_sequence_length)
-            replace_llama_with_condense(ratio=ratio)
-            if args.lora:
-                backbone_model = ToolLLaMALoRA(
-                    base_name_or_path=args.model_path,
-                    model_name_or_path=args.lora_path,
-                    max_sequence_length=args.max_sequence_length,
-                )
-            else:
-                backbone_model = ToolLLaMA(
-                    model_name_or_path=args.model_path,
-                    max_sequence_length=args.max_sequence_length,
-                )
-        else:
-            backbone_model = args.backbone_model
-        return backbone_model
-
-    def get_retriever(self):
-        return ToolRetriever(
-            corpus_tsv_path=self.args.corpus_tsv_path,
-            model_path=self.args.retrieval_model_path,
-        )
+        return args.backbone_model
 
     def get_args(self):
         return self.args
@@ -553,47 +533,14 @@ class pipeline_runner:
         single_chain_max_step=12,
         max_query_count=60,
         callbacks=None,
+        query=None,
     ):
-        if callbacks is None:
-            callbacks = []
-        if backbone_model == 'chatgpt_function':
-            model = 'gpt-3.5-turbo-16k-0613'
-            llm_forward = ChatGPTFunction(model=model, openai_key=openai_key)
-        elif backbone_model == 'davinci':
-            model = 'text-davinci-003'
-            llm_forward = Davinci(model=model, openai_key=openai_key)
-        else:
-            model = backbone_model
-            llm_forward = model
-
-        if method.startswith('CoT'):
-            passat = int(method.split('@')[-1])
-            chain = single_chain(llm=llm_forward, io_func=env, process_id=process_id)
-            result = chain.start(
-                pass_at=passat, single_chain_max_step=single_chain_max_step, answer=1
-            )
-        elif method.startswith('DFS'):
-            pattern = r'.+_w(\d+)'
-            re_result = re.match(pattern, method)
-            assert re_result is not None
-            width = int(re_result.group(1))
-            with_filter = True
-            if 'woFilter' in method:
-                with_filter = False
-            chain = DFS_tree_search(
-                llm=llm_forward, io_func=env, process_id=process_id, callbacks=callbacks
-            )
-            result = chain.start(
-                single_chain_max_step=single_chain_max_step,
-                tree_beam_size=width,
-                max_query_count=max_query_count,
-                answer=1,
-                with_filter=with_filter,
-            )
-        else:
-            print('invalid method')
-            raise NotImplementedError
-        return chain, result
+        ctm = ToolCTM(io_function=env, query=query, ctm_name='toolbench')
+        answer = ctm(
+            query=query,
+            io_function=env,
+        )
+        return answer
 
     def run_single_task(
         self,
@@ -622,10 +569,12 @@ class pipeline_runner:
         if (not server) and os.path.exists(output_file_path):
             return
         [callback.on_tool_retrieval_start() for callback in callbacks]
+        # breakpoint()
         env = rapidapi_wrapper(
             data_dict, tool_des, retriever, args, process_id=process_id
         )
         [callback.on_tool_retrieval_end(tools=env.functions) for callback in callbacks]
+        # breakpoint()
         query = data_dict['query']
         if process_id == 0:
             print(
@@ -641,7 +590,8 @@ class pipeline_runner:
             )
             for callback in callbacks
         ]
-        chain, result = self.method_converter(
+        # breakpoint()
+        answer = self.method_converter(
             backbone_model=backbone_model,
             openai_key=args.openai_key,
             method=method,
@@ -650,25 +600,16 @@ class pipeline_runner:
             single_chain_max_step=12,
             max_query_count=200,
             callbacks=callbacks,
+            query=query,
         )
         [
             callback.on_request_end(
-                chain=chain.terminal_node[0].messages,
-                outputs=chain.terminal_node[0].description,
+                chain=answer,
+                outputs=answer,
             )
             for callback in callbacks
         ]
-        if output_dir_path is not None:
-            with open(output_file_path, 'w') as writer:
-                data = chain.to_json(answer=True, process=True)
-                data['answer_generation']['query'] = query
-                json.dump(data, writer, indent=2)
-                success = (
-                    data['answer_generation']['valid_data']
-                    and 'give_answer' in data['answer_generation']['final_answer']
-                )
-                print(colored(f'[process({process_id})]valid={success}', 'green'))
-        return result
+        return answer
 
     def run(self):
         task_list = self.task_list
@@ -686,10 +627,7 @@ class pipeline_runner:
                 new_task_list.append(task)
         task_list = new_task_list
         print(f'undo tasks: {len(task_list)}')
-        if self.add_retrieval:
-            retriever = self.get_retriever()
-        else:
-            retriever = None
+        retriever = None
         for k, task in enumerate(task_list):
             print(
                 f'process[{self.process_id}] doing task {k}/{len(task_list)}: real_task_id_{task[2]}'
