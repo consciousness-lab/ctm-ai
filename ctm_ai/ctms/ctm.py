@@ -70,7 +70,6 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     def load_ctm(self) -> None:
         """Load CTM with support for both standard processors and tool processors"""
         super().load_ctm()
-        # breakpoint()
 
         # Add tool processors if io_function is provided and ToolBench is available
         if self.io_function and TOOLBENCH_AVAILABLE:
