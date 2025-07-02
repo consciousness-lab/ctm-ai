@@ -59,7 +59,7 @@ class ToolMessenger(BaseMessenger):
         self,
         query: str,
         io_function: base_env,
-        openai_function: str,
+        openai_function_name: str,
         executor_output: Message,
     ) -> List[Message]:
         message = Message(
