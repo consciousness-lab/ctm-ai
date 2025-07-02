@@ -12,7 +12,7 @@ from ..graphs import ProcessorGraph
 from ..processors import BaseProcessor, register_tool_processors
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-from ..utils import logging_func
+from ..utils import logging_func, logging_func_with_count
 from .ctm_base import BaseConsciousnessTuringMachine
 
 toolbench_root = os.path.abspath(
@@ -24,14 +24,13 @@ if toolbench_root not in sys.path:
 
 class ToolConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     def __init__(self, io_function, query, ctm_name: Optional[str] = None) -> None:
-        super().__init__()
-        self.config = (
-            ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
-            if ctm_name
-            else ConsciousnessTuringMachineConfig()
-        )
+        if hasattr(io_function, 'openai_function_names'):
+            print(f'openai_function_names: {io_function.openai_function_names}')
+
         self.io_function = io_function
         self.query = query
+        self.config = ConsciousnessTuringMachineConfig()
+
         self.load_ctm()
 
     def __call__(
@@ -45,11 +44,13 @@ class ToolConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         )
 
     def load_ctm(self) -> None:
+        if not hasattr(self, 'io_function') or self.io_function is None:
+            raise ValueError('io_function has not been properly initialized!')
         self.supervisors: List[BaseSupervisor] = []
         self.scorers: List[BaseScorer] = []
         self.fusers: List[BaseFuser] = []
 
-        openai_function_names = self.io_fucntion.openai_function_names
+        openai_function_names = self.io_function.openai_function_names
         openai_function_names = [name for name in openai_function_names]
         register_tool_processors(openai_function_names)
 
@@ -71,7 +72,9 @@ class ToolConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         query: str,
         io_function: base_env,
     ) -> Chunk:
-        return processor.ask(query, io_function, processor.name)
+        return processor.ask(
+            query=query, io_function=io_function, openai_function_name=processor.name
+        )
 
     @logging_func
     def ask_processors(self, query: str, io_function: base_env) -> List[Chunk]:
@@ -85,3 +88,42 @@ class ToolConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
             ]
         assert len(chunks) == len(self.processor_graph.nodes)
         return chunks
+
+    @logging_func_with_count
+    def go_up(
+        self,
+        query: str,
+        io_function=None,
+    ) -> Tuple[Chunk, List[Chunk]]:
+        chunks = self.ask_processors(
+            query,
+            io_function,
+        )
+        chunks = self.fuse_processor(chunks)
+        winning_chunk = self.uptree_competition(chunks)
+        return winning_chunk, chunks
+
+    @logging_func_with_count
+    def go_down(self, winning_chunk: Chunk, chunks: List[Chunk]) -> None:
+        self.downtree_broadcast(winning_chunk)
+        self.link_form(chunks)
+
+    def forward(
+        self,
+        query: str,
+        io_function=None,
+    ) -> Tuple[str, float]:
+        """Forward pass supporting both standard and tool-based processing"""
+        # Use provided io_function or fall back to instance io_function
+
+        for _ in range(self.config.max_iter_num):
+            winning_chunk, chunks = self.go_up(
+                query,
+                io_function,
+            )
+            answer, confidence_score = self.ask_supervisor(query, winning_chunk)
+            confidence_score = 0
+            if confidence_score > self.config.output_threshold:
+                return answer, confidence_score
+            self.go_down(winning_chunk, chunks)
+        return answer, confidence_score
