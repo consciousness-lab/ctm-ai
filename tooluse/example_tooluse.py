@@ -6,25 +6,26 @@ import time
 
 import requests
 from termcolor import colored
-from toolbench.inference.server import get_rapidapi_response
-from toolbench.utils import change_name, standardize
 from tqdm import tqdm
 
 # Add ToolBench to path if available
-ctm_base = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../../../ctm-ai')
+toolbench_root = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../ToolBench')
 )
-if ctm_base not in sys.path:
-    sys.path.insert(0, ctm_base)
+if toolbench_root not in sys.path:
+    sys.path.insert(0, toolbench_root)
+
+import argparse
 
 from toolbench.inference.Downstream_tasks.base_env import base_env
+from toolbench.inference.server import get_rapidapi_response
+from toolbench.utils import change_name, standardize
 
 from ctm_ai.ctms import ToolCTM
 
 
 # For pipeline environment preparation
 def get_white_list(tool_root_dir):
-    # print(tool_root_dir)
     white_list_dir = os.path.join(tool_root_dir)
     white_list = {}
     for cate in tqdm(os.listdir(white_list_dir)):
@@ -56,7 +57,7 @@ def contain(candidate_list, white_list):
 
 # rapidapi env wrapper
 class rapidapi_wrapper(base_env):
-    def __init__(self, query_json, tool_descriptions, retriever, args, process_id=0):
+    def __init__(self, query_json, tool_descriptions, args, process_id=0):
         super(rapidapi_wrapper).__init__()
 
         self.tool_root_dir = args.tool_root_dir
@@ -67,8 +68,6 @@ class rapidapi_wrapper(base_env):
         self.service_url = 'http://8.130.32.149:8080/rapidapi'
         self.max_observation_length = args.max_observation_length
         self.observ_compress_method = args.observ_compress_method
-        self.retriever = retriever
-        self.process_id = process_id
 
         self.tool_names = []
         self.cate_names = []
@@ -80,15 +79,8 @@ class rapidapi_wrapper(base_env):
         self.openai_function_names = []
         self.openai_name_reflect_all_info = {}
 
-        if self.retriever is not None:
-            query_json = self.retrieve_rapidapi_tools(
-                self.input_description, args.retrieved_api_nums, args.tool_root_dir
-            )
-            data_dict = self.fetch_api_json(query_json)
-            tool_descriptions = self.build_tool_description(data_dict)
-        else:
-            data_dict = self.fetch_api_json(query_json)
-            tool_descriptions = self.build_tool_description(data_dict)
+        data_dict = self.fetch_api_json(query_json)
+        tool_descriptions = self.build_tool_description(data_dict)
 
         for k, api_json in enumerate(data_dict['api_list']):
             standard_tool_name = tool_descriptions[k][0]
@@ -158,29 +150,6 @@ You have access of the following tools:\n"""
             [cont['standard_tool_name'], cont['description']] for cont in tool_des
         ]
         return tool_descriptions
-
-    def retrieve_rapidapi_tools(self, query, top_k, jsons_path):
-        retrieved_tools = self.retriever.retrieving(query, top_k=top_k)
-        query_json = {'api_list': []}
-        for tool_dict in retrieved_tools:
-            if len(query_json['api_list']) == top_k:
-                break
-            category = tool_dict['category']
-            tool_name = tool_dict['tool_name']
-            api_name = tool_dict['api_name']
-            if os.path.exists(jsons_path):
-                if os.path.exists(os.path.join(jsons_path, category)):
-                    if os.path.exists(
-                        os.path.join(jsons_path, category, tool_name + '.json')
-                    ):
-                        query_json['api_list'].append(
-                            {
-                                'category_name': category,
-                                'tool_name': tool_name,
-                                'api_name': api_name,
-                            }
-                        )
-        return query_json
 
     def fetch_api_json(self, query_json):
         data_dict = {'api_list': []}
@@ -388,13 +357,12 @@ You have access of the following tools:\n"""
                         'strip': self.observ_compress_method,
                         'toolbench_key': self.toolbench_key,
                     }
-                    if self.process_id == 0:
-                        print(
-                            colored(
-                                f'query to {self.cate_names[k]}-->{self.tool_names[k]}-->{action_name}',
-                                color='yellow',
-                            )
+                    print(
+                        colored(
+                            f'query to {self.cate_names[k]}-->{self.tool_names[k]}-->{action_name}',
+                            color='yellow',
                         )
+                    )
                     if self.use_rapidapi_key or self.api_customization:
                         payload['rapidapi_key'] = self.rapidapi_key
                         response = get_rapidapi_response(
@@ -467,9 +435,8 @@ You have access of the following tools:\n"""
 
 
 class pipeline_runner:
-    def __init__(self, args, add_retrieval=False, process_id=0, server=False):
+    def __init__(self, args, process_id=0, server=False):
         self.args = args
-        self.add_retrieval = add_retrieval
         self.process_id = process_id
         self.server = server
         if not self.server:
@@ -477,21 +444,12 @@ class pipeline_runner:
         else:
             self.task_list = []
 
-    def get_backbone_model(self):
-        args = self.args
-        return args.backbone_model
-
-    def get_args(self):
-        return self.args
-
     def generate_task_list(self):
         args = self.args
         query_dir = args.input_query_file
         answer_dir = args.output_answer_file
         if not os.path.exists(answer_dir):
             os.mkdir(answer_dir)
-        method = args.method
-        backbone_model = self.get_backbone_model()
         white_list = get_white_list(args.tool_root_dir)
         task_list = []
         querys = json.load(open(query_dir, 'r'))
@@ -503,7 +461,7 @@ class pipeline_runner:
                     standardize(cont['tool_name']) for cont in data_dict['api_list']
                 ]
                 tool_des = contain(origin_tool_names, white_list)
-                if tool_des == False:
+                if not tool_des:
                     continue
                 tool_des = [
                     [cont['standard_tool_name'], cont['description']]
@@ -513,8 +471,7 @@ class pipeline_runner:
                 tool_des = None
             task_list.append(
                 (
-                    method,
-                    backbone_model,
+                    'ctm',
                     query_id,
                     data_dict,
                     args,
@@ -526,14 +483,7 @@ class pipeline_runner:
 
     def method_converter(
         self,
-        backbone_model,
-        openai_key,
-        method,
         env,
-        process_id,
-        single_chain_max_step=12,
-        max_query_count=60,
-        callbacks=None,
         query=None,
     ):
         ctm = ToolCTM(io_function=env, query=query, ctm_name='toolbench')
@@ -545,15 +495,11 @@ class pipeline_runner:
 
     def run_single_task(
         self,
-        method,
-        backbone_model,
         query_id,
         data_dict,
         args,
         output_dir_path,
         tool_des,
-        retriever=None,
-        process_id=0,
         callbacks=None,
         server=None,
     ):
@@ -566,42 +512,29 @@ class pipeline_runner:
         splits = output_dir_path.split('/')
         os.makedirs('/'.join(splits[:-1]), exist_ok=True)
         os.makedirs('/'.join(splits), exist_ok=True)
-        output_file_path = os.path.join(output_dir_path, f'{query_id}_{method}.json')
+        output_file_path = os.path.join(output_dir_path, f'{query_id}_ctm.json')
         if (not server) and os.path.exists(output_file_path):
             return
         [callback.on_tool_retrieval_start() for callback in callbacks]
-        # breakpoint()
-        env = rapidapi_wrapper(
-            data_dict, tool_des, retriever, args, process_id=process_id
-        )
+        env = rapidapi_wrapper(data_dict, tool_des, args)
         [callback.on_tool_retrieval_end(tools=env.functions) for callback in callbacks]
-        # breakpoint()
         query = data_dict['query']
-        if process_id == 0:
-            print(
-                colored(
-                    f'[process({process_id})]now playing {query}, with {len(env.functions)} APIs',
-                    'green',
-                )
+        print(
+            colored(
+                f'now playing {query}, with {len(env.functions)} APIs',
+                'green',
             )
+        )
         [
             callback.on_request_start(
                 user_input=query,
-                method=method,
             )
             for callback in callbacks
         ]
-        # breakpoint()
-        answer = self.method_converter(
-            backbone_model=backbone_model,
-            openai_key=args.openai_key,
-            method=method,
-            env=env,
-            process_id=process_id,
-            single_chain_max_step=12,
-            max_query_count=200,
-            callbacks=callbacks,
+        ctm = ToolCTM(io_function=env, query=query, ctm_name='toolbench')
+        answer = ctm(
             query=query,
+            io_function=env,
         )
         [
             callback.on_request_end(
@@ -621,19 +554,68 @@ class pipeline_runner:
         for task in task_list:
             out_dir_path = task[-2]
             query_id = task[2]
-            output_file_path = os.path.join(
-                out_dir_path, f'{query_id}_{self.args.method}.json'
-            )
+            output_file_path = os.path.join(out_dir_path, f'{query_id}_ctm.json')
             if not os.path.exists(output_file_path):
                 new_task_list.append(task)
         task_list = new_task_list
         print(f'undo tasks: {len(task_list)}')
-        retriever = None
         for k, task in enumerate(task_list):
             print(
                 f'process[{self.process_id}] doing task {k}/{len(task_list)}: real_task_id_{task[2]}'
             )
-            # breakpoint()
-            result = self.run_single_task(
-                *task, retriever=retriever, process_id=self.process_id
-            )
+            result = self.run_single_task(*task)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--tool_root_dir', type=str, default='your_tools_path/', required=True, help=''
+    )
+    parser.add_argument(
+        '--max_observation_length',
+        type=int,
+        default=1024,
+        required=False,
+        help='maximum observation length',
+    )
+    parser.add_argument(
+        '--observ_compress_method',
+        type=str,
+        default='truncate',
+        choices=['truncate', 'filter', 'random'],
+        required=False,
+        help='observation compress method',
+    )
+    parser.add_argument(
+        '--input_query_file', type=str, default='', required=False, help='input path'
+    )
+    parser.add_argument(
+        '--output_answer_file', type=str, default='', required=False, help='output path'
+    )
+    parser.add_argument(
+        '--toolbench_key',
+        type=str,
+        default='',
+        required=False,
+        help='your toolbench key to request rapidapi service',
+    )
+    parser.add_argument(
+        '--rapidapi_key',
+        type=str,
+        default='',
+        required=False,
+        help='your rapidapi key to request rapidapi service',
+    )
+    parser.add_argument(
+        '--use_rapidapi_key',
+        action='store_true',
+        help='To use customized rapidapi service or not.',
+    )
+    parser.add_argument(
+        '--api_customization', action='store_true', help='To use customized api or not.'
+    )
+
+    args = parser.parse_args()
+    args = parser.parse_args()
+    pipeline_runner = pipeline_runner(args)
+    pipeline_runner.run()
