@@ -29,7 +29,9 @@ if TOOLBENCH_AVAILABLE:
 
 
 class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
-    def __init__(self, ctm_name: Optional[str] = None, io_function=None) -> None:
+    def __init__(
+        self, ctm_name: Optional[str] = None, io_function: Optional[base_env] = None
+    ) -> None:
         super().__init__()
         self.config = (
             ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
@@ -72,6 +74,8 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         # Add tool processors if io_function is provided and ToolBench is available
         if self.io_function and TOOLBENCH_AVAILABLE:
             self._load_tool_processors()
+        else:
+            print('Warning: io_function is not provided or TOOLBENCH is not available.')
 
     def _load_tool_processors(self) -> None:
         """Load tool processors from io_function"""
