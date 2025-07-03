@@ -1,6 +1,4 @@
 import concurrent.futures
-import os
-import sys
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -8,37 +6,28 @@ from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..configs import ConsciousnessTuringMachineConfig
+from ..fusers import BaseFuser
+from ..graphs import ProcessorGraph
+from ..scorers import BaseScorer
+from ..supervisors import BaseSupervisor
 from ..utils import logging_func_with_count
 from .ctm_base import BaseConsciousnessTuringMachine
 
 try:
-    from toolbench.inference.Downstream_tasks.base_env import base_env
+    from ..apis import BaseEnv
 
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False
-    base_env = None
-
-# Add ToolBench to path if available
-if TOOLBENCH_AVAILABLE:
-    toolbench_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '../../ToolBench')
-    )
-    if toolbench_root not in sys.path:
-        sys.path.insert(0, toolbench_root)
 
 
 class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     def __init__(
-        self, ctm_name: Optional[str] = None, io_function: Optional[base_env] = None
+        self, ctm_name: Optional[str] = None, io_function: Optional[BaseEnv] = None
     ) -> None:
-        super().__init__()
-        self.config = (
-            ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
-            if ctm_name
-            else ConsciousnessTuringMachineConfig()
-        )
         self.io_function = io_function
+        self.config = ConsciousnessTuringMachineConfig()
+
         self.load_ctm()
 
     def __call__(
@@ -52,7 +41,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function=None,
+        io_function: Optional[BaseEnv] = None,
     ) -> Tuple[str, float]:
         return self.forward(
             query,
@@ -69,13 +58,26 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
 
     def load_ctm(self) -> None:
         """Load CTM with support for both standard processors and tool processors"""
-        super().load_ctm()
+        self.processor_graph = ProcessorGraph()
+        self.supervisors: List[BaseSupervisor] = []
+        self.scorers: List[BaseScorer] = []
+        self.fusers: List[BaseFuser] = []
+
+        for group_name, processors in self.config.groups_of_processors.items():
+            for processor_name in processors:
+                self.processor_graph.add_node(
+                    processor_name=processor_name, processor_group_name=group_name
+                )
 
         # Add tool processors if io_function is provided and ToolBench is available
         if self.io_function and TOOLBENCH_AVAILABLE:
             self._load_tool_processors()
         else:
             print('Warning: io_function is not provided or TOOLBENCH is not available.')
+
+        self.add_supervisor(self.config.supervisor)
+        self.add_scorer(self.config.scorer)
+        self.add_fuser(self.config.fuser)
 
     def _load_tool_processors(self) -> None:
         """Load tool processors from io_function"""
@@ -107,7 +109,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function=None,
+        io_function: Optional[BaseEnv] = None,
     ) -> Chunk:
         """Ask processor with support for both standard and tool processors"""
         if io_function and hasattr(processor, 'name'):
@@ -139,7 +141,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function=None,
+        io_function: Optional[BaseEnv] = None,
     ) -> List[Chunk]:
         """Ask all processors with support for both standard and tool processors"""
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -178,7 +180,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function=None,
+        io_function: Optional[BaseEnv] = None,
     ) -> Tuple[Chunk, List[Chunk]]:
         chunks = self.ask_processors(
             query,
@@ -212,7 +214,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function=None,
+        io_function: Optional[BaseEnv] = None,
     ) -> Tuple[str, float]:
         """Forward pass supporting both standard and tool-based processing"""
         # Use provided io_function or fall back to instance io_function
@@ -242,7 +244,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     def forward_tool(
         self,
         query: str,
-        io_function: base_env,
+        io_function: BaseEnv,
     ) -> Tuple[str, float]:
         """Forward pass for tool-only processing (backward compatibility)"""
         if not TOOLBENCH_AVAILABLE:

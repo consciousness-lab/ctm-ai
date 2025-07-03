@@ -1,20 +1,11 @@
-import os
-import sys
 from typing import List
 
-from toolbench.inference.Downstream_tasks.base_env import base_env
-
+from ..apis import BaseEnv
 from ..chunks import Chunk
 from ..executors import BaseExecutor
 from ..messengers import BaseMessenger
 from ..scorers import BaseScorer
 from .processor_base import BaseProcessor
-
-toolbench_root = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../ToolBench')
-)
-if toolbench_root not in sys.path:
-    sys.path.insert(0, toolbench_root)
 
 
 @BaseProcessor.register_processor('tool_processor')
@@ -33,7 +24,7 @@ class ToolProcessor(BaseProcessor):
     def ask(
         self,
         query: str,
-        io_function: base_env,
+        io_function: BaseEnv,
         openai_function_name: str,
     ) -> Chunk:
         executor_messages = self.messenger.collect_executor_messages(
