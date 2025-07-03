@@ -7,7 +7,7 @@ import requests
 from termcolor import colored
 from tqdm import tqdm
 
-from ctm_ai.ctms import ToolCTM
+from ctm_ai.ctms import CTM
 
 from .api_base import base_env
 from .api_server import change_name, get_rapidapi_response, standardize
@@ -134,6 +134,8 @@ You have access of the following tools:\n"""
             standardize(cont['tool_name']) for cont in data_dict['api_list']
         ]
         tool_des = contain(origin_tool_names, white_list)
+        if not tool_des:
+            return []
         tool_descriptions = [
             [cont['standard_tool_name'], cont['description']] for cont in tool_des
         ]
@@ -433,10 +435,6 @@ class pipeline_runner:
         else:
             self.task_list = []
 
-    def get_backbone_model(self):
-        args = self.args
-        return args.backbone_model
-
     def get_args(self):
         return self.args
 
@@ -447,7 +445,6 @@ class pipeline_runner:
         if not os.path.exists(answer_dir):
             os.mkdir(answer_dir)
         method = args.method
-        backbone_model = self.get_backbone_model()
         white_list = get_white_list(args.tool_root_dir)
         task_list = []
         querys = json.load(open(query_dir, 'r'))
@@ -470,7 +467,6 @@ class pipeline_runner:
             task_list.append(
                 (
                     method,
-                    backbone_model,
                     query_id,
                     data_dict,
                     args,
@@ -483,10 +479,10 @@ class pipeline_runner:
     def method_converter(
         self,
         env,
-        query=None,
+        query,
     ):
-        ctm = ToolCTM(io_function=env, query=query, ctm_name='toolbench')
-        answer = ctm(
+        ctm = CTM(io_function=env, ctm_name='toolbench')
+        answer = ctm.forward_tool(
             query=query,
             io_function=env,
         )
@@ -495,7 +491,6 @@ class pipeline_runner:
     def run_single_task(
         self,
         method,
-        backbone_model,
         query_id,
         data_dict,
         args,

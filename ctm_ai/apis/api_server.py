@@ -215,7 +215,8 @@ def get_rapidapi_response(
     strip_method = info.strip
 
     try:
-        tool_input = json.loads(tool_input)
+        if isinstance(tool_input, str):
+            tool_input = json.loads(tool_input)
     except Exception:
         if tool_input == '':
             tool_input = {}
