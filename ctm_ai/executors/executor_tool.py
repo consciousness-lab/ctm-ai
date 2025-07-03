@@ -1,19 +1,12 @@
 import os
-import sys
 import time
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-from toolbench.inference.Downstream_tasks.base_env import base_env
 
+from ..apis import BaseEnv
 from ..executors.executor_base import BaseExecutor
 from ..messengers.message import Message
-
-toolbench_root = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../ToolBench')
-)
-if toolbench_root not in sys.path:
-    sys.path.insert(0, toolbench_root)
 
 
 @retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
@@ -35,8 +28,8 @@ def chat_completion_request(
     if function_call:
         json_data['function_call'] = function_call
 
-    openai.api_key = openai_key
-    response = openai.ChatCompletion.create(**json_data)
+    client = openai.OpenAI(api_key=openai_key)
+    response = client.chat.completions.create(**json_data)
     return response
 
 
@@ -101,7 +94,7 @@ class ToolExecutor(BaseExecutor):
     def ask(
         self,
         messages,
-        io_function: base_env,
+        io_function: BaseEnv,
         openai_function_name: str = '',
         *args,
         **kwargs,
