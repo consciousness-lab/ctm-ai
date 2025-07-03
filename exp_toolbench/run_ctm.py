@@ -1,36 +1,15 @@
+"""
+Close-domain QA Pipeline
+"""
+
 import argparse
 
-from .api_manager import pipeline_runner
+from ctm_ai.apis.api_manager import pipeline_runner
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--backbone_model',
-        type=str,
-        default='toolllama',
-        required=False,
-        help='chatgpt_function or davinci or toolllama',
-    )
-    parser.add_argument(
-        '--openai_key',
-        type=str,
-        default='',
-        required=False,
-        help='openai key for chatgpt_function or davinci model',
-    )
-    parser.add_argument(
-        '--model_path', type=str, default='your_model_path/', required=False, help=''
-    )
-    parser.add_argument(
         '--tool_root_dir', type=str, default='your_tools_path/', required=True, help=''
-    )
-    parser.add_argument('--lora', action='store_true', help='Load lora model or not.')
-    parser.add_argument(
-        '--lora_path',
-        type=str,
-        default='your_lora_path if lora',
-        required=False,
-        help='',
     )
     parser.add_argument(
         '--max_observation_length',
@@ -38,20 +17,6 @@ if __name__ == '__main__':
         default=1024,
         required=False,
         help='maximum observation length',
-    )
-    parser.add_argument(
-        '--max_source_sequence_length',
-        type=int,
-        default=4096,
-        required=False,
-        help='original maximum model sequence length',
-    )
-    parser.add_argument(
-        '--max_sequence_length',
-        type=int,
-        default=8192,
-        required=False,
-        help='maximum model sequence length',
     )
     parser.add_argument(
         '--observ_compress_method',
@@ -64,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--method',
         type=str,
-        default='CoT@1',
+        default='ctm',
         required=False,
         help='method for answer generation: CoT@n,Reflexion@n,BFS,DFS,UCT_vote',
     )
