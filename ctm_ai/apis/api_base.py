@@ -1,8 +1,7 @@
 class base_env:
-
     def __init__(self):
-        self.task_description = ""
-        self.input_description = ""
+        self.task_description = ''
+        self.input_description = ''
         self.tool_names = []
         self.functions = []
 
