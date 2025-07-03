@@ -2,6 +2,10 @@
 Close-domain QA Pipeline
 """
 
+import sys
+
+sys.path.append('..')
+
 import argparse
 
 from ctm_ai.apis.api_manager import pipeline_runner
@@ -60,6 +64,13 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--api_customization', action='store_true', help='To use customized api or not.'
+    )
+    parser.add_argument(
+        '--openai_key',
+        type=str,
+        default='',
+        required=True,
+        help='your openai key to request openai service',
     )
 
     args = parser.parse_args()

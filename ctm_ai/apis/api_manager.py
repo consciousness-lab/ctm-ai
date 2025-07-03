@@ -507,6 +507,7 @@ class pipeline_runner:
                 print('Warning: no callbacks are defined for server mode')
             callbacks = []
         splits = output_dir_path.split('/')
+        breakpoint()
         os.makedirs('/'.join(splits[:-1]), exist_ok=True)
         os.makedirs('/'.join(splits), exist_ok=True)
         output_file_path = os.path.join(output_dir_path, f'{query_id}_{method}.json')

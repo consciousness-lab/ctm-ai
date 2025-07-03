@@ -25,13 +25,9 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     def __init__(
         self, ctm_name: Optional[str] = None, io_function: Optional[BaseEnv] = None
     ) -> None:
-        super().__init__()
-        self.config = (
-            ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
-            if ctm_name
-            else ConsciousnessTuringMachineConfig()
-        )
         self.io_function = io_function
+        self.config = ConsciousnessTuringMachineConfig()
+
         self.load_ctm()
 
     def __call__(

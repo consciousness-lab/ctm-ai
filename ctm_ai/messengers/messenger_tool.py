@@ -1,18 +1,8 @@
-import os
-import sys
 from typing import List, TypeVar
 
-from toolbench.inference.Downstream_tasks.base_env import base_env
-
+from ..apis import BaseEnv
 from .message import Message
 from .messenger_base import BaseMessenger
-
-toolbench_root = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '../../ToolBench')
-)
-if toolbench_root not in sys.path:
-    sys.path.insert(0, toolbench_root)
-
 
 T = TypeVar('T', bound='BaseMessenger')
 FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION = """You are an expert at using tools, you can use the tool {openai_function_name} to do the following task.
@@ -35,7 +25,7 @@ class ToolMessenger(BaseMessenger):
     def collect_executor_messages(
         self,
         query: str,
-        io_function: base_env,
+        io_function: BaseEnv,
         openai_function_name: str,
     ) -> List[Message]:
         system = FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
@@ -47,10 +37,8 @@ class ToolMessenger(BaseMessenger):
             '{task_description}',
             task_description,
         )
-        message = [
-            Message(role='system', content=system),
-            Message(role='user', query=query),
-        ]
+        query_all = system + '\n' + query
+        message = Message(role='user', query=query_all)
         self.executor_messages.append(message)
 
         return self.executor_messages
@@ -58,7 +46,7 @@ class ToolMessenger(BaseMessenger):
     def collect_scorer_messages(
         self,
         query: str,
-        io_function: base_env,
+        io_function: BaseEnv,
         openai_function_name: str,
         executor_output: Message,
     ) -> List[Message]:
