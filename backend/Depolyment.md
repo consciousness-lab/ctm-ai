@@ -171,6 +171,17 @@ poetry run gunicorn app:app --bind 0.0.0.0:5000
   sudo tail -f /var/log/nginx/error.log
   ```
 
+- **HTTPS:**
+  If you set your DNS domain name like https://ctm-ai.dev, you need to have SSL license to support. Otherwise, in Chrome or Safari, typing http://ctm-ai.dev would not work since it would automatically encrypt. You can check whether your DNS works by `nslookup app.auto-research.dev` or `curl http://app.auto-research.dev` and `curl https://app.auto-research.dev`. If http works but https not work for curl, then you need to configure a SSL license.
+  You need to do some setups on the EC2 server command lines:
+  ```bash
+  sudo yum install epel-release -y   # Amazon Linux 2, CentOS 
+  sudo yum install certbot python3-certbot-nginx -y
+  sudo certbot --nginx
+  ```
+  
+
+
 ---
 
 This guide should help you deploy your demo to an EC2 server, with a fresh build of your frontend served by Nginx and your backend running on Gunicorn. Let me know if you have any further questions or need additional adjustments!
