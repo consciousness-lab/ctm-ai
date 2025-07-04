@@ -90,6 +90,11 @@ cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
            proxy_set_header X-Real-IP $remote_addr;
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
            proxy_set_header X-Forwarded-Proto $scheme;
+           # if your service need a lot of time to response, the default max response time is 60s, you need to change it to larger
+           proxy_connect_timeout       300;
+           proxy_send_timeout          300;
+           proxy_read_timeout          300;
+           send_timeout                300;
        }
    }
    ```
