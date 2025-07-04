@@ -9,6 +9,7 @@ This guide walks you through setting up your EC2 server for both the frontend an
 - **EC2 Instance:** A t2.micro instance is sufficient for this demo.
 - **Security Group:** Ensure that your security group inbound rules allow the necessary ports:
   - **Port 80** for HTTP (Nginx)
+  - **Port 443** for HTTPS (Nginx)
   - **Port 5000** for the backend (custom TCP with source `0.0.0.0/0`)
 
 - **EC2 software**: need to install poetry, nginx, npm, tmux on the server.
@@ -26,6 +27,8 @@ This guide walks you through setting up your EC2 server for both the frontend an
    - **Port Range:** 5000
    - **Source:** 0.0.0.0/0
    - make sure you can visit URL like `http://18.224.61.142:5000/api/upload`that are shown as `Method Not Allowed` instead of keeping waiting to load
+
+   - HTTP and HTTPS should also be set accordingly.
 
 ---
 
