@@ -72,7 +72,7 @@ cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
    ```nginx
    server {
        listen 80;
-       server_name 18.224.61.142;  # Replace with your domain if needed
+       server_name 18.224.61.142;  # Replace with your domai name if you are using DNS
 
        # Path to your built frontend files
        root /home/ubuntu/ctm-ai/frontend/build;
