@@ -53,7 +53,7 @@ npm install
 # Build the project
 npm run build
 
-# Move the react built things into /var/www
+# Move the react built things into /var/www, if the enginx root is under /home, then no need
 cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
 ```
 
@@ -96,6 +96,10 @@ cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
    ```bash
    sudo chown -R www-data:www-data path-to-dir/ctm-ai/frontend
    sudo chmod -R 755 path-to-dir/ctm-ai/frontend
+   sudo chmod o+x /home/ec2-user
+   sudo chmod o+x /home/ec2-user/tiny-scientist
+   sudo chmod o+x /home/ec2-user/tiny-scientist/frontend
+   sudo chmod o+x /home/ec2-user/tiny-scientist/frontend/build
    ```
    *(If you want to deploy from your current directory, adjust the root path accordingly.)*
 
