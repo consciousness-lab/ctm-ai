@@ -9,6 +9,7 @@ This guide walks you through setting up your EC2 server for both the frontend an
 - **EC2 Instance:** A t2.micro instance is sufficient for this demo.
 - **Security Group:** Ensure that your security group inbound rules allow the necessary ports:
   - **Port 80** for HTTP (Nginx)
+  - **Port 443** for HTTPS (Nginx)
   - **Port 5000** for the backend (custom TCP with source `0.0.0.0/0`)
 
 - **EC2 software**: need to install poetry, nginx, npm, tmux on the server.
@@ -26,6 +27,8 @@ This guide walks you through setting up your EC2 server for both the frontend an
    - **Port Range:** 5000
    - **Source:** 0.0.0.0/0
    - make sure you can visit URL like `http://18.224.61.142:5000/api/upload`that are shown as `Method Not Allowed` instead of keeping waiting to load
+
+   - HTTP and HTTPS should also be set accordingly.
 
 ---
 
@@ -53,7 +56,7 @@ npm install
 # Build the project
 npm run build
 
-# Move the react built things into /var/www
+# Move the react built things into /var/www, if the enginx root is under /home, then no need
 cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
 ```
 
@@ -69,7 +72,7 @@ cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
    ```nginx
    server {
        listen 80;
-       server_name 18.224.61.142;  # Replace with your domain if needed
+       server_name 18.224.61.142;  # Replace with your domai name if you are using DNS
 
        # Path to your built frontend files
        root /home/ubuntu/ctm-ai/frontend/build;
@@ -87,6 +90,11 @@ cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
            proxy_set_header X-Real-IP $remote_addr;
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
            proxy_set_header X-Forwarded-Proto $scheme;
+           # if your service need a lot of time to response, the default max response time is 60s, you need to change it to larger
+           proxy_connect_timeout       300;
+           proxy_send_timeout          300;
+           proxy_read_timeout          300;
+           send_timeout                300;
        }
    }
    ```
@@ -96,6 +104,10 @@ cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
    ```bash
    sudo chown -R www-data:www-data path-to-dir/ctm-ai/frontend
    sudo chmod -R 755 path-to-dir/ctm-ai/frontend
+   sudo chmod o+x /home/ec2-user
+   sudo chmod o+x /home/ec2-user/tiny-scientist
+   sudo chmod o+x /home/ec2-user/tiny-scientist/frontend
+   sudo chmod o+x /home/ec2-user/tiny-scientist/frontend/build
    ```
    *(If you want to deploy from your current directory, adjust the root path accordingly.)*
 
@@ -163,6 +175,17 @@ poetry run gunicorn app:app --bind 0.0.0.0:5000
   ```bash
   sudo tail -f /var/log/nginx/error.log
   ```
+
+- **HTTPS:**
+  If you set your DNS domain name like https://ctm-ai.dev, you need to have SSL license to support. Otherwise, in Chrome or Safari, typing http://ctm-ai.dev would not work since it would automatically encrypt. You can check whether your DNS works by `nslookup app.auto-research.dev` or `curl http://app.auto-research.dev` and `curl https://app.auto-research.dev`. If http works but https not work for curl, then you need to configure a SSL license.
+  You need to do some setups on the EC2 server command lines:
+  ```bash
+  sudo yum install epel-release -y   # Amazon Linux 2, CentOS 
+  sudo yum install certbot python3-certbot-nginx -y
+  sudo certbot --nginx
+  ```
+  
+
 
 ---
 
