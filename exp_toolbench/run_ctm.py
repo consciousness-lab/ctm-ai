@@ -2,6 +2,10 @@ import sys
 
 sys.path.append('..')
 
+import sys
+
+sys.path.append('..')
+
 import argparse
 
 from ctm_ai.apis.api_manager import pipeline_runner
