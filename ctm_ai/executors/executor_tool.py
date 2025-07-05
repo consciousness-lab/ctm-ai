@@ -1,5 +1,6 @@
 import os
 import time
+from typing import Dict, List
 
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
@@ -7,6 +8,16 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 from ..apis import BaseEnv
 from ..executors.executor_base import BaseExecutor
 from ..messengers.message import Message
+
+
+def convert_messages_to_openai_format(messages: List[Message]) -> List[Dict[str, str]]:
+    result = []
+    for m in messages:
+        msg_text = m.content if m.content is not None else m.query
+        if msg_text is None:
+            continue
+        result.append({'role': m.role, 'content': msg_text})
+    return result
 
 
 @retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
@@ -17,16 +28,23 @@ def chat_completion_request(
     function_call=None,
     model='gpt-4o',
 ):
+    openai_messages = convert_messages_to_openai_format(messages)
     json_data = {
         'model': model,
-        'messages': messages,
+        'messages': openai_messages,
         'max_tokens': 1024,
         'temperature': 0.7,
     }
     if functions:
-        json_data['functions'] = functions
+        if isinstance(functions, dict):
+            json_data['functions'] = [functions]
+        else:
+            json_data['functions'] = functions
     if function_call:
-        json_data['function_call'] = function_call
+        if isinstance(function_call, str):
+            json_data['function_call'] = {'name': function_call}
+        else:
+            json_data['function_call'] = function_call
 
     client = openai.OpenAI(api_key=openai_key)
     response = client.chat.completions.create(**json_data)
@@ -51,21 +69,32 @@ class ChatGPTFunction:
                     function_call=function_call,
                     model=self.model,
                 )
-                message = response['choices'][0]['message']
-                total_tokens = response['usage']['total_tokens']
+                message = response.choices[0].message
+                total_tokens = response.usage.total_tokens
 
                 if process_id == 0:
                     print(f'[process({process_id})] total tokens: {total_tokens}')
 
-                if (
-                    'function_call' in message
-                    and '.' in message['function_call']['name']
-                ):
-                    message['function_call']['name'] = message['function_call'][
-                        'name'
-                    ].split('.')[-1]
+                message_dict = {
+                    'role': message.role,
+                    'content': message.content,
+                }
 
-                return message, 0, total_tokens
+                if hasattr(message, 'function_call') and message.function_call:
+                    message_dict['function_call'] = {
+                        'name': message.function_call.name,
+                        'arguments': message.function_call.arguments,
+                    }
+
+                if (
+                    'function_call' in message_dict
+                    and '.' in message_dict['function_call']['name']
+                ):
+                    message_dict['function_call']['name'] = message_dict[
+                        'function_call'
+                    ]['name'].split('.')[-1]
+
+                return message_dict, 0, total_tokens
 
             except Exception as e:
                 print(
@@ -118,3 +147,9 @@ class ToolExecutor(BaseExecutor):
                 action_name=openai_function_name, action_input=function_input
             )
             return Message(role='function', content=observation, gist=observation)
+
+        return Message(
+            role='assistant',
+            content='[ERROR] No valid response from model',
+            gist='[ERROR] No valid response from model',
+        )

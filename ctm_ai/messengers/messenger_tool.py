@@ -1,6 +1,6 @@
 from typing import List, TypeVar
 
-from ..apis import BaseEnv
+from ..apis.api_base import base_env as BaseEnv
 from .message import Message
 from .messenger_base import BaseMessenger
 
