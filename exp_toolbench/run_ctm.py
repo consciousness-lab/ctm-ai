@@ -1,7 +1,3 @@
-"""
-Close-domain QA Pipeline
-"""
-
 import sys
 
 sys.path.append('..')
@@ -72,7 +68,6 @@ if __name__ == '__main__':
         required=True,
         help='your openai key to request openai service',
     )
-
     args = parser.parse_args()
 
     pipeline_runner = pipeline_runner(args)
