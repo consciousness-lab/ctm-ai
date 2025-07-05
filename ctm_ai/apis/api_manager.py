@@ -69,7 +69,6 @@ class rapidapi_wrapper(base_env):
 
         data_dict = self.fetch_api_json(query_json)
         tool_descriptions = self.build_tool_description(data_dict)
-
         for k, api_json in enumerate(data_dict['api_list']):
             standard_tool_name = tool_descriptions[k][0]
             openai_function_json, cate_name, pure_api_name, openai_function_name = (
