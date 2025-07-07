@@ -72,6 +72,9 @@ if __name__ == '__main__':
         required=True,
         help='your openai key to request openai service',
     )
+    parser.add_argument(
+        '--test', type=bool, default=False, help='To use test mode or not.'
+    )
 
     args = parser.parse_args()
 

@@ -68,7 +68,7 @@ class rapidapi_wrapper(base_env):
         self.openai_name_reflect_all_info = {}
 
         data_dict = self.fetch_api_json(query_json)
-        tool_descriptions = self.build_tool_description(data_dict)
+        self.tool_descriptions = self.build_tool_description(data_dict)
 
         for k, api_json in enumerate(data_dict['api_list']):
             standard_tool_name = tool_descriptions[k][0]
@@ -279,8 +279,8 @@ You have access of the following tools:\n"""
     def get_score(self):
         return 0.0
 
-    def step(self, **args):
-        obs, code = self._step(**args)
+    def step(self, action, input_str):
+        obs, code = self._step(action_name=action, action_input=input_str)
         if len(obs) > self.max_observation_length:
             obs = obs[: self.max_observation_length] + '...'
         return obs, code
@@ -426,7 +426,7 @@ You have access of the following tools:\n"""
 
 
 class pipeline_runner:
-    def __init__(self, args, process_id=0, server=False):
+    def __init__(self, args, process_id=0, server=False, test=False):
         self.args = args
         self.process_id = process_id
         self.server = server
@@ -434,6 +434,7 @@ class pipeline_runner:
             self.task_list = self.generate_task_list()
         else:
             self.task_list = []
+        self.test = test
 
     def get_args(self):
         return self.args
@@ -474,6 +475,10 @@ class pipeline_runner:
                     tool_des,
                 )
             )
+        if self.args.test:
+            task_list = [task_list[0]]
+            print('========================TEST MODE=========================')
+            print(f'task_list: {task_list}')
         return task_list
 
     def method_converter(
