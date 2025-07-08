@@ -65,7 +65,7 @@ cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
 1. **Edit the Nginx Configuration:**
    Open the configuration file for your site:
    ```bash
-   sudo nano /etc/nginx/sites-available/frontend
+   sudo nano /etc/nginx/sites-available/frontend (it can be also in /etc/nginx/conf.d/frontend.conf)
    ```
 2. **Paste the Following Configuration:**
 
@@ -96,6 +96,23 @@ cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
            proxy_read_timeout          300;
            send_timeout                300;
        }
+
+       # Optional (socket.io) if you are using socket service, you need to include this part of config
+       location /socket.io/ {
+            proxy_pass http://127.0.0.1:5000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_connect_timeout 300;
+            proxy_send_timeout 300;
+            proxy_read_timeout 300;
+            send_timeout 300;
+        }
+  
    }
    ```
 
