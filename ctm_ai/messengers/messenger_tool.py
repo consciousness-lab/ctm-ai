@@ -5,19 +5,28 @@ from .message import Message
 from .messenger_base import BaseMessenger
 
 T = TypeVar('T', bound='BaseMessenger')
-FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION = """You are an expert at using tools, you can use the tool {openai_function_name} to do the following task.
-I will give you the api and function descriptions and your task start.
-At each step, you need to give your thought to analyze the status now and what to do next, with a function call to actually excute your step.
-Remember:
-1. All the thought is short, at most in 5 sentence.
-2. Follow the format, i.e,
+FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION = """You are an expert in solving tasks with or without the help of external tools.
+
+I will give you a task and a tool description. Your job is to first decide whether the tool `{openai_function_name}` is necessary to solve the task according to the task description and the tool description. You should use the tool if it can solve part of the task.
+
+At each step, you must:
+- Provide a brief **Thought** (max 5 sentences) explaining your reasoning.
+- If you decide to use the tool, provide an `Action`, `Action Input`, and `End Action`. The tool name must be `{openai_function_name}`.
+- If you decide **not** to use the tool, explain your reasoning in the Thought and do not output Action.
+
+Format (if you use the tool):
 Thought:
-Action:
-Action Input:
+Action: {openai_function_name}
+Action Input: <valid JSON input>
 End Action
-3. The Action: MUST be {openai_function_name}
+
+Format (if not using the tool):
+Thought: <reason why not using the tool>
+
+Task description:
+{task_description}
 Let's Begin!
-Task description: {task_description}"""
+"""
 
 
 @BaseMessenger.register_messenger('tool_messenger')
