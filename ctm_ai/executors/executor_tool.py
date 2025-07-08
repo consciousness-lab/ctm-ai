@@ -16,7 +16,6 @@ def convert_messages_to_openai_format(messages: List[Message]) -> List[Dict[str,
         if msg_text is None:
             continue
         result.append({'role': m.role, 'content': msg_text})
-    breakpoint()
     return result
 
 
@@ -28,7 +27,6 @@ def chat_completion_request(
     model='gpt-4o',
 ):
     openai_messages = convert_messages_to_openai_format(messages)
-    breakpoint()
     json_data = {
         'model': model,
         'messages': openai_messages,
@@ -40,11 +38,6 @@ def chat_completion_request(
             json_data['functions'] = [functions]
         else:
             json_data['functions'] = functions
-    # if function_call:
-    #     if isinstance(function_call, str):
-    #         json_data["function_call"] = {"name": function_call}
-    #     else:
-    #         json_data["function_call"] = function_call
 
     client = openai.OpenAI(api_key=openai_key)
     breakpoint()
