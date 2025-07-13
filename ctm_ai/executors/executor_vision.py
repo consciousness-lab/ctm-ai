@@ -1,12 +1,7 @@
 import os
-from typing import Any, Union
+from typing import Any, List
 
-from openai import OpenAI
-from openai.types.chat import (
-    ChatCompletionAssistantMessageParam,
-    ChatCompletionSystemMessageParam,
-    ChatCompletionUserMessageParam,
-)
+from litellm import completion
 
 from ctm_ai.utils.loader import load_image
 
@@ -18,43 +13,23 @@ from .executor_base import BaseExecutor
 @BaseExecutor.register_executor('vision_executor')
 class VisionExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
-        self.model = OpenAI()
-
-    def convert_message_to_param(
-        self, message: Message
-    ) -> Union[
-        ChatCompletionAssistantMessageParam,
-        ChatCompletionSystemMessageParam,
-        ChatCompletionUserMessageParam,
-    ]:
-        if message.content is None:
-            raise ValueError('Message content cannot be None')
-        if message.role == 'system':
-            return ChatCompletionSystemMessageParam(
-                role='system', content=message.content
-            )
-        elif message.role == 'user':
-            return ChatCompletionUserMessageParam(role='user', content=message.content)
-        elif message.role == 'assistant':
-            return ChatCompletionAssistantMessageParam(
-                role='assistant', content=message.content
-            )
-        else:
-            raise ValueError(f'Unsupported message role: {message.role}')
+        """Initialize the model using the base class functionality."""
+        super().init_model(*args, **kwargs)
 
     @message_exponential_backoff()
     def ask(
         self,
-        messages: list[Message],
+        messages: List[Message],
         max_token: int = 300,
         return_num: int = 5,
+        model: str = None,
         *args: Any,
         **kwargs: Any,
     ) -> Message:
-        model_messages = [
-            self.convert_message_to_param(message) for message in messages
-        ]
+        """Ask method for vision processing with image handling using LiteLLM."""
+        model = model or self.model_name
 
+        # Handle image path
         image_path = kwargs.get('image_path')
         if not image_path:
             return Message(role='assistant', content='', gist='', gists=[])
@@ -62,8 +37,13 @@ class VisionExecutor(BaseExecutor):
         if not os.path.exists(image_path):
             raise FileNotFoundError(f'Image file not found: {image_path}')
 
-        base64_image = load_image(image_path)
+        # Convert messages to LiteLLM format
+        litellm_messages = [
+            self.convert_message_to_litellm_format(message) for message in messages
+        ]
 
+        # Load and add image to messages
+        base64_image = load_image(image_path)
         image_message = {
             'role': 'user',
             'content': [
@@ -74,10 +54,12 @@ class VisionExecutor(BaseExecutor):
                 },
             ],
         }
-        model_messages.append(image_message)  # type: ignore[arg-type]
-        response = self.model.chat.completions.create(
-            model='gpt-4o',
-            messages=model_messages,
+        litellm_messages.append(image_message)  # type: ignore[arg-type]
+
+        # Use LiteLLM completion with vision support
+        response = completion(
+            model=model,
+            messages=litellm_messages,
             max_tokens=max_token,
             n=return_num,
         )
