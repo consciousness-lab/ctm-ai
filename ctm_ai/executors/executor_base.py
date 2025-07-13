@@ -1,55 +1,14 @@
-import time
+import os
 from typing import Any, Callable, Dict, List, Type
 
-import litellm
-from litellm import completion
-from tenacity import retry, stop_after_attempt, wait_random_exponential
-
 from ..messengers import Message
-from ..utils import message_exponential_backoff
-
-
-def convert_messages_to_litellm_format(messages: List[Message]) -> List[Dict[str, str]]:
-    """Convert CTM messages to LiteLLM format."""
-    result = []
-    for m in messages:
-        msg_text = m.content if m.content is not None else m.query
-        if msg_text is None:
-            continue
-        result.append({'role': m.role, 'content': msg_text})
-    return result
-
-
-@retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
-def litellm_completion_request(
-    messages: List[Message],
-    functions=None,
-    model: str = 'gpt-4o',
-    max_tokens: int = 1024,
-    temperature: float = 0.7,
-    n: int = 1,
-    **kwargs,
-):
-    """Make a completion request using LiteLLM with retry logic."""
-    litellm_messages = convert_messages_to_litellm_format(messages)
-
-    completion_kwargs = {
-        'model': model,
-        'messages': litellm_messages,
-        'max_tokens': max_tokens,
-        'temperature': temperature,
-        'n': n,
-        **kwargs,
-    }
-
-    if functions:
-        if isinstance(functions, dict):
-            completion_kwargs['functions'] = [functions]
-        else:
-            completion_kwargs['functions'] = functions
-
-    response = completion(**completion_kwargs)
-    return response
+from ..utils import (
+    ask_llm_standard,
+    call_llm,
+    configure_litellm,
+    convert_message_to_litellm_format,
+    message_exponential_backoff,
+)
 
 
 class BaseExecutor(object):
@@ -85,26 +44,21 @@ class BaseExecutor(object):
         self.try_times = kwargs.get('try_times', 3)
         self.default_max_tokens = kwargs.get('max_tokens', 1024)
         self.default_temperature = kwargs.get('temperature', 0.7)
-
+        
         # Configure LiteLLM settings
         self._configure_litellm()
 
     def _configure_litellm(self) -> None:
         """Configure LiteLLM settings and callbacks."""
-        # Set default model if not specified
-        if not hasattr(litellm, 'model'):
-            litellm.model = self.model_name
-
-        # Configure logging and callbacks if needed
-        # litellm.success_callback = ["lunary"] # Example callback
-        # litellm.failure_callback = ["lunary"] # Example callback
+        configure_litellm(
+            model_name=self.model_name,
+            success_callbacks=None,  # Can be configured as needed
+            failure_callbacks=None   # Can be configured as needed
+        )
 
     def convert_message_to_litellm_format(self, message: Message) -> Dict[str, str]:
         """Convert Message to LiteLLM format."""
-        if message.content is None:
-            raise ValueError('Message content cannot be None')
-
-        return {'role': message.role, 'content': message.content}
+        return convert_message_to_litellm_format(message)
 
     def call_llm(
         self,
@@ -116,7 +70,7 @@ class BaseExecutor(object):
         temperature: float = None,
         n: int = 1,
         process_id: int = 0,
-        **kwargs,
+        **kwargs
     ) -> tuple[Dict[str, Any], int, int]:
         """
         Call LLM using LiteLLM with retry logic and error handling.
@@ -126,58 +80,18 @@ class BaseExecutor(object):
         model = model or self.model_name
         max_tokens = max_tokens or self.default_max_tokens
         temperature = temperature or self.default_temperature
-
-        for attempt in range(self.try_times):
-            time.sleep(15)
-            try:
-                response = litellm_completion_request(
-                    messages,
-                    functions=functions,
-                    model=model,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    n=n,
-                    **kwargs,
-                )
-
-                message = response.choices[0].message
-                total_tokens = response.usage.total_tokens
-
-                if process_id == 0:
-                    print(f'[process({process_id})] total tokens: {total_tokens}')
-
-                message_dict = {
-                    'role': message.role,
-                    'content': message.content,
-                }
-
-                # Handle function calls if present
-                if hasattr(message, 'function_call') and message.function_call:
-                    message_dict['function_call'] = {
-                        'name': message.function_call.name,
-                        'arguments': message.function_call.arguments,
-                    }
-
-                    # Clean up function name if it has dots
-                    if '.' in message_dict['function_call']['name']:
-                        message_dict['function_call']['name'] = message_dict[
-                            'function_call'
-                        ]['name'].split('.')[-1]
-
-                return message_dict, 0, total_tokens
-
-            except Exception as e:
-                print(
-                    f'[process({process_id})] Attempt {attempt + 1}/{self.try_times} failed with error: {repr(e)}'
-                )
-
-        return (
-            {
-                'role': 'assistant',
-                'content': f'[ERROR] Failed after {self.try_times} attempts.',
-            },
-            -1,
-            0,
+        
+        return call_llm(
+            messages=messages,
+            functions=functions,
+            function_call=function_call,
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            n=n,
+            process_id=process_id,
+            try_times=self.try_times,
+            **kwargs
         )
 
     @message_exponential_backoff()
@@ -192,18 +106,15 @@ class BaseExecutor(object):
     ) -> Message:
         """Standard ask method for basic text completion using LiteLLM."""
         model = model or self.model_name
-
-        litellm_messages = convert_messages_to_litellm_format(messages)
-
-        response = completion(
+        
+        gists = ask_llm_standard(
+            messages=messages,
             model=model,
-            messages=litellm_messages,
             max_tokens=max_token,
             n=return_num,
-            **kwargs,
+            **kwargs
         )
-
-        gists = [response.choices[i].message.content for i in range(return_num)]
+        
         return Message(
             role='assistant',
             content=gists[0],
