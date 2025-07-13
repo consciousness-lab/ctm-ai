@@ -1,4 +1,3 @@
-import os
 import time
 from typing import Any, Dict, List
 
@@ -28,20 +27,20 @@ def litellm_completion_request(
     max_tokens: int = 1024,
     temperature: float = 0.7,
     n: int = 1,
-    **kwargs
+    **kwargs,
 ):
     """Make a completion request using LiteLLM with retry logic."""
     litellm_messages = convert_messages_to_litellm_format(messages)
-    
+
     completion_kwargs = {
         'model': model,
         'messages': litellm_messages,
         'max_tokens': max_tokens,
         'temperature': temperature,
         'n': n,
-        **kwargs
+        **kwargs,
     }
-    
+
     if functions:
         if isinstance(functions, dict):
             completion_kwargs['functions'] = [functions]
@@ -56,11 +55,8 @@ def convert_message_to_litellm_format(message: Message) -> Dict[str, str]:
     """Convert Message to LiteLLM format."""
     if message.content is None:
         raise ValueError('Message content cannot be None')
-    
-    return {
-        'role': message.role,
-        'content': message.content
-    }
+
+    return {'role': message.role, 'content': message.content}
 
 
 def call_llm(
@@ -73,7 +69,7 @@ def call_llm(
     n: int = 1,
     process_id: int = 0,
     try_times: int = 3,
-    **kwargs
+    **kwargs,
 ) -> tuple[Dict[str, Any], int, int]:
     """
     Call LLM using LiteLLM with retry logic and error handling.
@@ -89,9 +85,9 @@ def call_llm(
                 max_tokens=max_tokens,
                 temperature=temperature,
                 n=n,
-                **kwargs
+                **kwargs,
             )
-            
+
             message = response.choices[0].message
             total_tokens = response.usage.total_tokens
 
@@ -139,38 +135,38 @@ def ask_llm_standard(
     max_tokens: int = 300,
     temperature: float = 0.7,
     n: int = 5,
-    **kwargs
+    **kwargs,
 ) -> List[str]:
     """
     Standard LLM asking method for basic text completion using LiteLLM.
     Returns a list of generated responses.
     """
     litellm_messages = convert_messages_to_litellm_format(messages)
-    
+
     response = completion(
         model=model,
         messages=litellm_messages,
         max_tokens=max_tokens,
         temperature=temperature,
         n=n,
-        **kwargs
+        **kwargs,
     )
-    
+
     return [response.choices[i].message.content for i in range(len(response.choices))]
 
 
 def configure_litellm(
     model_name: str = 'gpt-4o',
     success_callbacks: List[str] = None,
-    failure_callbacks: List[str] = None
+    failure_callbacks: List[str] = None,
 ) -> None:
     """Configure LiteLLM settings and callbacks."""
     # Set default model if not specified
     if not hasattr(litellm, 'model'):
         litellm.model = model_name
-    
+
     # Configure logging and callbacks if provided
     if success_callbacks:
         litellm.success_callback = success_callbacks
     if failure_callbacks:
-        litellm.failure_callback = failure_callbacks 
+        litellm.failure_callback = failure_callbacks

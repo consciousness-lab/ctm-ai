@@ -1,4 +1,3 @@
-import os
 from typing import Any, Callable, Dict, List, Type
 
 from ..messengers import Message
@@ -44,7 +43,7 @@ class BaseExecutor(object):
         self.try_times = kwargs.get('try_times', 3)
         self.default_max_tokens = kwargs.get('max_tokens', 1024)
         self.default_temperature = kwargs.get('temperature', 0.7)
-        
+
         # Configure LiteLLM settings
         self._configure_litellm()
 
@@ -53,7 +52,7 @@ class BaseExecutor(object):
         configure_litellm(
             model_name=self.model_name,
             success_callbacks=None,  # Can be configured as needed
-            failure_callbacks=None   # Can be configured as needed
+            failure_callbacks=None,  # Can be configured as needed
         )
 
     def convert_message_to_litellm_format(self, message: Message) -> Dict[str, str]:
@@ -70,7 +69,7 @@ class BaseExecutor(object):
         temperature: float = None,
         n: int = 1,
         process_id: int = 0,
-        **kwargs
+        **kwargs,
     ) -> tuple[Dict[str, Any], int, int]:
         """
         Call LLM using LiteLLM with retry logic and error handling.
@@ -80,7 +79,7 @@ class BaseExecutor(object):
         model = model or self.model_name
         max_tokens = max_tokens or self.default_max_tokens
         temperature = temperature or self.default_temperature
-        
+
         return call_llm(
             messages=messages,
             functions=functions,
@@ -91,7 +90,7 @@ class BaseExecutor(object):
             n=n,
             process_id=process_id,
             try_times=self.try_times,
-            **kwargs
+            **kwargs,
         )
 
     @message_exponential_backoff()
@@ -106,15 +105,11 @@ class BaseExecutor(object):
     ) -> Message:
         """Standard ask method for basic text completion using LiteLLM."""
         model = model or self.model_name
-        
+
         gists = ask_llm_standard(
-            messages=messages,
-            model=model,
-            max_tokens=max_token,
-            n=return_num,
-            **kwargs
+            messages=messages, model=model, max_tokens=max_token, n=return_num, **kwargs
         )
-        
+
         return Message(
             role='assistant',
             content=gists[0],

@@ -17,7 +17,7 @@ class HybridRelevanceScorer(BaseScorer):
         kwargs.setdefault('model', 'gpt-4o')
         kwargs.setdefault('embedding_model', 'text-embedding-3-small')
         super().init_scorer(*args, **kwargs)
-        
+
         self.embedding_model = kwargs.get('embedding_model', 'text-embedding-3-small')
 
     def get_embedding(self, text: str) -> np.ndarray:
@@ -26,7 +26,7 @@ class HybridRelevanceScorer(BaseScorer):
             response = embedding(model=self.embedding_model, input=[text])
             return np.array(response.data[0].embedding, dtype=np.float32)
         except Exception as e:
-            print(f"Error getting embedding: {e}")
+            print(f'Error getting embedding: {e}')
             # Return zero vector as fallback
             return np.zeros(1536, dtype=np.float32)  # Default embedding size
 
@@ -56,13 +56,13 @@ class HybridRelevanceScorer(BaseScorer):
 
             score_text = response.choices[0].message.content.strip()
             print(f'[Directness LLM Response] {score_text}')
-            
+
             try:
                 score = float(score_text)
                 return min(max(score / 10.0, 0.0), 1.0)
             except (ValueError, TypeError):
                 return 0.0
-                
+
         except Exception as e:
             print(f'[Directness LLM Error] {e}')
             return 0.0
@@ -72,7 +72,7 @@ class HybridRelevanceScorer(BaseScorer):
         """Hybrid relevance scoring using both embeddings and LLM assessment."""
         if not messages or not messages[-1].query or not messages[-1].gist:
             return 0.0
-            
+
         query = messages[-1].query
         gist = messages[-1].gist
 
@@ -80,7 +80,7 @@ class HybridRelevanceScorer(BaseScorer):
         try:
             query_emb = self.get_embedding(query)
             gist_emb = self.get_embedding(gist)
-            
+
             # Check for zero vectors
             if np.allclose(query_emb, 0) or np.allclose(gist_emb, 0):
                 topical_score = 0.0
@@ -96,5 +96,5 @@ class HybridRelevanceScorer(BaseScorer):
         # Combine both scores with weighted average
         # TODO: These weights could be made configurable
         final_score = 0.3 * topical_score + 0.7 * directness_score
-        
+
         return float(np.clip(final_score, 0.0, 1.0))

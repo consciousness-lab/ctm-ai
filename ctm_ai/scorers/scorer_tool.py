@@ -20,10 +20,10 @@ class ToolScorer(BaseScorer):
         """Ask relevance using LiteLLM for tool-based scoring."""
         if not messages or not messages[-1].query or not messages[-1].gist:
             return 0.0
-            
+
         query = messages[-1].query
         gist = messages[-1].gist
-        
+
         try:
             response = completion(
                 model=self.relevance_model,
@@ -47,7 +47,7 @@ class ToolScorer(BaseScorer):
                 n=5,
                 temperature=0.7,
             )
-            
+
             scores = []
             for choice in response.choices:
                 score_text = choice.message.content.strip()
@@ -59,8 +59,8 @@ class ToolScorer(BaseScorer):
                     scores.append(0.0)
 
             return sum(scores) / len(scores) if scores else 0.0
-            
+
         except Exception as e:
-            print(f"Error in tool scorer relevance: {e}")
+            print(f'Error in tool scorer relevance: {e}')
             # Fallback to parent class method
             return super().ask_relevance(messages)

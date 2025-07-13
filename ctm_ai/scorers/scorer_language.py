@@ -20,10 +20,10 @@ class LanguageScorer(BaseScorer):
         """Ask relevance using LiteLLM with logprob analysis."""
         if not messages or not messages[-1].query or not messages[-1].gist:
             return 0.0
-            
+
         query = messages[-1].query
         gist = messages[-1].gist
-        
+
         try:
             response = completion(
                 model=self.relevance_model,
@@ -38,7 +38,7 @@ class LanguageScorer(BaseScorer):
                 top_logprobs=20,
                 temperature=0.0,
             )
-            
+
             if (
                 response.choices
                 and response.choices[0].logprobs
@@ -47,15 +47,17 @@ class LanguageScorer(BaseScorer):
                 and response.choices[0].logprobs.content[0].top_logprobs
             ):
                 top_logprobs = response.choices[0].logprobs.content[0].top_logprobs
-                logprob_dict = {logprob.token: logprob.logprob for logprob in top_logprobs}
+                logprob_dict = {
+                    logprob.token: logprob.logprob for logprob in top_logprobs
+                }
                 probs = logprobs_to_softmax(
                     [logprob_dict.get('Yes', 0), logprob_dict.get('No', 0)]
                 )
                 return probs[0]
             else:
                 return 0.0
-                
+
         except Exception as e:
-            print(f"Error in language scorer relevance: {e}")
+            print(f'Error in language scorer relevance: {e}')
             # Fallback to parent class method
             return super().ask_relevance(messages)

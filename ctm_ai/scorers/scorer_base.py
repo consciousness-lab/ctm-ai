@@ -1,5 +1,4 @@
 import math
-import os
 from typing import Any, Callable, Dict, List, Type
 
 import numpy as np
@@ -8,11 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from wordfreq import word_frequency
 
 from ..messengers import Message
-from ..utils import (
-    ask_llm_standard,
-    configure_litellm,
-    score_exponential_backoff,
-)
+from ..utils import ask_llm_standard, configure_litellm, score_exponential_backoff
 
 
 class BaseScorer(object):
@@ -48,7 +43,7 @@ class BaseScorer(object):
         self.relevance_model = kwargs.get('relevance_model', self.model_name)
         self.confidence_model = kwargs.get('confidence_model', self.model_name)
         self.surprise_model = kwargs.get('surprise_model', self.model_name)
-        
+
         # Configure LiteLLM
         configure_litellm(model_name=self.model_name)
 
@@ -60,10 +55,10 @@ class BaseScorer(object):
         """
         if not messages or not messages[-1].query or not messages[-1].gist:
             return 0.0
-        
+
         query = messages[-1].query
         gist = messages[-1].gist
-        
+
         # Create prompt for relevance evaluation
         relevance_prompt = [
             Message(
@@ -81,24 +76,24 @@ Consider:
 - 0.2 = Barely relevant, weak connection
 - 0.0 = Not relevant, completely unrelated
 
-Respond with only a number between 0.0 and 1.0 (e.g., 0.85)."""
+Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
             )
         ]
-        
+
         try:
             responses = ask_llm_standard(
                 messages=relevance_prompt,
                 model=self.relevance_model,
                 max_tokens=10,
                 temperature=0.0,
-                n=1
+                n=1,
             )
-            
+
             # Extract numerical score
             score_text = responses[0].strip()
             score = float(score_text)
             return max(0.0, min(1.0, score))  # Clamp to [0, 1]
-            
+
         except (ValueError, TypeError, IndexError):
             # Fallback to simple keyword matching
             return self._fallback_relevance_score(query, gist)
@@ -111,7 +106,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85)."""
             tfidf_matrix = vectorizer.fit_transform(docs)
             similarity = cosine_similarity(tfidf_matrix[0], tfidf_matrix[1])[0][0]
             return float(similarity)
-        except:
+        except Exception:
             return 0.0
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
@@ -121,16 +116,16 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85)."""
         """
         if not messages or not messages[-1].gist:
             return 0.0
-        
+
         gist = messages[-1].gist
         gists = messages[-1].gists if messages[-1].gists else [gist]
-        
+
         # Method 1: LLM-based confidence assessment
         llm_confidence = self._ask_llm_confidence(gist)
-        
+
         # Method 2: Statistical confidence from multiple responses
         statistical_confidence = self._ask_statistical_confidence(gists)
-        
+
         # Combine both methods (weighted average)
         final_confidence = 0.6 * llm_confidence + 0.4 * statistical_confidence
         return float(np.clip(final_confidence, 0.0, 1.0))
@@ -152,23 +147,23 @@ Consider:
 - 0.2 = Very uncertain, lots of "maybe", "possibly", "might be"
 - 0.0 = Completely uncertain, no definitive information
 
-Respond with only a number between 0.0 and 1.0 (e.g., 0.75)."""
+Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
             )
         ]
-        
+
         try:
             responses = ask_llm_standard(
                 messages=confidence_prompt,
                 model=self.confidence_model,
                 max_tokens=10,
                 temperature=0.0,
-                n=1
+                n=1,
             )
-            
+
             score_text = responses[0].strip()
             score = float(score_text)
             return max(0.0, min(1.0, score))
-            
+
         except (ValueError, TypeError, IndexError):
             return 0.5  # Default neutral confidence
 
@@ -176,22 +171,22 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75)."""
         """Calculate confidence based on consistency of multiple responses."""
         if len(gists) <= 1:
             return 1.0  # Single response, assume full confidence
-        
+
         try:
             vectorizer = TfidfVectorizer()
             tfidf_matrix = vectorizer.fit_transform(gists)
             cos_sim_matrix = cosine_similarity(tfidf_matrix)
-            
+
             # Get upper triangle (excluding diagonal)
             upper_triangle_indices = np.triu_indices_from(cos_sim_matrix, k=1)
             upper_triangle_values = cos_sim_matrix[upper_triangle_indices]
-            
+
             # Average cosine similarity indicates consistency
             avg_similarity = np.mean(upper_triangle_values)
-            
+
             return float(avg_similarity)
-        
-        except:
+
+        except Exception:
             return 0.5  # Default if calculation fails
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
@@ -203,7 +198,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75)."""
     ) -> float:
         """
         Evaluate surprise using both LLM assessment and statistical methods.
-        
+
         Args:
             messages: List of messages
             lang: Language for word frequency analysis
@@ -213,14 +208,14 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75)."""
             return 0.0
 
         gist = messages[-1].gist
-        
+
         if use_llm:
             # Method 1: LLM-based surprise assessment
             llm_surprise = self._ask_llm_surprise(gist)
-            
+
             # Method 2: Statistical surprise from word frequency
             statistical_surprise = self._ask_statistical_surprise(gist, lang)
-            
+
             # Combine both methods
             final_surprise = 0.7 * llm_surprise + 0.3 * statistical_surprise
             return float(np.clip(final_surprise, 0.0, 1.0))
@@ -245,23 +240,23 @@ Consider:
 - 0.2 = Mostly expected, very predictable content
 - 0.0 = Completely expected, entirely predictable, common knowledge
 
-Respond with only a number between 0.0 and 1.0 (e.g., 0.65)."""
+Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
             )
         ]
-        
+
         try:
             responses = ask_llm_standard(
                 messages=surprise_prompt,
                 model=self.surprise_model,
                 max_tokens=10,
                 temperature=0.0,
-                n=1
+                n=1,
             )
-            
+
             score_text = responses[0].strip()
             score = float(score_text)
             return max(0.0, min(1.0, score))
-            
+
         except (ValueError, TypeError, IndexError):
             return 0.5  # Default neutral surprise
 
@@ -271,40 +266,36 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65)."""
             gist_words = gist.split()
             if not gist_words:
                 return 0.0
-            
+
             # Calculate negative log frequencies (higher = more surprising)
             log_freqs = [
-                -math.log(max(word_frequency(word.lower(), lang), 1e-6)) 
+                -math.log(max(word_frequency(word.lower(), lang), 1e-6))
                 for word in gist_words
             ]
-            
+
             # Average surprise across all words
             avg_surprise = sum(log_freqs) / len(log_freqs)
-            
+
             # Normalize to [0, 1] range (14.0 is approximately -log(1e-6))
             normalized_surprise = avg_surprise / 14.0
             return float(np.clip(normalized_surprise, 0.0, 1.0))
-        
-        except:
+
+        except Exception:
             return 0.0
 
-    def ask(
-        self,
-        messages: List[Message],
-        **kwargs
-    ) -> Message:
+    def ask(self, messages: List[Message], **kwargs) -> Message:
         """
         Main scoring method that evaluates relevance, confidence, and surprise.
-        
+
         Returns a Message with all scoring metrics.
         """
         relevance = self.ask_relevance(messages)
         confidence = self.ask_confidence(messages)
         surprise = self.ask_surprise(messages, **kwargs)
-        
+
         # Calculate composite weight
         weight = relevance * confidence * surprise
-        
+
         return Message(
             relevance=relevance,
             confidence=confidence,
