@@ -2,8 +2,8 @@ import os
 from typing import Any, List
 
 import requests
+from litellm import completion
 from newspaper import Article
-from openai import OpenAI
 
 from ..messengers import Message
 from ..utils import logger, message_exponential_backoff
@@ -13,17 +13,28 @@ from .executor_base import BaseExecutor
 @BaseExecutor.register_executor('search_executor')
 class SearchExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the model using LiteLLM and set up search APIs."""
+        # Set default model for search processing
+        kwargs.setdefault('model', 'gpt-4o-mini')
+        super().init_model(*args, **kwargs)
+
+        # Set up Google Search API
         self.api_key = os.environ['GOOGLE_API_KEY']
         self.cse_id = os.environ['GOOGLE_CSE_ID']
-        self.model = OpenAI()
         self.url = 'https://www.googleapis.com/customsearch/v1'
 
     @message_exponential_backoff()
-    def ask(self, messages: List[Message], *args: Any, **kwargs: Any) -> Message:
+    def ask(
+        self, messages: List[Message], model: str = None, *args: Any, **kwargs: Any
+    ) -> Message:
+        """Ask method for search processing using LiteLLM."""
+        model = model or self.model_name
         query = messages[-1].content
+
+        # Generate search keywords using LiteLLM
         keywords = (
-            self.model.chat.completions.create(
-                model='gpt-4o-mini',
+            completion(
+                model=model,
                 messages=[
                     {
                         'role': 'user',
@@ -36,6 +47,7 @@ class SearchExecutor(BaseExecutor):
             .choices[0]
             .message.content
         )
+
         params = {'key': self.api_key, 'cx': self.cse_id, 'q': keywords}
         try:
             response = requests.get(self.url, params=params, timeout=1)
@@ -65,9 +77,10 @@ class SearchExecutor(BaseExecutor):
                 info_str = f'Title: {title}\n Summary:\n{page_summary}\n\n'
                 content += info_str
 
+                # Generate gist using LiteLLM
                 gist = (
-                    self.model.chat.completions.create(
-                        model='gpt-4o-mini',
+                    completion(
+                        model=model,
                         messages=[
                             {
                                 'role': 'user',

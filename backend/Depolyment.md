@@ -112,7 +112,7 @@ cp -r /home/ubuntu/ctm-ai/frontend/build/* /var/www/html/
             proxy_read_timeout 300;
             send_timeout 300;
         }
-  
+
    }
    ```
 
@@ -197,11 +197,11 @@ poetry run gunicorn app:app --bind 0.0.0.0:5000
   If you set your DNS domain name like https://ctm-ai.dev, you need to have SSL license to support. Otherwise, in Chrome or Safari, typing http://ctm-ai.dev would not work since it would automatically encrypt. You can check whether your DNS works by `nslookup app.auto-research.dev` or `curl http://app.auto-research.dev` and `curl https://app.auto-research.dev`. If http works but https not work for curl, then you need to configure a SSL license.
   You need to do some setups on the EC2 server command lines:
   ```bash
-  sudo yum install epel-release -y   # Amazon Linux 2, CentOS 
+  sudo yum install epel-release -y   # Amazon Linux 2, CentOS
   sudo yum install certbot python3-certbot-nginx -y
   sudo certbot --nginx
   ```
-  
+
 
 
 ---
