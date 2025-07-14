@@ -62,7 +62,7 @@ class BaseProcessor(object):
         return BaseExecutor(name='language_executor')
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='language_messenger')
+        return BaseMessenger.create_messenger('language_messenger')
 
     def init_scorer(self) -> BaseScorer:
         return BaseScorer(name='language_scorer')
