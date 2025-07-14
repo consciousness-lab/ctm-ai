@@ -6,13 +6,13 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor('math_processor')
 class MathProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['GOOGLE_API_KEY']
+    REQUIRED_KEYS = ['OPENAI_API_KEY']
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='math_messenger')
+        return BaseMessenger.create_messenger('math_messenger')
 
     def init_executor(self) -> BaseExecutor:
         return BaseExecutor(name='math_executor')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='language_scorer')
+        return BaseScorer(name='hybrid_scorer')

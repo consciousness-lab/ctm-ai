@@ -6,10 +6,10 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor('video_processor')
 class VideoProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['GEMINI_API_KEY']
+    REQUIRED_KEYS = ['OPENAI_API_KEY']
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='video_messenger')
+        return BaseMessenger.create_messenger('video_messenger')
 
     def init_executor(self) -> BaseExecutor:
         return BaseExecutor(name='video_executor')

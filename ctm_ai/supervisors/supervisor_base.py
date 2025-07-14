@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
-from ..utils import logging_ask
+from ..utils import configure_litellm, logging_ask
 
 
 class BaseSupervisor(object):
@@ -25,14 +25,23 @@ class BaseSupervisor(object):
 
     def __init__(self, name: str, *args: Any, **kwargs: Any) -> None:
         self.name = name
-        self.init_supervisor()
+        self.init_supervisor(*args, **kwargs)
 
-    def init_supervisor(
-        self,
-    ) -> None:
-        raise NotImplementedError(
-            "The 'set_model' method must be implemented in derived classes."
-        )
+    def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the supervisor with LiteLLM support."""
+        # Default configuration for LiteLLM
+        self.model_name = kwargs.get('model', 'gpt-o3')
+        self.info_model = kwargs.get('info_model', self.model_name)
+        self.score_model = kwargs.get('score_model', self.model_name)
+        self.max_tokens = kwargs.get('max_tokens', 300)
+        self.temperature = kwargs.get('temperature', 0.0)
+
+        # Configure LiteLLM settings
+        self._configure_litellm()
+
+    def _configure_litellm(self) -> None:
+        """Configure LiteLLM settings."""
+        configure_litellm(model_name=self.model_name)
 
     @logging_ask()
     def ask(self, query: str, image_path: str) -> Tuple[Union[str, None], float]:
