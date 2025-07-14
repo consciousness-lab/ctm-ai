@@ -2,6 +2,7 @@ import math
 from typing import Any, Callable, Dict, List, Type
 
 import numpy as np
+from litellm import embedding
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from wordfreq import word_frequency
@@ -40,6 +41,7 @@ class BaseScorer(object):
         """Initialize the scorer with LiteLLM support."""
         # Default configuration for LiteLLM
         self.model_name = kwargs.get('model', 'gpt-4o-mini')
+        self.embedding_model = kwargs.get('embedding_model', 'text-embedding-3-small')
         self.relevance_model = kwargs.get('relevance_model', self.model_name)
         self.confidence_model = kwargs.get('confidence_model', self.model_name)
         self.surprise_model = kwargs.get('surprise_model', self.model_name)
@@ -47,8 +49,18 @@ class BaseScorer(object):
         # Configure LiteLLM
         configure_litellm(model_name=self.model_name)
 
+    def get_embedding(self, text: str) -> np.ndarray:
+        """Get embedding using LiteLLM."""
+        try:
+            response = embedding(model=self.embedding_model, input=[text])
+            return np.array(response.data[0].embedding, dtype=np.float32)
+        except Exception as e:
+            print(f'Error getting embedding: {e}')
+            # Return zero vector as fallback
+            return np.zeros(1536, dtype=np.float32)
+
     @score_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_relevance(self, messages: List[Message]) -> float:
+    def ask_relevance(self, messages: List[Message], use_llm: bool = True) -> float:
         """
         Evaluate relevance using LiteLLM.
         Can be overridden by subclasses for specialized relevance scoring.
@@ -59,7 +71,27 @@ class BaseScorer(object):
         query = messages[-1].query
         gist = messages[-1].gist
 
-        # Create prompt for relevance evaluation
+        llm_relevance = self._ask_llm_relevance(query, gist)
+        statistical_relevance = self._ask_statistical_relevance(query, gist)
+
+        if use_llm:
+            final_relevance = 0.6 * llm_relevance + 0.4 * statistical_relevance
+        else:
+            final_relevance = statistical_relevance
+        return float(np.clip(final_relevance, 0.0, 1.0))
+
+    def _fallback_relevance_score(self, query: str, gist: str) -> float:
+        """Fallback relevance scoring using simple similarity."""
+        try:
+            vectorizer = TfidfVectorizer()
+            docs = [query.lower(), gist.lower()]
+            tfidf_matrix = vectorizer.fit_transform(docs)
+            similarity = cosine_similarity(tfidf_matrix[0], tfidf_matrix[1])[0][0]
+            return float(similarity)
+        except Exception:
+            return 0.0
+
+    def _ask_llm_relevance(self, query: str, gist: str) -> float:
         relevance_prompt = [
             Message(
                 role='user',
@@ -95,22 +127,27 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
             return max(0.0, min(1.0, score))  # Clamp to [0, 1]
 
         except (ValueError, TypeError, IndexError):
-            # Fallback to simple keyword matching
-            return self._fallback_relevance_score(query, gist)
+            return 0.5  # Default neutral confidence
 
-    def _fallback_relevance_score(self, query: str, gist: str) -> float:
-        """Fallback relevance scoring using simple similarity."""
+    def _ask_statistical_relevance(self, query: str, gist: str) -> float:
+        """Calculate relevance based on consistency of multiple responses."""
+
         try:
-            vectorizer = TfidfVectorizer()
-            docs = [query.lower(), gist.lower()]
-            tfidf_matrix = vectorizer.fit_transform(docs)
-            similarity = cosine_similarity(tfidf_matrix[0], tfidf_matrix[1])[0][0]
-            return float(similarity)
-        except Exception:
-            return 0.0
+            query_emb = self.get_embedding(query)
+            gist_emb = self.get_embedding(gist)
+
+            # Check for zero vectors
+            if np.allclose(query_emb, 0.0) or np.allclose(gist_emb, 0.0):
+                topical_score = 0.0
+            else:
+                topical_score = cosine_similarity([query_emb], [gist_emb])[0][0]
+        except Exception as e:
+            print(f'[Embedding Error] {e}')
+            topical_score = 0.0
+        return float(topical_score)
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_confidence(self, messages: List[Message]) -> float:
+    def ask_confidence(self, messages: List[Message], use_llm: bool = True) -> float:
         """
         Evaluate confidence using both LLM assessment and statistical methods.
         """
@@ -127,7 +164,10 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
         statistical_confidence = self._ask_statistical_confidence(gists)
 
         # Combine both methods (weighted average)
-        final_confidence = 0.6 * llm_confidence + 0.4 * statistical_confidence
+        if use_llm:
+            final_confidence = 0.6 * llm_confidence + 0.4 * statistical_confidence
+        else:
+            final_confidence = statistical_confidence
         return float(np.clip(final_confidence, 0.0, 1.0))
 
     def _ask_llm_confidence(self, gist: str) -> float:
