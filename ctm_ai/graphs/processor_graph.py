@@ -42,6 +42,15 @@ class ProcessorGraph(object):
         if removed:
             logger.info(f'Removed link between {processor1_name} and {processor2_name}')
 
+    def has_link(self, processor1_name: str, processor2_name: str) -> bool:
+        """Check if there is a link between two processors"""
+        try:
+            processor1 = self.get_node(processor1_name)
+            processor2 = self.get_node(processor2_name)
+            return processor2 in self.graph[processor1]
+        except ValueError:
+            return False
+
     def get_node(self, processor_name: str) -> BaseProcessor:
         for processor in self.graph.keys():
             if processor.name == processor_name:

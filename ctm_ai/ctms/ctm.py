@@ -6,7 +6,6 @@ from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..configs import ConsciousnessTuringMachineConfig
-from ..fusers import BaseFuser
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
@@ -77,7 +76,6 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
 
         self.add_supervisor(self.config.supervisor)
         self.add_scorer(self.config.scorer)
-        self.add_fuser(self.config.fuser)
 
     def _load_tool_processors(self) -> None:
         """Load tool processors from io_function"""
@@ -194,7 +192,6 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
             video_path,
             io_function,
         )
-        chunks = self.fuse_processor(chunks)
         winning_chunk = self.uptree_competition(chunks)
         return winning_chunk, chunks
 
