@@ -2,31 +2,31 @@ import math
 from typing import Any, Callable, Dict, List, Type
 
 import numpy as np
+from litellm import embedding
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from wordfreq import word_frequency
-from litellm import embedding
 
 from ..messengers import Message
 from ..utils import ask_llm_standard, configure_litellm, score_exponential_backoff
 
 
 class BaseScorer(object):
-    _scorer_registry: Dict[str, Type["BaseScorer"]] = {}
+    _scorer_registry: Dict[str, Type['BaseScorer']] = {}
 
     @classmethod
     def register_scorer(
         cls, name: str
-    ) -> Callable[[Type["BaseScorer"]], Type["BaseScorer"]]:
+    ) -> Callable[[Type['BaseScorer']], Type['BaseScorer']]:
         def decorator(
-            subclass: Type["BaseScorer"],
-        ) -> Type["BaseScorer"]:
+            subclass: Type['BaseScorer'],
+        ) -> Type['BaseScorer']:
             cls._scorer_registry[name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> "BaseScorer":
+    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> 'BaseScorer':
         if name not in cls._scorer_registry:
             raise ValueError(f"No scorer registered with name '{name}'")
         instance = super(BaseScorer, cls).__new__(cls._scorer_registry[name])
@@ -40,11 +40,11 @@ class BaseScorer(object):
     def init_scorer(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the scorer with LiteLLM support."""
         # Default configuration for LiteLLM
-        self.model_name = kwargs.get("model", "gpt-4o-mini")
-        self.embedding_model = kwargs.get("embedding_model", "text-embedding-3-small")
-        self.relevance_model = kwargs.get("relevance_model", self.model_name)
-        self.confidence_model = kwargs.get("confidence_model", self.model_name)
-        self.surprise_model = kwargs.get("surprise_model", self.model_name)
+        self.model_name = kwargs.get('model', 'gpt-4o-mini')
+        self.embedding_model = kwargs.get('embedding_model', 'text-embedding-3-small')
+        self.relevance_model = kwargs.get('relevance_model', self.model_name)
+        self.confidence_model = kwargs.get('confidence_model', self.model_name)
+        self.surprise_model = kwargs.get('surprise_model', self.model_name)
 
         # Configure LiteLLM
         configure_litellm(model_name=self.model_name)
@@ -55,7 +55,7 @@ class BaseScorer(object):
             response = embedding(model=self.embedding_model, input=[text])
             return np.array(response.data[0].embedding, dtype=np.float32)
         except Exception as e:
-            print(f"Error getting embedding: {e}")
+            print(f'Error getting embedding: {e}')
             # Return zero vector as fallback
             return np.zeros(1536, dtype=np.float32)
 
@@ -92,10 +92,9 @@ class BaseScorer(object):
             return 0.0
 
     def _ask_llm_relevance(self, query: str, gist: str) -> float:
-
         relevance_prompt = [
             Message(
-                role="user",
+                role='user',
                 content=f"""Please evaluate how relevant the answer is to the question on a scale from 0.0 to 1.0.
 
 Question: {query}
@@ -143,7 +142,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
             else:
                 topical_score = cosine_similarity([query_emb], [gist_emb])[0][0]
         except Exception as e:
-            print(f"[Embedding Error] {e}")
+            print(f'[Embedding Error] {e}')
             topical_score = 0.0
         return float(topical_score)
 
@@ -175,7 +174,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
         """Use LLM to assess confidence in the response."""
         confidence_prompt = [
             Message(
-                role="user",
+                role='user',
                 content=f"""Please evaluate how confident this response appears to be on a scale from 0.0 to 1.0.
 
 Response: {gist}
@@ -234,7 +233,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
     def ask_surprise(
         self,
         messages: List[Message],
-        lang: str = "en",
+        lang: str = 'en',
         use_llm: bool = True,
     ) -> float:
         """
@@ -268,7 +267,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
         """Use LLM to assess how surprising or novel the response is."""
         surprise_prompt = [
             Message(
-                role="user",
+                role='user',
                 content=f"""Please evaluate how surprising, unexpected, or novel this response is on a scale from 0.0 to 1.0.
 
 Response: {gist}

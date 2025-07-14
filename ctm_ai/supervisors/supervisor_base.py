@@ -1,16 +1,16 @@
 from typing import Any, Dict, Optional, Tuple, Type, Union
 
-from ..utils import logging_ask, configure_litellm
+from ..utils import configure_litellm, logging_ask
 
 
 class BaseSupervisor(object):
-    _supervisor_registry: Dict[str, Type["BaseSupervisor"]] = {}
+    _supervisor_registry: Dict[str, Type['BaseSupervisor']] = {}
 
     @classmethod
     def register_supervisor(cls, name: str) -> Any:
         def decorator(
-            subclass: Type["BaseSupervisor"],
-        ) -> Type["BaseSupervisor"]:
+            subclass: Type['BaseSupervisor'],
+        ) -> Type['BaseSupervisor']:
             cls._supervisor_registry[name] = subclass
             return subclass
 
@@ -30,11 +30,11 @@ class BaseSupervisor(object):
     def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the supervisor with LiteLLM support."""
         # Default configuration for LiteLLM
-        self.model_name = kwargs.get("model", "gpt-o3")
-        self.info_model = kwargs.get("info_model", self.model_name)
-        self.score_model = kwargs.get("score_model", self.model_name)
-        self.max_tokens = kwargs.get("max_tokens", 300)
-        self.temperature = kwargs.get("temperature", 0.0)
+        self.model_name = kwargs.get('model', 'gpt-o3')
+        self.info_model = kwargs.get('info_model', self.model_name)
+        self.score_model = kwargs.get('score_model', self.model_name)
+        self.max_tokens = kwargs.get('max_tokens', 300)
+        self.temperature = kwargs.get('temperature', 0.0)
 
         # Configure LiteLLM settings
         self._configure_litellm()

@@ -2,14 +2,14 @@ from typing import Any, Optional
 
 from ..messengers import Message
 from ..utils import (
+    ask_llm_standard,
     info_exponential_backoff,
     score_exponential_backoff,
-    ask_llm_standard,
 )
 from .supervisor_base import BaseSupervisor
 
 
-@BaseSupervisor.register_supervisor("language_supervisor")
+@BaseSupervisor.register_supervisor('language_supervisor')
 class LanguageSupervisor(BaseSupervisor):
     def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
         super().init_supervisor(*args, **kwargs)
@@ -18,8 +18,8 @@ class LanguageSupervisor(BaseSupervisor):
     def ask_info(self, query: str, context: Optional[str] = None) -> Optional[str]:
         messages = [
             Message(
-                role="user",
-                content=f"The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a few words:",
+                role='user',
+                content=f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a few words:',
             )
         ]
 
@@ -33,7 +33,7 @@ class LanguageSupervisor(BaseSupervisor):
             )
             return responses[0] if responses else None
         except Exception as e:
-            print(f"Error in ask_info: {e}")
+            print(f'Error in ask_info: {e}')
             return None
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
@@ -43,7 +43,7 @@ class LanguageSupervisor(BaseSupervisor):
 
         messages = [
             Message(
-                role="user",
+                role='user',
                 content=f"""Please evaluate the relevance between the query and the information on a scale from 0.0 to 1.0.
 
 Query: {query}
@@ -83,7 +83,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
                 return 0.0
 
         except Exception as e:
-            print(f"Error in ask_score: {e}")
+            print(f'Error in ask_score: {e}')
             return self._fallback_similarity_score(query, gist)
 
     def _fallback_similarity_score(self, query: str, gist: str) -> float:
