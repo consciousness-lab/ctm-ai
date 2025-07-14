@@ -9,7 +9,7 @@ class VisionProcessor(BaseProcessor):
     REQUIRED_KEYS = ['OPENAI_API_KEY']
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='vision_messenger')
+        return BaseMessenger.create_messenger('vision_messenger')
 
     def init_executor(self) -> BaseExecutor:
         return BaseExecutor(name='vision_executor')

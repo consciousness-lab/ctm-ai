@@ -9,7 +9,7 @@ class AudioProcessor(BaseProcessor):
     REQUIRED_KEYS = ['GEMINI_API_KEY']
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='audio_messenger')
+        return BaseMessenger.create_messenger('audio_messenger')
 
     def init_executor(self) -> BaseExecutor:
         return BaseExecutor(name='audio_executor')

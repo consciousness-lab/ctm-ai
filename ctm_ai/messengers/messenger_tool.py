@@ -31,12 +31,17 @@ Let's Begin!
 
 @BaseMessenger.register_messenger('tool_messenger')
 class ToolMessenger(BaseMessenger):
+    default_scorer_role = 'assistant'
+    include_query_in_scorer = False
+    include_gists_in_scorer = False
+
     def collect_executor_messages(
         self,
         query: str,
         io_function: BaseEnv,
         openai_function_name: str,
     ) -> List[Message]:
+        """ToolMessenger有特殊的参数和逻辑，需要自定义实现"""
         system = FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
         system = system.replace('{openai_function_name}', openai_function_name)
         task_description = io_function.openai_name_reflect_all_info[
@@ -51,17 +56,3 @@ class ToolMessenger(BaseMessenger):
         self.executor_messages.append(message)
 
         return self.executor_messages
-
-    def collect_scorer_messages(
-        self,
-        query: str,
-        io_function: BaseEnv,
-        openai_function_name: str,
-        executor_output: Message,
-    ) -> List[Message]:
-        message = Message(
-            role='assistant',
-            gist=executor_output.gist,
-        )
-        self.scorer_messages.append(message)
-        return self.scorer_messages

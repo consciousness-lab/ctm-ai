@@ -13,7 +13,7 @@ class ToolProcessor(BaseProcessor):
     REQUIRED_KEYS = ['OPENAI_API_KEY', 'TOOLBENCH_KEY']
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger(name='tool_messenger')
+        return BaseMessenger.create_messenger('tool_messenger')
 
     def init_executor(self) -> BaseExecutor:
         return BaseExecutor(name='tool_executor')
