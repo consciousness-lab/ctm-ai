@@ -15,6 +15,7 @@ class Message(BaseModel):
     weight: Optional[float] = Field(default=None)
     gist: Optional[str] = Field(default=None)
     gists: Optional[List[str]] = Field(default=[])
+    additional_question: Optional[str] = Field(default=None)
 
     class Config:
         extra = 'allow'
