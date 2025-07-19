@@ -65,6 +65,7 @@ class VisionExecutor(BaseExecutor):
         )
 
         gists = [response.choices[i].message.content for i in range(return_num)]
+
         return Message(
             role='assistant',
             content=gists[0],

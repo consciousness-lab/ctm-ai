@@ -177,29 +177,66 @@ class BaseConsciousnessTuringMachine(ABC):
             processor.update(chunk)
 
     @logging_func
-    def link_form(self, chunks: List[Chunk]) -> None:
-        chunk_manager = ChunkManager(chunks, self.config)
-        interaction_matrix = chunk_manager.get_interaction_type_matrix()
+    def link_form(self, chunks: List[Chunk], winning_chunk: Chunk) -> None:
+        if (
+            not winning_chunk.additional_question
+            or not winning_chunk.additional_question.strip()
+        ):
+            chunk_manager = ChunkManager(chunks, self.config)
+            interaction_matrix = chunk_manager.get_interaction_type_matrix()
 
-        for i in range(len(interaction_matrix)):
-            for j in range(i + 1, len(interaction_matrix)):
-                interaction_type = interaction_matrix[i][j]
+            for i in range(len(interaction_matrix)):
+                for j in range(i + 1, len(interaction_matrix)):
+                    interaction_type = interaction_matrix[i][j]
 
-                if not self.processor_graph.has_node(
-                    chunks[i].processor_name
-                ) or not self.processor_graph.has_node(chunks[j].processor_name):
-                    continue
+                    if not self.processor_graph.has_node(
+                        chunks[i].processor_name
+                    ) or not self.processor_graph.has_node(chunks[j].processor_name):
+                        continue
 
-                if interaction_type != 0:
+                    if interaction_type != 0:
+                        self.processor_graph.add_link(
+                            processor1_name=chunks[i].processor_name,
+                            processor2_name=chunks[j].processor_name,
+                        )
+                    else:
+                        self.processor_graph.remove_link(
+                            processor1_name=chunks[i].processor_name,
+                            processor2_name=chunks[j].processor_name,
+                        )
+            return
+
+        for processor in self.processor_graph.nodes:
+            if processor.name == winning_chunk.processor_name:
+                continue
+
+            try:
+                response_chunk = self._ask_processor_for_additional_question(
+                    processor, winning_chunk.additional_question
+                )
+
+                if response_chunk.confidence > 0.98:
                     self.processor_graph.add_link(
-                        processor1_name=chunks[i].processor_name,
-                        processor2_name=chunks[j].processor_name,
+                        processor1_name=winning_chunk.processor_name,
+                        processor2_name=processor.name,
                     )
-                else:
-                    self.processor_graph.remove_link(
-                        processor1_name=chunks[i].processor_name,
-                        processor2_name=chunks[j].processor_name,
+                    print(
+                        f'Add link: {winning_chunk.processor_name} <-> {processor.name} '
+                        f'(confidence: {response_chunk.confidence:.3f})'
                     )
+
+            except Exception as e:
+                print(f'Error {processor.name}: {e}')
+                continue
+
+    def _ask_processor_for_additional_question(
+        self, processor: BaseProcessor, additional_question: str
+    ) -> Chunk:
+        query = f'Can you help with this question: {additional_question}'
+
+        response_chunk = processor.ask(query=query)
+
+        return response_chunk
 
     @logging_func
     def fuse_processor(self, chunks: List[Chunk]) -> List[Chunk]:

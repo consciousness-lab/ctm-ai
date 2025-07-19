@@ -8,6 +8,7 @@ from ..chunks import Chunk
 from ..executors import BaseExecutor
 from ..messengers import BaseMessenger, Message
 from ..scorers import BaseScorer
+from ..utils import ask_llm_standard
 
 
 class BaseProcessor(object):
@@ -119,10 +120,61 @@ class BaseProcessor(object):
             scorer_output=scorer_output,
         )
 
+        # Generate additional question based on gist and query
+        additional_question = self._ask_for_additional_content(
+            query=query,
+            text=text,
+            image_path=image_path,
+            audio_path=audio_path,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
+            gist=executor_output.gist,
+        )
+
         chunk = self.merge_outputs_into_chunk(
-            name=self.name, scorer_output=scorer_output, executor_output=executor_output
+            name=self.name,
+            scorer_output=scorer_output,
+            executor_output=executor_output,
+            additional_question=additional_question,
         )
         return chunk
+
+    def _ask_for_additional_content(
+        self,
+        query: str,
+        gist: str,
+        text: Optional[str] = None,
+        image_path: Optional[str] = None,
+        audio_path: Optional[str] = None,
+        video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
+    ) -> str:
+        prompt = f"""Based on the original query: "{query}"
+And the current gist: "{gist}"
+
+What additional information or content would be most helpful to provide a more complete and accurate response? Consider:
+1. What specific details are missing?
+2. What context would improve the understanding?
+3. What related information would enhance the response?
+
+Please provide a clear, specific question asking for the most relevant additional content."""
+
+        try:
+            # Use LiteLLM to generate the additional question
+            additional_questions = ask_llm_standard(
+                messages=[Message(role='user', content=prompt)],
+                model=self.executor.model_name,
+                max_tokens=100,
+                n=1,
+            )
+            return (
+                additional_questions[0]
+                if additional_questions
+                else 'What additional information would help me provide a better response?'
+            )
+        except Exception:
+            # Fallback to a generic question if LLM call fails
+            return f"Based on your query about '{query}', what additional details or context would help me provide a more complete answer?"
 
     def update(self, chunk: Chunk) -> None:
         if chunk.processor_name != self.name:
@@ -133,7 +185,11 @@ class BaseProcessor(object):
             )
 
     def merge_outputs_into_chunk(
-        self, name: str, scorer_output: Message, executor_output: Message
+        self,
+        name: str,
+        scorer_output: Message,
+        executor_output: Message,
+        additional_question: str = '',
     ) -> Chunk:
         return Chunk(
             time_step=0,
@@ -145,12 +201,14 @@ class BaseProcessor(object):
             weight=scorer_output.weight,
             intensity=scorer_output.weight,
             mood=scorer_output.weight,
+            additional_question=additional_question,
         )
 
     def split_chunk_into_outputs(self, chunk: Chunk) -> Tuple[Message, Message]:
         executor_output = Message(
             role='assistant',
             content=chunk.gist,
+            additional_question=chunk.additional_question,
         )
         scorer_output = Message(
             relevance=chunk.relevance,
