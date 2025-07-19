@@ -161,7 +161,7 @@ class ToolExecutor(BaseExecutor):
                 role='function',
                 content=error_msg,
                 gist=error_msg,
-                additional_question=f"Available tools include: {', '.join(available_tool_names)}. Please select a valid tool.",
+                additional_question=f'Available tools include: {", ".join(available_tool_names)}. Please select a valid tool.',
             )
 
         # Error case
