@@ -14,13 +14,11 @@ class ConsciousnessTuringMachineBaseline(BaseCTM):
         self.processor_graph = ProcessorGraph()
         self.supervisors: List[BaseSupervisor] = []
         self.scorers = []
-        self.fusers = []
 
-        for group_name, processors in self.config.groups_of_processors.items():
-            for processor_name in processors:
-                self.processor_graph.add_node(
-                    processor_name=processor_name, processor_group_name=group_name
-                )
+        for processor_name in self.config.processors:
+            self.processor_graph.add_node(
+                processor_name=processor_name, processor_group_name=None
+            )
 
         self.add_supervisor(self.config.supervisor)
 

@@ -109,6 +109,11 @@ class BaseMessenger(object):
         self.executor_messages.append(executor_output)
         self.scorer_messages.append(scorer_output)
 
+    def clear_memory(self) -> None:
+        """Clear all stored messages"""
+        self.executor_messages.clear()
+        self.scorer_messages.clear()
+
     def _build_executor_content(
         self,
         query: str,
@@ -140,6 +145,7 @@ class BaseMessenger(object):
         video_frames: Optional[List[Any]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        memory_mode: bool = True,  # Default to memory mode
         **kwargs: Any,
     ) -> List[Message]:
         content = self._build_executor_content(
@@ -156,11 +162,21 @@ class BaseMessenger(object):
             message_data['content'] = content
 
         message = Message(**message_data)
-        self.executor_messages.append(message)
-        return self.executor_messages
+
+        # Only append to memory if memory_mode is enabled
+        if memory_mode:
+            self.executor_messages.append(message)
+            return self.executor_messages
+        else:
+            # Return only the current message without memory
+            return [message]
 
     def collect_scorer_messages(
-        self, executor_output: Message, query: str, **kwargs: Any
+        self,
+        executor_output: Message,
+        query: str,
+        memory_mode: bool = True,  # Default to memory mode
+        **kwargs: Any,
     ) -> List[Message]:
         message_data = {
             'role': self.default_scorer_role,
@@ -174,5 +190,11 @@ class BaseMessenger(object):
             message_data['gists'] = executor_output.gists
 
         message = Message(**message_data)
-        self.scorer_messages.append(message)
-        return self.scorer_messages
+
+        # Only append to memory if memory_mode is enabled
+        if memory_mode:
+            self.scorer_messages.append(message)
+            return self.scorer_messages
+        else:
+            # Return only the current message without memory
+            return [message]

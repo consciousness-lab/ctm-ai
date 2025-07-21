@@ -30,7 +30,7 @@ class BaseSupervisor(object):
     def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the supervisor with LiteLLM support."""
         # Default configuration for LiteLLM
-        self.model_name = kwargs.get('model', 'gpt-o3')
+        self.model_name = kwargs.get('model', 'gpt-4o')
         self.info_model = kwargs.get('info_model', self.model_name)
         self.score_model = kwargs.get('score_model', self.model_name)
         self.max_tokens = kwargs.get('max_tokens', 300)
@@ -44,8 +44,8 @@ class BaseSupervisor(object):
         configure_litellm(model_name=self.model_name)
 
     @logging_ask()
-    def ask(self, query: str, image_path: str) -> Tuple[Union[str, None], float]:
-        gist = self.ask_info(query, image_path)
+    def ask(self, query: str, context: str) -> Tuple[Union[str, None], float]:
+        gist = self.ask_info(query, context)
         score = self.ask_score(query, gist)
         return gist, score
 
