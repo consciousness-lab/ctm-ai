@@ -44,7 +44,7 @@ class BaseExecutor(object):
         self.model_name = kwargs.get('model', 'gpt-4o')
         self.try_times = kwargs.get('try_times', 3)
         self.default_max_tokens = kwargs.get('max_tokens', 1024)
-        self.default_temperature = kwargs.get('temperature', 0.7)
+        self.default_temperature = kwargs.get('temperature', 0.0)
 
         # Configure LiteLLM settings
         self._configure_litellm()
@@ -150,7 +150,6 @@ class BaseExecutor(object):
 
         return Message(
             role='assistant',
-            content=gist,
             gist=gist,
             additional_question=additional_question,
         )

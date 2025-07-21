@@ -132,6 +132,17 @@ class BaseMessenger(object):
         if self.include_video_note and video_frames_path:
             content += f'Note: The input contains {len(video_frames_path)} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n'
 
+        # Add JSON format requirement
+        content += """
+
+Please respond in JSON format with the following structure:
+{
+    "response": "Your detailed response to the query",
+    "additional_question": "If you are not sure about the answer, you should generate a question that potentially can be answered by other modality models or other tools like search engine."
+}
+
+Your additional_question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about."""
+
         return content
 
     def collect_executor_messages(

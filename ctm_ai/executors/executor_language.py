@@ -19,34 +19,10 @@ class LanguageExecutor(BaseExecutor):
         **kwargs: Any,
     ) -> Message:
         """Ask method for language processing using the unified ask_base method."""
-        print(messages)
 
-        # Enhance the last message to request JSON format
-        if messages:
-            enhanced_messages = messages[:-1].copy()
-            last_message = messages[-1]
-
-            enhanced_content = f"""{last_message.content}
-
-Please respond in JSON format with the following structure:
-{{
-    "response": "Your detailed response to the query",
-    "additional_question": "A follow-up question to gather more specific information or explore related topics"
-}}
-
-Your additional_question should help clarify what specific aspects the user wants to know more about or suggest related topics that might be of interest."""
-
-            enhanced_last_message = Message(
-                role=last_message.role, content=enhanced_content
-            )
-            enhanced_messages.append(enhanced_last_message)
-        else:
-            enhanced_messages = messages
-
-        print(enhanced_messages)
         # Convert messages to LiteLLM format
         litellm_messages = [
-            self.convert_message_to_litellm_format(msg) for msg in enhanced_messages
+            self.convert_message_to_litellm_format(msg) for msg in messages
         ]
 
         # Use the unified ask_base method

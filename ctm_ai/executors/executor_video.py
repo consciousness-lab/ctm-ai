@@ -48,21 +48,10 @@ class VideoExecutor(BaseExecutor):
         # Convert messages to text
         message_text = ' '.join([msg.content for msg in messages if msg.content])
 
-        # Create enhanced prompt for JSON response
-        enhanced_prompt = f"""{message_text}
-
-Please respond in JSON format with the following structure:
-{{
-    "response": "Your detailed analysis of the video frames",
-    "additional_question": "A follow-up question to gather more specific information about what the user wants to know about the video"
-}}
-
-Your additional_question should be specific to video analysis, such as asking about specific frames, time periods, actions, movements, scene transitions, or objects throughout the video sequence. Here are the relevant image frames of the video:"""
-
         # Create message with video frames for LiteLLM
         video_message = {
             'role': 'user',
-            'content': [{'type': 'text', 'text': enhanced_prompt}],
+            'content': [{'type': 'text', 'text': message_text}],
         }
 
         # Add image frames to the message

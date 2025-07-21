@@ -32,7 +32,6 @@ class VisionExecutor(BaseExecutor):
         if not image_path:
             return Message(
                 role='assistant',
-                content='',
                 gist='',
                 additional_question='Please provide an image to analyze.',
             )
@@ -43,23 +42,14 @@ class VisionExecutor(BaseExecutor):
         # Load and add image to messages
         base64_image = load_image(image_path)
 
-        # Create enhanced prompt for JSON response
+        # Use the original query from messages
         original_query = messages[-1].content if messages else ''
-        enhanced_prompt = f"""{original_query}
-
-Please respond in JSON format with the following structure:
-{{
-    "response": "Your detailed analysis of the image",
-    "additional_question": "A follow-up question to gather more specific information about what the user wants to know about the image"
-}}
-
-Your additional_question should be specific to image analysis, such as asking about particular objects, areas, colors, relationships, or details in the image."""
 
         # Create message with image for LiteLLM
         image_message = {
             'role': 'user',
             'content': [
-                {'type': 'text', 'text': enhanced_prompt},
+                {'type': 'text', 'text': original_query},
                 {
                     'type': 'image_url',
                     'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},

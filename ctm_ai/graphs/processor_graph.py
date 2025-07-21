@@ -9,9 +9,14 @@ class ProcessorGraph(object):
         self.graph: Dict[BaseProcessor, Set[BaseProcessor]] = {}
 
     def add_node(
-        self, processor_name: str, processor_group_name: Optional[str] = None
+        self,
+        processor_name: str,
+        processor_group_name: Optional[str] = None,
+        config: Optional[object] = None,
     ) -> None:
         processor = BaseProcessor(name=processor_name, group_name=processor_group_name)
+        if config:
+            processor.config = config
         self.graph[processor] = set()
         logger.info(f'Added processor {processor_name} to graph')
 

@@ -51,7 +51,6 @@ class AudioExecutor(BaseExecutor):
         if not audio_path:
             return Message(
                 role='assistant',
-                content='',
                 gist='',
                 additional_question='Please provide an audio file to analyze.',
             )
@@ -60,17 +59,6 @@ class AudioExecutor(BaseExecutor):
             raise FileNotFoundError(f'Audio file not found: {audio_path}')
 
         query = messages[-1].content
-
-        # Create enhanced prompt for JSON response
-        enhanced_query = f"""{query}
-
-Please respond in JSON format with the following structure:
-{{
-    "response": "Your detailed analysis of the audio",
-    "additional_question": "A follow-up question to gather more specific information about what the user wants to know about the audio"
-}}
-
-Your additional_question should be specific to audio analysis, such as asking about time segments, specific sounds, audio quality, voices, or emotional content."""
 
         try:
             # Get MIME type for audio file
@@ -84,7 +72,7 @@ Your additional_question should be specific to audio analysis, such as asking ab
             audio_message = {
                 'role': 'user',
                 'content': [
-                    {'type': 'text', 'text': enhanced_query},
+                    {'type': 'text', 'text': query},
                     {
                         'type': 'audio_url',
                         'audio_url': {
