@@ -8,8 +8,8 @@
     "synergy_weight_threshold": 0.6,
     "groups_of_processors": {
         "group_1": [
-            "video_processor",
-            "language_processor"
+            "language_processor",
+            "vision_processor"
         ]
     },
     "supervisor": "language_supervisor",

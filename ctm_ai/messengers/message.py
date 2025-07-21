@@ -16,6 +16,7 @@ class Message(BaseModel):
     gist: Optional[str] = Field(default=None)
     gists: Optional[List[str]] = Field(default=[])
     additional_question: Optional[str] = Field(default=None)
+    additional_questions: Optional[List[str]] = Field(default=[])
 
     class Config:
         extra = 'allow'
