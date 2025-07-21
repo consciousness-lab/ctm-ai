@@ -9,8 +9,7 @@
     "groups_of_processors": {
         "group_1": [
             "video_processor",
-            "language_processor",
-            "search_processor"
+            "language_processor"
         ]
     },
     "supervisor": "language_supervisor",
