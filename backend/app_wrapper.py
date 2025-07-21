@@ -112,7 +112,6 @@ class FlaskAppWrapper:
 
             self.ctm.add_supervisor('language_supervisor')
             self.ctm.add_scorer('language_scorer')
-            self.ctm.add_fuser('language_fuser')
 
             return (
                 self.add_cors_headers(
@@ -298,7 +297,8 @@ class FlaskAppWrapper:
             data = request.get_json() or {}
             updates: List[Dict[str, str]] = data.get('updates', [])
 
-            self.ctm.link_form(self.state.chunks)
+            # Update processor states (no need to call link_form here)
+            # self.ctm.link_form(self.state.chunks, winning_chunk=None)
             self.state.chunks = []
             self.state.node_details.clear()
             self.state.node_parents.clear()
