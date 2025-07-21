@@ -1,6 +1,6 @@
-import os
 import base64
 import io
+import os
 from typing import Any, List
 
 from ..messengers import Message
@@ -79,5 +79,5 @@ class VideoExecutor(BaseExecutor):
             max_token=max_token,
             return_num=return_num,
             model=model,
-            default_additional_question='Would you like me to analyze any specific aspects of this video in more detail?'
+            default_additional_question='Would you like me to analyze any specific aspects of this video in more detail?',
         )
