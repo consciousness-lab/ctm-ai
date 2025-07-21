@@ -19,7 +19,7 @@ class ToolProcessor(BaseProcessor):
         return BaseExecutor(name='tool_executor')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='tool_scorer')
+        return BaseScorer(name="language_scorer")
 
     def ask(
         self,

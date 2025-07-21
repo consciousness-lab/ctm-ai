@@ -15,4 +15,4 @@ class VideoProcessor(BaseProcessor):
         return BaseExecutor(name='video_executor')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='hybrid_scorer')
+        return BaseScorer(name="language_scorer")
