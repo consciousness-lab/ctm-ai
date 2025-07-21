@@ -62,8 +62,11 @@ class BaseScorer(object):
     @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_relevance(self, messages: List[Message], use_llm: bool = True) -> float:
         """
-        Evaluate relevance using LiteLLM.
-        Can be overridden by subclasses for specialized relevance scoring.
+        Evaluate relevance using either LLM or statistical methods.
+
+        Args:
+            messages: List of messages containing query and gist
+            use_llm: If True, use LLM for relevance scoring; if False, use statistical methods
         """
         if not messages or not messages[-1].query or not messages[-1].gist:
             return 0.0
@@ -71,13 +74,13 @@ class BaseScorer(object):
         query = messages[-1].query
         gist = messages[-1].gist
 
-        llm_relevance = self._ask_llm_relevance(query, gist)
-        statistical_relevance = self._ask_statistical_relevance(query, gist)
-
         if use_llm:
-            final_relevance = 0.6 * llm_relevance + 0.4 * statistical_relevance
+            # Use only LLM method
+            final_relevance = self._ask_llm_relevance(query, gist)
         else:
-            final_relevance = statistical_relevance
+            # Use only statistical method
+            final_relevance = self._ask_statistical_relevance(query, gist)
+
         return float(np.clip(final_relevance, 0.0, 1.0))
 
     def _fallback_relevance_score(self, query: str, gist: str) -> float:
@@ -101,12 +104,14 @@ Question: {query}
 Answer: {gist}
 
 Consider:
-- 1.0 = Perfectly relevant, directly answers the question
-- 0.8 = Highly relevant, mostly answers the question
+- 1.0 = Perfectly relevant, directly answers the question with specific information
+- 0.8 = Highly relevant, mostly answers the question with useful information
 - 0.6 = Moderately relevant, partially answers the question
-- 0.4 = Somewhat relevant, tangentially related
-- 0.2 = Barely relevant, weak connection
-- 0.0 = Not relevant, completely unrelated
+- 0.4 = Somewhat relevant, tangentially related but not very helpful
+- 0.2 = Barely relevant, weak connection or very general response
+- 0.0 = Not relevant, refuses to answer, says "cannot determine", or completely unrelated
+
+IMPORTANT: If the answer says "I cannot determine", "I don't know", "cannot answer", or refuses to provide information, score it as 0.0.
 
 Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
             )
@@ -149,7 +154,11 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
     @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_confidence(self, messages: List[Message], use_llm: bool = True) -> float:
         """
-        Evaluate confidence using both LLM assessment and statistical methods.
+        Evaluate confidence using either LLM or statistical methods.
+
+        Args:
+            messages: List of messages containing gist
+            use_llm: If True, use LLM for confidence scoring; if False, use statistical methods
         """
         if not messages or not messages[-1].gist:
             return 0.0
@@ -157,17 +166,13 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
         gist = messages[-1].gist
         gists = messages[-1].gists if messages[-1].gists else [gist]
 
-        # Method 1: LLM-based confidence assessment
-        llm_confidence = self._ask_llm_confidence(gist)
-
-        # Method 2: Statistical confidence from multiple responses
-        statistical_confidence = self._ask_statistical_confidence(gists)
-
-        # Combine both methods (weighted average)
         if use_llm:
-            final_confidence = 0.6 * llm_confidence + 0.4 * statistical_confidence
+            # Use only LLM method
+            final_confidence = self._ask_llm_confidence(gist)
         else:
-            final_confidence = statistical_confidence
+            # Use only statistical method
+            final_confidence = self._ask_statistical_confidence(gists)
+
         return float(np.clip(final_confidence, 0.0, 1.0))
 
     def _ask_llm_confidence(self, gist: str) -> float:
@@ -185,7 +190,9 @@ Consider:
 - 0.6 = Moderately confident, some uncertainty expressed
 - 0.4 = Somewhat uncertain, many qualifications or hedging
 - 0.2 = Very uncertain, lots of "maybe", "possibly", "might be"
-- 0.0 = Completely uncertain, no definitive information
+- 0.0 = Completely uncertain, says "cannot determine", "I don't know", or no definitive information
+
+IMPORTANT: If the response says "I cannot determine", "cannot answer", "I don't know", or refuses to provide information, score it as 0.0.
 
 Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
             )
@@ -237,12 +244,12 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
         use_llm: bool = True,
     ) -> float:
         """
-        Evaluate surprise using both LLM assessment and statistical methods.
+        Evaluate surprise using either LLM or statistical methods.
 
         Args:
-            messages: List of messages
+            messages: List of messages containing gist
             lang: Language for word frequency analysis
-            use_llm: Whether to use LLM for surprise assessment
+            use_llm: If True, use LLM for surprise scoring; if False, use statistical methods
         """
         if not messages or not messages[-1].gist:
             return 0.0
@@ -250,18 +257,13 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
         gist = messages[-1].gist
 
         if use_llm:
-            # Method 1: LLM-based surprise assessment
-            llm_surprise = self._ask_llm_surprise(gist)
-
-            # Method 2: Statistical surprise from word frequency
-            statistical_surprise = self._ask_statistical_surprise(gist, lang)
-
-            # Combine both methods
-            final_surprise = 0.7 * llm_surprise + 0.3 * statistical_surprise
-            return float(np.clip(final_surprise, 0.0, 1.0))
+            # Use only LLM method
+            final_surprise = self._ask_llm_surprise(gist)
         else:
             # Use only statistical method
-            return self._ask_statistical_surprise(gist, lang)
+            final_surprise = self._ask_statistical_surprise(gist, lang)
+
+        return float(np.clip(final_surprise, 0.0, 1.0))
 
     def _ask_llm_surprise(self, gist: str) -> float:
         """Use LLM to assess how surprising or novel the response is."""
@@ -323,15 +325,20 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
         except Exception:
             return 0.0
 
-    def ask(self, messages: List[Message], **kwargs) -> Message:
+    def ask(self, messages: List[Message], use_llm: bool = True, **kwargs) -> Message:
         """
         Main scoring method that evaluates relevance, confidence, and surprise.
 
+        Args:
+            messages: List of messages containing query and gist
+            use_llm: If True, use LLM for all scoring methods; if False, use statistical methods
+            **kwargs: Additional arguments passed to ask_surprise
+
         Returns a Message with all scoring metrics.
         """
-        relevance = self.ask_relevance(messages)
-        confidence = self.ask_confidence(messages)
-        surprise = self.ask_surprise(messages, **kwargs)
+        relevance = self.ask_relevance(messages, use_llm=use_llm)
+        confidence = self.ask_confidence(messages, use_llm=use_llm)
+        surprise = self.ask_surprise(messages, use_llm=use_llm, **kwargs)
 
         # Calculate composite weight
         weight = relevance * confidence * surprise

@@ -8,5 +8,7 @@
             "search_processor",
             "audio_processor"
     ],
+    "scorer": "language_scorer",
+    "scorer_use_llm": true,
     "supervisor": "language_supervisor"
 }

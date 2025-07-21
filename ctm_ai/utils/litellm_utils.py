@@ -25,7 +25,7 @@ def litellm_completion_request(
     functions=None,
     model: str = 'gpt-4o',
     max_tokens: int = 1024,
-    temperature: float = 0.7,
+    temperature: float = 0.0,
     n: int = 1,
     **kwargs,
 ):
@@ -53,10 +53,12 @@ def litellm_completion_request(
 
 def convert_message_to_litellm_format(message: Message) -> Dict[str, str]:
     """Convert Message to LiteLLM format."""
-    if message.content is None:
-        raise ValueError('Message content cannot be None')
+    # Use gist if content is None, otherwise use content
+    content = message.content if message.content is not None else message.gist
+    if content is None:
+        raise ValueError('Message content and gist cannot both be None')
 
-    return {'role': message.role, 'content': message.content}
+    return {'role': message.role, 'content': content}
 
 
 def call_llm(
@@ -65,7 +67,7 @@ def call_llm(
     function_call=None,
     model: str = 'gpt-4o',
     max_tokens: int = 1024,
-    temperature: float = 0.7,
+    temperature: float = 0.0,
     n: int = 1,
     process_id: int = 0,
     try_times: int = 3,
@@ -133,7 +135,7 @@ def ask_llm_standard(
     messages: List[Message],
     model: str = 'gpt-4o',
     max_tokens: int = 300,
-    temperature: float = 0.7,
+    temperature: float = 0.0,
     n: int = 5,
     **kwargs,
 ) -> List[str]:

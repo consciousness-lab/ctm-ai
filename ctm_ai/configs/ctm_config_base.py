@@ -10,6 +10,7 @@ class ConsciousnessTuringMachineConfig:
         output_threshold: float = 0.5,
         processors: Optional[List[str]] = None,
         scorer: str = 'language_scorer',
+        scorer_use_llm: bool = True,
         supervisor: str = 'language_supervisor',
         **kwargs: Any,
     ) -> None:
@@ -18,6 +19,7 @@ class ConsciousnessTuringMachineConfig:
         self.output_threshold: float = output_threshold
         self.processors: List[str] = processors if processors is not None else []
         self.scorer: str = scorer
+        self.scorer_use_llm: bool = scorer_use_llm
         self.supervisor: str = supervisor
         for key, value in kwargs.items():
             setattr(self, key, value)
