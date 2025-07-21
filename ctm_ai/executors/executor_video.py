@@ -1,4 +1,6 @@
 import os
+import base64
+import io
 from typing import Any, List
 
 from ..messengers import Message
@@ -13,6 +15,13 @@ class VideoExecutor(BaseExecutor):
         # Set default model to Gemini for video processing
         kwargs.setdefault('model', 'gemini/gemini-1.5-flash-8b')
         super().init_model(*args, **kwargs)
+
+    def pil_to_base64(self, image) -> str:
+        """Convert PIL image to base64 string."""
+        buffer = io.BytesIO()
+        image.save(buffer, format='JPEG')
+        img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        return img_str
 
     @message_exponential_backoff()
     def ask(
@@ -42,24 +51,25 @@ class VideoExecutor(BaseExecutor):
             ]
             raise FileNotFoundError(f'Some video frames not found: {missing_files}')
 
-        # Load video frames
-        images = load_images(video_frames_path)
+        # Load video frames (returns PIL Image objects)
+        pil_images = load_images(video_frames_path)
 
         # Convert messages to text
         message_text = ' '.join([msg.content for msg in messages if msg.content])
 
-        # Create message with video frames for LiteLLM
+        # Create message with video frames for LiteLLM (following Gemini docs)
         video_message = {
             'role': 'user',
             'content': [{'type': 'text', 'text': message_text}],
         }
 
-        # Add image frames to the message
-        for image in images:
+        # Add image frames to the message (convert PIL images to base64)
+        for pil_image in pil_images:
+            base64_image = self.pil_to_base64(pil_image)
             video_message['content'].append(
                 {
                     'type': 'image_url',
-                    'image_url': {'url': f'data:image/jpeg;base64,{image}'},
+                    'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
                 }
             )
 
@@ -69,5 +79,5 @@ class VideoExecutor(BaseExecutor):
             max_token=max_token,
             return_num=return_num,
             model=model,
-            default_additional_question='Would you like me to analyze any specific aspects of this video in more detail?',
+            default_additional_question='Would you like me to analyze any specific aspects of this video in more detail?'
         )

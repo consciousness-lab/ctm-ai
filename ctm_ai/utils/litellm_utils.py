@@ -6,6 +6,7 @@ from litellm import completion
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from ..messengers import Message
+import os
 
 
 def convert_messages_to_litellm_format(messages: List[Message]) -> List[Dict[str, str]]:
