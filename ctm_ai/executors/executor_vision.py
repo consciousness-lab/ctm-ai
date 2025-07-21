@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any, List
 
@@ -32,7 +33,12 @@ class VisionExecutor(BaseExecutor):
         # Handle image path
         image_path = kwargs.get('image_path')
         if not image_path:
-            return Message(role='assistant', content='', gist='', gists=[])
+            return Message(
+                role='assistant', 
+                content='', 
+                gist='',
+                additional_question='Please provide an image to analyze.'
+            )
 
         if not os.path.exists(image_path):
             raise FileNotFoundError(f'Image file not found: {image_path}')
@@ -44,10 +50,23 @@ class VisionExecutor(BaseExecutor):
 
         # Load and add image to messages
         base64_image = load_image(image_path)
+        
+        # Create enhanced prompt for JSON response
+        original_query = messages[-1].content if messages else ""
+        enhanced_prompt = f"""{original_query}
+
+Please respond in JSON format with the following structure:
+{{
+    "response": "Your detailed analysis of the image",
+    "additional_question": "A follow-up question to gather more specific information about what the user wants to know about the image"
+}}
+
+Your additional_question should be specific to image analysis, such as asking about particular objects, areas, colors, relationships, or details in the image."""
+
         image_message = {
             'role': 'user',
             'content': [
-                {'type': 'text', 'text': 'Here is the relevant image:'},
+                {'type': 'text', 'text': enhanced_prompt},
                 {
                     'type': 'image_url',
                     'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
@@ -65,9 +84,22 @@ class VisionExecutor(BaseExecutor):
         )
 
         gists = [response.choices[i].message.content for i in range(return_num)]
+        
+        # Parse JSON response
+        try:
+            parsed_response = json.loads(gists[0])
+            content = parsed_response.get('response', gists[0])
+            additional_question = parsed_response.get('additional_question', 
+                'Would you like me to analyze any specific aspects of this image in more detail?')
+        except (json.JSONDecodeError, TypeError):
+            # Fallback if JSON parsing fails
+            content = gists[0]
+            additional_question = 'Would you like me to analyze any specific aspects of this image in more detail?'
+
         return Message(
             role='assistant',
-            content=gists[0],
-            gist=gists[0],
+            content=content,
+            gist=content,
             gists=gists,
+            additional_question=additional_question,
         )
