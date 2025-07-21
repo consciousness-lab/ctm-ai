@@ -53,7 +53,7 @@ class BaseScorer(object):
         """Get embedding using LiteLLM."""
         try:
             response = embedding(model=self.embedding_model, input=[text])
-            return np.array(response.data[0].embedding, dtype=np.float32)
+            return np.array(response.data[0]['embedding'], dtype=np.float32)
         except Exception as e:
             print(f'Error getting embedding: {e}')
             # Return zero vector as fallback
