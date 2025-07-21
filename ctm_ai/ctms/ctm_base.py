@@ -1,5 +1,4 @@
 import concurrent.futures
-import random
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
@@ -69,7 +68,9 @@ class BaseConsciousnessTuringMachine(ABC):
 
         for processor_name in self.config.processors:
             self.processor_graph.add_node(
-                processor_name=processor_name, processor_group_name=None
+                processor_name=processor_name,
+                processor_group_name=None,
+                config=self.config,
             )
 
         self.add_supervisor(self.config.supervisor)
@@ -208,12 +209,12 @@ class BaseConsciousnessTuringMachine(ABC):
         )
 
         for chunk in chunks:
-            if chunk.confidence > 0.8:
+            if chunk.relevance >= 0.8:
                 self.processor_graph.add_link(
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
                 )
-            elif chunk.confidence < 0.2:
+            elif chunk.relevance <= 0.2:
                 self.processor_graph.remove_link(
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
@@ -221,62 +222,33 @@ class BaseConsciousnessTuringMachine(ABC):
 
     @logging_func_with_count
     def fuse_processor(self, chunks: List[Chunk]) -> List[Chunk]:
-        linked_chunks: List[Tuple[Chunk, Chunk]] = []
+        proc_map = {p.name: p for p in self.processor_graph.nodes}
+        dirty: set[str] = set()  # processors whose memory got new info
 
+        # ---------- pass 1: Q&A + memory updates ----------
         for chunk in chunks:
-            src_chunk = chunk
-            tgt_processor_names = self.processor_graph.get_neighbor_names(
-                processor_name=src_chunk.processor_name
-            )
-            linked_chunks.extend(
-                [
-                    (src_chunk, chunk)
-                    for chunk in chunks
-                    if chunk.processor_name in tgt_processor_names
-                ]
-            )
+            q = chunk.additional_question
+            if not q:
+                continue
 
-        # Process each linked chunk pair and replace original chunks
-        for chunk1, chunk2 in linked_chunks:
-            processor1 = self.processor_graph.get_node(chunk1.processor_name)
-            processor2 = self.processor_graph.get_node(chunk2.processor_name)
+            for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
+                if nbr == chunk.processor_name:  # ⇢ self‑link
+                    # just fold the processor's own gist into its memory once
+                    proc_map[nbr].update(chunk)
+                    dirty.add(nbr)
+                    continue
 
-            if processor1 and processor2:
-                # Add chunks to each other's processor memory
-                processor1.update(chunk2)
-                processor2.update(chunk1)
+                # normal neighbour → ask & store answer
+                answer = proc_map[nbr].ask_without_memory(query=q, text=chunk.gist)
+                proc_map[chunk.processor_name].update(answer)
+                dirty.add(chunk.processor_name)
 
-                # Re-ask both processors with their updated memory
-                original_query = (
-                    chunk1.gist
-                    if chunk1.confidence > chunk2.confidence
-                    else chunk2.gist
-                )
+        # ---------- pass 2: re‑ask only the updated processors ----------
+        for idx, chunk in enumerate(chunks):
+            if chunk.processor_name in dirty:
+                p = proc_map[chunk.processor_name]
+                chunks[idx] = p.ask_with_memory(query=chunk.gist, text=chunk.gist)
 
-                # Get updated chunks from processors
-                updated_chunk1 = processor1.ask_with_memory(
-                    query=original_query,
-                    text=chunk1.gist,
-                )
-                updated_chunk2 = processor2.ask_with_memory(
-                    query=original_query,
-                    text=chunk2.gist,
-                )
-
-                # Replace original chunks with updated ones
-                # Find and replace chunk1
-                for i, chunk in enumerate(chunks):
-                    if chunk.processor_name == chunk1.processor_name:
-                        chunks[i] = updated_chunk1
-                        break
-
-                # Find and replace chunk2
-                for i, chunk in enumerate(chunks):
-                    if chunk.processor_name == chunk2.processor_name:
-                        chunks[i] = updated_chunk2
-                        break
-
-        random.shuffle(chunks)
         return chunks
 
     @abstractmethod

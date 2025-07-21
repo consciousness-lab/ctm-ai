@@ -119,7 +119,15 @@ class BaseProcessor(object):
             memory_mode=use_memory,  # Pass memory mode to messenger
         )
 
-        scorer_output = self.scorer.ask(messages=scorer_messages)
+        # Get scorer_use_llm from config if available, otherwise default to True
+        scorer_use_llm = (
+            getattr(self.config, 'scorer_use_llm', True)
+            if hasattr(self, 'config')
+            else True
+        )
+        scorer_output = self.scorer.ask(
+            messages=scorer_messages, use_llm=scorer_use_llm
+        )
 
         # Only update messenger if using memory mode
         if use_memory:
@@ -202,6 +210,40 @@ class BaseProcessor(object):
             len(self.messenger.scorer_messages),
         )
 
+    def get_memory_content(self) -> Dict[str, List[Message]]:
+        """Get the content of processor memory"""
+        return {
+            'executor_messages': self.messenger.executor_messages.copy(),
+            'scorer_messages': self.messenger.scorer_messages.copy(),
+        }
+
+    def get_memory_summary(self) -> Dict[str, Any]:
+        """Get a summary of processor memory"""
+        executor_count = len(self.messenger.executor_messages)
+        scorer_count = len(self.messenger.scorer_messages)
+
+        # Get recent messages for summary
+        recent_executor = (
+            self.messenger.executor_messages[-1] if executor_count > 0 else None
+        )
+        recent_scorer = self.messenger.scorer_messages[-1] if scorer_count > 0 else None
+
+        return {
+            'processor_name': self.name,
+            'memory_mode': self.memory_mode,
+            'executor_message_count': executor_count,
+            'scorer_message_count': scorer_count,
+            'recent_executor_gist': recent_executor.gist if recent_executor else None,
+            'recent_scorer_scores': {
+                'relevance': recent_scorer.relevance if recent_scorer else None,
+                'confidence': recent_scorer.confidence if recent_scorer else None,
+                'surprise': recent_scorer.surprise if recent_scorer else None,
+                'weight': recent_scorer.weight if recent_scorer else None,
+            }
+            if recent_scorer
+            else None,
+        }
+
     def update(self, chunk: Chunk) -> None:
         if chunk.processor_name != self.name:
             executor_output, scorer_output = self.split_chunk_into_outputs(chunk)
@@ -233,7 +275,7 @@ class BaseProcessor(object):
     def split_chunk_into_outputs(self, chunk: Chunk) -> Tuple[Message, Message]:
         executor_output = Message(
             role='assistant',
-            content=chunk.gist,
+            gist=chunk.gist,
         )
         scorer_output = Message(
             relevance=chunk.relevance,

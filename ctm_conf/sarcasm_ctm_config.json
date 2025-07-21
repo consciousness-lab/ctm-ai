@@ -6,5 +6,7 @@
             "language_processor",
             "vision_processor"
     ],
+    "scorer": "language_scorer",
+    "scorer_use_llm": true,
     "supervisor": "language_supervisor"
 }
