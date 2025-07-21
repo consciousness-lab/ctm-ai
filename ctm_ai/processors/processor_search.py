@@ -15,4 +15,4 @@ class SearchProcessor(BaseProcessor):
         return BaseExecutor(name='search_executor')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name="language_scorer")
+        return BaseScorer(name='language_scorer')

@@ -15,4 +15,4 @@ class MathProcessor(BaseProcessor):
         return BaseExecutor(name='math_executor')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name="language_scorer")
+        return BaseScorer(name='language_scorer')
