@@ -3,8 +3,8 @@
     "max_iter_num": 3,
     "output_threshold": 0.5,
     "processors": [
-        "language_processor",
-        "vision_processor"
+            "language_processor",
+            "vision_processor"
     ],
     "supervisor": "language_supervisor"
 }

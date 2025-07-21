@@ -238,8 +238,8 @@ class BaseConsciousnessTuringMachine(ABC):
 
         # Process each linked chunk pair and replace original chunks
         for chunk1, chunk2 in linked_chunks:
-            processor1 = self.processor_graph.get_processor(chunk1.processor_name)
-            processor2 = self.processor_graph.get_processor(chunk2.processor_name)
+            processor1 = self.processor_graph.get_node(chunk1.processor_name)
+            processor2 = self.processor_graph.get_node(chunk2.processor_name)
 
             if processor1 and processor2:
                 # Add chunks to each other's processor memory

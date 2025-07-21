@@ -3,10 +3,10 @@
     "max_iter_num": 3,
     "output_threshold": 0.5,
     "processors": [
-        "video_processor",
-        "language_processor",
-        "search_processor",
-        "audio_processor"
+            "video_processor",
+            "language_processor",
+            "search_processor",
+            "audio_processor"
     ],
     "supervisor": "language_supervisor"
 }
