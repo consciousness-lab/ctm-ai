@@ -185,14 +185,16 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
 Response: {gist}
 
 Consider:
-- 1.0 = Very confident, definitive statements, clear and certain
+- 1.0 = Very confident, definitive statements, clear yes/no answers, certain conclusions
 - 0.8 = Confident, mostly certain with minor qualifications
 - 0.6 = Moderately confident, some uncertainty expressed
 - 0.4 = Somewhat uncertain, many qualifications or hedging
 - 0.2 = Very uncertain, lots of "maybe", "possibly", "might be"
-- 0.0 = Completely uncertain, says "cannot determine", "I don't know", or no definitive information
+- 0.0 = Completely uncertain, says "cannot determine", "I don't know", "not enough information", or ambiguous responses
 
-IMPORTANT: If the response says "I cannot determine", "cannot answer", "I don't know", or refuses to provide information, score it as 0.0.
+IMPORTANT: 
+- Direct yes/no answers should be scored as 1.0
+- Responses that say "I cannot determine", "cannot answer", "I don't know", "not enough information", or are ambiguous should be scored as 0.0
 
 Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
             )
