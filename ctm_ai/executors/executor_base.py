@@ -1,8 +1,10 @@
+import json
 from typing import Any, Callable, Dict, List, Type
+
+from litellm import completion
 
 from ..messengers import Message
 from ..utils import (
-    ask_llm_standard,
     call_llm,
     configure_litellm,
     convert_message_to_litellm_format,
@@ -59,6 +61,99 @@ class BaseExecutor(object):
         """Convert Message to LiteLLM format."""
         return convert_message_to_litellm_format(message)
 
+    def parse_json_response(
+        self, content: str, default_additional_question: str = ''
+    ) -> tuple[str, str]:
+        """
+        Parse JSON response to extract response and additional_question.
+
+        Args:
+            content: The raw response content from LLM
+            default_additional_question: Default additional question if parsing fails
+
+        Returns:
+            tuple: (parsed_content, additional_question)
+        """
+        try:
+            # Handle JSON wrapped in ```json and ``` code blocks
+            if '```json' in content and '```' in content:
+                # Extract JSON from code block
+                start_idx = content.find('```json') + 7
+                end_idx = content.rfind('```')
+                if start_idx > 6 and end_idx > start_idx:
+                    json_content = content[start_idx:end_idx].strip()
+                    parsed_response = json.loads(json_content)
+                else:
+                    # Fallback to direct parsing
+                    parsed_response = json.loads(content)
+            else:
+                # Direct JSON parsing
+                parsed_response = json.loads(content)
+
+            parsed_content = parsed_response.get('response', content)
+            additional_question = parsed_response.get(
+                'additional_question', default_additional_question
+            )
+
+            return parsed_content, additional_question
+
+        except (json.JSONDecodeError, TypeError):
+            # Fallback if JSON parsing fails
+            return content, default_additional_question
+
+    @message_exponential_backoff()
+    def ask_base(
+        self,
+        messages: List[Dict[str, Any]],
+        max_token: int = 300,
+        return_num: int = 5,
+        model: str = None,
+        default_additional_question: str = '',
+        *args: Any,
+        **kwargs: Any,
+    ) -> Message:
+        """
+        Base ask method that handles all types of messages (text, image, audio, video).
+
+        Args:
+            messages: List of message dictionaries in LiteLLM format
+            max_token: Maximum tokens for response
+            return_num: Number of response candidates
+            model: Model name to use
+            default_additional_question: Default additional question if JSON parsing fails
+            *args, **kwargs: Additional arguments for completion
+
+        Returns:
+            Message with parsed response and additional_question
+        """
+        model = model or self.model_name
+
+        # Use LiteLLM completion with the provided messages
+        response = completion(
+            model=model,
+            messages=messages,
+            max_tokens=max_token,
+            n=return_num,
+            *args,
+            **kwargs,
+        )
+
+        # Extract responses from all candidates
+        contents = [
+            response.choices[i].message.content for i in range(len(response.choices))
+        ]
+
+        # Parse JSON response using the common parsing method
+        gist, additional_question = self.parse_json_response(
+            contents[0], default_additional_question
+        )
+
+        return Message(
+            role='assistant',
+            gist=gist,
+            additional_question=additional_question,
+        )
+
     def call_llm(
         self,
         messages: List[Message],
@@ -91,31 +186,6 @@ class BaseExecutor(object):
             process_id=process_id,
             try_times=self.try_times,
             **kwargs,
-        )
-
-    @message_exponential_backoff()
-    def ask_standard(
-        self,
-        messages: List[Message],
-        max_token: int = 300,
-        return_num: int = 5,
-        model: str = None,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Message:
-        """Standard ask method for basic text completion using LiteLLM."""
-        model = model or self.model_name
-
-        gists = ask_llm_standard(
-            messages=messages, model=model, max_tokens=max_token, n=return_num, **kwargs
-        )
-        breakpoint()
-
-        return Message(
-            role='assistant',
-            content=gists[0],
-            gist=gists[0],
-            gists=gists,
         )
 
     def ask(self, messages: Any, *args: Any, **kwargs: Any) -> Any:

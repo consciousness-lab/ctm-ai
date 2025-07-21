@@ -1,8 +1,5 @@
-import json
 import os
 from typing import Any, List
-
-from litellm import completion
 
 from ..messengers import Message
 from ..utils import load_images, message_exponential_backoff
@@ -27,7 +24,7 @@ class VideoExecutor(BaseExecutor):
         *args: Any,
         **kwargs: Any,
     ) -> Message:
-        """Ask method for video processing using LiteLLM with Gemini."""
+        """Ask method for video processing using unified ask_base."""
         model = model or self.model_name
 
         video_frames_path = kwargs.get('video_frames_path')
@@ -62,7 +59,7 @@ Please respond in JSON format with the following structure:
 
 Your additional_question should be specific to video analysis, such as asking about specific frames, time periods, actions, movements, scene transitions, or objects throughout the video sequence. Here are the relevant image frames of the video:"""
 
-        # Create message with video frames for Gemini
+        # Create message with video frames for LiteLLM
         video_message = {
             'role': 'user',
             'content': [{'type': 'text', 'text': enhanced_prompt}],
@@ -77,36 +74,11 @@ Your additional_question should be specific to video analysis, such as asking ab
                 }
             )
 
-        # Use LiteLLM completion with Gemini for video
-        response = completion(
-            model=model,
+        # Use the unified ask_base method
+        return self.ask_base(
             messages=[video_message],
-            max_tokens=max_token,
-            n=return_num,
-        )
-
-        # Extract responses from all candidates
-        gists = [
-            response.choices[i].message.content for i in range(len(response.choices))
-        ]
-
-        # Parse JSON response
-        try:
-            parsed_response = json.loads(gists[0])
-            content = parsed_response.get('response', gists[0])
-            additional_question = parsed_response.get(
-                'additional_question',
-                'Would you like me to analyze any specific aspects of this video in more detail?',
-            )
-        except (json.JSONDecodeError, TypeError):
-            # Fallback if JSON parsing fails
-            content = gists[0]
-            additional_question = 'Would you like me to analyze any specific aspects of this video in more detail?'
-
-        return Message(
-            role='assistant',
-            content=content,
-            gist=content,
-            gists=gists,
-            additional_question=additional_question,
+            max_token=max_token,
+            return_num=return_num,
+            model=model,
+            default_additional_question='Would you like me to analyze any specific aspects of this video in more detail?',
         )

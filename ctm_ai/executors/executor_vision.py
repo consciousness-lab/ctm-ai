@@ -1,8 +1,5 @@
-import json
 import os
 from typing import Any, List
-
-from litellm import completion
 
 from ctm_ai.utils.loader import load_image
 
@@ -27,7 +24,7 @@ class VisionExecutor(BaseExecutor):
         *args: Any,
         **kwargs: Any,
     ) -> Message:
-        """Ask method for vision processing with image handling using LiteLLM."""
+        """Ask method for vision processing with image handling using unified ask_base."""
         model = model or self.model_name
 
         # Handle image path
@@ -42,11 +39,6 @@ class VisionExecutor(BaseExecutor):
 
         if not os.path.exists(image_path):
             raise FileNotFoundError(f'Image file not found: {image_path}')
-
-        # Convert messages to LiteLLM format
-        litellm_messages = [
-            self.convert_message_to_litellm_format(message) for message in messages
-        ]
 
         # Load and add image to messages
         base64_image = load_image(image_path)
@@ -63,6 +55,7 @@ Please respond in JSON format with the following structure:
 
 Your additional_question should be specific to image analysis, such as asking about particular objects, areas, colors, relationships, or details in the image."""
 
+        # Create message with image for LiteLLM
         image_message = {
             'role': 'user',
             'content': [
@@ -73,35 +66,12 @@ Your additional_question should be specific to image analysis, such as asking ab
                 },
             ],
         }
-        litellm_messages.append(image_message)  # type: ignore[arg-type]
 
-        # Use LiteLLM completion with vision support
-        response = completion(
+        # Use the unified ask_base method
+        return self.ask_base(
+            messages=[image_message],
+            max_token=max_token,
+            return_num=return_num,
             model=model,
-            messages=litellm_messages,
-            max_tokens=max_token,
-            n=return_num,
-        )
-
-        gists = [response.choices[i].message.content for i in range(return_num)]
-
-        # Parse JSON response
-        try:
-            parsed_response = json.loads(gists[0])
-            content = parsed_response.get('response', gists[0])
-            additional_question = parsed_response.get(
-                'additional_question',
-                'Would you like me to analyze any specific aspects of this image in more detail?',
-            )
-        except (json.JSONDecodeError, TypeError):
-            # Fallback if JSON parsing fails
-            content = gists[0]
-            additional_question = 'Would you like me to analyze any specific aspects of this image in more detail?'
-
-        return Message(
-            role='assistant',
-            content=content,
-            gist=content,
-            gists=gists,
-            additional_question=additional_question,
+            default_additional_question='Would you like me to analyze any specific aspects of this image in more detail?',
         )

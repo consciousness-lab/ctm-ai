@@ -1,4 +1,3 @@
-import json
 from typing import Any, List
 
 from ..messengers import Message
@@ -19,7 +18,7 @@ class LanguageExecutor(BaseExecutor):
         *args: Any,
         **kwargs: Any,
     ) -> Message:
-        """Ask method for language processing using the base class functionality."""
+        """Ask method for language processing using the unified ask_base method."""
 
         # Enhance the last message to request JSON format
         if messages:
@@ -43,34 +42,16 @@ Your additional_question should help clarify what specific aspects the user want
         else:
             enhanced_messages = messages
 
-        # Get response from base class
-        response = self.ask_standard(
-            messages=enhanced_messages,
+        # Convert messages to LiteLLM format
+        litellm_messages = [
+            self.convert_message_to_litellm_format(msg) for msg in enhanced_messages
+        ]
+
+        # Use the unified ask_base method
+        return self.ask_base(
+            messages=litellm_messages,
             max_token=max_token,
             return_num=return_num,
             model=self.model_name,
-        )
-
-        # Parse JSON response
-        try:
-            parsed_response = json.loads(response.content)
-            content = parsed_response.get('response', response.content)
-            additional_question = parsed_response.get(
-                'additional_question',
-                'Would you like me to explain any specific aspects in more detail?',
-            )
-        except (json.JSONDecodeError, TypeError):
-            # Fallback if JSON parsing fails
-            content = response.content
-            additional_question = (
-                'Would you like me to explain any specific aspects in more detail?'
-            )
-
-        # Return response with additional question
-        return Message(
-            role=response.role,
-            content=content,
-            gist=content,
-            gists=response.gists,
-            additional_question=additional_question,
+            default_additional_question='Would you like me to explain any specific aspects in more detail?',
         )

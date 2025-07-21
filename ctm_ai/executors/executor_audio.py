@@ -1,8 +1,5 @@
-import json
 import os
 from typing import Any, List
-
-from litellm import completion
 
 from ..messengers import Message
 from ..utils import message_exponential_backoff
@@ -44,7 +41,7 @@ class AudioExecutor(BaseExecutor):
         *args: Any,
         **kwargs: Any,
     ) -> Message:
-        """Ask method for audio processing using LiteLLM with Gemini."""
+        """Ask method for audio processing using unified ask_base."""
         model = model or self.model_name
 
         if not messages:
@@ -76,15 +73,14 @@ Please respond in JSON format with the following structure:
 Your additional_question should be specific to audio analysis, such as asking about time segments, specific sounds, audio quality, voices, or emotional content."""
 
         try:
-            # For audio processing with Gemini through LiteLLM
-            # We need to prepare the message with audio data
+            # Get MIME type for audio file
             mime_type = self.get_mime_type(audio_path)
 
             # Read audio file
             with open(audio_path, 'rb') as f:
                 audio_data = f.read()
 
-            # Create message with audio content for Gemini
+            # Create message with audio content for LiteLLM
             audio_message = {
                 'role': 'user',
                 'content': [
@@ -98,35 +94,13 @@ Your additional_question should be specific to audio analysis, such as asking ab
                 ],
             }
 
-            # Use LiteLLM completion with Gemini for audio
-            response = completion(
-                model=model,
+            # Use the unified ask_base method
+            return self.ask_base(
                 messages=[audio_message],
-                max_tokens=max_token,
-                n=return_num,
-            )
-
-            content = response.choices[0].message.content
-
-            # Parse JSON response
-            try:
-                parsed_response = json.loads(content)
-                response_text = parsed_response.get('response', content)
-                additional_question = parsed_response.get(
-                    'additional_question',
-                    'Would you like me to analyze any specific aspects of this audio in more detail?',
-                )
-            except (json.JSONDecodeError, TypeError):
-                # Fallback if JSON parsing fails
-                response_text = content
-                additional_question = 'Would you like me to analyze any specific aspects of this audio in more detail?'
-
-            return Message(
-                role='assistant',
-                content=response_text,
-                gist=response_text,
-                gists=[response_text],
-                additional_question=additional_question,
+                max_token=max_token,
+                return_num=return_num,
+                model=model,
+                default_additional_question='Would you like me to analyze any specific aspects of this audio in more detail?',
             )
 
         except Exception as e:
