@@ -34,10 +34,10 @@ class VisionExecutor(BaseExecutor):
         image_path = kwargs.get('image_path')
         if not image_path:
             return Message(
-                role='assistant', 
-                content='', 
+                role='assistant',
+                content='',
                 gist='',
-                additional_question='Please provide an image to analyze.'
+                additional_question='Please provide an image to analyze.',
             )
 
         if not os.path.exists(image_path):
@@ -50,9 +50,9 @@ class VisionExecutor(BaseExecutor):
 
         # Load and add image to messages
         base64_image = load_image(image_path)
-        
+
         # Create enhanced prompt for JSON response
-        original_query = messages[-1].content if messages else ""
+        original_query = messages[-1].content if messages else ''
         enhanced_prompt = f"""{original_query}
 
 Please respond in JSON format with the following structure:
@@ -84,13 +84,15 @@ Your additional_question should be specific to image analysis, such as asking ab
         )
 
         gists = [response.choices[i].message.content for i in range(return_num)]
-        
+
         # Parse JSON response
         try:
             parsed_response = json.loads(gists[0])
             content = parsed_response.get('response', gists[0])
-            additional_question = parsed_response.get('additional_question', 
-                'Would you like me to analyze any specific aspects of this image in more detail?')
+            additional_question = parsed_response.get(
+                'additional_question',
+                'Would you like me to analyze any specific aspects of this image in more detail?',
+            )
         except (json.JSONDecodeError, TypeError):
             # Fallback if JSON parsing fails
             content = gists[0]

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 try:
     from ..apis import BaseEnv as _BaseEnv
+
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False

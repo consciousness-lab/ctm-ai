@@ -53,10 +53,10 @@ class AudioExecutor(BaseExecutor):
         audio_path = kwargs.get('audio_path')
         if not audio_path:
             return Message(
-                role='assistant', 
-                content='', 
+                role='assistant',
+                content='',
                 gist='',
-                additional_question='Please provide an audio file to analyze.'
+                additional_question='Please provide an audio file to analyze.',
             )
 
         if not os.path.exists(audio_path):
@@ -112,8 +112,10 @@ Your additional_question should be specific to audio analysis, such as asking ab
             try:
                 parsed_response = json.loads(content)
                 response_text = parsed_response.get('response', content)
-                additional_question = parsed_response.get('additional_question', 
-                    'Would you like me to analyze any specific aspects of this audio in more detail?')
+                additional_question = parsed_response.get(
+                    'additional_question',
+                    'Would you like me to analyze any specific aspects of this audio in more detail?',
+                )
             except (json.JSONDecodeError, TypeError):
                 # Fallback if JSON parsing fails
                 response_text = content

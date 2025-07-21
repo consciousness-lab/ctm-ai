@@ -109,6 +109,7 @@ class BaseExecutor(object):
         gists = ask_llm_standard(
             messages=messages, model=model, max_tokens=max_token, n=return_num, **kwargs
         )
+        breakpoint()
 
         return Message(
             role='assistant',
