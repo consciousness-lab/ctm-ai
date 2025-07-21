@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 try:
     from ..apis import BaseEnv as _BaseEnv
+
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False
@@ -208,7 +209,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     @logging_func_with_count
     def go_down(self, winning_chunk: Chunk, chunks: List[Chunk]) -> None:
         self.downtree_broadcast(winning_chunk)
-        self.link_form(chunks)
+        self.link_form(chunks, winning_chunk)
 
     def forward(
         self,

@@ -1,7 +1,7 @@
 import math
 import time
 from functools import wraps
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Union
 
 from ..messengers import Message
 from .logger import logger
