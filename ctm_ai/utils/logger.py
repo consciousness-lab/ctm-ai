@@ -1,27 +1,25 @@
 import logging
 from functools import wraps
 from logging import StreamHandler
-from typing import Any, Callable, Dict, List, Literal, Mapping, Union
+from typing import Any, Callable, Dict, List, Mapping, Union
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 from termcolor import colored
 
 LogType = Union[List[Dict[str, str]], None]
 
 ColorType = Literal[
+    'grey',
     'red',
     'green',
     'yellow',
     'blue',
     'magenta',
     'cyan',
-    'light_grey',
-    'dark_grey',
-    'light_red',
-    'light_green',
-    'light_yellow',
-    'light_blue',
-    'light_magenta',
-    'light_cyan',
     'white',
 ]
 
