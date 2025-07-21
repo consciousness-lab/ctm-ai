@@ -150,6 +150,7 @@ class BaseExecutor(object):
 
         return Message(
             role='assistant',
+            content=gist,
             gist=gist,
             additional_question=additional_question,
         )

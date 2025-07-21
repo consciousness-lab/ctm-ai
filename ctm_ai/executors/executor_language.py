@@ -19,6 +19,7 @@ class LanguageExecutor(BaseExecutor):
         **kwargs: Any,
     ) -> Message:
         """Ask method for language processing using the unified ask_base method."""
+        print(messages)
 
         # Enhance the last message to request JSON format
         if messages:
@@ -42,6 +43,7 @@ Your additional_question should help clarify what specific aspects the user want
         else:
             enhanced_messages = messages
 
+        print(enhanced_messages)
         # Convert messages to LiteLLM format
         litellm_messages = [
             self.convert_message_to_litellm_format(msg) for msg in enhanced_messages
