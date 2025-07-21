@@ -26,7 +26,11 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         self, ctm_name: Optional[str] = None, io_function: Optional[BaseEnv] = None
     ) -> None:
         self.io_function = io_function
-        self.config = ConsciousnessTuringMachineConfig()
+        self.config = (
+            ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
+            if ctm_name
+            else ConsciousnessTuringMachineConfig()
+        )
 
         self.load_ctm()
 
@@ -73,7 +77,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         if self.io_function and TOOLBENCH_AVAILABLE:
             self._load_tool_processors()
         else:
-            print('Warning: io_function is not provided or TOOLBENCH is not available.')
+            print("Warning: io_function is not provided or TOOLBENCH is not available.")
 
         self.add_supervisor(self.config.supervisor)
         self.add_scorer(self.config.scorer)
@@ -92,10 +96,10 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
                 processor_name = openai_function_name
                 self.processor_graph.add_node(
                     processor_name=processor_name,
-                    processor_group_name='tools',
+                    processor_group_name="tools",
                 )
         except Exception as e:
-            print(f'Warning: Failed to load tool processors: {e}')
+            print(f"Warning: Failed to load tool processors: {e}")
 
     @staticmethod
     def ask_processor(
@@ -112,7 +116,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         io_function: Optional[BaseEnv] = None,
     ) -> Chunk:
         """Ask processor with support for both standard and tool processors"""
-        if io_function and hasattr(processor, 'name'):
+        if io_function and hasattr(processor, "name"):
             # Tool processor
             return processor.ask(query, io_function, processor.name)
         else:
@@ -249,7 +253,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         """Forward pass for tool-only processing (backward compatibility)"""
         if not TOOLBENCH_AVAILABLE:
             raise ImportError(
-                'ToolBench is not available. Please install ToolBench to use tool functionality.'
+                "ToolBench is not available. Please install ToolBench to use tool functionality."
             )
 
         return self.forward(query=query, io_function=io_function)
