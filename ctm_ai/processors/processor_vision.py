@@ -15,4 +15,4 @@ class VisionProcessor(BaseProcessor):
         return BaseExecutor(name='vision_executor')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='hybrid_scorer')
+        return BaseScorer(name='language_scorer')

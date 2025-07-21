@@ -15,4 +15,4 @@ class CodeProcessor(BaseProcessor):
         return BaseExecutor(name='code_executor')
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='hybrid_scorer')
+        return BaseScorer(name='language_scorer')

@@ -94,7 +94,7 @@ class ToolExecutor(BaseExecutor):
         # Call LLM for tool selection and invocation
         model = model or self.model_name
         new_message, error_code, total_tokens = self.call_llm(
-            messages,
+            messages, 
             functions=self.configured_functions,
             model=model,
             max_tokens=max_token,
@@ -161,7 +161,7 @@ class ToolExecutor(BaseExecutor):
                 role='function',
                 content=error_msg,
                 gist=error_msg,
-                additional_question=f"Available tools include: {', '.join(available_tool_names)}. Please select a valid tool.",
+                additional_question=f'Available tools include: {", ".join(available_tool_names)}. Please select a valid tool.',
             )
 
         # Error case

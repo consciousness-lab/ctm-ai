@@ -8,6 +8,7 @@ from ..chunks import Chunk
 from ..executors import BaseExecutor
 from ..messengers import BaseMessenger, Message
 from ..scorers import BaseScorer
+from ..utils import ask_llm_standard
 
 
 class BaseProcessor(object):
@@ -119,8 +120,14 @@ class BaseProcessor(object):
             scorer_output=scorer_output,
         )
 
+        # Use additional_question from executor output
+        additional_question = executor_output.additional_question or ''
+
         chunk = self.merge_outputs_into_chunk(
-            name=self.name, scorer_output=scorer_output, executor_output=executor_output
+            name=self.name,
+            scorer_output=scorer_output,
+            executor_output=executor_output,
+            additional_question=additional_question,
         )
         return chunk
 
@@ -133,7 +140,11 @@ class BaseProcessor(object):
             )
 
     def merge_outputs_into_chunk(
-        self, name: str, scorer_output: Message, executor_output: Message
+        self,
+        name: str,
+        scorer_output: Message,
+        executor_output: Message,
+        additional_question: str = '',
     ) -> Chunk:
         return Chunk(
             time_step=0,
@@ -145,6 +156,7 @@ class BaseProcessor(object):
             weight=scorer_output.weight,
             intensity=scorer_output.weight,
             mood=scorer_output.weight,
+            additional_question=additional_question,
         )
 
     def split_chunk_into_outputs(self, chunk: Chunk) -> Tuple[Message, Message]:
