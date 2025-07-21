@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any, List
 
@@ -31,7 +32,12 @@ class VideoExecutor(BaseExecutor):
 
         video_frames_path = kwargs.get('video_frames_path')
         if not video_frames_path:
-            return Message(role='assistant', content='', gist='', gists=[])
+            return Message(
+                role='assistant', 
+                content='', 
+                gist='',
+                additional_question='Please provide video frames to analyze.'
+            )
 
         if not all(os.path.exists(path) for path in video_frames_path):
             missing_files = [
@@ -45,11 +51,19 @@ class VideoExecutor(BaseExecutor):
         # Convert messages to text
         message_text = ' '.join([msg.content for msg in messages if msg.content])
 
-        # Create prompt for video analysis
-        prompt = f'{message_text}. Here are the relevant image frames of the video:'
+        # Create enhanced prompt for JSON response
+        enhanced_prompt = f"""{message_text}
+
+Please respond in JSON format with the following structure:
+{{
+    "response": "Your detailed analysis of the video frames",
+    "additional_question": "A follow-up question to gather more specific information about what the user wants to know about the video"
+}}
+
+Your additional_question should be specific to video analysis, such as asking about specific frames, time periods, actions, movements, scene transitions, or objects throughout the video sequence. Here are the relevant image frames of the video:"""
 
         # Create message with video frames for Gemini
-        video_message = {'role': 'user', 'content': [{'type': 'text', 'text': prompt}]}
+        video_message = {'role': 'user', 'content': [{'type': 'text', 'text': enhanced_prompt}]}
 
         # Add image frames to the message
         for image in images:
@@ -73,9 +87,21 @@ class VideoExecutor(BaseExecutor):
             response.choices[i].message.content for i in range(len(response.choices))
         ]
 
+        # Parse JSON response
+        try:
+            parsed_response = json.loads(gists[0])
+            content = parsed_response.get('response', gists[0])
+            additional_question = parsed_response.get('additional_question', 
+                'Would you like me to analyze any specific aspects of this video in more detail?')
+        except (json.JSONDecodeError, TypeError):
+            # Fallback if JSON parsing fails
+            content = gists[0]
+            additional_question = 'Would you like me to analyze any specific aspects of this video in more detail?'
+
         return Message(
             role='assistant',
-            content=gists[0],
-            gist=gists[0],
+            content=content,
+            gist=content,
             gists=gists,
+            additional_question=additional_question,
         )

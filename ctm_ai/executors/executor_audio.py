@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any, List
 
@@ -51,12 +52,28 @@ class AudioExecutor(BaseExecutor):
 
         audio_path = kwargs.get('audio_path')
         if not audio_path:
-            return Message(role='assistant', content='', gist='', gists=[])
+            return Message(
+                role='assistant', 
+                content='', 
+                gist='',
+                additional_question='Please provide an audio file to analyze.'
+            )
 
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f'Audio file not found: {audio_path}')
 
         query = messages[-1].content
+
+        # Create enhanced prompt for JSON response
+        enhanced_query = f"""{query}
+
+Please respond in JSON format with the following structure:
+{{
+    "response": "Your detailed analysis of the audio",
+    "additional_question": "A follow-up question to gather more specific information about what the user wants to know about the audio"
+}}
+
+Your additional_question should be specific to audio analysis, such as asking about time segments, specific sounds, audio quality, voices, or emotional content."""
 
         try:
             # For audio processing with Gemini through LiteLLM
@@ -71,7 +88,7 @@ class AudioExecutor(BaseExecutor):
             audio_message = {
                 'role': 'user',
                 'content': [
-                    {'type': 'text', 'text': query},
+                    {'type': 'text', 'text': enhanced_query},
                     {
                         'type': 'audio_url',
                         'audio_url': {
@@ -91,11 +108,23 @@ class AudioExecutor(BaseExecutor):
 
             content = response.choices[0].message.content
 
+            # Parse JSON response
+            try:
+                parsed_response = json.loads(content)
+                response_text = parsed_response.get('response', content)
+                additional_question = parsed_response.get('additional_question', 
+                    'Would you like me to analyze any specific aspects of this audio in more detail?')
+            except (json.JSONDecodeError, TypeError):
+                # Fallback if JSON parsing fails
+                response_text = content
+                additional_question = 'Would you like me to analyze any specific aspects of this audio in more detail?'
+
             return Message(
                 role='assistant',
-                content=content,
-                gist=content,
-                gists=[content],
+                content=response_text,
+                gist=response_text,
+                gists=[response_text],
+                additional_question=additional_question,
             )
 
         except Exception as e:

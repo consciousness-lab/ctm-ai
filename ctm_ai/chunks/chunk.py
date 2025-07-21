@@ -16,6 +16,7 @@ class Chunk:
         weight: float = -1.0,
         intensity: float = -1.0,
         mood: float = -1.0,
+        additional_question: str = '',
     ) -> None:
         self.time_step: int = time_step
         self.processor_name: str = processor_name
@@ -26,6 +27,7 @@ class Chunk:
         self.weight: float = weight
         self.intensity: float = intensity
         self.mood: float = mood
+        self.additional_question: str = additional_question
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Chunk):
@@ -68,6 +70,7 @@ class Chunk:
             'weight': self.weight,
             'intensity': self.intensity,
             'mood': self.mood,
+            'additional_question': self.additional_question,
         }
 
     def format_readable(self) -> str:
@@ -80,7 +83,8 @@ class Chunk:
             f'Surprise: {self.surprise:.2f}\n'
             f'Weight: {self.weight:.2f}\n'
             f'Intensity: {self.intensity:.2f}\n'
-            f'Mood: {self.mood:.2f}'
+            f'Mood: {self.mood:.2f}\n'
+            f'Additional Question: {self.additional_question}'
         )
 
     @staticmethod
@@ -95,4 +99,5 @@ class Chunk:
             weight=data['weight'],
             intensity=data['intensity'],
             mood=data['mood'],
+            additional_question=data.get('additional_question', ''),
         )
