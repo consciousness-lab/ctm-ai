@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Any, List, Optional
 
 
 class ConsciousnessTuringMachineConfig:
@@ -8,29 +8,17 @@ class ConsciousnessTuringMachineConfig:
         ctm_name: Optional[str] = None,
         max_iter_num: int = 3,
         output_threshold: float = 0.5,
-        groups_of_processors: Optional[Dict[str, Any]] = None,
+        processors: Optional[List[str]] = None,
         scorer: str = 'language_scorer',
         supervisor: str = 'language_supervisor',
-        fuser: str = 'language_fuser',
-        redundant_text_sim_threshold: float = 0.8,
-        redundant_weight_threshold: float = 0.5,
-        synergy_text_sim_threshold: float = 0.2,
-        synergy_weight_threshold: float = 0.5,
         **kwargs: Any,
     ) -> None:
         self.ctm_name: Optional[str] = ctm_name
         self.max_iter_num: int = max_iter_num
         self.output_threshold: float = output_threshold
-        self.groups_of_processors: Dict[str, Any] = (
-            groups_of_processors if groups_of_processors is not None else {}
-        )
+        self.processors: List[str] = processors if processors is not None else []
         self.scorer: str = scorer
         self.supervisor: str = supervisor
-        self.fuser: str = fuser
-        self.redundant_text_sim_threshold: float = redundant_text_sim_threshold
-        self.redundant_weight_threshold: float = redundant_weight_threshold
-        self.synergy_text_sim_threshold: float = synergy_text_sim_threshold
-        self.synergy_weight_threshold: float = synergy_weight_threshold
         for key, value in kwargs.items():
             setattr(self, key, value)
 

@@ -1,4 +1,3 @@
-import concurrent.futures
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import numpy as np
@@ -6,7 +5,6 @@ from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..configs import ConsciousnessTuringMachineConfig
-from ..fusers import BaseFuser
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
@@ -69,13 +67,11 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         self.processor_graph = ProcessorGraph()
         self.supervisors: List[BaseSupervisor] = []
         self.scorers: List[BaseScorer] = []
-        self.fusers: List[BaseFuser] = []
 
-        for group_name, processors in self.config.groups_of_processors.items():
-            for processor_name in processors:
-                self.processor_graph.add_node(
-                    processor_name=processor_name, processor_group_name=group_name
-                )
+        for processor_name in self.config.processors:
+            self.processor_graph.add_node(
+                processor_name=processor_name, processor_group_name=None
+            )
 
         # Add tool processors if io_function is provided and ToolBench is available
         if self.io_function and TOOLBENCH_AVAILABLE:
@@ -85,131 +81,32 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
 
         self.add_supervisor(self.config.supervisor)
         self.add_scorer(self.config.scorer)
-        self.add_fuser(self.config.fuser)
 
     def _load_tool_processors(self) -> None:
-        """Load tool processors from io_function"""
-        try:
-            from ..processors import register_tool_processors
+        """Load tool processors if ToolBench is available."""
+        if not TOOLBENCH_AVAILABLE:
+            return
 
-            openai_function_names = self.io_function.openai_function_names
-            openai_function_names = [name for name in openai_function_names]
-            register_tool_processors(openai_function_names)
+        tool_processors = [
+            'tool_processor',
+        ]
 
-            for openai_function_name in openai_function_names:
-                processor_name = openai_function_name
-                self.processor_graph.add_node(
-                    processor_name=processor_name,
-                    processor_group_name='tools',
-                )
-        except Exception as e:
-            print(f'Warning: Failed to load tool processors: {e}')
-
-    @staticmethod
-    def ask_processor(
-        processor,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[np.uint8] = None,
-        image_path: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        audio_path: Optional[str] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
-        video_frames_path: Optional[List[str]] = None,
-        video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
-    ) -> Chunk:
-        """Ask processor with support for both standard and tool processors"""
-        if io_function and hasattr(processor, 'name'):
-            # Tool processor
-            return processor.ask(query, io_function, processor.name)
-        else:
-            # Standard processor
-            return processor.ask(
-                query,
-                text,
-                image,
-                image_path,
-                audio,
-                audio_path,
-                video_frames,
-                video_frames_path,
-                video_path,
-            )
+        for processor_name in tool_processors:
+            self.add_processor(processor_name)
 
     @logging_func_with_count
-    def ask_processors(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[np.uint8] = None,
-        image_path: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        audio_path: Optional[str] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
-        video_frames_path: Optional[List[str]] = None,
-        video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
-    ) -> List[Chunk]:
-        """Ask all processors with support for both standard and tool processors"""
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [
-                executor.submit(
-                    self.ask_processor,
-                    processor,
-                    query,
-                    text,
-                    image,
-                    image_path,
-                    audio,
-                    audio_path,
-                    video_frames,
-                    video_frames_path,
-                    video_path,
-                    io_function,
-                )
-                for processor in self.processor_graph.nodes
-            ]
-            chunks = [
-                future.result() for future in concurrent.futures.as_completed(futures)
-            ]
-        assert len(chunks) == len(self.processor_graph.nodes)
-        return chunks
-
-    @logging_func_with_count
-    def go_up(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[np.uint8] = None,
-        image_path: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        audio_path: Optional[str] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
-        video_frames_path: Optional[List[str]] = None,
-        video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
-    ) -> Tuple[Chunk, List[Chunk]]:
-        chunks = self.ask_processors(
-            query,
-            text,
-            image,
-            image_path,
-            audio,
-            audio_path,
-            video_frames,
-            video_frames_path,
-            video_path,
-            io_function,
-        )
+    def go_up(self, query: str, **input_kwargs) -> Tuple[Chunk, List[Chunk]]:
+        chunks = self.ask_processors(query, **input_kwargs)
         chunks = self.fuse_processor(chunks)
         winning_chunk = self.uptree_competition(chunks)
         return winning_chunk, chunks
 
     @logging_func_with_count
-    def go_down(self, winning_chunk: Chunk, chunks: List[Chunk]) -> None:
+    def go_down(
+        self, winning_chunk: Chunk, chunks: List[Chunk], **input_kwargs
+    ) -> None:
         self.downtree_broadcast(winning_chunk)
-        self.link_form(chunks, winning_chunk)
+        self.link_form(chunks, winning_chunk, **input_kwargs)
 
     def forward(
         self,
@@ -228,24 +125,29 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         # Use provided io_function or fall back to instance io_function
         current_io_function = io_function or self.io_function
 
+        # Collect all input parameters for reuse
+        input_params = {
+            'text': text,
+            'image': image,
+            'image_path': image_path,
+            'audio': audio,
+            'audio_path': audio_path,
+            'video_frames': video_frames,
+            'video_frames_path': video_frames_path,
+            'video_path': video_path,
+            'io_function': current_io_function,
+        }
+
         for _ in range(self.config.max_iter_num):
             winning_chunk, chunks = self.go_up(
                 query,
-                text,
-                image,
-                image_path,
-                audio,
-                audio_path,
-                video_frames,
-                video_frames_path,
-                video_path,
-                current_io_function,
+                **input_params,
             )
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
             confidence_score = 0
             if confidence_score > self.config.output_threshold:
                 return answer, confidence_score
-            self.go_down(winning_chunk, chunks)
+            self.go_down(winning_chunk, chunks, **input_params)
         return answer, confidence_score
 
     # Convenience method for tool-only usage (backward compatibility)

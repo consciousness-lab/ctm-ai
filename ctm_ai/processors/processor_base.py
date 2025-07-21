@@ -47,6 +47,7 @@ class BaseProcessor(object):
         self.check_required_env_vars()
         self.name = name
         self.group_name = group_name
+        self.memory_mode = kwargs.get('memory_mode', True)  # Default to memory mode
         self.executor = self.init_executor()
         self.messenger = self.init_messenger()
         self.scorer = self.init_scorer()
@@ -78,7 +79,11 @@ class BaseProcessor(object):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        memory_mode: Optional[bool] = None,  # Override instance memory_mode
     ) -> Chunk:
+        # Use provided memory_mode or fall back to instance default
+        use_memory = memory_mode if memory_mode is not None else self.memory_mode
+
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
             text=text,
@@ -89,6 +94,7 @@ class BaseProcessor(object):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
+            memory_mode=use_memory,  # Pass memory mode to messenger
         )
 
         executor_output = self.executor.ask(
@@ -110,14 +116,17 @@ class BaseProcessor(object):
             video_frames_path=video_frames_path,
             video_path=video_path,
             executor_output=executor_output,
+            memory_mode=use_memory,  # Pass memory mode to messenger
         )
 
         scorer_output = self.scorer.ask(messages=scorer_messages)
 
-        self.messenger.update(
-            executor_output=executor_output,
-            scorer_output=scorer_output,
-        )
+        # Only update messenger if using memory mode
+        if use_memory:
+            self.messenger.update(
+                executor_output=executor_output,
+                scorer_output=scorer_output,
+            )
 
         # Use additional_question from executor output
         additional_question = executor_output.additional_question or ''
@@ -129,6 +138,69 @@ class BaseProcessor(object):
             additional_question=additional_question,
         )
         return chunk
+
+    def ask_with_memory(
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
+    ) -> Chunk:
+        """Ask with memory enabled (default behavior)"""
+        return self.ask(
+            query=query,
+            text=text,
+            image=image,
+            image_path=image_path,
+            audio=audio,
+            audio_path=audio_path,
+            video_frames=video_frames,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
+            memory_mode=True,
+        )
+
+    def ask_without_memory(
+        self,
+        query: str,
+        text: Optional[str] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
+    ) -> Chunk:
+        """Ask without memory (fresh start each time)"""
+        return self.ask(
+            query=query,
+            text=text,
+            image=image,
+            image_path=image_path,
+            audio=audio,
+            audio_path=audio_path,
+            video_frames=video_frames,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
+            memory_mode=False,
+        )
+
+    def clear_memory(self) -> None:
+        """Clear all stored messages in messenger"""
+        self.messenger.clear_memory()
+
+    def get_memory_size(self) -> Tuple[int, int]:
+        """Get the number of stored executor and scorer messages"""
+        return (
+            len(self.messenger.executor_messages),
+            len(self.messenger.scorer_messages),
+        )
 
     def update(self, chunk: Chunk) -> None:
         if chunk.processor_name != self.name:
