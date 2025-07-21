@@ -28,6 +28,8 @@ numpy = "^2.2.3"
 flask = "^3.1.0"
 flask-cors = "*"
 gunicorn = "^23.0.0"
+litellm = "^1.52.0"
+typing-extensions = "^4.0.0"
 torch = { version = "^2.5.1+cpu", optional = true, source = "torchcpu" }
 
 [tool.poetry.extras]
