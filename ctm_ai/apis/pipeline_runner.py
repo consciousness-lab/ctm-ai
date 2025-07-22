@@ -13,7 +13,7 @@ def method_converter(env, query):
     from ctm_ai.ctms import CTM
 
     ctm = CTM(io_function=env, ctm_name='toolbench')
-    answer = ctm.forward_tool(
+    answer = ctm.forward(
         query=query,
         io_function=env,
     )

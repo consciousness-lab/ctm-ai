@@ -25,6 +25,7 @@ class ToolProcessor(BaseProcessor):
         self,
         query: str,
         io_function: BaseEnv,
+        **kwargs,
     ) -> Chunk:
         openai_function_name = self.name
         executor_messages = self.messenger.collect_executor_messages(
