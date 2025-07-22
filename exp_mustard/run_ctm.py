@@ -6,14 +6,6 @@ from ctm_ai.ctms.ctm import ConsciousTuringMachine
 
 sys.path.append('..')
 
-SYS_PROMPT = (
-    'Please analyze the inputs provided to determine the punchline provided sarcasm or not.'
-    "Your answer should start with 'Yes' or 'No'."
-    "If you think these inputs includes exaggerated description or its real meaning is not aligned with the original one, please answer 'Yes'."
-    "If you think these inputs is neutral or its true meaning is not different from its original one, please answer 'No'."
-    'You should also provide your reason for your answer.'
-)
-
 
 def load_data(file_path):
     with open(file_path, 'r', encoding='utf-8') as json_file:
@@ -25,7 +17,7 @@ def run_instance(test_file, output_file='ctm.jsonl'):
     dataset = load_data('mustard_dataset/mustard_dataset_test.json')
     ctm = ConsciousTuringMachine('sarcasm_ctm')
     target_sentence = dataset[test_file]['utterance']
-    query = f"{SYS_PROMPT}\n\n punchline:'{target_sentence}' "
+    query = 'Is the person saying sarcasm or not?'
     text_list = dataset[test_file]['context']
     text_list.append(target_sentence)
     fullContext = ''
