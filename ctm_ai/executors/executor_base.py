@@ -98,6 +98,8 @@ class BaseExecutor(object):
             additional_question = parsed_response.get(
                 'additional_question', default_additional_question
             )
+            if additional_question == '':
+                additional_question = default_additional_question
 
             return parsed_content, additional_question
 
