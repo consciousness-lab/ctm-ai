@@ -47,7 +47,6 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
     ) -> Tuple[str, float]:
         return self.forward(
             query,
@@ -59,7 +58,6 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
             video_frames,
             video_frames_path,
             video_path,
-            io_function,
         )
 
     def load_ctm(self) -> None:
@@ -97,7 +95,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
     @logging_func_with_count
     def go_up(self, query: str, **input_kwargs) -> Tuple[Chunk, List[Chunk]]:
         chunks = self.ask_processors(query, **input_kwargs)
-        chunks = self.fuse_processor(chunks)
+        chunks = self.fuse_processor(chunks, query, **input_kwargs)
         winning_chunk = self.uptree_competition(chunks)
         return winning_chunk, chunks
 
@@ -119,12 +117,8 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
     ) -> Tuple[str, float]:
         """Forward pass supporting both standard and tool-based processing"""
-        # Use provided io_function or fall back to instance io_function
-        current_io_function = io_function or self.io_function
-
         # Collect all input parameters for reuse
         input_params = {
             'text': text,
@@ -135,7 +129,6 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
             'video_frames': video_frames,
             'video_frames_path': video_frames_path,
             'video_path': video_path,
-            'io_function': current_io_function,
         }
 
         for _ in range(self.config.max_iter_num):
@@ -162,4 +155,4 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
                 'ToolBench is not available. Please install ToolBench to use tool functionality.'
             )
 
-        return self.forward(query=query, io_function=io_function)
+        return self.forward(query=query)
