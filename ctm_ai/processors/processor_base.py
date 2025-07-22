@@ -8,7 +8,7 @@ from ..chunks import Chunk
 from ..executors import BaseExecutor
 from ..messengers import BaseMessenger, Message
 from ..scorers import BaseScorer
-from ..apis import BaseEnv
+
 
 class BaseProcessor(object):
     _processor_registry: Dict[str, Type['BaseProcessor']] = {}
@@ -79,12 +79,10 @@ class BaseProcessor(object):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
-        memory_mode: Optional[bool] = None,  # Override instance memory_mode
+        use_memory: bool = True,  # Whether to condition on memory
+        store_memory: bool = True,  # Whether to store input-output pair in memory
     ) -> Chunk:
-        # Use provided memory_mode or fall back to instance default
-        use_memory = memory_mode if memory_mode is not None else self.memory_mode
-
+        # Collect executor messages with or without memory
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
             text=text,
@@ -95,9 +93,11 @@ class BaseProcessor(object):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
-            memory_mode=use_memory,
+            use_memory=use_memory,
+            store_memory=store_memory,
         )
 
+        # Ask executor
         executor_output = self.executor.ask(
             messages=executor_messages,
             image_path=image_path,
@@ -106,6 +106,7 @@ class BaseProcessor(object):
             video_path=video_path,
         )
 
+        # Collect scorer messages with or without memory
         scorer_messages = self.messenger.collect_scorer_messages(
             query=query,
             text=text,
@@ -117,10 +118,11 @@ class BaseProcessor(object):
             video_frames_path=video_frames_path,
             video_path=video_path,
             executor_output=executor_output,
-            memory_mode=use_memory,  # Pass memory mode to messenger
+            use_memory=use_memory,
+            store_memory=store_memory,
         )
 
-        # Get scorer_use_llm from config if available, otherwise default to True
+        # Ask scorer
         scorer_use_llm = (
             getattr(self.config, 'scorer_use_llm', True)
             if hasattr(self, 'config')
@@ -130,15 +132,17 @@ class BaseProcessor(object):
             messages=scorer_messages, use_llm=scorer_use_llm
         )
 
-        # Always update messenger, regardless of memory mode
-        self.messenger.update(
-            executor_output=executor_output,
-            scorer_output=scorer_output,
-        )
+        # Store in memory if specified
+        if store_memory:
+            self.messenger.update(
+                executor_output=executor_output,
+                scorer_output=scorer_output,
+            )
 
         # Use additional_question from executor output
         additional_question = executor_output.additional_question or ''
 
+        # Merge outputs into a chunk
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,
@@ -146,62 +150,6 @@ class BaseProcessor(object):
             additional_question=additional_question,
         )
         return chunk
-
-    def ask_with_memory(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[np.uint8] = None,
-        image_path: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        audio_path: Optional[str] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
-        video_frames_path: Optional[List[str]] = None,
-        video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
-    ) -> Chunk:
-        """Ask with memory enabled (default behavior)"""
-        return self.ask(
-            query=query,
-            text=text,
-            image=image,
-            image_path=image_path,
-            audio=audio,
-            audio_path=audio_path,
-            video_frames=video_frames,
-            video_frames_path=video_frames_path,
-            video_path=video_path,
-            io_function=io_function,
-            memory_mode=True,
-        )
-
-    def ask_without_memory(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[np.uint8] = None,
-        image_path: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        audio_path: Optional[str] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
-        video_frames_path: Optional[List[str]] = None,
-        video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
-    ) -> Chunk:
-        """Ask without memory (fresh start each time)"""
-        return self.ask(
-            query=query,
-            text=text,
-            image=image,
-            image_path=image_path,
-            audio=audio,
-            audio_path=audio_path,
-            video_frames=video_frames,
-            video_frames_path=video_frames_path,
-            video_path=video_path,
-            io_function=io_function,
-            memory_mode=False,
-        )
 
     def clear_memory(self) -> None:
         """Clear all stored messages in messenger"""

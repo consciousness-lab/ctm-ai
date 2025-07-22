@@ -73,8 +73,6 @@ class ToolExecutor(BaseExecutor):
     def ask(
         self,
         messages: List[Message],
-        max_token: int = 300,
-        return_num: int = 5,
         model: str = None,
         *args: Any,
         **kwargs: Any,
@@ -97,8 +95,6 @@ class ToolExecutor(BaseExecutor):
             messages,
             functions=self.configured_functions,
             model=model,
-            max_tokens=max_token,
-            n=return_num,
             **kwargs,
         )
 

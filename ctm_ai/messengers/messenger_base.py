@@ -135,6 +135,7 @@ class BaseMessenger(object):
         # Add JSON format requirement
         content += """
 You should utilize the other information in the context history and modality-specific information to answer the query.
+In the context history, there might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones in the context history.
 Please respond in JSON format with the following structure:
 {
     "response": "Your detailed response to the query",
@@ -157,7 +158,8 @@ Your additional_question should be just about what kind of information you need 
         video_frames: Optional[List[Any]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        memory_mode: bool = True,  # Default to memory mode
+        use_memory: bool = True,
+        store_memory: bool = True,
         **kwargs: Any,
     ) -> List[Message]:
         content = self._build_executor_content(
@@ -191,19 +193,20 @@ Your additional_question should be just about what kind of information you need 
 
         message = Message(**message_data)
 
-        # Always append to memory, but return different messages based on memory_mode
-        self.executor_messages.append(message)
-        if memory_mode:
+        if store_memory:
+            self.executor_messages.append(message)
+
+        if use_memory:
             return self.executor_messages
         else:
-            # Return only the current message without memory
             return [message]
 
     def collect_scorer_messages(
         self,
         executor_output: Message,
         query: str,
-        memory_mode: bool = True,  # Default to memory mode
+        use_memory: bool = True,
+        store_memory: bool = True,
         **kwargs: Any,
     ) -> List[Message]:
         message_data = {
@@ -219,10 +222,10 @@ Your additional_question should be just about what kind of information you need 
 
         message = Message(**message_data)
 
-        # Always append to memory, but return different messages based on memory_mode
-        self.scorer_messages.append(message)
-        if memory_mode:
+        if store_memory:
+            self.scorer_messages.append(message)
+
+        if use_memory:
             return self.scorer_messages
         else:
-            # Return only the current message without memory
             return [message]

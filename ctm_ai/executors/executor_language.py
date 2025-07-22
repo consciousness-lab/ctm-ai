@@ -13,8 +13,6 @@ class LanguageExecutor(BaseExecutor):
     def ask(
         self,
         messages: List[Message],
-        max_token: int = 300,
-        return_num: int = 5,
         *args: Any,
         **kwargs: Any,
     ) -> Message:
@@ -25,12 +23,9 @@ class LanguageExecutor(BaseExecutor):
             self.convert_message_to_litellm_format(msg) for msg in messages
         ]
 
-        breakpoint()
         # Use the unified ask_base method
         return self.ask_base(
             messages=litellm_messages,
-            max_token=max_token,
-            return_num=return_num,
             model=self.model_name,
             default_additional_question='Would you like me to explain any specific aspects in more detail?',
         )
