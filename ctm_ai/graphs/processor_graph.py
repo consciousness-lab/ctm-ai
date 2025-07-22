@@ -1,12 +1,12 @@
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 from ..processors import BaseProcessor
-from ..utils import logger
 
 
-class ProcessorGraph(object):
+class ProcessorGraph:
     def __init__(self) -> None:
-        self.graph: Dict[BaseProcessor, Set[BaseProcessor]] = {}
+        self.nodes: List[BaseProcessor] = []
+        self.adjacency_list: Dict[str, List[str]] = {}
 
     def add_node(
         self,
@@ -24,55 +24,45 @@ class ProcessorGraph(object):
             self.adjacency_list[processor_name] = []
 
     def remove_node(self, processor_name: str) -> None:
-        processor = self.get_node(processor_name)
-        for conn in list(self.graph[processor]):
-            self.graph[conn].discard(processor)
-        logger.info(f'Removed processor {processor_name} from graph')
-        del self.graph[processor]
+        node_to_remove = self.get_node(processor_name)
+        if node_to_remove:
+            self.nodes.remove(node_to_remove)
+            del self.adjacency_list[processor_name]
+            for neighbors in self.adjacency_list.values():
+                if processor_name in neighbors:
+                    neighbors.remove(processor_name)
 
     def add_link(self, processor1_name: str, processor2_name: str) -> None:
-        processor1 = self.get_node(processor1_name)
-        processor2 = self.get_node(processor2_name)
-        self.graph[processor1].add(processor2)
-        self.graph[processor2].add(processor1)
-        logger.info(f'Added link between {processor1_name} and {processor2_name}')
+        if (
+            processor1_name in self.adjacency_list
+            and processor2_name in self.adjacency_list
+        ):
+            self.adjacency_list[processor1_name].append(processor2_name)
+            self.adjacency_list[processor2_name].append(processor1_name)
 
     def remove_link(self, processor1_name: str, processor2_name: str) -> None:
-        processor1 = self.get_node(processor1_name)
-        processor2 = self.get_node(processor2_name)
-        removed = False
-        if processor2 in self.graph[processor1]:
-            self.graph[processor1].remove(processor2)
-            removed = True
-        if processor1 in self.graph[processor2]:
-            self.graph[processor2].remove(processor1)
-            removed = True
-        if removed:
-            logger.info(f'Removed link between {processor1_name} and {processor2_name}')
+        if (
+            processor1_name in self.adjacency_list
+            and processor2_name in self.adjacency_list[processor1_name]
+        ):
+            self.adjacency_list[processor1_name].remove(processor2_name)
+        if (
+            processor2_name in self.adjacency_list
+            and processor1_name in self.adjacency_list[processor2_name]
+        ):
+            self.adjacency_list[processor2_name].remove(processor1_name)
 
-    def get_node(self, processor_name: str) -> BaseProcessor:
-        for processor in self.graph.keys():
-            if processor.name == processor_name:
-                return processor
-        raise ValueError(f'Processor with name {processor_name} not found in graph')
-
-    def get_neighbor(self, processor_name: str) -> List[BaseProcessor]:
-        processor = self.get_node(processor_name)
-        return [node for node in self.graph[processor]]
+    def get_node(self, processor_name: str) -> Optional[BaseProcessor]:
+        for node in self.nodes:
+            if node.name == processor_name:
+                return node
+        return None
 
     def get_neighbor_names(self, processor_name: str) -> List[str]:
-        processor = self.get_node(processor_name)
-        return [node.name for node in self.graph[processor]]
-
-    @property
-    def nodes(self) -> List[BaseProcessor]:
-        return list(self.graph.keys())
+        return self.adjacency_list.get(processor_name, [])
 
     def __len__(self) -> int:
-        return len(self.graph)
+        return len(self.nodes)
 
     def has_node(self, processor_name: str) -> bool:
-        for processor in self.graph.keys():
-            if processor.name == processor_name:
-                return True
-        return False
+        return any(node.name == processor_name for node in self.nodes)

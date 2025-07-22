@@ -24,7 +24,6 @@ class LanguageExecutor(BaseExecutor):
             self.convert_message_to_litellm_format(msg) for msg in messages
         ]
 
-        breakpoint()
         # Use the unified ask_base method
         return self.ask_base(
             messages=litellm_messages,

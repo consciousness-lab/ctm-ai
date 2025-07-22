@@ -67,9 +67,7 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         self.scorers: List[BaseScorer] = []
 
         for processor_name in self.config.processors:
-            self.processor_graph.add_node(
-                processor_name=processor_name, processor_group_name=None
-            )
+            self.add_processor(processor_name=processor_name, group_name=None)
 
         # Add tool processors if io_function is provided and ToolBench is available
         if self.io_function and TOOLBENCH_AVAILABLE:
