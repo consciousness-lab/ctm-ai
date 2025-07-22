@@ -15,12 +15,12 @@ if TYPE_CHECKING:
     from ..apis import BaseEnv
 
 try:
-    from ..apis import BaseEnv as _BaseEnv
+    from ..apis import BaseEnv
 
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False
-    _BaseEnv = None
+    BaseEnv = None
 
 
 class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
@@ -30,7 +30,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         self.io_function = io_function
         self.config = (
             ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
-            if ctm_name
+            if ctm_name != 'toolbench'
             else ConsciousnessTuringMachineConfig()
         )
 
@@ -85,12 +85,17 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         if not TOOLBENCH_AVAILABLE:
             return
 
-        tool_processors = [
-            'tool_processor',
-        ]
+        from ..processors import register_tool_processors
 
-        for processor_name in tool_processors:
-            self.add_processor(processor_name)
+        openai_function_names = [
+            name for name in self.io_function.openai_function_names
+        ]
+        register_tool_processors(openai_function_names)
+        for openai_function_name in openai_function_names:
+            processor_name = openai_function_name
+            self.processor_graph.add_node(
+                processor_name=processor_name, processor_group_name='tools'
+            )
 
     @logging_func_with_count
     def go_up(self, query: str, **input_kwargs) -> Tuple[Chunk, List[Chunk]]:

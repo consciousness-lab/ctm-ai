@@ -8,7 +8,7 @@ sys.path.append('..')
 
 import argparse
 
-from ctm_ai.apis.api_manager import pipeline_runner
+from ctm_ai.apis import pipeline_runner
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -16,12 +16,12 @@ if TYPE_CHECKING:
     pass
 
 try:
-    from ..apis import BaseEnv as _BaseEnv
+    from ..apis import BaseEnv
 
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False
-    _BaseEnv = None
+    BaseEnv = None
 
 
 class BaseConsciousnessTuringMachine(ABC):
