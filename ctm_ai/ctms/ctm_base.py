@@ -110,7 +110,8 @@ class BaseConsciousnessTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        memory_mode: Optional[bool] = None,
+        use_memory: bool = True,
+        store_memory: bool = True,
     ) -> Chunk:
         """Ask processor with support for both standard and tool processors"""
         return processor.ask(
@@ -123,7 +124,8 @@ class BaseConsciousnessTuringMachine(ABC):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
-            memory_mode=memory_mode,  # Pass memory mode to standard processor
+            use_memory=use_memory,
+            store_memory=store_memory,
         )
 
     @logging_func_with_count
@@ -138,7 +140,8 @@ class BaseConsciousnessTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        memory_mode: Optional[bool] = None,  # Add memory mode support
+        use_memory: bool = True,
+        store_memory: bool = True,
     ) -> List[Chunk]:
         """Ask all processors with support for both standard and tool processors"""
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -155,7 +158,8 @@ class BaseConsciousnessTuringMachine(ABC):
                     video_frames,
                     video_frames_path,
                     video_path,
-                    memory_mode,  # Pass memory mode to each processor
+                    use_memory,
+                    store_memory,
                 )
                 for processor in self.processor_graph.nodes
             ]
@@ -197,7 +201,10 @@ class BaseConsciousnessTuringMachine(ABC):
         additional_question = winning_chunk.additional_question
         # Use the same input parameters for processing additional question
         chunks = self.ask_processors(
-            query=additional_question, **input_kwargs, memory_mode=False
+            query=additional_question,
+            **input_kwargs,
+            use_memory=False,
+            store_memory=False,
         )
 
         for chunk in chunks:
@@ -230,14 +237,27 @@ class BaseConsciousnessTuringMachine(ABC):
                     dirty.add(nbr)
                     continue
 
-                answer_chunk = proc_map[nbr].ask_without_memory(query=q, **input_kwargs)
-                proc_map[chunk.processor_name].update(answer_chunk)
+                multimodal_kwargs = {
+                    k: v for k, v in input_kwargs.items() if k != 'text'
+                }
+                answer_chunk = proc_map[nbr].ask(
+                    query=q,
+                    text=chunk.gist,
+                    use_memory=False,
+                    store_memory=False,
+                    **multimodal_kwargs,
+                )
+                input_kwargs['text'] += '(additional information: {})'.format(
+                    answer_chunk.gist
+                )
                 dirty.add(chunk.processor_name)
 
         for idx, chunk in enumerate(chunks):
             if chunk.processor_name in dirty:
                 p = proc_map[chunk.processor_name]
-                chunks[idx] = p.ask_with_memory(query=query, **input_kwargs)
+                chunks[idx] = p.ask(
+                    query=query, use_memory=True, store_memory=True, **input_kwargs
+                )
         return chunks
 
     @abstractmethod
