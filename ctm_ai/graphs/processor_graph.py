@@ -12,13 +12,16 @@ class ProcessorGraph(object):
         self,
         processor_name: str,
         processor_group_name: Optional[str] = None,
-        config: Optional[object] = None,
+        system_prompt: Optional[str] = None,
     ) -> None:
-        processor = BaseProcessor(name=processor_name, group_name=processor_group_name)
-        if config:
-            processor.config = config
-        self.graph[processor] = set()
-        logger.info(f'Added processor {processor_name} to graph')
+        if processor_name not in [p.name for p in self.nodes]:
+            processor = BaseProcessor(
+                name=processor_name,
+                group_name=processor_group_name,
+                system_prompt=system_prompt,
+            )
+            self.nodes.append(processor)
+            self.adjacency_list[processor_name] = []
 
     def remove_node(self, processor_name: str) -> None:
         processor = self.get_node(processor_name)

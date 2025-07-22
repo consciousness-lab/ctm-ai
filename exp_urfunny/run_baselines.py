@@ -4,7 +4,7 @@ import os
 from torch.utils.data import DataLoader
 from urfunny_dataset import URFunnyDataset
 
-from exp_baselines import ConsciousnessTuringMachineBaseline, GeminiMultimodalLLM
+from exp_baselines import ConsciousTuringMachineBaseline, GeminiMultimodalLLM
 
 SYS_PROMPT = (
     'Please analyze the inputs provided to determine the punchline provided humor or not.'
@@ -59,7 +59,7 @@ def run_baseline(name: str) -> None:
                     for file in files:
                         file_paths.append(str(os.path.join(root, file)))
                 file_paths.sort()
-                ctm = ConsciousnessTuringMachineBaseline('urfunny_test')
+                ctm = ConsciousTuringMachineBaseline('urfunny_test')
                 answer = ctm(
                     query=query,
                     text=batch['context'][i],

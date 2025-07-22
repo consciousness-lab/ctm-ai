@@ -1,4 +1,4 @@
-from .ctm import ConsciousnessTuringMachine as CTM
-from .ctm_base import BaseConsciousnessTuringMachine as BaseCTM
+from .ctm import ConsciousTuringMachine as CTM
+from .ctm_base import BaseConsciousTuringMachine as BaseCTM
 
 __all__ = ['CTM', 'BaseCTM']

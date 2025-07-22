@@ -160,6 +160,7 @@ Your additional_question should be just about what kind of information you need 
         video_path: Optional[str] = None,
         use_memory: bool = True,
         store_memory: bool = True,
+        executor_system_prompt: str = '',
         **kwargs: Any,
     ) -> List[Message]:
         content = self._build_executor_content(
@@ -183,7 +184,7 @@ Your additional_question should be just about what kind of information you need 
         if audio is not None:
             message_data['audio'] = audio
         if audio_path is not None:
-            message_data['audio_path'] = audio_path
+            message_data['audio'] = audio_path
         if video_frames is not None:
             message_data['video_frames'] = video_frames
         if video_frames_path is not None:
@@ -193,13 +194,19 @@ Your additional_question should be just about what kind of information you need 
 
         message = Message(**message_data)
 
+        messages = []
+        if executor_system_prompt:
+            messages.append(Message(role='system', content=executor_system_prompt))
+        
         if store_memory:
             self.executor_messages.append(message)
 
         if use_memory:
-            return self.executor_messages
+            messages.extend(self.executor_messages)
         else:
-            return [message]
+            messages.append(message)
+            
+        return messages
 
     def collect_scorer_messages(
         self,

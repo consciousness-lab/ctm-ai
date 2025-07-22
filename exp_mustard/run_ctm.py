@@ -2,7 +2,7 @@ import json
 import os
 import sys
 
-from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
+from ctm_ai.ctms.ctm import ConsciousTuringMachine
 
 sys.path.append('..')
 
@@ -23,7 +23,7 @@ def load_data(file_path):
 
 def run_instance(test_file, output_file='ctm.jsonl'):
     dataset = load_data('mustard_dataset/mustard_dataset_test.json')
-    ctm = ConsciousnessTuringMachine('sarcasm_ctm')
+    ctm = ConsciousTuringMachine('sarcasm_ctm')
     target_sentence = dataset[test_file]['utterance']
     query = f"{SYS_PROMPT}\n\n punchline:'{target_sentence}' "
     text_list = dataset[test_file]['context']

@@ -3,11 +3,12 @@
     "max_iter_num": 3,
     "output_threshold": 0.5,
     "processors": [
-            "language_processor",
-            "vision_processor",
-            "audio_processor"
+        "language_processor"
     ],
     "scorer": "language_scorer",
     "scorer_use_llm": true,
-    "supervisor": "language_supervisor"
+    "supervisor": "language_supervisor",
+    "system_prompts": {
+        "language_processor": "You are a witty AI that specializes in detecting sarcasm. Analyze the text for subtle ironic cues, and explain your reasoning."
+    }
 }

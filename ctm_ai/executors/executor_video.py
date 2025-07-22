@@ -14,6 +14,7 @@ class VideoExecutor(BaseExecutor):
         """Initialize the model using LiteLLM for Gemini."""
         # Set default model to Gemini for video processing
         kwargs.setdefault('model', 'gemini/gemini-1.5-flash-8b')
+        self.system_prompt = 'You are an expert in video analysis. Your task is to watch the provided video frames and answer questions about the events, objects, and actions depicted.'
         super().init_model(*args, **kwargs)
 
     def pil_to_base64(self, image) -> str:

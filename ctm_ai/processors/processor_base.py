@@ -48,7 +48,8 @@ class BaseProcessor(object):
         self.name = name
         self.group_name = group_name
         self.memory_mode = kwargs.get('memory_mode', True)  # Default to memory mode
-        self.executor = self.init_executor()
+        self.system_prompt = kwargs.get('system_prompt')
+        self.executor = self.init_executor(system_prompt=self.system_prompt)
         self.messenger = self.init_messenger()
         self.scorer = self.init_scorer()
 
@@ -59,8 +60,8 @@ class BaseProcessor(object):
                 f'[{self.name}] Missing required environment variables: {missing_vars}'
             )
 
-    def init_executor(self) -> BaseExecutor:
-        return BaseExecutor(name='language_executor')
+    def init_executor(self, system_prompt: Optional[str] = None) -> BaseExecutor:
+        return BaseExecutor(name='language_executor', system_prompt=system_prompt)
 
     def init_messenger(self) -> BaseMessenger:
         return BaseMessenger.create_messenger('language_messenger')
@@ -95,6 +96,7 @@ class BaseProcessor(object):
             video_path=video_path,
             use_memory=use_memory,
             store_memory=store_memory,
+            executor_system_prompt=self.executor.system_prompt,
         )
 
         # Ask executor

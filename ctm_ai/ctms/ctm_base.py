@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ..chunks import Chunk, ChunkManager
-from ..configs import ConsciousnessTuringMachineConfig
+from ..configs import ConsciousTuringMachineConfig
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
@@ -24,13 +24,13 @@ except ImportError:
     BaseEnv = None
 
 
-class BaseConsciousnessTuringMachine(ABC):
+class BaseConsciousTuringMachine(ABC):
     def __init__(self, ctm_name: Optional[str] = None) -> None:
         super().__init__()
         self.config = (
-            ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
+            ConsciousTuringMachineConfig.from_ctm(ctm_name)
             if ctm_name
-            else ConsciousnessTuringMachineConfig()
+            else ConsciousTuringMachineConfig()
         )
         self.load_ctm()
 
@@ -79,7 +79,13 @@ class BaseConsciousnessTuringMachine(ABC):
     def add_processor(
         self, processor_name: str, group_name: Optional[str] = None
     ) -> None:
-        self.processor_graph.add_node(processor_name, group_name)
+        """Add a processor to the CTM."""
+        system_prompt = self.config.system_prompts.get(processor_name)
+        self.processor_graph.add_node(
+            processor_name=processor_name,
+            processor_group_name=group_name,
+            system_prompt=system_prompt,
+        )
 
     def remove_processor(self, processor_name: str) -> None:
         self.processor_graph.remove_node(processor_name)
