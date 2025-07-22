@@ -4,13 +4,13 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ctm_ai.chunks import Chunk, ChunkManager
-from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
+from ctm_ai.ctms.ctm import ConsciousTuringMachine
 
 
 class ChunkProcessor:
     @staticmethod
     def process_chunks(
-        ctm_instance: ConsciousnessTuringMachine,
+        ctm_instance: ConsciousTuringMachine,
         query: Optional[str],
         text: Optional[str] = None,
         image: Optional[np.uint8] = None,
@@ -38,7 +38,7 @@ class ChunkProcessor:
 
     @staticmethod
     def fuse_chunks(
-        ctm_instance: ConsciousnessTuringMachine, chunks: List[Chunk]
+        ctm_instance: ConsciousTuringMachine, chunks: List[Chunk]
     ) -> List[Chunk]:
         return cast(List[Chunk], ctm_instance.fuse_processor(chunks))
 

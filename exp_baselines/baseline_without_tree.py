@@ -9,7 +9,7 @@ from ctm_ai.supervisors import BaseSupervisor
 from ctm_ai.utils import logging_func
 
 
-class ConsciousnessTuringMachineBaseline(BaseCTM):
+class ConsciousTuringMachineBaseline(BaseCTM):
     def load_ctm(self) -> None:
         self.processor_graph = ProcessorGraph()
         self.supervisors: List[BaseSupervisor] = []

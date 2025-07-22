@@ -4,12 +4,12 @@ import numpy as np
 from numpy.typing import NDArray
 
 from ..chunks import Chunk
-from ..configs import ConsciousnessTuringMachineConfig
+from ..configs import ConsciousTuringMachineConfig
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
 from ..utils import logging_func_with_count
-from .ctm_base import BaseConsciousnessTuringMachine
+from .ctm_base import BaseConsciousTuringMachine
 
 if TYPE_CHECKING:
     from ..apis import BaseEnv
@@ -23,15 +23,15 @@ except ImportError:
     BaseEnv = None
 
 
-class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
+class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def __init__(
         self, ctm_name: Optional[str] = None, io_function: Optional['BaseEnv'] = None
     ) -> None:
         self.io_function = io_function
         self.config = (
-            ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
+            ConsciousTuringMachineConfig.from_ctm(ctm_name)
             if ctm_name != 'toolbench'
-            else ConsciousnessTuringMachineConfig()
+            else ConsciousTuringMachineConfig()
         )
 
         self.load_ctm()
@@ -67,9 +67,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         self.scorers: List[BaseScorer] = []
 
         for processor_name in self.config.processors:
-            self.processor_graph.add_node(
-                processor_name=processor_name, processor_group_name=None
-            )
+            self.add_processor(processor_name=processor_name, group_name=None)
 
         # Add tool processors if io_function is provided and ToolBench is available
         if self.io_function and TOOLBENCH_AVAILABLE:

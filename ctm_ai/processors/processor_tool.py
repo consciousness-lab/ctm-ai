@@ -15,8 +15,8 @@ class ToolProcessor(BaseProcessor):
     def init_messenger(self) -> BaseMessenger:
         return BaseMessenger.create_messenger('tool_messenger')
 
-    def init_executor(self) -> BaseExecutor:
-        return BaseExecutor(name='tool_executor')
+    def init_executor(self, system_prompt: str = None) -> BaseExecutor:
+        return BaseExecutor(name='tool_executor', system_prompt=system_prompt)
 
     def init_scorer(self) -> BaseScorer:
         return BaseScorer(name='language_scorer')

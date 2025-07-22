@@ -10,7 +10,7 @@ from state import AppState
 from werkzeug.wrappers.response import Response as WerkzeugResponse
 
 from ctm_ai.chunks import Chunk, ChunkManager
-from ctm_ai.ctms.ctm import ConsciousnessTuringMachine
+from ctm_ai.ctms.ctm import ConsciousTuringMachine
 from ctm_ai.utils import extract_audio_from_video, extract_video_frames
 
 ResponseType = Union[FlaskResponse, WerkzeugResponse]
@@ -19,7 +19,7 @@ ResponseType = Union[FlaskResponse, WerkzeugResponse]
 class FlaskAppWrapper:
     def __init__(self) -> None:
         self.app: Flask = Flask(__name__)
-        self.ctm: ConsciousnessTuringMachine = ConsciousnessTuringMachine()
+        self.ctm: ConsciousTuringMachine = ConsciousTuringMachine()
         self.state: AppState = AppState()
         self.chunk_manager: ChunkManager = ChunkManager()
         self.setup_app_config()

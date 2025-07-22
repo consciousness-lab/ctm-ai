@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from ..configs import ConsciousnessTuringMachineConfig
+from ..configs import ConsciousTuringMachineConfig
 from ..utils import logging_chunk_compete
 from .chunk import Chunk
 
@@ -16,7 +16,7 @@ class ChunkManager:
     def __init__(
         self,
         chunks: List[Chunk] = [],
-        config: Optional[ConsciousnessTuringMachineConfig] = None,
+        config: Optional[ConsciousTuringMachineConfig] = None,
     ) -> None:
         self.config = config
         self.chunks: List[Chunk] = chunks
