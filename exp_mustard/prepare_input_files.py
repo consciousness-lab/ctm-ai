@@ -58,9 +58,9 @@ def prepare_audios(file_list_path: str, input_folder: str, output_folder: str) -
 
 
 if __name__ == '__main__':
-    video_folder = 'mustard_videos'
+    video_folder = 'mmsd_raw_data/context_final'
     audio_folder = 'mustard_audios'
     frames_folder = 'mustard_frames'
     sample_data = 'mustard_dataset/mustard_dataset_test.json'
-    # prepare_frames(sample_data, video_folder, frames_folder, 10)
-    prepare_audios(sample_data, video_folder, audio_folder)
+    prepare_frames(sample_data, video_folder, frames_folder, 10)
+    # prepare_audios(sample_data, video_folder, audio_folder)
