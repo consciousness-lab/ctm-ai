@@ -46,6 +46,9 @@ class BaseExecutor(object):
         self.default_max_tokens = kwargs.get('max_tokens', 1024)
         self.default_temperature = kwargs.get('temperature', 0.0)
 
+        # Get Gemini API key if provided
+        self.gemini_api_key = kwargs.get('gemini_api_key')
+
         # Configure LiteLLM settings
         self._configure_litellm()
 

@@ -1,3 +1,4 @@
+import base64
 import os
 from typing import Any, List
 
@@ -66,17 +67,19 @@ class AudioExecutor(BaseExecutor):
 
             # Read audio file
             with open(audio_path, 'rb') as f:
-                audio_data = f.read()
+                audio_bytes = f.read()
 
-            # Create message with audio content for LiteLLM
+            encoded_data = base64.b64encode(audio_bytes).decode('utf-8')
+
+            # Create message with audio content for LiteLLM (following Gemini docs)
             audio_message = {
                 'role': 'user',
                 'content': [
                     {'type': 'text', 'text': query},
                     {
-                        'type': 'audio_url',
-                        'audio_url': {
-                            'url': f'data:{mime_type};base64,{audio_data.hex()}'
+                        'type': 'file',
+                        'file': {
+                            'file_data': f'data:{mime_type};base64,{encoded_data}',
                         },
                     },
                 ],

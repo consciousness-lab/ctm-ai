@@ -4,7 +4,8 @@
     "output_threshold": 0.5,
     "processors": [
             "language_processor",
-            "vision_processor"
+            "audio_processor",
+            "video_processor"
     ],
     "scorer": "language_scorer",
     "scorer_use_llm": true,
