@@ -19,7 +19,7 @@ class LanguageSupervisor(BaseSupervisor):
         messages = [
             Message(
                 role='user',
-                content=f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a few words:',
+                content=f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.',
             )
         ]
 
@@ -50,12 +50,14 @@ Query: {query}
 Information: {gist}
 
 Consider:
-- 1.0 = Perfectly relevant, directly answers the query
-- 0.8 = Highly relevant, mostly answers the query
-- 0.6 = Moderately relevant, partially answers the query
-- 0.4 = Somewhat relevant, tangentially related
-- 0.2 = Barely relevant, weak connection
-- 0.0 = Not relevant, completely unrelated
+- 1.0 = Perfectly relevant, directly answers the question with specific information
+- 0.8 = Highly relevant, mostly answers the question with useful information
+- 0.6 = Moderately relevant, partially answers the question
+- 0.4 = Somewhat relevant, tangentially related but not very helpful
+- 0.2 = Barely relevant, weak connection or very general response
+- 0.0 = Not relevant, refuses to answer, says "cannot determine", or completely unrelated
+
+IMPORTANT: If the answer says "I cannot determine", "I don't know", "cannot answer", or refuses to provide information, score it as 0.0.
 
 Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
             )

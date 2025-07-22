@@ -5,7 +5,7 @@
     "processors": [
             "language_processor",
             "audio_processor",
-            "video_processor"
+            "vision_processor"
     ],
     "scorer": "language_scorer",
     "scorer_use_llm": true,
