@@ -230,13 +230,7 @@ class BaseConsciousnessTuringMachine(ABC):
                     dirty.add(nbr)
                     continue
 
-                multimodal_kwargs = {
-                    k: v for k, v in input_kwargs.items() if k != 'text'
-                }
-
-                answer_chunk = proc_map[nbr].ask_without_memory(
-                    query=q, text=chunk.gist, **multimodal_kwargs
-                )
+                answer_chunk = proc_map[nbr].ask_without_memory(query=q, **input_kwargs)
                 proc_map[chunk.processor_name].update(answer_chunk)
                 dirty.add(chunk.processor_name)
 

@@ -94,6 +94,9 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
 
     @logging_func_with_count
     def go_up(self, query: str, **input_kwargs) -> Tuple[Chunk, List[Chunk]]:
+        for processor in self.processor_graph.nodes:
+            processor.clear_memory()
+
         chunks = self.ask_processors(query, **input_kwargs)
         chunks = self.fuse_processor(chunks, query, **input_kwargs)
         winning_chunk = self.uptree_competition(chunks)
