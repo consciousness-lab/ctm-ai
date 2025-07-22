@@ -47,10 +47,17 @@ class BaseProcessor(object):
         self.check_required_env_vars()
         self.name = name
         self.group_name = group_name
-        self.memory_mode = kwargs.get('memory_mode', True)  # Default to memory mode
-        self.executor = self.init_executor()
+        self.system_prompt = kwargs.get('system_prompt')
+
+        self.executor = self.init_executor(system_prompt=self.system_prompt)
         self.messenger = self.init_messenger()
         self.scorer = self.init_scorer()
+
+        # Set the system prompt in the messenger after initialization
+        if self.system_prompt:
+            self.messenger.system_prompt_message = Message(
+                role='system', content=self.system_prompt
+            )
 
     def check_required_env_vars(self) -> None:
         missing_vars = [var for var in self.REQUIRED_KEYS if var not in os.environ]
@@ -59,8 +66,8 @@ class BaseProcessor(object):
                 f'[{self.name}] Missing required environment variables: {missing_vars}'
             )
 
-    def init_executor(self) -> BaseExecutor:
-        return BaseExecutor(name='language_executor')
+    def init_executor(self, system_prompt: Optional[str] = None) -> BaseExecutor:
+        return BaseExecutor(name='language_executor', system_prompt=system_prompt)
 
     def init_messenger(self) -> BaseMessenger:
         return BaseMessenger.create_messenger('language_messenger')

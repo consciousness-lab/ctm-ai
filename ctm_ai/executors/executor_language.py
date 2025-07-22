@@ -8,6 +8,7 @@ from .executor_base import BaseExecutor
 class LanguageExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the model using the base class functionality."""
+        self.system_prompt = 'You are an expert in language understanding. Your task is to analyze the provided text and answer questions about it.'
         super().init_model(*args, **kwargs)
 
     def ask(

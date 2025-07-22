@@ -3,7 +3,7 @@ import os
 import sys
 import time
 
-from exp_baselines import ConsciousnessTuringMachineBaseline
+from exp_baselines import ConsciousTuringMachineBaseline
 
 sys.path.append('..')
 
@@ -23,7 +23,7 @@ def load_data(file_path):
 
 def run_instance(test_file, output_file='baseline2.jsonl'):
     dataset = load_data('urfunny_dataset_test.json')
-    ctm = ConsciousnessTuringMachineBaseline('urfunny_test')
+    ctm = ConsciousTuringMachineBaseline('urfunny_test')
     ctm.config.filename_log = f'{test_file}.log'
     target_sentence = dataset[test_file]['punchline_sentence']
     query = f"{SYS_PROMPT}\n\n punchline:'{target_sentence}' "

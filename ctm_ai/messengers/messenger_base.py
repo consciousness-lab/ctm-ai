@@ -102,10 +102,13 @@ class BaseMessenger(object):
         return self.scorer_messages
 
     def init_messenger(self) -> None:
+        self.system_prompt_message: Optional[Message] = None
         self.executor_messages: List[Message] = []
         self.scorer_messages: List[Message] = []
 
     def update(self, executor_output: Message, scorer_output: Message) -> None:
+        # We only store the assistant's response here,
+        # because the user's message is already stored in collect_executor_messages
         self.executor_messages.append(executor_output)
         self.scorer_messages.append(scorer_output)
 
@@ -183,7 +186,7 @@ Your additional_question should be just about what kind of information you need 
         if audio is not None:
             message_data['audio'] = audio
         if audio_path is not None:
-            message_data['audio_path'] = audio_path
+            message_data['audio'] = audio_path
         if video_frames is not None:
             message_data['video_frames'] = video_frames
         if video_frames_path is not None:
@@ -191,15 +194,23 @@ Your additional_question should be just about what kind of information you need 
         if video_path is not None:
             message_data['video_path'] = video_path
 
-        message = Message(**message_data)
+        current_message = Message(**message_data)
 
-        if store_memory:
-            self.executor_messages.append(message)
+        # Build the list of messages for the current inference
+        messages_for_inference = []
+        if self.system_prompt_message:
+            messages_for_inference.append(self.system_prompt_message)
 
         if use_memory:
-            return self.executor_messages
-        else:
-            return [message]
+            messages_for_inference.extend(self.executor_messages)
+
+        messages_for_inference.append(current_message)
+
+        # Store the current user message in memory if required
+        if store_memory:
+            self.executor_messages.append(current_message)
+
+        return messages_for_inference
 
     def collect_scorer_messages(
         self,
@@ -220,12 +231,12 @@ Your additional_question should be just about what kind of information you need 
         if self.include_gists_in_scorer and hasattr(executor_output, 'gists'):
             message_data['gists'] = executor_output.gists
 
-        message = Message(**message_data)
+        current_message = Message(**message_data)
 
         if store_memory:
-            self.scorer_messages.append(message)
+            self.scorer_messages.append(current_message)
 
         if use_memory:
             return self.scorer_messages
         else:
-            return [message]
+            return [current_message]

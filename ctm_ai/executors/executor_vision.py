@@ -12,6 +12,7 @@ from .executor_base import BaseExecutor
 class VisionExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the model using the base class functionality."""
+        self.system_prompt = 'You are an expert in image analysis. Your task is to examine the provided image and answer questions about its content.'
         super().init_model(*args, **kwargs)
 
     @message_exponential_backoff()

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "ctm-ai"
 version = "0.0.2"
-description = "A cognitive architecture motivated by consciousness turing machine."
+description = "A cognitive architecture motivated by Conscious turing machine."
 authors = ["Haofei Yu <yuhaofei44@gmail.com>"]
 license = "Apache 2.0 License"
 readme = "README.md"
