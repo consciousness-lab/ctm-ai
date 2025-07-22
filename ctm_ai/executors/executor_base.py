@@ -46,15 +46,13 @@ class BaseExecutor(object):
         self.default_max_tokens = kwargs.get('max_tokens', 4096)
         self.default_return_num = kwargs.get('return_num', 1)
         self.default_temperature = kwargs.get('temperature', 0.0)
-        
+
         # Set a default system_prompt that can be overridden by subclasses
         if not hasattr(self, 'system_prompt'):
             self.system_prompt = 'You are a helpful AI assistant.'
 
         # Prioritize system_prompt from kwargs (config)
-        self.system_prompt = kwargs.get(
-            'system_prompt', self.system_prompt
-        )
+        self.system_prompt = kwargs.get('system_prompt', self.system_prompt)
 
         # Get Gemini API key if provided
         self.gemini_api_key = kwargs.get('gemini_api_key')

@@ -67,7 +67,7 @@ class ToolExecutor(BaseExecutor):
 
     def init_model(self, *args, **kwargs):
         """Initialize the model and functions for the tool executor."""
-        self.system_prompt = 'You are a helpful assistant with access to a variety of tools. Your task is to select the appropriate tool and use it to answer the user\'s query.'
+        self.system_prompt = "You are a helpful assistant with access to a variety of tools. Your task is to select the appropriate tool and use it to answer the user's query."
         super().init_model(*args, **kwargs)
 
     @message_exponential_backoff()

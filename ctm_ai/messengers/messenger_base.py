@@ -197,7 +197,7 @@ Your additional_question should be just about what kind of information you need 
         messages = []
         if executor_system_prompt:
             messages.append(Message(role='system', content=executor_system_prompt))
-        
+
         if store_memory:
             self.executor_messages.append(message)
 
@@ -205,7 +205,7 @@ Your additional_question should be just about what kind of information you need 
             messages.extend(self.executor_messages)
         else:
             messages.append(message)
-            
+
         return messages
 
     def collect_scorer_messages(

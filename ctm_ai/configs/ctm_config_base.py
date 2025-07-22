@@ -1,5 +1,5 @@
 import json
-from typing import Any, List, Optional, Dict
+from typing import Any, Dict, List, Optional
 
 
 class ConsciousTuringMachineConfig:
@@ -22,7 +22,9 @@ class ConsciousTuringMachineConfig:
         self.scorer: str = scorer
         self.scorer_use_llm: bool = scorer_use_llm
         self.supervisor: str = supervisor
-        self.system_prompts: Dict[str, str] = system_prompts if system_prompts is not None else {}
+        self.system_prompts: Dict[str, str] = (
+            system_prompts if system_prompts is not None else {}
+        )
         for key, value in kwargs.items():
             setattr(self, key, value)
 
