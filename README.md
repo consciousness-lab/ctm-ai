@@ -2,7 +2,7 @@
 
 
 
-<h1 align="center">CTM-AI: A Blueprint for Implementing a General AI System Inspired by Conscious Theory</h1>
+<h1 align="center">CTM-AI: A Blueprint for Implementing a General AI System Inspired by Consciousness Theory</h1>
 
 <div align="center">
 
