@@ -20,10 +20,6 @@ def run_instance(test_file, output_file='ctm.jsonl'):
     query = 'Is the person saying sarcasm or not?'
     text_list = dataset[test_file]['context']
     text_list.append(target_sentence)
-    fullContext = ''
-    for i in range(len(text_list)):
-        currentUtterance = f'{text_list[i]} \n'
-        fullContext += currentUtterance
     audio_path = f'mustard_audios/{test_file}_audio.mp4'
     video_frames_path = f'mustard_frames/{test_file}_frames'
     file_paths = [
