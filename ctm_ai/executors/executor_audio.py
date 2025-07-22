@@ -36,8 +36,6 @@ class AudioExecutor(BaseExecutor):
     def ask(
         self,
         messages: List[Message],
-        max_token: int = 300,
-        return_num: int = 1,
         model: str = None,
         *args: Any,
         **kwargs: Any,
@@ -88,8 +86,6 @@ class AudioExecutor(BaseExecutor):
             # Use the unified ask_base method
             return self.ask_base(
                 messages=[audio_message],
-                max_token=max_token,
-                return_num=return_num,
                 model=model,
                 default_additional_question='Would you like me to analyze any specific aspects of this audio in more detail?',
             )

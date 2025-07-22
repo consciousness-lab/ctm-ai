@@ -134,14 +134,16 @@ class BaseMessenger(object):
 
         # Add JSON format requirement
         content += """
-
+You should utilize the other information in the context history and modality-specific information to answer the query.
+In the context history, there might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones in the context history.
 Please respond in JSON format with the following structure:
 {
     "response": "Your detailed response to the query",
     "additional_question": "If you are not sure about the answer, you should generate a question that potentially can be answered by other modality models or other tools like search engine."
 }
 
-Your additional_question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about."""
+Your additional_question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about.
+Your additional_question should be just about what kind of information you need to get from other modality models or other tools like search engine, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what is the caption of the image, etc. The question needs to be short and clean."""
 
         return content
 
@@ -156,7 +158,8 @@ Your additional_question should be potentially answerable by other modality mode
         video_frames: Optional[List[Any]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        memory_mode: bool = True,  # Default to memory mode
+        use_memory: bool = True,
+        store_memory: bool = True,
         **kwargs: Any,
     ) -> List[Message]:
         content = self._build_executor_content(
@@ -172,21 +175,38 @@ Your additional_question should be potentially answerable by other modality mode
         else:
             message_data['content'] = content
 
+        # Add multimodal information to message
+        if image is not None:
+            message_data['image'] = image
+        if image_path is not None:
+            message_data['image_path'] = image_path
+        if audio is not None:
+            message_data['audio'] = audio
+        if audio_path is not None:
+            message_data['audio_path'] = audio_path
+        if video_frames is not None:
+            message_data['video_frames'] = video_frames
+        if video_frames_path is not None:
+            message_data['video_frames_path'] = video_frames_path
+        if video_path is not None:
+            message_data['video_path'] = video_path
+
         message = Message(**message_data)
 
-        # Only append to memory if memory_mode is enabled
-        if memory_mode:
+        if store_memory:
             self.executor_messages.append(message)
+
+        if use_memory:
             return self.executor_messages
         else:
-            # Return only the current message without memory
             return [message]
 
     def collect_scorer_messages(
         self,
         executor_output: Message,
         query: str,
-        memory_mode: bool = True,  # Default to memory mode
+        use_memory: bool = True,
+        store_memory: bool = True,
         **kwargs: Any,
     ) -> List[Message]:
         message_data = {
@@ -202,10 +222,10 @@ Your additional_question should be potentially answerable by other modality mode
 
         message = Message(**message_data)
 
-        # Only append to memory if memory_mode is enabled
-        if memory_mode:
+        if store_memory:
             self.scorer_messages.append(message)
+
+        if use_memory:
             return self.scorer_messages
         else:
-            # Return only the current message without memory
             return [message]

@@ -13,15 +13,15 @@ from ..supervisors import BaseSupervisor
 from ..utils import logging_func_with_count
 
 if TYPE_CHECKING:
-    from ..apis import BaseEnv
+    pass
 
 try:
-    from ..apis import BaseEnv as _BaseEnv
+    from ..apis import BaseEnv
 
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False
-    _BaseEnv = None
+    BaseEnv = None
 
 
 class BaseConsciousnessTuringMachine(ABC):
@@ -110,27 +110,23 @@ class BaseConsciousnessTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
-        memory_mode: Optional[bool] = None,
+        use_memory: bool = True,
+        store_memory: bool = True,
     ) -> Chunk:
         """Ask processor with support for both standard and tool processors"""
-        if io_function and hasattr(processor, 'name'):
-            # Tool processor
-            return processor.ask(query, io_function, processor.name)
-        else:
-            # Standard processor
-            return processor.ask(
-                query=query,
-                text=text,
-                image=image,
-                image_path=image_path,
-                audio=audio,
-                audio_path=audio_path,
-                video_frames=video_frames,
-                video_frames_path=video_frames_path,
-                video_path=video_path,
-                memory_mode=memory_mode,  # Pass memory mode to standard processor
-            )
+        return processor.ask(
+            query=query,
+            text=text,
+            image=image,
+            image_path=image_path,
+            audio=audio,
+            audio_path=audio_path,
+            video_frames=video_frames,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
+            use_memory=use_memory,
+            store_memory=store_memory,
+        )
 
     @logging_func_with_count
     def ask_processors(
@@ -144,8 +140,8 @@ class BaseConsciousnessTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
-        memory_mode: Optional[bool] = None,  # Add memory mode support
+        use_memory: bool = True,
+        store_memory: bool = True,
     ) -> List[Chunk]:
         """Ask all processors with support for both standard and tool processors"""
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -162,8 +158,8 @@ class BaseConsciousnessTuringMachine(ABC):
                     video_frames,
                     video_frames_path,
                     video_path,
-                    io_function,
-                    memory_mode,  # Pass memory mode to each processor
+                    use_memory,
+                    store_memory,
                 )
                 for processor in self.processor_graph.nodes
             ]
@@ -205,7 +201,10 @@ class BaseConsciousnessTuringMachine(ABC):
         additional_question = winning_chunk.additional_question
         # Use the same input parameters for processing additional question
         chunks = self.ask_processors(
-            query=additional_question, **input_kwargs, memory_mode=False
+            query=additional_question,
+            **input_kwargs,
+            use_memory=False,
+            store_memory=False,
         )
 
         for chunk in chunks:
@@ -221,11 +220,12 @@ class BaseConsciousnessTuringMachine(ABC):
                 )
 
     @logging_func_with_count
-    def fuse_processor(self, chunks: List[Chunk]) -> List[Chunk]:
+    def fuse_processor(
+        self, chunks: List[Chunk], query: str, **input_kwargs
+    ) -> List[Chunk]:
         proc_map = {p.name: p for p in self.processor_graph.nodes}
         dirty: set[str] = set()  # processors whose memory got new info
 
-        # ---------- pass 1: Q&A + memory updates ----------
         for chunk in chunks:
             q = chunk.additional_question
             if not q:
@@ -233,22 +233,27 @@ class BaseConsciousnessTuringMachine(ABC):
 
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
                 if nbr == chunk.processor_name:  # ⇢ self‑link
-                    # just fold the processor's own gist into its memory once
                     proc_map[nbr].update(chunk)
                     dirty.add(nbr)
                     continue
 
-                # normal neighbour → ask & store answer
-                answer = proc_map[nbr].ask_without_memory(query=q, text=chunk.gist)
-                proc_map[chunk.processor_name].update(answer)
+                answer_chunk = proc_map[nbr].ask(
+                    query=q,
+                    use_memory=False,
+                    store_memory=False,
+                    **input_kwargs,
+                )
+                input_kwargs['text'] += '(additional information: {})'.format(
+                    answer_chunk.gist
+                )
                 dirty.add(chunk.processor_name)
 
-        # ---------- pass 2: re‑ask only the updated processors ----------
         for idx, chunk in enumerate(chunks):
             if chunk.processor_name in dirty:
                 p = proc_map[chunk.processor_name]
-                chunks[idx] = p.ask_with_memory(query=chunk.gist, text=chunk.gist)
-
+                chunks[idx] = p.ask(
+                    query=query, use_memory=True, store_memory=True, **input_kwargs
+                )
         return chunks
 
     @abstractmethod

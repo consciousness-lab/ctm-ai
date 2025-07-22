@@ -43,7 +43,8 @@ class BaseExecutor(object):
         # Default configuration for LiteLLM
         self.model_name = kwargs.get('model', 'gpt-4o')
         self.try_times = kwargs.get('try_times', 3)
-        self.default_max_tokens = kwargs.get('max_tokens', 1024)
+        self.default_max_tokens = kwargs.get('max_tokens', 4096)
+        self.default_return_num = kwargs.get('return_num', 1)
         self.default_temperature = kwargs.get('temperature', 0.0)
 
         # Get Gemini API key if provided
@@ -108,8 +109,8 @@ class BaseExecutor(object):
     def ask_base(
         self,
         messages: List[Dict[str, Any]],
-        max_token: int = 300,
-        return_num: int = 5,
+        max_token: int = None,
+        return_num: int = None,
         model: str = None,
         default_additional_question: str = '',
         *args: Any,
@@ -130,6 +131,8 @@ class BaseExecutor(object):
             Message with parsed response and additional_question
         """
         model = model or self.model_name
+        max_token = max_token or self.default_max_tokens
+        return_num = return_num or self.default_return_num
 
         # Use LiteLLM completion with the provided messages
         response = completion(

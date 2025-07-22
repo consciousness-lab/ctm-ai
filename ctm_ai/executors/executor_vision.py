@@ -18,8 +18,6 @@ class VisionExecutor(BaseExecutor):
     def ask(
         self,
         messages: List[Message],
-        max_token: int = 300,
-        return_num: int = 5,
         model: str = None,
         *args: Any,
         **kwargs: Any,
@@ -60,8 +58,6 @@ class VisionExecutor(BaseExecutor):
         # Use the unified ask_base method
         return self.ask_base(
             messages=[image_message],
-            max_token=max_token,
-            return_num=return_num,
             model=model,
             default_additional_question='Would you like me to analyze any specific aspects of this image in more detail?',
         )

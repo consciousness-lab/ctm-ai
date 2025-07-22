@@ -15,12 +15,12 @@ if TYPE_CHECKING:
     from ..apis import BaseEnv
 
 try:
-    from ..apis import BaseEnv as _BaseEnv
+    from ..apis import BaseEnv
 
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False
-    _BaseEnv = None
+    BaseEnv = None
 
 
 class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
@@ -30,7 +30,7 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         self.io_function = io_function
         self.config = (
             ConsciousnessTuringMachineConfig.from_ctm(ctm_name)
-            if ctm_name
+            if ctm_name != 'toolbench'
             else ConsciousnessTuringMachineConfig()
         )
 
@@ -47,7 +47,6 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
     ) -> Tuple[str, float]:
         return self.forward(
             query,
@@ -59,7 +58,6 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
             video_frames,
             video_frames_path,
             video_path,
-            io_function,
         )
 
     def load_ctm(self) -> None:
@@ -87,17 +85,25 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         if not TOOLBENCH_AVAILABLE:
             return
 
-        tool_processors = [
-            'tool_processor',
-        ]
+        from ..processors import register_tool_processors
 
-        for processor_name in tool_processors:
-            self.add_processor(processor_name)
+        openai_function_names = [
+            name for name in self.io_function.openai_function_names
+        ]
+        register_tool_processors(openai_function_names)
+        for openai_function_name in openai_function_names:
+            processor_name = openai_function_name
+            self.processor_graph.add_node(
+                processor_name=processor_name, processor_group_name='tools'
+            )
 
     @logging_func_with_count
     def go_up(self, query: str, **input_kwargs) -> Tuple[Chunk, List[Chunk]]:
+        for processor in self.processor_graph.nodes:
+            processor.clear_memory()
+
         chunks = self.ask_processors(query, **input_kwargs)
-        chunks = self.fuse_processor(chunks)
+        chunks = self.fuse_processor(chunks, query, **input_kwargs)
         winning_chunk = self.uptree_competition(chunks)
         return winning_chunk, chunks
 
@@ -119,12 +125,8 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
     ) -> Tuple[str, float]:
         """Forward pass supporting both standard and tool-based processing"""
-        # Use provided io_function or fall back to instance io_function
-        current_io_function = io_function or self.io_function
-
         # Collect all input parameters for reuse
         input_params = {
             'text': text,
@@ -135,7 +137,6 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
             'video_frames': video_frames,
             'video_frames_path': video_frames_path,
             'video_path': video_path,
-            'io_function': current_io_function,
         }
 
         for _ in range(self.config.max_iter_num):
@@ -144,7 +145,6 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
                 **input_params,
             )
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
-            confidence_score = 0
             if confidence_score > self.config.output_threshold:
                 return answer, confidence_score
             self.go_down(winning_chunk, chunks, **input_params)
@@ -162,4 +162,4 @@ class ConsciousnessTuringMachine(BaseConsciousnessTuringMachine):
                 'ToolBench is not available. Please install ToolBench to use tool functionality.'
             )
 
-        return self.forward(query=query, io_function=io_function)
+        return self.forward(query=query)
