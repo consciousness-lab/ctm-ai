@@ -16,12 +16,12 @@ if TYPE_CHECKING:
     pass
 
 try:
-    from ..apis import BaseEnv as _BaseEnv
+    from ..apis import BaseEnv
 
     TOOLBENCH_AVAILABLE = True
 except ImportError:
     TOOLBENCH_AVAILABLE = False
-    _BaseEnv = None
+    BaseEnv = None
 
 
 class BaseConsciousnessTuringMachine(ABC):
@@ -229,7 +229,6 @@ class BaseConsciousnessTuringMachine(ABC):
                     proc_map[nbr].update(chunk)
                     dirty.add(nbr)
                     continue
-
                 answer_chunk = proc_map[nbr].ask_without_memory(query=q, **input_kwargs)
                 proc_map[chunk.processor_name].update(answer_chunk)
                 dirty.add(chunk.processor_name)

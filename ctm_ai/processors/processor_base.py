@@ -8,7 +8,7 @@ from ..chunks import Chunk
 from ..executors import BaseExecutor
 from ..messengers import BaseMessenger, Message
 from ..scorers import BaseScorer
-
+from ..apis import BaseEnv
 
 class BaseProcessor(object):
     _processor_registry: Dict[str, Type['BaseProcessor']] = {}
@@ -79,6 +79,7 @@ class BaseProcessor(object):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        io_function: Optional['BaseEnv'] = None,
         memory_mode: Optional[bool] = None,  # Override instance memory_mode
     ) -> Chunk:
         # Use provided memory_mode or fall back to instance default
@@ -157,6 +158,7 @@ class BaseProcessor(object):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        io_function: Optional['BaseEnv'] = None,
     ) -> Chunk:
         """Ask with memory enabled (default behavior)"""
         return self.ask(
@@ -169,6 +171,7 @@ class BaseProcessor(object):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
+            io_function=io_function,
             memory_mode=True,
         )
 
@@ -183,6 +186,7 @@ class BaseProcessor(object):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        io_function: Optional['BaseEnv'] = None,
     ) -> Chunk:
         """Ask without memory (fresh start each time)"""
         return self.ask(
@@ -195,6 +199,7 @@ class BaseProcessor(object):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
+            io_function=io_function,
             memory_mode=False,
         )
 
