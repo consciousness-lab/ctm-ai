@@ -47,16 +47,18 @@ def multi_info_exponential_backoff(
 
 def info_exponential_backoff(
     retries: int = 5, base_wait_time: int = 1
-) -> Callable[[Callable[..., str | None]], Callable[..., str | None]]:
+) -> Callable[[Callable[..., Union[str, None]]], Callable[..., Union[str, None]]]:
     """
     Decorator for applying exponential backoff to a function.
     :param retries: Maximum number of retries.
     :param base_wait_time: Base wait time in seconds for the exponential backoff.
     """
 
-    def decorator(func: Callable[..., str | None]) -> Callable[..., str | None]:
+    def decorator(
+        func: Callable[..., Union[str, None]],
+    ) -> Callable[..., Union[str, None]]:
         @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> str | None:
+        def wrapper(*args: Any, **kwargs: Any) -> Union[str, None]:
             attempts = 0
             while attempts < retries:
                 try:

@@ -13,7 +13,7 @@ from ..supervisors import BaseSupervisor
 from ..utils import logging_func_with_count
 
 if TYPE_CHECKING:
-    from ..apis import BaseEnv
+    pass
 
 try:
     from ..apis import BaseEnv as _BaseEnv
@@ -110,27 +110,21 @@ class BaseConsciousnessTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
         memory_mode: Optional[bool] = None,
     ) -> Chunk:
         """Ask processor with support for both standard and tool processors"""
-        if io_function and hasattr(processor, 'name'):
-            # Tool processor
-            return processor.ask(query, io_function, processor.name)
-        else:
-            # Standard processor
-            return processor.ask(
-                query=query,
-                text=text,
-                image=image,
-                image_path=image_path,
-                audio=audio,
-                audio_path=audio_path,
-                video_frames=video_frames,
-                video_frames_path=video_frames_path,
-                video_path=video_path,
-                memory_mode=memory_mode,  # Pass memory mode to standard processor
-            )
+        return processor.ask(
+            query=query,
+            text=text,
+            image=image,
+            image_path=image_path,
+            audio=audio,
+            audio_path=audio_path,
+            video_frames=video_frames,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
+            memory_mode=memory_mode,  # Pass memory mode to standard processor
+        )
 
     @logging_func_with_count
     def ask_processors(
@@ -144,7 +138,6 @@ class BaseConsciousnessTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
         memory_mode: Optional[bool] = None,  # Add memory mode support
     ) -> List[Chunk]:
         """Ask all processors with support for both standard and tool processors"""
@@ -162,7 +155,6 @@ class BaseConsciousnessTuringMachine(ABC):
                     video_frames,
                     video_frames_path,
                     video_path,
-                    io_function,
                     memory_mode,  # Pass memory mode to each processor
                 )
                 for processor in self.processor_graph.nodes
@@ -221,11 +213,12 @@ class BaseConsciousnessTuringMachine(ABC):
                 )
 
     @logging_func_with_count
-    def fuse_processor(self, chunks: List[Chunk]) -> List[Chunk]:
+    def fuse_processor(
+        self, chunks: List[Chunk], query: str, **input_kwargs
+    ) -> List[Chunk]:
         proc_map = {p.name: p for p in self.processor_graph.nodes}
         dirty: set[str] = set()  # processors whose memory got new info
 
-        # ---------- pass 1: Q&A + memory updates ----------
         for chunk in chunks:
             q = chunk.additional_question
             if not q:
@@ -233,22 +226,24 @@ class BaseConsciousnessTuringMachine(ABC):
 
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
                 if nbr == chunk.processor_name:  # ⇢ self‑link
-                    # just fold the processor's own gist into its memory once
                     proc_map[nbr].update(chunk)
                     dirty.add(nbr)
                     continue
 
-                # normal neighbour → ask & store answer
-                answer = proc_map[nbr].ask_without_memory(query=q, text=chunk.gist)
-                proc_map[chunk.processor_name].update(answer)
+                multimodal_kwargs = {
+                    k: v for k, v in input_kwargs.items() if k != 'text'
+                }
+
+                answer_chunk = proc_map[nbr].ask_without_memory(
+                    query=q, text=chunk.gist, **multimodal_kwargs
+                )
+                proc_map[chunk.processor_name].update(answer_chunk)
                 dirty.add(chunk.processor_name)
 
-        # ---------- pass 2: re‑ask only the updated processors ----------
         for idx, chunk in enumerate(chunks):
             if chunk.processor_name in dirty:
                 p = proc_map[chunk.processor_name]
-                chunks[idx] = p.ask_with_memory(query=chunk.gist, text=chunk.gist)
-
+                chunks[idx] = p.ask_with_memory(query=query, **input_kwargs)
         return chunks
 
     @abstractmethod

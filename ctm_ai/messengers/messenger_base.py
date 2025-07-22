@@ -134,7 +134,7 @@ class BaseMessenger(object):
 
         # Add JSON format requirement
         content += """
-
+You should utilize the other information in the context history to answer the query.
 Please respond in JSON format with the following structure:
 {
     "response": "Your detailed response to the query",
@@ -171,6 +171,22 @@ Your additional_question should be potentially answerable by other modality mode
             message_data['query'] = content
         else:
             message_data['content'] = content
+
+        # Add multimodal information to message
+        if image is not None:
+            message_data['image'] = image
+        if image_path is not None:
+            message_data['image_path'] = image_path
+        if audio is not None:
+            message_data['audio'] = audio
+        if audio_path is not None:
+            message_data['audio_path'] = audio_path
+        if video_frames is not None:
+            message_data['video_frames'] = video_frames
+        if video_frames_path is not None:
+            message_data['video_frames_path'] = video_frames_path
+        if video_path is not None:
+            message_data['video_path'] = video_path
 
         message = Message(**message_data)
 

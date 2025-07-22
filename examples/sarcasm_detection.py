@@ -10,6 +10,7 @@ if __name__ == '__main__':
     query = 'Is the person saying sarcasm or not?'
     text = 'You have no idea what you are talking about!'
     image_path = '../assets/sarcasm_example1.png'
+    audio_path = '../assets/sarcasm_example1.mp4'
     image = load_image(image_path)
-    answer = ctm(query=query, text=text, image_path=image_path)
+    answer = ctm(query=query, text=text, image_path=image_path, audio_path=audio_path)
     print(answer)
