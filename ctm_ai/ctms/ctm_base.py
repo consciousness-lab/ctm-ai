@@ -110,7 +110,6 @@ class BaseConsciousnessTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
         memory_mode: Optional[bool] = None,
     ) -> Chunk:
         """Ask processor with support for both standard and tool processors"""
@@ -124,7 +123,6 @@ class BaseConsciousnessTuringMachine(ABC):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
-            io_function=io_function,
             memory_mode=memory_mode,  # Pass memory mode to standard processor
         )
 
@@ -140,7 +138,6 @@ class BaseConsciousnessTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        io_function: Optional['BaseEnv'] = None,
         memory_mode: Optional[bool] = None,  # Add memory mode support
     ) -> List[Chunk]:
         """Ask all processors with support for both standard and tool processors"""
@@ -158,7 +155,6 @@ class BaseConsciousnessTuringMachine(ABC):
                     video_frames,
                     video_frames_path,
                     video_path,
-                    io_function,
                     memory_mode,  # Pass memory mode to each processor
                 )
                 for processor in self.processor_graph.nodes
@@ -233,14 +229,7 @@ class BaseConsciousnessTuringMachine(ABC):
                     proc_map[nbr].update(chunk)
                     dirty.add(nbr)
                     continue
-
-                multimodal_kwargs = {
-                    k: v for k, v in input_kwargs.items() if k != 'text'
-                }
-
-                answer_chunk = proc_map[nbr].ask_without_memory(
-                    query=q, text=chunk.gist, **multimodal_kwargs
-                )
+                answer_chunk = proc_map[nbr].ask_without_memory(query=q, **input_kwargs)
                 proc_map[chunk.processor_name].update(answer_chunk)
                 dirty.add(chunk.processor_name)
 

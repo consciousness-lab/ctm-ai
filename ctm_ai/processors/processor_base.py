@@ -95,8 +95,7 @@ class BaseProcessor(object):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
-            io_function=io_function,
-            memory_mode=use_memory,  # Pass memory mode to messenger
+            memory_mode=use_memory,
         )
 
         executor_output = self.executor.ask(
@@ -131,12 +130,11 @@ class BaseProcessor(object):
             messages=scorer_messages, use_llm=scorer_use_llm
         )
 
-        # Only update messenger if using memory mode
-        if use_memory:
-            self.messenger.update(
-                executor_output=executor_output,
-                scorer_output=scorer_output,
-            )
+        # Always update messenger, regardless of memory mode
+        self.messenger.update(
+            executor_output=executor_output,
+            scorer_output=scorer_output,
+        )
 
         # Use additional_question from executor output
         additional_question = executor_output.additional_question or ''

@@ -134,14 +134,15 @@ class BaseMessenger(object):
 
         # Add JSON format requirement
         content += """
-You should utilize the other information in the context history to answer the query.
+You should utilize the other information in the context history and modality-specific information to answer the query.
 Please respond in JSON format with the following structure:
 {
     "response": "Your detailed response to the query",
     "additional_question": "If you are not sure about the answer, you should generate a question that potentially can be answered by other modality models or other tools like search engine."
 }
 
-Your additional_question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about."""
+Your additional_question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about.
+Your additional_question should be just about what kind of information you need to get from other modality models or other tools like search engine, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what is the caption of the image, etc. The question needs to be short and clean."""
 
         return content
 
@@ -190,9 +191,9 @@ Your additional_question should be potentially answerable by other modality mode
 
         message = Message(**message_data)
 
-        # Only append to memory if memory_mode is enabled
+        # Always append to memory, but return different messages based on memory_mode
+        self.executor_messages.append(message)
         if memory_mode:
-            self.executor_messages.append(message)
             return self.executor_messages
         else:
             # Return only the current message without memory
@@ -218,9 +219,9 @@ Your additional_question should be potentially answerable by other modality mode
 
         message = Message(**message_data)
 
-        # Only append to memory if memory_mode is enabled
+        # Always append to memory, but return different messages based on memory_mode
+        self.scorer_messages.append(message)
         if memory_mode:
-            self.scorer_messages.append(message)
             return self.scorer_messages
         else:
             # Return only the current message without memory
