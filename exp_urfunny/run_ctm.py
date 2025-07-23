@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -14,13 +15,14 @@ if __name__ == '__main__':
         level=logging.INFO,
     )
 
-    dataset_path = 'dataset_sample.json'
+    dataset_path = 'data_raw/urfunny_dataset_test.json'
     video_frames_root = 'test_inputs/urfunny_frames'
     audio_root = 'test_inputs/urfunny_audios'
 
     dataset = URFunnyDataset(dataset_path, video_frames_root, audio_root)
 
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=1)
+    output_file = 'ctm_urfunny.jsonl'
 
     for batch in dataloader:
         for i in range(len(batch['label'])):
@@ -37,4 +39,23 @@ if __name__ == '__main__':
                 video_frames_path=file_paths,
                 audio_path=batch['audio_path'][i],
             )
+            print('------------------------------------------')
             print(answer)
+            print('------------------------------------------')
+
+            if isinstance(answer, tuple) and len(answer) == 2:
+                answer_text, confidence_score = answer
+                if hasattr(confidence_score, 'item'):
+                    confidence_score = confidence_score.item()
+                serializable_answer = [answer_text, float(confidence_score)]
+            else:
+                serializable_answer = [str(answer)]
+
+            result = {
+                str(batch['filename'][i]): {
+                    'answer': serializable_answer,
+                    'label': str(batch['label'][i]),
+                }
+            }
+            with open(output_file, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(result, ensure_ascii=False) + '\n')

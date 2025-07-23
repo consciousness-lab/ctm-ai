@@ -48,8 +48,11 @@ class BaseProcessor(object):
         self.name = name
         self.group_name = group_name
         self.system_prompt = kwargs.get('system_prompt')
+        self.model = kwargs.get('model')
 
-        self.executor = self.init_executor(system_prompt=self.system_prompt)
+        self.executor = self.init_executor(
+            system_prompt=self.system_prompt, model=self.model
+        )
         self.messenger = self.init_messenger()
         self.scorer = self.init_scorer()
 
@@ -66,8 +69,12 @@ class BaseProcessor(object):
                 f'[{self.name}] Missing required environment variables: {missing_vars}'
             )
 
-    def init_executor(self, system_prompt: Optional[str] = None) -> BaseExecutor:
-        return BaseExecutor(name='language_executor', system_prompt=system_prompt)
+    def init_executor(
+        self, system_prompt: Optional[str] = None, model: Optional[str] = None
+    ) -> BaseExecutor:
+        return BaseExecutor(
+            name='language_executor', system_prompt=system_prompt, model=model
+        )
 
     def init_messenger(self) -> BaseMessenger:
         return BaseMessenger.create_messenger('language_messenger')

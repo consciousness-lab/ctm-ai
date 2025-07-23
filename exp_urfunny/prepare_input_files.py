@@ -60,6 +60,6 @@ if __name__ == '__main__':
     video_folder = 'urfunny2_videos'
     audio_folder = 'test_inputs/urfunny_audios'
     frames_folder = 'test_inputs/urfunny_frames'
-    sample_data = 'dataset_sample.json'
-    prepare_frames(sample_data, video_folder, frames_folder, 10)
-    prepare_audios(sample_data, video_folder, audio_folder)
+    sample_data = 'data_raw/urfunny_dataset_test.json'
+    prepare_frames(sample_data, video_folder, frames_folder, 5)
+    # prepare_audios(sample_data, video_folder, audio_folder)
