@@ -13,21 +13,21 @@ from ..utils import (
 
 
 class BaseExecutor(object):
-    _executor_registry: Dict[str, Type['BaseExecutor']] = {}
+    _executor_registry: Dict[str, Type["BaseExecutor"]] = {}
 
     @classmethod
     def register_executor(
         cls, name: str
-    ) -> Callable[[Type['BaseExecutor']], Type['BaseExecutor']]:
+    ) -> Callable[[Type["BaseExecutor"]], Type["BaseExecutor"]]:
         def decorator(
-            subclass: Type['BaseExecutor'],
-        ) -> Type['BaseExecutor']:
+            subclass: Type["BaseExecutor"],
+        ) -> Type["BaseExecutor"]:
             cls._executor_registry[name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> 'BaseExecutor':
+    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> "BaseExecutor":
         if name not in cls._executor_registry:
             raise ValueError(f"No executor registered with name '{name}'")
         instance = super(BaseExecutor, cls).__new__(cls._executor_registry[name])
@@ -41,21 +41,21 @@ class BaseExecutor(object):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the model. Can be overridden by subclasses."""
         # Default configuration for LiteLLM
-        self.model_name = kwargs.get('model', 'gpt-4o')
-        self.try_times = kwargs.get('try_times', 3)
-        self.default_max_tokens = kwargs.get('max_tokens', 4096)
-        self.default_return_num = kwargs.get('return_num', 1)
-        self.default_temperature = kwargs.get('temperature', 0.0)
+        self.model_name = kwargs.get("model", "gemini/gemini-2.0-flash-lite")
+        self.try_times = kwargs.get("try_times", 3)
+        self.default_max_tokens = kwargs.get("max_tokens", 4096)
+        self.default_return_num = kwargs.get("return_num", 1)
+        self.default_temperature = kwargs.get("temperature", 0.0)
 
         # Set a default system_prompt that can be overridden by subclasses
-        if not hasattr(self, 'system_prompt'):
-            self.system_prompt = 'You are a helpful AI assistant.'
+        if not hasattr(self, "system_prompt"):
+            self.system_prompt = "You are a helpful AI assistant."
 
         # Prioritize system_prompt from kwargs (config)
-        self.system_prompt = kwargs.get('system_prompt', self.system_prompt)
+        self.system_prompt = kwargs.get("system_prompt", self.system_prompt)
 
         # Get Gemini API key if provided
-        self.gemini_api_key = kwargs.get('gemini_api_key')
+        self.gemini_api_key = kwargs.get("gemini_api_key")
 
         # Configure LiteLLM settings
         self._configure_litellm()
@@ -73,7 +73,7 @@ class BaseExecutor(object):
         return convert_message_to_litellm_format(message)
 
     def parse_json_response(
-        self, content: str, default_additional_question: str = ''
+        self, content: str, default_additional_question: str = ""
     ) -> tuple[str, str]:
         """
         Parse JSON response to extract response and additional_question.
@@ -87,10 +87,10 @@ class BaseExecutor(object):
         """
         try:
             # Handle JSON wrapped in ```json and ``` code blocks
-            if '```json' in content and '```' in content:
+            if "```json" in content and "```" in content:
                 # Extract JSON from code block
-                start_idx = content.find('```json') + 7
-                end_idx = content.rfind('```')
+                start_idx = content.find("```json") + 7
+                end_idx = content.rfind("```")
                 if start_idx > 6 and end_idx > start_idx:
                     json_content = content[start_idx:end_idx].strip()
                     parsed_response = json.loads(json_content)
@@ -101,11 +101,11 @@ class BaseExecutor(object):
                 # Direct JSON parsing
                 parsed_response = json.loads(content)
 
-            parsed_content = parsed_response.get('response', content)
+            parsed_content = parsed_response.get("response", content)
             additional_question = parsed_response.get(
-                'additional_question', default_additional_question
+                "additional_question", default_additional_question
             )
-            if additional_question == '':
+            if additional_question == "":
                 additional_question = default_additional_question
 
             return parsed_content, additional_question
@@ -121,7 +121,7 @@ class BaseExecutor(object):
         max_token: int = None,
         return_num: int = None,
         model: str = None,
-        default_additional_question: str = '',
+        default_additional_question: str = "",
         *args: Any,
         **kwargs: Any,
     ) -> Message:
@@ -164,7 +164,7 @@ class BaseExecutor(object):
         )
 
         return Message(
-            role='assistant',
+            role="assistant",
             gist=gist,
             additional_question=additional_question,
         )
