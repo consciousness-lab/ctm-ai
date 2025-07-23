@@ -13,12 +13,15 @@ class ProcessorGraph:
         processor_name: str,
         processor_group_name: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        model: Optional[str] = None,
+        **kwargs,
     ) -> None:
         if processor_name not in [p.name for p in self.nodes]:
             processor = BaseProcessor(
                 name=processor_name,
                 group_name=processor_group_name,
                 system_prompt=system_prompt,
+                model=model,
             )
             self.nodes.append(processor)
             self.adjacency_list[processor_name] = []

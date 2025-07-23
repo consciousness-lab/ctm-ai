@@ -67,10 +67,13 @@ class BaseConsciousTuringMachine(ABC):
         self.scorers: List[BaseScorer] = []
 
         for processor_name in self.config.processors:
+            processor_config = self.config.processors_config.get(processor_name, {})
             self.processor_graph.add_node(
                 processor_name=processor_name,
                 processor_group_name=None,
                 config=self.config,
+                system_prompt=processor_config.get('system_prompt'),
+                model=processor_config.get('model'),
             )
 
         self.add_supervisor(self.config.supervisor)
@@ -80,11 +83,12 @@ class BaseConsciousTuringMachine(ABC):
         self, processor_name: str, group_name: Optional[str] = None
     ) -> None:
         """Add a processor to the CTM."""
-        system_prompt = self.config.system_prompts.get(processor_name)
+        processor_config = self.config.processors_config.get(processor_name, {})
         self.processor_graph.add_node(
             processor_name=processor_name,
             processor_group_name=group_name,
-            system_prompt=system_prompt,
+            system_prompt=processor_config.get('system_prompt'),
+            model=processor_config.get('model'),
         )
 
     def remove_processor(self, processor_name: str) -> None:
