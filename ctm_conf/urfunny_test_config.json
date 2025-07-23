@@ -2,11 +2,6 @@
     "ctm_name": "urfunny_test",
     "max_iter_num": 3,
     "output_threshold": 0.5,
-    "processors": [
-            "video_processor",
-            "language_processor",
-            "audio_processor"
-    ],
     "scorer": "language_scorer",
     "scorer_use_llm": true,
     "supervisor": "language_supervisor",

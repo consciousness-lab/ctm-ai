@@ -66,14 +66,12 @@ class BaseConsciousTuringMachine(ABC):
         self.supervisors: List[BaseSupervisor] = []
         self.scorers: List[BaseScorer] = []
 
-        for processor_name in self.config.processors:
-            processor_config = self.config.processors_config.get(processor_name, {})
+        for processor_name, processor_config in self.config.processors_config.items():
             self.processor_graph.add_node(
                 processor_name=processor_name,
                 processor_group_name=None,
-                config=self.config,
                 system_prompt=processor_config.get('system_prompt'),
-                model=processor_config.get('model'),
+                model=processor_config.get('model')
             )
 
         self.add_supervisor(self.config.supervisor)
