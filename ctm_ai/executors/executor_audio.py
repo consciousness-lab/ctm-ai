@@ -1,6 +1,6 @@
 import base64
 import os
-from typing import Any, List
+from typing import Any, List, Dict
 
 from ..messengers import Message
 from ..utils import message_exponential_backoff
@@ -10,9 +10,8 @@ from .executor_base import BaseExecutor
 @BaseExecutor.register_executor('audio_executor')
 class AudioExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
-        """Initialize the model using LiteLLM for Gemini."""
-        # Set default model to Gemini for audio processing
-        kwargs.setdefault('audio_model', 'gemini/gemini-2.0-flash-lite')
+        """Initialize the model for audio processing."""
+        # Set default system prompt for audio analysis
         self.system_prompt = 'You are an expert in audio analysis. Your task is to listen to the provided audio and answer questions about its content, such as tone, emotion, or spoken words.'
         super().init_model(*args, **kwargs)
 
