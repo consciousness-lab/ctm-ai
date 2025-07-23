@@ -1,6 +1,6 @@
 {
     "ctm_name": "sarcasm_ctm",
-    "max_iter_num": 3,
+    "max_iter_num": 1,
     "output_threshold": 0.9,
     "processors": [
         "language_processor"
