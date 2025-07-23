@@ -71,7 +71,7 @@ class BaseConsciousTuringMachine(ABC):
                 processor_name=processor_name,
                 processor_group_name=None,
                 system_prompt=processor_config.get('system_prompt'),
-                model=processor_config.get('model')
+                model=processor_config.get('model'),
             )
 
         self.add_supervisor(self.config.supervisor)

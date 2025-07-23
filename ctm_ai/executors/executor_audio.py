@@ -1,6 +1,6 @@
 import base64
 import os
-from typing import Any, List, Dict
+from typing import Any, List
 
 from ..messengers import Message
 from ..utils import message_exponential_backoff
