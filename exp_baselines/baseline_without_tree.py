@@ -15,9 +15,12 @@ class ConsciousTuringMachineBaseline(BaseCTM):
         self.supervisors: List[BaseSupervisor] = []
         self.scorers = []
 
-        for processor_name in self.config.processors:
+        for processor_name, processor_config in self.config.processors_config.items():
             self.processor_graph.add_node(
-                processor_name=processor_name, processor_group_name=None
+                processor_name=processor_name,
+                processor_group_name=None,
+                system_prompt=processor_config.get('system_prompt'),
+                model=processor_config.get('model'),
             )
 
         self.add_supervisor(self.config.supervisor)
