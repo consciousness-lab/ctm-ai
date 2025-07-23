@@ -16,7 +16,7 @@ class VideoExecutor(BaseExecutor):
         kwargs.setdefault('model', 'gemini/gemini-2.0-flash-lite')
         self.system_prompt = 'You are an expert in video analysis. Your task is to watch the provided video frames and answer questions about the events, objects, and actions depicted.'
         super().init_model(*args, **kwargs)
-        self.model_name = kwargs.get("video_model", "gemini/gemini-2.0-flash-lite")
+        self.model_name = kwargs.get('video_model', 'gemini/gemini-2.0-flash-lite')
 
     def pil_to_base64(self, image) -> str:
         """Convert PIL image to base64 string."""

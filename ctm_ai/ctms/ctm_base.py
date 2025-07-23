@@ -73,7 +73,7 @@ class BaseConsciousTuringMachine(ABC):
                 processor_group_name=None,
                 config=self.config,
                 system_prompt=processor_config.get('system_prompt'),
-                model=processor_config.get('model')
+                model=processor_config.get('model'),
             )
 
         self.add_supervisor(self.config.supervisor)
@@ -88,7 +88,7 @@ class BaseConsciousTuringMachine(ABC):
             processor_name=processor_name,
             processor_group_name=group_name,
             system_prompt=processor_config.get('system_prompt'),
-            model=processor_config.get('model')
+            model=processor_config.get('model'),
         )
 
     def remove_processor(self, processor_name: str) -> None:
