@@ -30,7 +30,7 @@ class BaseSupervisor(object):
     def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the supervisor with LiteLLM support."""
         # Default configuration for LiteLLM
-        self.model_name = kwargs.get("model", "gemini/gemini-2.0-flash-lite")
+        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
         self.info_model = kwargs.get('info_model', self.model_name)
         self.score_model = kwargs.get('score_model', self.model_name)
         self.max_tokens = kwargs.get('max_tokens', 300)
