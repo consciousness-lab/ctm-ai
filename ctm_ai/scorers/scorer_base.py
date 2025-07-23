@@ -44,7 +44,7 @@ class BaseScorer(object):
         self.embedding_model = kwargs.get('embedding_model', 'text-embedding-3-small')
         self.relevance_model = kwargs.get('relevance_model', self.model_name)
         self.confidence_model = kwargs.get('confidence_model', self.model_name)
-        self.surprise_model = kwargs.get('surprise_model', self.model_name)
+        self.surprise_model = kwargs.get('scorer_model', self.model_name)
 
         # Configure LiteLLM
         configure_litellm(model_name=self.model_name)

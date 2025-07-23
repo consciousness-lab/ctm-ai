@@ -13,6 +13,7 @@ from .supervisor_base import BaseSupervisor
 class LanguageSupervisor(BaseSupervisor):
     def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
         super().init_supervisor(*args, **kwargs)
+        self.model_name = kwargs.get('supervisor_model', 'gemini/gemini-2.0-flash-lite')
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def ask_info(self, query: str, context: Optional[str] = None) -> Optional[str]:
