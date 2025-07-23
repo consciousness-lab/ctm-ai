@@ -13,6 +13,12 @@ class ConsciousTuringMachineConfig:
         scorer_use_llm: bool = True,
         supervisor: str = 'language_supervisor',
         system_prompts: Optional[Dict[str, str]] = None,
+        scorer_model: str = 'gemini/gemini-2.0-flash-lite',
+        supervisors_model: str = 'gemini/gemini-2.0-flash-lite',
+        language_model: str = 'gemini/gemini-2.0-flash-lite',
+        video_model: str = 'gemini/gemini-2.0-flash-lite',
+        audio_mdoel: str = 'gemini/gemini-2.0-flash-lite',
+        model: str = 'gemini/gemini-2.0-flash-lite',
         **kwargs: Any,
     ) -> None:
         self.ctm_name: Optional[str] = ctm_name

@@ -3,9 +3,7 @@
     "max_iter_num": 3,
     "output_threshold": 0.9,
     "processors": [
-        "audio_processor",
-        "language_processor",
-        "video_processor"
+        "language_processor"
     ],
     "scorer": "language_scorer",
     "scorer_use_llm": true,
