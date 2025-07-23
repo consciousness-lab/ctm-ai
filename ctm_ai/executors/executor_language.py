@@ -10,7 +10,7 @@ class LanguageExecutor(BaseExecutor):
         """Initialize the model using the base class functionality."""
         self.system_prompt = 'You are an expert in language understanding. Your task is to analyze the provided text and answer questions about it.'
         super().init_model(*args, **kwargs)
-        self.model_name = kwargs.get("language_model", "gemini/gemini-2.0-flash-lite")
+        self.model_name = kwargs.get('language_model', 'gemini/gemini-2.0-flash-lite')
 
     def ask(
         self,
