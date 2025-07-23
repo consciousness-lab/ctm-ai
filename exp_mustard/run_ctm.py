@@ -58,6 +58,7 @@ if __name__ == "__main__":
 
     test_list = list(dataset.keys())
     print(f'Total Test Cases: {len(test_list)}')
+    test_list = test_list[30:]
 
     for test_file in test_list:
         run_instance(test_file)
