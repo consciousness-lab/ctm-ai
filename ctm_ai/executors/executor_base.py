@@ -41,7 +41,7 @@ class BaseExecutor(object):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the model. Can be overridden by subclasses."""
         # Default configuration for LiteLLM
-        self.model_name = kwargs.get('model', 'gpt-4o')
+        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
         self.try_times = kwargs.get('try_times', 3)
         self.default_max_tokens = kwargs.get('max_tokens', 4096)
         self.default_return_num = kwargs.get('return_num', 1)

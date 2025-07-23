@@ -40,7 +40,7 @@ class BaseScorer(object):
     def init_scorer(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the scorer with LiteLLM support."""
         # Default configuration for LiteLLM
-        self.model_name = kwargs.get('model', 'gpt-4o-mini')
+        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
         self.embedding_model = kwargs.get('embedding_model', 'text-embedding-3-small')
         self.relevance_model = kwargs.get('relevance_model', self.model_name)
         self.confidence_model = kwargs.get('confidence_model', self.model_name)

@@ -13,15 +13,18 @@ def load_data(file_path):
     return data
 
 
-def run_instance(test_file, output_file="ctm.jsonl"):
-    dataset = load_data("mustard_dataset/mustard_dataset_test.json")
-    ctm = ConsciousTuringMachine("sarcasm_ctm")
-    target_sentence = dataset[test_file]["utterance"]
-    query = "Is the person saying sarcasm or not?"
-    text_list = dataset[test_file]["context"]
-    text_list.append(target_sentence)
-    audio_path = f"mustard_audios/{test_file}_audio.mp4"
-    video_frames_path = f"mustard_frames/{test_file}_frames"
+def run_instance(test_file, output_file='ctm.jsonl'):
+    dataset = load_data('mustard_dataset/mustard_dataset_test.json')
+    ctm = ConsciousTuringMachine('sarcasm_ctm')
+    target_sentence = dataset[test_file]['utterance']
+    query = 'Is the person sarcasm or not?'
+    full_context = ''
+    for i in range(len(dataset[test_file]['context'])):
+        full_context += dataset[test_file]['context'][i]
+    full_context += target_sentence
+
+    audio_path = f'mustard_audios/{test_file}_audio.mp4'
+    video_frames_path = f'mustard_frames/{test_file}_frames'
     file_paths = [
         os.path.join(video_frames_path, file_name)
         for file_name in os.listdir(video_frames_path)
@@ -54,8 +57,8 @@ if __name__ == "__main__":
     dataset = load_data(dataset_path)
 
     test_list = list(dataset.keys())
-    print(f"Total Test Cases: {len(test_list)}")
-    test_list = test_list[:10]
+    print(f'Total Test Cases: {len(test_list)}')
 
-    for test_file in test_list:
-        run_instance(test_file)
+    run_instance('2_154')
+    # for test_file in test_list:
+    #     run_instance(test_file)

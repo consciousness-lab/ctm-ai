@@ -12,7 +12,7 @@ class AudioExecutor(BaseExecutor):
     def init_model(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the model using LiteLLM for Gemini."""
         # Set default model to Gemini for audio processing
-        kwargs.setdefault('model', 'gemini/gemini-1.5-flash')
+        kwargs.setdefault('model', 'gemini/gemini-2.0-flash-lite')
         self.system_prompt = 'You are an expert in audio analysis. Your task is to listen to the provided audio and answer questions about its content, such as tone, emotion, or spoken words.'
         super().init_model(*args, **kwargs)
 
