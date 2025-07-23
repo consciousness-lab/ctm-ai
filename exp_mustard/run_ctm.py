@@ -4,11 +4,11 @@ import sys
 
 from ctm_ai.ctms.ctm import ConsciousTuringMachine
 
-sys.path.append('..')
+sys.path.append("..")
 
 
 def load_data(file_path):
-    with open(file_path, 'r', encoding='utf-8') as json_file:
+    with open(file_path, "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
     return data
 
@@ -37,23 +37,23 @@ def run_instance(test_file, output_file='ctm.jsonl'):
         audio_path=audio_path,
     )
 
-    print('------------------------------------------')
+    print("------------------------------------------")
     print(answer)
-    print('------------------------------------------')
+    print("------------------------------------------")
 
     result = {
         test_file: {
-            'answer': [answer],
-            'label': dataset[test_file]['sarcasm'],
+            "answer": [answer],
+            "label": dataset[test_file]["sarcasm"],
         }
     }
 
-    with open(output_file, 'a', encoding='utf-8') as f:
-        f.write(json.dumps(result, ensure_ascii=False) + '\n')
+    with open(output_file, "a", encoding="utf-8") as f:
+        f.write(json.dumps(result, ensure_ascii=False) + "\n")
 
 
-if __name__ == '__main__':
-    dataset_path = 'mustard_dataset/mustard_dataset_test.json'
+if __name__ == "__main__":
+    dataset_path = "mustard_dataset/mustard_dataset_test.json"
     dataset = load_data(dataset_path)
 
     test_list = list(dataset.keys())
