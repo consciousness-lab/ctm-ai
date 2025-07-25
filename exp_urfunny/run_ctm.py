@@ -18,6 +18,10 @@ def run_instance(test_file, output_file='ctm_urfunny.jsonl'):
     ctm = ConsciousTuringMachine('urfunny_test')
     target_sentence = dataset[test_file]['punchline_sentence']
     query = 'Is the persion being hurmous or not?'
+    context_sentences = "context setences: "
+    for i in range(len(dataset[test_file]["context_sentences"])):
+        context_sentences += dataset[test_file]["context_sentences"][i]
+    context_sentences += "\npunchline sentence: " + target_sentence
     audio_path = f'test_inputs/urfunny_audios/{test_file}_audio.mp4'
     video_frames_path = f'test_inputs/urfunny_frames/{test_file}_frames'
     file_paths = [
@@ -43,7 +47,6 @@ def run_instance(test_file, output_file='ctm_urfunny.jsonl'):
             'label': dataset[test_file]['label'],
         }
     }
-    breakpoint()
 
     with open(output_file, 'a', encoding='utf-8') as f:
         f.write(json.dumps(result, ensure_ascii=False) + '\n')
@@ -55,6 +58,7 @@ if __name__ == '__main__':
 
     test_list = list(dataset.keys())
     print(f'Total Test Cases: {len(test_list)}')
+    run_instance("630")
 
-    for test_file in test_list:
-        run_instance(test_file)
+    # for test_file in test_list:
+    #     run_instance(test_file)
