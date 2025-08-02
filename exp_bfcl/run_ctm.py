@@ -1,18 +1,21 @@
 import argparse
 import json
 
-from .constants.category_mapping import (
+from constants.category_mapping import (
     MULTI_TURN_FUNC_DOC_FILE_MAPPING,
     TEST_FILE_MAPPING,
 )
-from .constants.eval_config import (
+from constants.eval_config import (
     MULTI_TURN_FUNC_DOC_PATH,
     PROJECT_ROOT,
     PROMPT_PATH,
     RESULT_PATH,
     TEST_IDS_TO_GENERATE_PATH,
 )
-from .utils import is_multi_turn, parse_test_category_argument, sort_key, load_file
+from utils import is_multi_turn, parse_test_category_argument, sort_key, load_file
+from openai_handler import OpenAIHandler
+
+from ctm_ai.ctms.ctm import BFCLConsciousTuringMachine
 
 RETRY_LIMIT = 3
 # 60s for the timer to complete. But often we find that even with 60 there is a conflict. So 65 is a safe no.
@@ -28,21 +31,6 @@ def get_args():
 
     parser.add_argument("--result-dir", default=None, type=str)
     parser.add_argument("--run-ids", action="store_true", default=False)
-    parser.add_argument("--allow-overwrite", "-o", action="store_true", default=False)
-    # Add the new skip_vllm argument
-    parser.add_argument(
-        "--skip-server-setup",
-        action="store_true",
-        default=False,
-        help="Skip vLLM/SGLang server setup and use existing endpoint specified by the VLLM_ENDPOINT and VLLM_PORT environment variables.",
-    )
-    # Optional local model path
-    parser.add_argument(
-        "--local-model-path",
-        type=str,
-        default=None,
-        help="Specify the path to a local directory containing the model's config/tokenizer/weights for fully offline inference. Use this only if the model weights are stored in a location other than the default HF_HOME directory.",
-    )
     args = parser.parse_args()
 
     return args
@@ -167,7 +155,13 @@ def main(args):
         all_test_entries_involved,
     ) = get_involved_test_entries(args.test_category, args.run_ids)
 
-    print(f"Generating results for {args.model}")
+    # Handle model argument - it can be a list or string
+    if isinstance(args.model, list):
+        model_name = args.model[0]  # Use the first model if multiple provided
+    else:
+        model_name = args.model
+
+    print(f"Generating results for {model_name}")
     if args.run_ids:
         print("Running specific test cases. Ignoring `--test-category` argument.")
     else:
@@ -180,8 +174,24 @@ def main(args):
 
     test_cases_total = collect_test_cases(
         args,
-        args.model,
+        model_name,
         all_test_categories,
         all_test_file_paths,
         all_test_entries_involved,
     )
+    for test_case in test_cases_total:
+        ctm = BFCLConsciousTuringMachine("bfcl_test")
+        openai_handler = OpenAIHandler(model_name)
+        inference_data = openai_handler.process_test_entry(test_case)
+        query = inference_data["message"][0]["content"]
+        breakpoint()
+        answer = ctm(
+            query=query,
+            inference_data=inference_data,
+        )
+        # print(answer)
+
+
+if __name__ == "__main__":
+    args = get_args()
+    main(args)

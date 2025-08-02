@@ -4,12 +4,14 @@ from .executor_language import LanguageExecutor
 from .executor_tool import ToolExecutor
 from .executor_video import VideoExecutor
 from .executor_vision import VisionExecutor
+from .executor_api import APIExecutor
 
 __all__ = [
-    'BaseExecutor',
-    'AudioExecutor',
-    'LanguageExecutor',
-    'ToolExecutor',
-    'VideoExecutor',
-    'VisionExecutor',
+    "BaseExecutor",
+    "AudioExecutor",
+    "LanguageExecutor",
+    "ToolExecutor",
+    "VideoExecutor",
+    "VisionExecutor",
+    "APIExecutor",
 ]
