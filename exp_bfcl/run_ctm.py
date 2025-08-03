@@ -12,10 +12,10 @@ from constants.eval_config import (
     RESULT_PATH,
     TEST_IDS_TO_GENERATE_PATH,
 )
-from utils import is_multi_turn, parse_test_category_argument, sort_key, load_file
 from openai_handler import OpenAIHandler
+from utils import is_multi_turn, load_file, parse_test_category_argument, sort_key
 
-from ctm_ai.ctms.ctm import BFCLConsciousTuringMachine
+from ctm_ai.ctms import BFCLCTM
 
 RETRY_LIMIT = 3
 # 60s for the timer to complete. But often we find that even with 60 there is a conflict. So 65 is a safe no.
@@ -25,12 +25,12 @@ RETRY_DELAY = 65  # Delay in seconds
 def get_args():
     parser = argparse.ArgumentParser()
     # Refer to model_choice for supported models.
-    parser.add_argument("--model", type=str, default="gpt-4o", nargs="+")
+    parser.add_argument('--model', type=str, default='gpt-4o', nargs='+')
     # Refer to test_categories for supported categories.
-    parser.add_argument("--test-category", type=str, default="all", nargs="+")
+    parser.add_argument('--test-category', type=str, default='all', nargs='+')
 
-    parser.add_argument("--result-dir", default=None, type=str)
-    parser.add_argument("--run-ids", action="store_true", default=False)
+    parser.add_argument('--result-dir', default=None, type=str)
+    parser.add_argument('--run-ids', action='store_true', default=False)
     args = parser.parse_args()
 
     return args
@@ -49,7 +49,7 @@ def get_involved_test_entries(test_category_args, run_ids):
                 [
                     entry
                     for entry in load_file(PROMPT_PATH / test_file_path)
-                    if entry["id"] in test_ids
+                    if entry['id'] in test_ids
                 ]
             )
             all_test_categories.append(category)
@@ -79,14 +79,13 @@ def collect_test_cases(
     all_test_file_paths,
     all_test_entries_involved,
 ):
-    model_name_dir = model_name.replace("/", "_")
+    model_name_dir = model_name.replace('/', '_')
     model_result_dir = args.result_dir / model_name_dir
 
     existing_result = []
     for test_category, file_to_open in zip(all_test_categories, all_test_file_paths):
-
         result_file_path = model_result_dir / file_to_open.replace(
-            ".json", "_result.json"
+            '.json', '_result.json'
         )
         if result_file_path.exists():
             # Not allowing overwrite, we will load the existing results
@@ -99,12 +98,12 @@ def collect_test_cases(
             else:
                 pass
 
-        existing_ids = [entry["id"] for entry in existing_result]
+        existing_ids = [entry['id'] for entry in existing_result]
 
     test_cases_to_generate = [
         test_case
         for test_case in all_test_entries_involved
-        if test_case["id"] not in existing_ids
+        if test_case['id'] not in existing_ids
     ]
     test_cases_to_generate = process_multi_turn_test_case(test_cases_to_generate)
 
@@ -116,36 +115,35 @@ def process_multi_turn_test_case(test_cases):
     Multi-turn test cases don't have the function doc in the prompt. We need to add them here.
     """
     for entry in test_cases:
-        if not is_multi_turn(entry["id"]):
+        if not is_multi_turn(entry['id']):
             continue
-        involved_classes = entry["involved_classes"]
-        entry["function"] = []
+        involved_classes = entry['involved_classes']
+        entry['function'] = []
         for func_collection in involved_classes:
             # func_doc is a list of dict
             func_doc = load_file(
                 MULTI_TURN_FUNC_DOC_PATH
                 / MULTI_TURN_FUNC_DOC_FILE_MAPPING[func_collection]
             )
-            entry["function"].extend(func_doc)
+            entry['function'].extend(func_doc)
 
         # Handle Miss Func category; we need to remove the holdout function doc
-        if "missed_function" in entry:
-            for turn_index, missed_func_names in entry["missed_function"].items():
-                entry["missed_function"][turn_index] = []
+        if 'missed_function' in entry:
+            for turn_index, missed_func_names in entry['missed_function'].items():
+                entry['missed_function'][turn_index] = []
                 for missed_func_name in missed_func_names:
-                    for i, func_doc in enumerate(entry["function"]):
-                        if func_doc["name"] == missed_func_name:
+                    for i, func_doc in enumerate(entry['function']):
+                        if func_doc['name'] == missed_func_name:
                             # Add the missed function doc to the missed_function list
-                            entry["missed_function"][turn_index].append(func_doc)
+                            entry['missed_function'][turn_index].append(func_doc)
                             # Remove it from the function list
-                            entry["function"].pop(i)
+                            entry['function'].pop(i)
                             break
 
     return test_cases
 
 
 def main(args):
-
     if type(args.test_category) is not list:
         args.test_category = [args.test_category]
 
@@ -161,11 +159,11 @@ def main(args):
     else:
         model_name = args.model
 
-    print(f"Generating results for {model_name}")
+    print(f'Generating results for {model_name}')
     if args.run_ids:
-        print("Running specific test cases. Ignoring `--test-category` argument.")
+        print('Running specific test cases. Ignoring `--test-category` argument.')
     else:
-        print(f"Running full test cases for categories: {all_test_categories}.")
+        print(f'Running full test cases for categories: {all_test_categories}.')
 
     if args.result_dir is not None:
         args.result_dir = PROJECT_ROOT / args.result_dir
@@ -180,18 +178,16 @@ def main(args):
         all_test_entries_involved,
     )
     for test_case in test_cases_total:
-        ctm = BFCLConsciousTuringMachine("bfcl_test")
         openai_handler = OpenAIHandler(model_name)
         inference_data = openai_handler.process_test_entry(test_case)
-        query = inference_data["message"][0]["content"]
-        breakpoint()
+        query = inference_data['message'][0]['content']
+        ctm = BFCLCTM('bfcl_test', inference_data=inference_data)
         answer = ctm(
             query=query,
-            inference_data=inference_data,
         )
-        # print(answer)
+        print(answer)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     args = get_args()
     main(args)

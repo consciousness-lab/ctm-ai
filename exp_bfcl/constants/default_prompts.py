@@ -17,6 +17,10 @@ Here is a list of functions in JSON format that you can invoke.\n{functions}\n
 """
 )
 
-DEFAULT_USER_PROMPT_FOR_ADDITIONAL_FUNCTION_FC = "I have updated some more functions you can choose from. What about now?"
+DEFAULT_USER_PROMPT_FOR_ADDITIONAL_FUNCTION_FC = (
+    'I have updated some more functions you can choose from. What about now?'
+)
 
-DEFAULT_USER_PROMPT_FOR_ADDITIONAL_FUNCTION_PROMPTING = "{functions}\n" + DEFAULT_USER_PROMPT_FOR_ADDITIONAL_FUNCTION_FC
+DEFAULT_USER_PROMPT_FOR_ADDITIONAL_FUNCTION_PROMPTING = (
+    '{functions}\n' + DEFAULT_USER_PROMPT_FOR_ADDITIONAL_FUNCTION_FC
+)

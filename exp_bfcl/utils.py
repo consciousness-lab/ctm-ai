@@ -1,8 +1,6 @@
-from constants.category_mapping import (
-    TEST_COLLECTION_MAPPING,
-    TEST_FILE_MAPPING,
-)
 import json
+
+from constants.category_mapping import TEST_COLLECTION_MAPPING, TEST_FILE_MAPPING
 
 
 def load_file(file_path, sort_by_id=False):
@@ -31,13 +29,13 @@ def parse_test_category_argument(test_category_args):
             test_filename_total.add(TEST_FILE_MAPPING[test_category])
         else:
             # Invalid test category name
-            raise Exception(f"Invalid test category name provided: {test_category}")
+            raise Exception(f'Invalid test category name provided: {test_category}')
 
     return sorted(list(test_filename_total)), sorted(list(test_name_total))
 
 
 def is_multi_turn(test_category):
-    return "multi_turn" in test_category
+    return 'multi_turn' in test_category
 
 
 def sort_key(entry):
@@ -54,21 +52,21 @@ def sort_key(entry):
 
     In either case, the universal index is enough to sort the entries.
     """
-    parts = entry["id"].rsplit("_", 1)
+    parts = entry['id'].rsplit('_', 1)
     test_category, index = parts[0], parts[1]
     # This handles the case where the index is in the form TestCategory_Index-FuncDocSubIndex-PromptSubIndex
-    if "-" in index:
-        index = index.split("-")[0]
+    if '-' in index:
+        index = index.split('-')[0]
     return (test_category, int(index))
 
 
 def _get_language_specific_hint(test_category):
-    if test_category == "java":
-        return " Note that the provided function is in Java 8 SDK syntax."
-    elif test_category == "javascript":
-        return " Note that the provided function is in JavaScript syntax."
+    if test_category == 'java':
+        return ' Note that the provided function is in Java 8 SDK syntax.'
+    elif test_category == 'javascript':
+        return ' Note that the provided function is in JavaScript syntax.'
     else:
-        return " Note that the provided function is in Python 3 syntax."
+        return ' Note that the provided function is in Python 3 syntax.'
 
 
 def func_doc_language_specific_pre_processing(function, test_category):
@@ -78,53 +76,53 @@ def func_doc_language_specific_pre_processing(function, test_category):
     assert type(function) == list
     for item in function:
         # Add language specific hints to the function description
-        func_description = item["description"]
-        item["description"] = item["description"] + _get_language_specific_hint(
+        func_description = item['description']
+        item['description'] = item['description'] + _get_language_specific_hint(
             test_category
         )
         # Process the parameters
-        properties = item["parameters"]["properties"]
-        if test_category == "java":
+        properties = item['parameters']['properties']
+        if test_category == 'java':
             for key, value in properties.items():
-                if value["type"] == "any":
-                    properties[key][
-                        "description"
-                    ] += " This parameter can be of any type of Java object in string representation."
+                if value['type'] == 'any':
+                    properties[key]['description'] += (
+                        ' This parameter can be of any type of Java object in string representation.'
+                    )
                 else:
-                    value[
-                        "description"
-                    ] += f" This is Java {value['type']} type parameter in string representation."
-                if value["type"] == "ArrayList" or value["type"] == "Array":
-                    value[
-                        "description"
-                    ] += f" The list elements are of type {value['items']['type']}; they are not in string representation."
-                    del value["items"]
+                    value['description'] += (
+                        f' This is Java {value["type"]} type parameter in string representation.'
+                    )
+                if value['type'] == 'ArrayList' or value['type'] == 'Array':
+                    value['description'] += (
+                        f' The list elements are of type {value["items"]["type"]}; they are not in string representation.'
+                    )
+                    del value['items']
 
-                value["type"] = "string"
+                value['type'] = 'string'
 
-        elif test_category == "javascript":
+        elif test_category == 'javascript':
             for key, value in properties.items():
-                if value["type"] == "any":
-                    properties[key][
-                        "description"
-                    ] += " This parameter can be of any type of JavaScript object in string representation."
+                if value['type'] == 'any':
+                    properties[key]['description'] += (
+                        ' This parameter can be of any type of JavaScript object in string representation.'
+                    )
                 else:
-                    value[
-                        "description"
-                    ] += f" This is JavaScript {value['type']} type parameter in string representation."
-                if value["type"] == "array":
-                    value[
-                        "description"
-                    ] += f" The list elements are of type {value['items']['type']}; they are not in string representation."
-                    del value["items"]
+                    value['description'] += (
+                        f' This is JavaScript {value["type"]} type parameter in string representation.'
+                    )
+                if value['type'] == 'array':
+                    value['description'] += (
+                        f' The list elements are of type {value["items"]["type"]}; they are not in string representation.'
+                    )
+                    del value['items']
 
-                if value["type"] == "dict":
-                    if "properties" in value:  # not every dict has properties
-                        value[
-                            "description"
-                        ] += f" The dictionary entries have the following schema; they are not in string representation. {json.dumps(value['properties'])}"
-                        del value["properties"]
+                if value['type'] == 'dict':
+                    if 'properties' in value:  # not every dict has properties
+                        value['description'] += (
+                            f' The dictionary entries have the following schema; they are not in string representation. {json.dumps(value["properties"])}'
+                        )
+                        del value['properties']
 
-                value["type"] = "string"
+                value['type'] = 'string'
 
     return function
