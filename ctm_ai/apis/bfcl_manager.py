@@ -8,7 +8,7 @@ class BFCLManager:
         self.function_names = []
         self.funcs_to_all_info = {}
         self.funcs_to_description = {}
-
+        self.messages = inference_data["message"]
         self._parse_tools()
 
     def _parse_tools(self):

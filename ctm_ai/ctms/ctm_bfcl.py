@@ -18,7 +18,8 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
         ctm_name: Optional[str] = None,
         inference_data: Optional[Dict[str, Any]] = None,
     ) -> None:
-        self.io_function = BFCLManager(inference_data)
+        self.api_manager = BFCLManager(inference_data)
+        breakpoint()
         self.config = ConsciousTuringMachineConfig()
 
         self.load_ctm()
@@ -27,10 +28,9 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
         self,
         query: str,
     ) -> Tuple[str, float]:
-        breakpoint()
         return self.forward(
             query,
-            self.io_function,
+            self.api_manager,
         )
 
     def load_ctm(self) -> None:
@@ -40,7 +40,7 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
         self.supervisors: List[BaseSupervisor] = []
         self.scorers: List[BaseScorer] = []
         # Then, add the specialized logic for this subclass to load tool processors
-        if self.io_function:
+        if self.api_manager:
             self._load_bfcl_processors()
 
         self.add_supervisor(self.config.supervisor)
@@ -51,34 +51,40 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
 
         from ..processors import register_api_processors
 
-        openai_function_names = [name for name in self.io_function.function_names]
+        openai_function_names = [name for name in self.api_manager.function_names]
         register_api_processors(openai_function_names)
         for openai_function_name in openai_function_names:
             processor_name = openai_function_name
             self.processor_graph.add_node(
-                processor_name=processor_name, processor_group_name="bfcl"
+                processor_name=processor_name,
+                processor_group_name="bfcl",
+                system_prompt=getattr(
+                    self.config,
+                    "system_prompt",
+                    "You are a helpful assistant with access to a variety of tools. Your task is to select the appropriate tool and use it to answer the user's query.",
+                ),
+                model=getattr(self.config, "model", "gpt-4o-mini"),
             )
-            breakpoint()
 
     @logging_func_with_count
     def ask_processors(
-        self, query: str, io_function: BFCLManager = None, **kwargs
+        self, query: str, api_manager: BFCLManager = None, **kwargs
     ) -> List[Chunk]:
-        """Override ask_processors to handle io_function parameter for BFCL processors"""
-        if io_function is None:
-            io_function = self.io_function
+        """Override ask_processors to handle api_manager parameter for BFCL processors"""
+        if api_manager is None:
+            api_manager = self.api_manager
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = []
             for processor in self.processor_graph.nodes:
-                # Check if this is a BFCL processor that needs io_function
+                # Check if this is a BFCL processor that needs api_manager
                 if (
                     hasattr(processor, "name")
-                    and processor.name in self.io_function.function_names
+                    and processor.name in self.api_manager.function_names
                 ):
-                    # For BFCL processors, pass io_function
+                    # For BFCL processors, pass api_manager
                     future = executor.submit(
-                        processor.ask, query=query, io_function=io_function, **kwargs
+                        processor.ask, query=query, api_manager=api_manager, **kwargs
                     )
                 else:
                     # For standard processors, use the base class method
@@ -113,12 +119,12 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
     def forward(
         self,
         query: str,
-        io_function: BFCLManager,
+        api_manager: BFCLManager,
     ) -> Tuple[str, float]:
         """Forward pass supporting both standard and tool-based processing"""
         # Collect all input parameters for reuse
         input_params = {
-            "io_function": io_function,
+            "api_manager": api_manager,
         }
 
         for _ in range(self.config.max_iter_num):

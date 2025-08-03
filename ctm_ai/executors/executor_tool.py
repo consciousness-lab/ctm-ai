@@ -11,13 +11,13 @@ from ..tools import (
 from ..utils.error_handler import message_exponential_backoff
 
 
-@BaseExecutor.register_executor('tool_executor')
+@BaseExecutor.register_executor("tool_executor")
 class ToolExecutor(BaseExecutor):
     def __init__(
         self,
         name: str,
         use_builtin_tools: bool = True,
-        io_function=None,
+        api_manager=None,
         openai_function_names: Optional[Union[str, List[str]]] = None,
         custom_functions: Optional[List[Dict[str, Any]]] = None,
         *args,
@@ -29,14 +29,14 @@ class ToolExecutor(BaseExecutor):
         Args:
             name: Executor name
             use_builtin_tools: Whether to use builtin tools (default: True)
-            io_function: External tool interface (optional)
+            api_manager: External tool interface (optional)
             openai_function_names: External tool function name list (optional)
             custom_functions: Custom function list (optional)
         """
         super().__init__(name, *args, **kwargs)
 
         # Initialize tool configuration
-        self.io_function = io_function
+        self.api_manager = api_manager
         self.configured_functions = []
 
         # Add builtin tools
@@ -44,18 +44,18 @@ class ToolExecutor(BaseExecutor):
             self.configured_functions.extend(get_builtin_tool_definitions())
 
         # Add external tools
-        if io_function and openai_function_names:
+        if api_manager and openai_function_names:
             if isinstance(openai_function_names, str):
                 openai_function_names = [openai_function_names]
 
             for func_name in openai_function_names:
                 try:
-                    external_function = io_function.openai_name_reflect_all_info[
+                    external_function = api_manager.openai_name_reflect_all_info[
                         func_name
                     ][0]
                     self.configured_functions.append(external_function)
                 except Exception as e:
-                    print(f'Warning: Unable to load external tool {func_name}: {e}')
+                    print(f"Warning: Unable to load external tool {func_name}: {e}")
 
         # Add custom functions
         if custom_functions:
@@ -99,27 +99,27 @@ class ToolExecutor(BaseExecutor):
             **kwargs,
         )
 
-        assert new_message['role'] == 'assistant'
+        assert new_message["role"] == "assistant"
 
         # Handle normal content response (no tool used)
-        if 'content' in new_message.keys() and new_message['content'] is not None:
+        if "content" in new_message.keys() and new_message["content"] is not None:
             additional_question = self._generate_general_question(
-                messages, new_message['content']
+                messages, new_message["content"]
             )
             return Message(
-                role='assistant',
-                content=new_message['content'],
-                gist=new_message['content'],
+                role="assistant",
+                content=new_message["content"],
+                gist=new_message["content"],
                 additional_question=additional_question,
             )
 
         # Handle tool call response
-        if 'function_call' in new_message.keys():
-            function_call_data = new_message['function_call']
+        if "function_call" in new_message.keys():
+            function_call_data = new_message["function_call"]
             assert isinstance(function_call_data, dict)
 
-            function_name = function_call_data['name']
-            function_arguments = function_call_data['arguments']
+            function_name = function_call_data["name"]
+            function_arguments = function_call_data["arguments"]
 
             # Parse arguments
             try:
@@ -128,17 +128,17 @@ class ToolExecutor(BaseExecutor):
                 else:
                     arguments = function_arguments
             except json.JSONDecodeError as e:
-                error_msg = f'Parameter parsing failed: {str(e)}'
+                error_msg = f"Parameter parsing failed: {str(e)}"
                 return Message(
-                    role='function',
+                    role="function",
                     content=error_msg,
                     gist=error_msg,
-                    additional_question='Please check your request format and try again.',
+                    additional_question="Please check your request format and try again.",
                 )
 
             # Handle builtin tool calls
             builtin_tool_names = [
-                tool['name'] for tool in get_builtin_tool_definitions()
+                tool["name"] for tool in get_builtin_tool_definitions()
             ]
             if function_name in builtin_tool_names:
                 return self._handle_builtin_tool_call(
@@ -146,25 +146,25 @@ class ToolExecutor(BaseExecutor):
                 )
 
             # Handle external tool calls
-            elif self.io_function:
+            elif self.api_manager:
                 return self._handle_external_tool_call(
-                    messages, self.io_function, function_name, function_arguments
+                    messages, self.api_manager, function_name, function_arguments
                 )
 
             # Unknown tool
-            available_tool_names = [func['name'] for func in self.configured_functions]
-            error_msg = f'Unknown tool: {function_name}'
+            available_tool_names = [func["name"] for func in self.configured_functions]
+            error_msg = f"Unknown tool: {function_name}"
             return Message(
-                role='function',
+                role="function",
                 content=error_msg,
                 gist=error_msg,
                 additional_question=f'Available tools include: {", ".join(available_tool_names)}. Please select a valid tool.',
             )
 
         # Error case
-        error_msg = '[ERROR] Model did not return valid response'
+        error_msg = "[ERROR] Model did not return valid response"
         return Message(
-            role='assistant',
+            role="assistant",
             content=error_msg,
             gist=error_msg,
             additional_question="Please rephrase your request and I'll try to understand and help you better.",
@@ -174,24 +174,24 @@ class ToolExecutor(BaseExecutor):
         """Dynamically add custom function"""
         self.configured_functions.append(function_definition)
 
-    def add_external_tool(self, io_function, openai_function_name: str):
+    def add_external_tool(self, api_manager, openai_function_name: str):
         """Dynamically add external tool"""
         try:
-            external_function = io_function.openai_name_reflect_all_info[
+            external_function = api_manager.openai_name_reflect_all_info[
                 openai_function_name
             ][0]
             self.configured_functions.append(external_function)
             if openai_function_name not in self.openai_function_names:
                 self.openai_function_names.append(openai_function_name)
-            if not self.io_function:
-                self.io_function = io_function
+            if not self.api_manager:
+                self.api_manager = api_manager
         except Exception as e:
-            print(f'Unable to add external tool {openai_function_name}: {e}')
+            print(f"Unable to add external tool {openai_function_name}: {e}")
 
     def remove_function(self, function_name: str):
         """Remove specified function"""
         self.configured_functions = [
-            func for func in self.configured_functions if func['name'] != function_name
+            func for func in self.configured_functions if func["name"] != function_name
         ]
         if function_name in self.openai_function_names:
             self.openai_function_names.remove(function_name)
@@ -205,9 +205,9 @@ class ToolExecutor(BaseExecutor):
             observation = call_builtin_tool(function_name, arguments)
 
             # Get original query for question generation
-            original_query = ''
+            original_query = ""
             for msg in messages:
-                if msg.content and msg.role == 'user':
+                if msg.content and msg.role == "user":
                     original_query = msg.content
                     break
 
@@ -217,72 +217,72 @@ class ToolExecutor(BaseExecutor):
             )
 
             return Message(
-                role='function',
+                role="function",
                 content=observation,
                 gist=observation,
                 additional_question=additional_question,
             )
 
         except Exception as e:
-            error_msg = f'Builtin tool call failed: {str(e)}'
+            error_msg = f"Builtin tool call failed: {str(e)}"
             return Message(
-                role='function',
+                role="function",
                 content=error_msg,
                 gist=error_msg,
-                additional_question=f'Tool {function_name} encountered an issue. Please check your input and try again.',
+                additional_question=f"Tool {function_name} encountered an issue. Please check your input and try again.",
             )
 
     def _handle_external_tool_call(
         self,
         messages: List[Message],
-        io_function,
+        api_manager,
         function_name: str,
         function_arguments: str,
     ) -> Message:
         """Handle external tool calls"""
         try:
-            observation, status = io_function.step(function_name, function_arguments)
+            observation, status = api_manager.step(function_name, function_arguments)
 
             # Get original query
-            original_query = ''
+            original_query = ""
             for msg in messages:
-                if msg.content and msg.role == 'user':
+                if msg.content and msg.role == "user":
                     original_query = msg.content
                     break
 
             # Generate general question for external tools
-            additional_question = f'Based on the {function_name} tool result, what other related questions can I help you with?'
+            additional_question = f"Based on the {function_name} tool result, what other related questions can I help you with?"
 
             return Message(
-                role='function',
+                role="function",
                 content=observation,
                 gist=observation,
                 additional_question=additional_question,
             )
 
         except Exception as e:
-            error_msg = f'External tool call failed: {str(e)}'
+            error_msg = f"External tool call failed: {str(e)}"
             return Message(
-                role='function',
+                role="function",
                 content=error_msg,
                 gist=error_msg,
-                additional_question=f'Tool {function_name} encountered an issue. Please check your input and try again.',
+                additional_question=f"Tool {function_name} encountered an issue. Please check your input and try again.",
             )
 
     def _generate_general_question(self, messages: List[Message], response: str) -> str:
         """Generate follow-up question for general responses"""
         # Get original query
-        original_query = ''
+        original_query = ""
         for msg in messages:
-            if msg.content and msg.role == 'user':
+            if msg.content and msg.role == "user":
                 original_query = msg.content
                 break
 
         # Generate general follow-up questions
         general_questions = [
             f"Regarding '{original_query}', what specific aspects would you like to know more about?",
-            'Would you like me to use search or calculation tools to get more information?',
-            'Which part would you like me to explain in more detail?',
+            "Would you like me to use search or calculation tools to get more information?",
+            "Which part would you like me to explain in more detail?",
         ]
 
         return general_questions[0]  # Simply return the first question
@@ -293,13 +293,13 @@ class ToolExecutor(BaseExecutor):
 
     def list_function_names(self) -> List[str]:
         """List all available function names"""
-        return [func['name'] for func in self.configured_functions]
+        return [func["name"] for func in self.configured_functions]
 
     def get_configuration(self) -> Dict[str, Any]:
         """Get current configuration information"""
         return {
-            'use_builtin_tools': self.use_builtin_tools,
-            'openai_function_names': self.openai_function_names,
-            'total_functions': len(self.configured_functions),
-            'function_names': self.list_function_names(),
+            "use_builtin_tools": self.use_builtin_tools,
+            "openai_function_names": self.openai_function_names,
+            "total_functions": len(self.configured_functions),
+            "function_names": self.list_function_names(),
         }

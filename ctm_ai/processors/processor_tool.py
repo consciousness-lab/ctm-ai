@@ -8,41 +8,45 @@ from ..scorers import BaseScorer
 from .processor_base import BaseProcessor
 
 
-@BaseProcessor.register_processor('tool_processor')
+@BaseProcessor.register_processor("tool_processor")
 class ToolProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['OPENAI_API_KEY', 'TOOLBENCH_KEY']
+    REQUIRED_KEYS = ["OPENAI_API_KEY", "TOOLBENCH_KEY"]
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger.create_messenger('tool_messenger')
+        return BaseMessenger.create_messenger("tool_messenger")
 
-    def init_executor(self, system_prompt: str = None) -> BaseExecutor:
-        return BaseExecutor(name='tool_executor', system_prompt=system_prompt)
+    def init_executor(
+        self, system_prompt: str = None, model: str = None
+    ) -> BaseExecutor:
+        return BaseExecutor(
+            name="tool_executor", system_prompt=system_prompt, model=model
+        )
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='language_scorer')
+        return BaseScorer(name="language_scorer")
 
     def ask(
         self,
         query: str,
-        io_function: BaseEnv,
+        api_manager: BaseEnv,
         **kwargs,
     ) -> Chunk:
         openai_function_name = self.name
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
-            io_function=io_function,
+            api_manager=api_manager,
             openai_function_name=openai_function_name,
         )
 
         executor_output = self.executor.ask(
             messages=executor_messages,
-            io_function=io_function,
+            api_manager=api_manager,
             openai_function_name=openai_function_name,
         )
 
         scorer_messages = self.messenger.collect_scorer_messages(
             query=query,
-            io_function=io_function,
+            api_manager=api_manager,
             openai_function_name=openai_function_name,
             executor_output=executor_output,
         )

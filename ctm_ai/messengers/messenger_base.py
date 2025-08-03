@@ -166,6 +166,7 @@ Your additional_question should be just about what kind of information you need 
         video_frames: Optional[List[Any]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        api_manager: Any = None,
         use_memory: bool = True,
         store_memory: bool = True,
         **kwargs: Any,

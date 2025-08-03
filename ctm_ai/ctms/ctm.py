@@ -22,12 +22,12 @@ except ImportError:
 
 class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def __init__(
-        self, ctm_name: Optional[str] = None, io_function: Optional['BaseEnv'] = None
+        self, ctm_name: Optional[str] = None, api_manager: Optional["BaseEnv"] = None
     ) -> None:
-        self.io_function = io_function
+        self.api_manager = api_manager
         self.config = (
             ConsciousTuringMachineConfig.from_ctm(ctm_name)
-            if ctm_name != 'toolbench'
+            if ctm_name != "toolbench"
             else ConsciousTuringMachineConfig()
         )
 
@@ -63,7 +63,7 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         super().load_ctm()
 
         # Then, add the specialized logic for this subclass to load tool processors
-        if self.io_function and TOOLBENCH_AVAILABLE:
+        if self.api_manager and TOOLBENCH_AVAILABLE:
             self._load_tool_processors()
 
     def _load_tool_processors(self) -> None:
@@ -74,13 +74,13 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         from ..processors import register_tool_processors
 
         openai_function_names = [
-            name for name in self.io_function.openai_function_names
+            name for name in self.api_manager.openai_function_names
         ]
         register_tool_processors(openai_function_names)
         for openai_function_name in openai_function_names:
             processor_name = openai_function_name
             self.processor_graph.add_node(
-                processor_name=processor_name, processor_group_name='tools'
+                processor_name=processor_name, processor_group_name="tools"
             )
 
     @logging_func_with_count
@@ -115,14 +115,14 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         """Forward pass supporting both standard and tool-based processing"""
         # Collect all input parameters for reuse
         input_params = {
-            'text': text,
-            'image': image,
-            'image_path': image_path,
-            'audio': audio,
-            'audio_path': audio_path,
-            'video_frames': video_frames,
-            'video_frames_path': video_frames_path,
-            'video_path': video_path,
+            "text": text,
+            "image": image,
+            "image_path": image_path,
+            "audio": audio,
+            "audio_path": audio_path,
+            "video_frames": video_frames,
+            "video_frames_path": video_frames_path,
+            "video_path": video_path,
         }
 
         for _ in range(self.config.max_iter_num):
@@ -140,12 +140,12 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def forward_tool(
         self,
         query: str,
-        io_function: 'BaseEnv',
+        api_manager: "BaseEnv",
     ) -> Tuple[str, float]:
         """Forward pass for tool-only processing (backward compatibility)"""
         if not TOOLBENCH_AVAILABLE:
             raise ImportError(
-                'ToolBench is not available. Please install ToolBench to use tool functionality.'
+                "ToolBench is not available. Please install ToolBench to use tool functionality."
             )
 
         return self.forward(query=query)
