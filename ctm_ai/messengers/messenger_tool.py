@@ -38,13 +38,13 @@ class ToolMessenger(BaseMessenger):
     def collect_executor_messages(
         self,
         query: str,
-        io_function: BaseEnv,
+        api_manager: BaseEnv,
         openai_function_name: str,
     ) -> List[Message]:
         """ToolMessenger有特殊的参数和逻辑，需要自定义实现"""
         system = FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
         system = system.replace('{openai_function_name}', openai_function_name)
-        task_description = io_function.openai_name_reflect_all_info[
+        task_description = api_manager.openai_name_reflect_all_info[
             openai_function_name
         ][1]
         system = system.replace(

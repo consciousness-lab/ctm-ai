@@ -22,9 +22,9 @@ except ImportError:
 
 class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def __init__(
-        self, ctm_name: Optional[str] = None, io_function: Optional['BaseEnv'] = None
+        self, ctm_name: Optional[str] = None, api_manager: Optional['BaseEnv'] = None
     ) -> None:
-        self.io_function = io_function
+        self.api_manager = api_manager
         self.config = (
             ConsciousTuringMachineConfig.from_ctm(ctm_name)
             if ctm_name != 'toolbench'
@@ -63,7 +63,7 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         super().load_ctm()
 
         # Then, add the specialized logic for this subclass to load tool processors
-        if self.io_function and TOOLBENCH_AVAILABLE:
+        if self.api_manager and TOOLBENCH_AVAILABLE:
             self._load_tool_processors()
 
     def _load_tool_processors(self) -> None:
@@ -74,7 +74,7 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         from ..processors import register_tool_processors
 
         openai_function_names = [
-            name for name in self.io_function.openai_function_names
+            name for name in self.api_manager.openai_function_names
         ]
         register_tool_processors(openai_function_names)
         for openai_function_name in openai_function_names:
@@ -140,7 +140,7 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def forward_tool(
         self,
         query: str,
-        io_function: 'BaseEnv',
+        api_manager: 'BaseEnv',
     ) -> Tuple[str, float]:
         """Forward pass for tool-only processing (backward compatibility)"""
         if not TOOLBENCH_AVAILABLE:
