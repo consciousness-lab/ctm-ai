@@ -14,14 +14,22 @@ class LanguageSupervisor(BaseSupervisor):
     def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
         super().init_supervisor(*args, **kwargs)
         self.model_name = kwargs.get('supervisor_model', 'gemini/gemini-2.0-flash-lite')
+        self.supervisor_system_prompt = kwargs.get(
+            'problem_prompt',
+            'You are a helpful assistant that can answer questions based on the context. Please provide the answer only based on the detailed information provided.',
+        )
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def ask_info(self, query: str, context: Optional[str] = None) -> Optional[str]:
         messages = [
             Message(
+                role='system',
+                content=self.supervisor_system_prompt,
+            ),
+            Message(
                 role='user',
                 content=f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.',
-            )
+            ),
         ]
 
         try:

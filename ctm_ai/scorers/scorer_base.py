@@ -46,6 +46,12 @@ class BaseScorer(object):
         self.confidence_model = kwargs.get('confidence_model', self.model_name)
         self.surprise_model = kwargs.get('scorer_model', self.model_name)
 
+        if not hasattr(self, 'system_prompt'):
+            self.system_prompt = 'You are a helpful AI assistant.'
+
+        # Prioritize system_prompt from kwargs (config)
+        self.system_prompt = kwargs.get('system_prompt', self.system_prompt)
+
         # Configure LiteLLM
         configure_litellm(model_name=self.model_name)
 
@@ -97,6 +103,10 @@ class BaseScorer(object):
     def _ask_llm_relevance(self, query: str, gist: str) -> float:
         relevance_prompt = [
             Message(
+                role='system',
+                content=self.system_prompt,
+            ),
+            Message(
                 role='user',
                 content=f"""Please evaluate how relevant the answer is to the question on a scale from 0.0 to 1.0.
 
@@ -114,7 +124,7 @@ Consider:
 IMPORTANT: If the answer says "I cannot determine", "I don't know", "cannot answer", or refuses to provide information, score it as 0.0.
 
 Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
-            )
+            ),
         ]
 
         try:
@@ -179,6 +189,10 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
         """Use LLM to assess confidence in the response."""
         confidence_prompt = [
             Message(
+                role='system',
+                content=self.system_prompt,
+            ),
+            Message(
                 role='user',
                 content=f"""Please evaluate how confident this response appears to be on a scale from 0.0 to 1.0.
 
@@ -195,7 +209,7 @@ Consider:
 IMPORTANT: If the response says "I cannot determine", "cannot answer", "I don't know", or refuses to provide information, score it as 0.0.
 
 Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
-            )
+            ),
         ]
 
         try:
@@ -269,6 +283,10 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
         """Use LLM to assess how surprising or novel the response is."""
         surprise_prompt = [
             Message(
+                role='system',
+                content=self.system_prompt,
+            ),
+            Message(
                 role='user',
                 content=f"""Please evaluate how surprising, unexpected, or novel this response is on a scale from 0.0 to 1.0.
 
@@ -283,7 +301,7 @@ Consider:
 - 0.0 = Completely expected, entirely predictable, common knowledge
 
 Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
-            )
+            ),
         ]
 
         try:
@@ -336,6 +354,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
 
         Returns a Message with all scoring metrics.
         """
+        breakpoint()
         relevance = self.ask_relevance(messages, use_llm=use_llm)
         confidence = self.ask_confidence(messages, use_llm=use_llm)
         surprise = self.ask_surprise(messages, use_llm=use_llm, **kwargs)

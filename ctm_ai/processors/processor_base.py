@@ -204,14 +204,16 @@ class BaseProcessor(object):
             'executor_message_count': executor_count,
             'scorer_message_count': scorer_count,
             'recent_executor_gist': recent_executor.gist if recent_executor else None,
-            'recent_scorer_scores': {
-                'relevance': recent_scorer.relevance if recent_scorer else None,
-                'confidence': recent_scorer.confidence if recent_scorer else None,
-                'surprise': recent_scorer.surprise if recent_scorer else None,
-                'weight': recent_scorer.weight if recent_scorer else None,
-            }
-            if recent_scorer
-            else None,
+            'recent_scorer_scores': (
+                {
+                    'relevance': recent_scorer.relevance if recent_scorer else None,
+                    'confidence': recent_scorer.confidence if recent_scorer else None,
+                    'surprise': recent_scorer.surprise if recent_scorer else None,
+                    'weight': recent_scorer.weight if recent_scorer else None,
+                }
+                if recent_scorer
+                else None
+            ),
         }
 
     def update(self, chunk: Chunk) -> None:

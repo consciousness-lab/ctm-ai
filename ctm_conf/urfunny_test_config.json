@@ -20,5 +20,5 @@
         }
     },
     "scorer_model": "gemini/gemini-2.0-flash-lite",
-    "supervisors_model": "gemini/gemini-2.0-flash-lite"
+    "supervisor_model": "gemini/gemini-2.0-flash-lite" 
 }
