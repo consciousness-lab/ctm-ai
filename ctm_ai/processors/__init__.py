@@ -1,3 +1,4 @@
+from .processor_api import APIProcessor, register_api_processors
 from .processor_audio import AudioProcessor
 from .processor_base import BaseProcessor
 from .processor_code import CodeProcessor
@@ -6,7 +7,6 @@ from .processor_math import MathProcessor
 from .processor_tool import ToolProcessor, register_tool_processors
 from .processor_video import VideoProcessor
 from .processor_vision import VisionProcessor
-from .processor_api import APIProcessor, register_api_processors
 
 __all__ = [
     'BaseProcessor',

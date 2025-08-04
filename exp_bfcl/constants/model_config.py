@@ -20,9 +20,6 @@ from bfcl_eval.model_handler.api_inference.nexus import NexusHandler
 from bfcl_eval.model_handler.api_inference.nova import NovaHandler
 from bfcl_eval.model_handler.api_inference.novita import NovitaHandler
 from bfcl_eval.model_handler.api_inference.nvidia import NvidiaHandler
-from bfcl_eval.model_handler.api_inference.openai_completion import (
-    OpenAICompletionsHandler,
-)
 from bfcl_eval.model_handler.api_inference.openai_response import OpenAIResponsesHandler
 from bfcl_eval.model_handler.api_inference.qwen import (
     QwenAgentNoThinkHandler,
@@ -30,25 +27,20 @@ from bfcl_eval.model_handler.api_inference.qwen import (
     QwenAPIHandler,
 )
 from bfcl_eval.model_handler.api_inference.writer import WriterHandler
-from bfcl_eval.model_handler.api_inference.yi import YiHandler
 from bfcl_eval.model_handler.local_inference.arch import ArchHandler
 from bfcl_eval.model_handler.local_inference.bielik import BielikHandler
 from bfcl_eval.model_handler.local_inference.bitagent import BitAgentHandler
-from bfcl_eval.model_handler.local_inference.deepseek import DeepseekHandler
-from bfcl_eval.model_handler.local_inference.deepseek_coder import DeepseekCoderHandler
 from bfcl_eval.model_handler.local_inference.deepseek_reasoning import (
     DeepseekReasoningHandler,
 )
 from bfcl_eval.model_handler.local_inference.falcon_fc import Falcon3FCHandler
 from bfcl_eval.model_handler.local_inference.gemma import GemmaHandler
-from bfcl_eval.model_handler.local_inference.glaive import GlaiveHandler
 from bfcl_eval.model_handler.local_inference.glm import GLMHandler
 from bfcl_eval.model_handler.local_inference.granite import (
     GraniteFunctionCallingHandler,
 )
 from bfcl_eval.model_handler.local_inference.granite_3 import Granite3FCHandler
 from bfcl_eval.model_handler.local_inference.hammer import HammerHandler
-from bfcl_eval.model_handler.local_inference.hermes import HermesHandler
 from bfcl_eval.model_handler.local_inference.llama import LlamaHandler
 from bfcl_eval.model_handler.local_inference.llama_3_1 import LlamaHandler_3_1
 from bfcl_eval.model_handler.local_inference.minicpm import MiniCPMHandler
@@ -56,9 +48,6 @@ from bfcl_eval.model_handler.local_inference.minicpm_fc import MiniCPMFCHandler
 from bfcl_eval.model_handler.local_inference.mistral_fc import MistralFCHandler
 from bfcl_eval.model_handler.local_inference.phi import PhiHandler
 from bfcl_eval.model_handler.local_inference.phi_fc import PhiFCHandler
-from bfcl_eval.model_handler.local_inference.quick_testing_oss import (
-    QuickTestingOSSHandler,
-)
 from bfcl_eval.model_handler.local_inference.qwen import QwenHandler
 from bfcl_eval.model_handler.local_inference.qwen_fc import QwenFCHandler
 from bfcl_eval.model_handler.local_inference.salesforce_llama import (

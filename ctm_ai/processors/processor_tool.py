@@ -8,22 +8,22 @@ from ..scorers import BaseScorer
 from .processor_base import BaseProcessor
 
 
-@BaseProcessor.register_processor("tool_processor")
+@BaseProcessor.register_processor('tool_processor')
 class ToolProcessor(BaseProcessor):
-    REQUIRED_KEYS = ["OPENAI_API_KEY", "TOOLBENCH_KEY"]
+    REQUIRED_KEYS = ['OPENAI_API_KEY', 'TOOLBENCH_KEY']
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger.create_messenger("tool_messenger")
+        return BaseMessenger.create_messenger('tool_messenger')
 
     def init_executor(
         self, system_prompt: str = None, model: str = None
     ) -> BaseExecutor:
         return BaseExecutor(
-            name="tool_executor", system_prompt=system_prompt, model=model
+            name='tool_executor', system_prompt=system_prompt, model=model
         )
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name="language_scorer")
+        return BaseScorer(name='language_scorer')
 
     def ask(
         self,

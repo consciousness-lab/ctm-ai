@@ -1,15 +1,14 @@
-from typing import Dict, Any, List, Optional, Tuple
+import concurrent.futures
+from typing import Any, Dict, List, Optional, Tuple
 
+from ..apis import BFCLManager
 from ..chunks import Chunk
 from ..configs import ConsciousTuringMachineConfig
-from ..utils import logging_func_with_count
-from .ctm_base import BaseConsciousTuringMachine
-from ..apis import BFCLManager
-
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-import concurrent.futures
+from ..utils import logging_func_with_count
+from .ctm_base import BaseConsciousTuringMachine
 
 
 class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
@@ -57,13 +56,13 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
             processor_name = openai_function_name
             self.processor_graph.add_node(
                 processor_name=processor_name,
-                processor_group_name="bfcl",
+                processor_group_name='bfcl',
                 system_prompt=getattr(
                     self.config,
-                    "system_prompt",
+                    'system_prompt',
                     "You are a helpful assistant with access to a variety of tools. Your task is to select the appropriate tool and use it to answer the user's query.",
                 ),
-                model=getattr(self.config, "model", "gpt-4o-mini"),
+                model=getattr(self.config, 'model', 'gpt-4o-mini'),
             )
 
     @logging_func_with_count
@@ -79,7 +78,7 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
             for processor in self.processor_graph.nodes:
                 # Check if this is a BFCL processor that needs api_manager
                 if (
-                    hasattr(processor, "name")
+                    hasattr(processor, 'name')
                     and processor.name in self.api_manager.function_names
                 ):
                     # For BFCL processors, pass api_manager
@@ -124,7 +123,7 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
         """Forward pass supporting both standard and tool-based processing"""
         # Collect all input parameters for reuse
         input_params = {
-            "api_manager": api_manager,
+            'api_manager': api_manager,
         }
 
         for _ in range(self.config.max_iter_num):

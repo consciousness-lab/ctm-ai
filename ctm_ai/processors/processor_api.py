@@ -1,6 +1,5 @@
-from typing import List, Any, Dict
+from typing import Any, List
 
-from ..apis import BFCLManager
 from ..chunks import Chunk
 from ..executors import BaseExecutor
 from ..messengers import BaseMessenger
@@ -8,22 +7,22 @@ from ..scorers import BaseScorer
 from .processor_base import BaseProcessor
 
 
-@BaseProcessor.register_processor("api_processor")
+@BaseProcessor.register_processor('api_processor')
 class APIProcessor(BaseProcessor):
-    REQUIRED_KEYS = ["OPENAI_API_KEY"]
+    REQUIRED_KEYS = ['OPENAI_API_KEY']
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger.create_messenger("api_messenger")
+        return BaseMessenger.create_messenger('api_messenger')
 
     def init_executor(
         self, system_prompt: str = None, model: str = None
     ) -> BaseExecutor:
         return BaseExecutor(
-            name="api_executor", system_prompt=system_prompt, model=model
+            name='api_executor', system_prompt=system_prompt, model=model
         )
 
     def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name="language_scorer")
+        return BaseScorer(name='language_scorer')
 
     def ask(
         self,

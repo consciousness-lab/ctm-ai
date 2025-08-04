@@ -4,7 +4,7 @@ from ..apis import BaseEnv
 from .message import Message
 from .messenger_base import BaseMessenger
 
-T = TypeVar("T", bound="BaseMessenger")
+T = TypeVar('T', bound='BaseMessenger')
 FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION = """You are an expert in solving tasks with or without the help of external tools.
 
 I will give you a task and a tool description. Your job is to first decide whether the tool `{openai_function_name}` is necessary to solve the task according to the task description and the tool description. You should use the tool if it can solve part of the task.
@@ -29,9 +29,9 @@ Let's Begin!
 """
 
 
-@BaseMessenger.register_messenger("tool_messenger")
+@BaseMessenger.register_messenger('tool_messenger')
 class ToolMessenger(BaseMessenger):
-    default_scorer_role = "assistant"
+    default_scorer_role = 'assistant'
     include_query_in_scorer = False
     include_gists_in_scorer = False
 
@@ -43,16 +43,16 @@ class ToolMessenger(BaseMessenger):
     ) -> List[Message]:
         """ToolMessenger有特殊的参数和逻辑，需要自定义实现"""
         system = FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
-        system = system.replace("{openai_function_name}", openai_function_name)
+        system = system.replace('{openai_function_name}', openai_function_name)
         task_description = api_manager.openai_name_reflect_all_info[
             openai_function_name
         ][1]
         system = system.replace(
-            "{task_description}",
+            '{task_description}',
             task_description,
         )
-        query_all = system + "\n" + query
-        message = Message(role="user", query=query_all)
+        query_all = system + '\n' + query
+        message = Message(role='user', query=query_all)
         self.executor_messages.append(message)
 
         return self.executor_messages
