@@ -1,29 +1,32 @@
 import json
 import os
 import sys
+import concurrent.futures
+from typing import List, Dict, Any
 
 from ctm_ai.ctms.ctm import ConsciousTuringMachine
 
-sys.path.append('..')
+sys.path.append("..")
 
 
 def load_data(file_path):
-    with open(file_path, 'r', encoding='utf-8') as json_file:
+    with open(file_path, "r", encoding="utf-8") as json_file:
         data = json.load(json_file)
     return data
 
 
-def run_instance(test_file, output_file='ctm_urfunny.jsonl'):
-    dataset = load_data('data_raw/urfunny_dataset_test.json')
-    ctm = ConsciousTuringMachine('urfunny_test')
-    target_sentence = dataset[test_file]['punchline_sentence']
-    query = 'Is the persion being hurmous or not?'
-    context_sentences = 'context setences: '
-    for i in range(len(dataset[test_file]['context_sentences'])):
-        context_sentences += dataset[test_file]['context_sentences'][i]
-    context_sentences += '\npunchline sentence: ' + target_sentence
-    audio_path = f'test_inputs/urfunny_audios/{test_file}_audio.mp4'
-    video_frames_path = f'test_inputs/urfunny_frames/{test_file}_frames'
+def run_single_instance(
+    test_file: str, dataset: Dict[str, Any], output_file: str = "ctm_urfunny.jsonl"
+) -> Dict[str, Any]:
+    ctm = ConsciousTuringMachine("urfunny_test")
+    target_sentence = dataset[test_file]["punchline_sentence"]
+    query = "Is the persion being hurmous or not?"
+    context_sentences = "context setences: "
+    for i in range(len(dataset[test_file]["context_sentences"])):
+        context_sentences += dataset[test_file]["context_sentences"][i]
+    context_sentences += "\npunchline sentence: " + target_sentence
+    audio_path = f"test_inputs/urfunny_audios/{test_file}_audio.mp4"
+    video_frames_path = f"test_inputs/urfunny_frames/{test_file}_frames"
     file_paths = [
         os.path.join(video_frames_path, file_name)
         for file_name in os.listdir(video_frames_path)
@@ -32,33 +35,83 @@ def run_instance(test_file, output_file='ctm_urfunny.jsonl'):
     answer = ctm(
         query=query,
         text=target_sentence,
-        video_frames_path=file_paths,
-        audio_path=audio_path,
+        # video_frames_path=file_paths,
+        # audio_path=audio_path,
     )
 
-    print('------------------------------------------')
+    print("------------------------------------------")
+    print(f"Test file: {test_file}")
     print(target_sentence)
     print(answer)
-    print('------------------------------------------')
+    print("------------------------------------------")
 
     result = {
         test_file: {
-            'answer': [answer],
-            'label': dataset[test_file]['label'],
+            "answer": [answer],
+            "label": dataset[test_file]["label"],
         }
     }
 
-    with open(output_file, 'a', encoding='utf-8') as f:
-        f.write(json.dumps(result, ensure_ascii=False) + '\n')
+    with open(output_file, "a", encoding="utf-8") as f:
+        f.write(json.dumps(result, ensure_ascii=False) + "\n")
+
+    return result
 
 
-if __name__ == '__main__':
-    dataset_path = 'data_raw/urfunny_dataset_test.json'
+def run_parallel_instances(
+    test_files: List[str],
+    dataset: Dict[str, Any],
+    output_file: str = "ctm_urfunny_parallel.jsonl",
+    max_workers: int = 4,
+) -> List[Dict[str, Any]]:
+    results = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_test_file = {
+            executor.submit(
+                run_single_instance, test_file, dataset, output_file
+            ): test_file
+            for test_file in test_files
+        }
+
+        for future in concurrent.futures.as_completed(future_to_test_file):
+            test_file = future_to_test_file[future]
+            try:
+                result = future.result()
+                results.append(result)
+                print(f"Completed: {test_file}")
+            except Exception as exc:
+                print(f"Test file {test_file} generated an exception: {exc}")
+
+    return results
+
+
+def run_instance(test_file, output_file="ctm_urfunny.jsonl"):
+    dataset = load_data("data_raw/urfunny_dataset_test.json")
+    return run_single_instance(test_file, dataset, output_file)
+
+
+if __name__ == "__main__":
+    dataset_path = "data_raw/urfunny_dataset_test.json"
     dataset = load_data(dataset_path)
 
     test_list = list(dataset.keys())
-    print(f'Total Test Cases: {len(test_list)}')
-    run_instance('630')
+    print(f"Total Test Cases: {len(test_list)}")
 
-    # for test_file in test_list:
-    #     run_instance(test_file)
+    test_files_to_run = test_list
+    print(f"Running {len(test_files_to_run)} test files in parallel...")
+
+    results = run_parallel_instances(
+        test_files=test_files_to_run,
+        dataset=dataset,
+        output_file="ctm_urfunny_only_language.jsonl",
+        max_workers=8,
+    )
+
+    # results = run_single_instance(
+    #     test_file=test_files_to_run,
+    #     dataset=dataset,
+    #     output_file="ctm_urfunny.jsonl",
+    # )
+
+    print(f"Completed {len(results)} test cases successfully!")
