@@ -11,7 +11,7 @@ from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
 from ..utils import logging_func_with_count
-from ..utils.logger import logger, logging_fuse_processor, logging_link_form
+from ..utils.logger import logging_fuse_processor, logging_link_form
 
 if TYPE_CHECKING:
     pass
@@ -261,12 +261,8 @@ class BaseConsciousTuringMachine(ABC):
                 )
                 dirty.add(chunk.processor_name)
 
-        logger.info(f'FUSE_PROCESSOR: Re-asking {len(dirty)} dirty processors')
         for idx, chunk in enumerate(chunks):
             if chunk.processor_name in dirty:
-                logger.info(
-                    f'FUSE_PROCESSOR: Re-asking {chunk.processor_name} with updated context'
-                )
                 p = proc_map[chunk.processor_name]
                 chunks[idx] = p.ask(
                     query=query, use_memory=True, store_memory=True, **input_kwargs
