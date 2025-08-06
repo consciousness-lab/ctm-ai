@@ -11,6 +11,7 @@ from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
 from ..utils import logging_func_with_count
+from ..utils.logger import logging_fuse_processor, logging_link_form
 
 if TYPE_CHECKING:
     pass
@@ -195,6 +196,7 @@ class BaseConsciousTuringMachine(ABC):
             processor.update(chunk)
 
     @logging_func_with_count
+    @logging_link_form
     def link_form(
         self, chunks: List[Chunk], winning_chunk: Chunk, **input_kwargs
     ) -> None:
@@ -207,6 +209,7 @@ class BaseConsciousTuringMachine(ABC):
             **input_kwargs: All input parameters (text, image, audio, etc.)
         """
         additional_question = winning_chunk.additional_question
+
         # Use the same input parameters for processing additional question
         chunks = self.ask_processors(
             query=additional_question,
@@ -216,11 +219,12 @@ class BaseConsciousTuringMachine(ABC):
         )
 
         for chunk in chunks:
-            if chunk.relevance >= 0.8:
+            if chunk.relevance >= 0.6:
                 self.processor_graph.add_link(
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
                 )
+
             elif chunk.relevance <= 0.2:
                 self.processor_graph.remove_link(
                     processor1_name=winning_chunk.processor_name,
@@ -228,6 +232,7 @@ class BaseConsciousTuringMachine(ABC):
                 )
 
     @logging_func_with_count
+    @logging_fuse_processor
     def fuse_processor(
         self, chunks: List[Chunk], query: str, **input_kwargs
     ) -> List[Chunk]:
@@ -262,6 +267,7 @@ class BaseConsciousTuringMachine(ABC):
                 chunks[idx] = p.ask(
                     query=query, use_memory=True, store_memory=True, **input_kwargs
                 )
+
         return chunks
 
     @abstractmethod

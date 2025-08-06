@@ -146,10 +146,11 @@ You should utilize the other information in the context history and modality-spe
 In the context history, there might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones in the context history.
 Please respond in JSON format with the following structure:
 {
-    "response": "Your detailed response to the query",
+    "response": "Your detailed response to the query, grounded as much as possible in the available modality-specific information and context history.",
     "additional_question": "If you are not sure about the answer, you should generate a question that potentially can be answered by other modality models or other tools like search engine."
 }
 
+Your response should deeply interpret the modality-specific input and clearly explain how it informs your answer. Be explicit about how you use the information from each modality, rather than providing general or vague responses.
 Your additional_question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about.
 Your additional_question should be just about what kind of information you need to get from other modality models or other tools like search engine, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what is the caption of the image, etc. The question needs to be short and clean."""
 

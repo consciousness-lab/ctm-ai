@@ -341,7 +341,8 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
         surprise = self.ask_surprise(messages, use_llm=use_llm, **kwargs)
 
         # Calculate composite weight
-        weight = relevance * confidence * surprise
+        # weight = relevance * confidence * surprise**0.05
+        weight = relevance + confidence + (surprise * 0.2)
 
         return Message(
             relevance=relevance,

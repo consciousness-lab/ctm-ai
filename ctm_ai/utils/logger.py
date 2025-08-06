@@ -184,3 +184,91 @@ def logging_chunk_compete(func: Callable[..., Any]) -> Callable[..., Any]:
         return result
 
     return wrapper
+
+
+def logging_link_form(func: Callable[..., Any]) -> Callable[..., Any]:
+    @wraps(func)
+    def wrapper(
+        self: Any, chunks: List[Any], winning_chunk: Any, **input_kwargs
+    ) -> Any:
+        additional_question = winning_chunk.additional_question
+        logger.info(
+            f'LINK_FORM: Processing additional question from {winning_chunk.processor_name}: "{additional_question}"'
+        )
+
+        result = func(self, chunks, winning_chunk, **input_kwargs)
+
+        for chunk in chunks:
+            logger.info(
+                f'LINK_FORM: Evaluating {chunk.processor_name} with relevance {chunk.relevance}'
+            )
+            if chunk.relevance >= 0.6:
+                logger.info(
+                    f'LINK_FORM: Adding link between {winning_chunk.processor_name} and {chunk.processor_name} (relevance: {chunk.relevance})'
+                )
+            elif chunk.relevance <= 0.2:
+                logger.info(
+                    f'LINK_FORM: Removing link between {winning_chunk.processor_name} and {chunk.processor_name} (relevance: {chunk.relevance})'
+                )
+
+        return result
+
+    return wrapper
+
+
+def logging_fuse_processor(func: Callable[..., Any]) -> Callable[..., Any]:
+    @wraps(func)
+    def wrapper(self: Any, chunks: List[Any], query: str, **input_kwargs) -> Any:
+        logger.info(
+            f'FUSE_PROCESSOR: Starting fusion process with {len(chunks)} chunks'
+        )
+
+        result = func(self, chunks, query, **input_kwargs)
+
+        logger.info('FUSE_PROCESSOR: Fusion process completed')
+        return result
+
+    return wrapper
+
+
+def logging_processor_graph_operation(func: Callable[..., Any]) -> Callable[..., Any]:
+    @wraps(func)
+    def wrapper(self: Any, processor1_name: str, processor2_name: str) -> Any:
+        operation_type = 'ADD' if func.__name__ == 'add_link' else 'REMOVE'
+        logger.info(f'LINK {operation_type}: {processor1_name} <-> {processor2_name}')
+
+        result = func(self, processor1_name, processor2_name)
+        return result
+
+    return wrapper
+
+
+def logging_processor_neighbor_interaction(
+    func: Callable[..., Any],
+) -> Callable[..., Any]:
+    @wraps(func)
+    def wrapper(self: Any, chunk: Any, query: str, **input_kwargs) -> Any:
+        q = chunk.additional_question
+        if q:
+            logger.info(
+                f'FUSE_PROCESSOR: Processing additional question from {chunk.processor_name}: "{q}"'
+            )
+
+        result = func(self, chunk, query, **input_kwargs)
+
+        for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
+            if nbr == chunk.processor_name:  # self-link
+                logger.info(
+                    f'FUSE_PROCESSOR: Self-link detected for {nbr}, updating memory'
+                )
+            else:
+                logger.info(
+                    f'FUSE_PROCESSOR: Asking neighbor {nbr} for additional information'
+                )
+                logger.info(
+                    f'FUSE_PROCESSOR: Added information from {nbr} to {chunk.processor_name}'
+                )
+
+        return result
+
+    return wrapper
