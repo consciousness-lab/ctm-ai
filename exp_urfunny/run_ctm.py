@@ -98,22 +98,6 @@ if __name__ == '__main__':
     test_list = list(dataset.keys())
     print(f'Total Test Cases: {len(test_list)}')
 
-    # test_files_to_run = [
-    #     "1008",
-    #     "1009",
-    #     "1141",
-    #     "1142",
-    #     "1167",
-    #     "1171",
-    #     "1183",
-    #     "1184",
-    #     "1243",
-    #     "1247",
-    #     "1298",
-    #     "1328",
-    #     "1327",
-    #     "1326",
-    # ]
     test_files_to_run = [
         '1171',
         '1183',
@@ -124,21 +108,46 @@ if __name__ == '__main__':
         '1328',
         '1327',
         '1326',
+        '1008',
+        '1009',
+        '1141',
+        '1142',
+        '1167',
+        '1171',
+        '1183',
+        '1184',
+        '1243',
+        '1247',
+        '1298',
+        '1328',
+        '1327',
+        '1326',
     ]
+    # test_files_to_run = [
+    #     '1171',
+    #     '1183',
+    #     '1184',
+    #     '1243',
+    #     '1247',
+    #     '1298',
+    #     '1328',
+    #     '1327',
+    #     '1326',
+    # ]
     print(f'Running {len(test_files_to_run)} test files in parallel...')
 
-    # results = run_parallel_instances(
-    #     test_files=test_files_to_run,
-    #     dataset=dataset,
-    #     output_file="ctm_urfunny_tune.jsonl",
-    #     max_workers=3,
-    # )
-
-    # for test_file in test_files_to_run:
-    results = run_single_instance(
-        test_file='1171',
+    results = run_parallel_instances(
+        test_files=test_files_to_run,
         dataset=dataset,
         output_file='ctm_urfunny_tune.jsonl',
+        max_workers=3,
     )
+
+    # for test_file in test_files_to_run:
+    # results = run_single_instance(
+    #     test_file="1327",
+    #     dataset=dataset,
+    #     output_file="ctm_urfunny_tune.jsonl",
+    # )
 
     print(f'Completed {len(results)} test cases successfully!')

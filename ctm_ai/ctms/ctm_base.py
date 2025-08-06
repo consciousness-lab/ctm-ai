@@ -11,7 +11,7 @@ from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
 from ..utils import logging_func_with_count
-from ..utils.logger import logger
+from ..utils.logger import logger, logging_fuse_processor, logging_link_form
 
 if TYPE_CHECKING:
     pass
@@ -196,6 +196,7 @@ class BaseConsciousTuringMachine(ABC):
             processor.update(chunk)
 
     @logging_func_with_count
+    @logging_link_form
     def link_form(
         self, chunks: List[Chunk], winning_chunk: Chunk, **input_kwargs
     ) -> None:
@@ -208,9 +209,6 @@ class BaseConsciousTuringMachine(ABC):
             **input_kwargs: All input parameters (text, image, audio, etc.)
         """
         additional_question = winning_chunk.additional_question
-        logger.info(
-            f'LINK_FORM: Processing additional question from {winning_chunk.processor_name}: "{additional_question}"'
-        )
 
         # Use the same input parameters for processing additional question
         chunks = self.ask_processors(
@@ -221,34 +219,23 @@ class BaseConsciousTuringMachine(ABC):
         )
 
         for chunk in chunks:
-            logger.info(
-                f'LINK_FORM: Evaluating {chunk.processor_name} with relevance {chunk.relevance}'
-            )
-            if chunk.relevance >= 0.5:
-                logger.info(
-                    f'LINK_FORM: Adding link between {winning_chunk.processor_name} and {chunk.processor_name} (relevance: {chunk.relevance})'
-                )
+            if chunk.relevance >= 0.6:
                 self.processor_graph.add_link(
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
                 )
 
             elif chunk.relevance <= 0.2:
-                logger.info(
-                    f'LINK_FORM: Removing link between {winning_chunk.processor_name} and {chunk.processor_name} (relevance: {chunk.relevance})'
-                )
                 self.processor_graph.remove_link(
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
                 )
 
     @logging_func_with_count
+    @logging_fuse_processor
     def fuse_processor(
         self, chunks: List[Chunk], query: str, **input_kwargs
     ) -> List[Chunk]:
-        logger.info(
-            f'FUSE_PROCESSOR: Starting fusion process with {len(chunks)} chunks'
-        )
         proc_map = {p.name: p for p in self.processor_graph.nodes}
         dirty: set[str] = set()  # processors whose memory got new info
 
@@ -257,21 +244,12 @@ class BaseConsciousTuringMachine(ABC):
             if not q:
                 continue
 
-            logger.info(
-                f'FUSE_PROCESSOR: Processing additional question from {chunk.processor_name}: "{q}"'
-            )
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
                 if nbr == chunk.processor_name:  # ⇢ self‑link
-                    logger.info(
-                        f'FUSE_PROCESSOR: Self-link detected for {nbr}, updating memory'
-                    )
                     proc_map[nbr].update(chunk)
                     dirty.add(nbr)
                     continue
 
-                logger.info(
-                    f'FUSE_PROCESSOR: Asking neighbor {nbr} for additional information'
-                )
                 answer_chunk = proc_map[nbr].ask(
                     query=q,
                     use_memory=False,
@@ -282,9 +260,6 @@ class BaseConsciousTuringMachine(ABC):
                     answer_chunk.gist
                 )
                 dirty.add(chunk.processor_name)
-                logger.info(
-                    f'FUSE_PROCESSOR: Added information from {nbr} to {chunk.processor_name}'
-                )
 
         logger.info(f'FUSE_PROCESSOR: Re-asking {len(dirty)} dirty processors')
         for idx, chunk in enumerate(chunks):
@@ -297,7 +272,6 @@ class BaseConsciousTuringMachine(ABC):
                     query=query, use_memory=True, store_memory=True, **input_kwargs
                 )
 
-        logger.info('FUSE_PROCESSOR: Fusion process completed')
         return chunks
 
     @abstractmethod

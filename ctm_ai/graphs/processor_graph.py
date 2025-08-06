@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 
 from ..processors import BaseProcessor
-from ..utils.logger import logger
+from ..utils.logger import logging_processor_graph_operation
 
 
 class ProcessorGraph:
@@ -36,6 +36,7 @@ class ProcessorGraph:
                 if processor_name in neighbors:
                     neighbors.remove(processor_name)
 
+    @logging_processor_graph_operation
     def add_link(self, processor1_name: str, processor2_name: str) -> None:
         if (
             processor1_name in self.adjacency_list
@@ -43,8 +44,8 @@ class ProcessorGraph:
         ):
             self.adjacency_list[processor1_name].append(processor2_name)
             self.adjacency_list[processor2_name].append(processor1_name)
-            logger.info(f'LINK ADDED: {processor1_name} <-> {processor2_name}')
 
+    @logging_processor_graph_operation
     def remove_link(self, processor1_name: str, processor2_name: str) -> None:
         if (
             processor1_name in self.adjacency_list
@@ -56,7 +57,6 @@ class ProcessorGraph:
             and processor1_name in self.adjacency_list[processor2_name]
         ):
             self.adjacency_list[processor2_name].remove(processor1_name)
-            logger.info(f'LINK REMOVED: {processor1_name} <-> {processor2_name}')
 
     def get_node(self, processor_name: str) -> Optional[BaseProcessor]:
         for node in self.nodes:
