@@ -42,6 +42,7 @@ class BaseMessenger(object):
             'default_scorer_role': 'assistant',
             'include_query_in_scorer': False,
             'include_gists_in_scorer': False,
+            'api_manager': True,
         },
     }
 
@@ -54,6 +55,7 @@ class BaseMessenger(object):
     include_text_in_content: bool = False
     include_video_note: bool = False
     use_query_field: bool = False
+    api_manager: bool = False
 
     @classmethod
     def register_messenger(
@@ -141,7 +143,8 @@ class BaseMessenger(object):
             content += f'Note: The input contains {len(video_frames_path)} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n'
 
         # Add JSON format requirement
-        content += """
+        if self.api_manager is False:
+            content += """
 You should utilize the other information in the context history and modality-specific information to answer the query.
 In the context history, there might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones in the context history.
 Please respond in JSON format with the following structure:

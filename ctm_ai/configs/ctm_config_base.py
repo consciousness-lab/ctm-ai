@@ -8,7 +8,7 @@ class ConsciousTuringMachineConfig:
         ctm_name: Optional[str] = None,
         max_iter_num: int = 3,
         output_threshold: float = 0.5,
-        scorer: str = 'language_scorer',
+        scorer: str = 'api_scorer',
         scorer_use_llm: bool = True,
         supervisor: str = 'language_supervisor',
         processors_config: Optional[Dict[str, Any]] = None,
