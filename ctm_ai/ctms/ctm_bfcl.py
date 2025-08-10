@@ -1,6 +1,9 @@
 import concurrent.futures
 from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
+from numpy.typing import NDArray
+
 from ..apis import BFCLManager
 from ..chunks import Chunk
 from ..configs import ConsciousTuringMachineConfig
@@ -18,7 +21,6 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
         inference_data: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.api_manager = BFCLManager(inference_data)
-        breakpoint()
         self.config = ConsciousTuringMachineConfig()
 
         self.load_ctm()
@@ -43,7 +45,7 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
             self._load_bfcl_processors()
 
         self.add_supervisor(self.config.supervisor)
-        self.add_scorer(self.config.scorer)
+        self.add_scorer('api_scorer')
 
     def _load_bfcl_processors(self) -> None:
         """Load BFCL processors."""
@@ -63,7 +65,26 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
                     "You are a helpful assistant with access to a variety of tools. Your task is to select the appropriate tool and use it to answer the user's query.",
                 ),
                 model=getattr(self.config, 'model', 'gpt-4o-mini'),
+                api_manager=self.api_manager,  # Pass api_manager to the processor
             )
+
+    @staticmethod
+    def ask_processor(
+        processor,
+        query: str,
+        text: Optional[str] = None,
+        api_manager: BFCLManager = None,
+        use_memory: bool = True,
+        store_memory: bool = True,
+    ) -> Chunk:
+        """Ask processor with support for both standard and tool processors"""
+        return processor.ask(
+            query=query,
+            text=text,
+            api_manager=api_manager,
+            use_memory=use_memory,
+            store_memory=store_memory,
+        )
 
     @logging_func_with_count
     def ask_processors(
