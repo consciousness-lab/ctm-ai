@@ -43,6 +43,12 @@ class BaseMessenger(object):
             'include_query_in_scorer': False,
             'include_gists_in_scorer': False,
         },
+        'tool_messenger': {
+            'default_scorer_role': 'assistant',
+            'include_query_in_scorer': False,
+            'include_gists_in_scorer': False,
+            'api_manager': True,
+        },
     }
 
     default_scorer_role: str = 'assistant'
@@ -54,6 +60,7 @@ class BaseMessenger(object):
     include_text_in_content: bool = False
     include_video_note: bool = False
     use_query_field: bool = False
+    api_manager: bool = False
 
     @classmethod
     def register_messenger(

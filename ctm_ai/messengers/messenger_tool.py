@@ -1,58 +1,87 @@
-from typing import List, TypeVar
+from typing import Any, List, Optional, TypeVar
 
 from ..apis import BaseEnv
 from .message import Message
 from .messenger_base import BaseMessenger
 
 T = TypeVar('T', bound='BaseMessenger')
-FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION = """You are an expert in solving tasks with or without the help of external tools.
-
-I will give you a task and a tool description. Your job is to first decide whether the tool `{openai_function_name}` is necessary to solve the task according to the task description and the tool description. You should use the tool if it can solve part of the task.
-
-At each step, you must:
-- Provide a brief **Thought** (max 5 sentences) explaining your reasoning.
-- If you decide to use the tool, provide an `Action`, `Action Input`, and `End Action`. The tool name must be `{openai_function_name}`.
-- If you decide **not** to use the tool, explain your reasoning in the Thought and do not output Action.
-
-Format (if you use the tool):
-Thought:
-Action: {openai_function_name}
-Action Input: <valid JSON input>
-End Action
-
-Format (if not using the tool):
-Thought: <reason why not using the tool>
-
-Task description:
-{task_description}
-Let's Begin!
-"""
 
 
 @BaseMessenger.register_messenger('tool_messenger')
 class ToolMessenger(BaseMessenger):
-    default_scorer_role = 'assistant'
-    include_query_in_scorer = False
-    include_gists_in_scorer = False
+    default_scorer_role: str = 'assistant'
+    include_query_in_scorer: bool = True
+    include_gists_in_scorer: bool = True
+
+    default_executor_role: str = 'user'
+    format_query_with_prefix: bool = False
+    include_text_in_content: bool = False
+    include_video_note: bool = False
+    use_query_field: bool = False
 
     def collect_executor_messages(
         self,
         query: str,
-        api_manager: BaseEnv,
-        openai_function_name: str,
+        api_manager: Any = None,
+        use_memory: bool = True,
+        store_memory: bool = True,
+        function_name: str = None,
+        **kwargs: Any,
     ) -> List[Message]:
-        """ToolMessenger有特殊的参数和逻辑，需要自定义实现"""
-        system = FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
-        system = system.replace('{openai_function_name}', openai_function_name)
-        task_description = api_manager.openai_name_reflect_all_info[
-            openai_function_name
-        ][1]
-        system = system.replace(
-            '{task_description}',
-            task_description,
+        content = self._build_executor_content(
+            query=query, api_manager=api_manager, function_name=function_name, **kwargs
         )
-        query_all = system + '\n' + query
-        message = Message(role='user', query=query_all)
-        self.executor_messages.append(message)
 
-        return self.executor_messages
+        message_data = {
+            'role': self.default_executor_role,
+        }
+
+        if self.use_query_field:
+            message_data['query'] = content
+        else:
+            message_data['content'] = content
+
+        current_message = Message(**message_data)
+
+        messages_for_inference = []
+        if self.system_prompt_message:
+            messages_for_inference.append(self.system_prompt_message)
+
+        if use_memory:
+            messages_for_inference.extend(self.executor_messages)
+
+        messages_for_inference.append(current_message)
+
+        if store_memory:
+            self.executor_messages.append(current_message)
+
+        return messages_for_inference
+
+    def _build_executor_content(
+        self,
+        query: str,
+        api_manager: Any = None,
+        function_name: str = None,
+        **kwargs: Any,
+    ) -> str:
+        content = f'Task Description: {query}\n'
+
+        content += f"""
+You should utilize the other information in the context history and the information about the tool `{function_name}` to solve the task.
+In the context history, there might have some answers to the task, you should utilize them to better solve and answer the task.
+
+DECISION:
+- First decide whether to call the tool `{function_name}`.
+- If the tool helps even partially, CALL IT. Otherwise, answer directly.
+
+OUTPUT PROTOCOL (MUST follow strictly):
+- If you CALL the tool:
+  - Return ONLY a function call via tool_calls.
+  - Set assistant.content to null (no natural-language text).
+  - Do NOT include any text explanation.
+- If you DO NOT call the tool:
+  - Return ONLY a natural-language answer in assistant.content.
+  - Do NOT include tool_calls.
+"""
+
+        return content
