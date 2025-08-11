@@ -49,7 +49,7 @@ class rapidapi_wrapper(base_env):
         self.rapidapi_key = args.rapidapi_key
         self.use_rapidapi_key = args.use_rapidapi_key
         self.api_customization = args.api_customization
-        self.service_url = 'http://8.130.32.149:8080/rapidapi'
+        self.service_url = os.getenv('SERVICE_URL', 'http://8.130.32.149:8080/rapidapi')
         self.max_observation_length = args.max_observation_length
         self.observ_compress_method = args.observ_compress_method
         self.process_id = process_id
@@ -61,29 +61,30 @@ class rapidapi_wrapper(base_env):
         self.functions = []
         self.api_name_reflect = {}
         self.standard_tool_name_reflect_all_info = {}
-        self.openai_function_names = []
-        self.openai_name_reflect_all_info = {}
+        self.function_names = []
+        self.funcs_to_all_info = {}
 
         data_dict = self.fetch_api_json(query_json)
         self.tool_descriptions = self.build_tool_description(data_dict)
 
         for k, api_json in enumerate(data_dict['api_list']):
             standard_tool_name = tool_descriptions[k][0]
-            openai_function_json, cate_name, pure_api_name, openai_function_name = (
-                self.api_json_to_openai_json(api_json, standard_tool_name)
-            )
+            (
+                openai_function_json,
+                templete,
+                cate_name,
+                pure_api_name,
+                openai_function_name,
+            ) = self.api_json_to_openai_json(api_json, standard_tool_name)
             self.functions.append(openai_function_json)
-            self.openai_function_names.append(openai_function_name)
+            self.function_names.append(openai_function_name)
 
-            self.api_name_reflect[openai_function_json['name']] = pure_api_name
+            self.api_name_reflect[openai_function_json['function']['name']] = (
+                pure_api_name
+            )
             self.tool_names.append(standard_tool_name)
             self.cate_names.append(cate_name)
-            tool_description = tool_descriptions[k][1]
-            api_description = openai_function_json['description']
-            self.openai_name_reflect_all_info[openai_function_name] = [
-                openai_function_json,
-                f'tool description:\n{standard_tool_name}: {tool_description}\n\napi description:\n{pure_api_name}: {api_description}',
-            ]
+            self.funcs_to_all_info[openai_function_name] = [openai_function_json]
 
         finish_func = {
             'name': 'Finish',
@@ -104,11 +105,10 @@ class rapidapi_wrapper(base_env):
             },
         }
 
-        self.functions.append(finish_func)
+        # self.functions.append(finish_func)
         self.CALL_MAX_TIME = 3
         self.task_description = """You should use functions to help handle the real time user querys. Remember:
-1.ALWAYS call \"Finish\" function at the end of the task. And the final answer should contain enough information to show to the user,If you can't handle the task, or you find that function calls always fail(the function is not valid now), use function Finish->give_up_and_restart.
-2.Do not use origin tool names, use only subfunctions' names.
+Do not use origin tool names, use only subfunctions' names.
 You have access of the following tools:\n"""
 
         unduplicated_reflection = {}
@@ -131,8 +131,6 @@ You have access of the following tools:\n"""
             standardize(cont['tool_name']) for cont in data_dict['api_list']
         ]
         tool_des = contain(origin_tool_names, white_list)
-        if not tool_des:
-            return []
         tool_descriptions = [
             [cont['standard_tool_name'], cont['description']] for cont in tool_des
         ]
@@ -181,6 +179,8 @@ You have access of the following tools:\n"""
                 'properties': {},
                 'required': [],
                 'optional': [],
+                # "required": [""],
+                # "optional": [""],
             },
         }
 
@@ -207,62 +207,45 @@ You have access of the following tools:\n"""
                 templete['description']
                 + f'The description of this function is: "{tuncated_description}"'
             )
-        if (
-            'required_parameters' in api_json.keys()
-            and len(api_json['required_parameters']) > 0
-        ):
-            for para in api_json['required_parameters']:
-                name = standardize(para['name'])
-                name = change_name(name)
-                if para['type'] in map_type:
-                    param_type = map_type[para['type']]
-                else:
-                    param_type = 'string'
-                prompt = {
-                    'type': param_type,
-                    'description': para['description'][:description_max_length],
-                }
+        req_params = api_json.get('required_parameters') or []
+        for para in req_params:
+            name = change_name(standardize(para['name']))
+            param_type = map_type.get(para.get('type', ''), 'string')
+            prompt = {
+                'type': param_type,
+                'description': (para.get('description') or '')[:description_max_length],
+            }
+            default_value = para.get('default', None)
+            if default_value not in (None, ''):
+                prompt['example_value'] = default_value
 
-                default_value = para['default']
-                if len(str(default_value)) != 0:
-                    prompt = {
-                        'type': param_type,
-                        'description': para['description'][:description_max_length],
-                        'example_value': default_value,
-                    }
-                else:
-                    prompt = {
-                        'type': param_type,
-                        'description': para['description'][:description_max_length],
-                    }
+            templete['parameters']['properties'][name] = prompt
+            templete['parameters']['required'].append(name)
 
-                templete['parameters']['properties'][name] = prompt
-                templete['parameters']['required'].append(name)
-            for para in api_json['optional_parameters']:
-                name = standardize(para['name'])
-                name = change_name(name)
-                if para['type'] in map_type:
-                    param_type = map_type[para['type']]
-                else:
-                    param_type = 'string'
+        opt_params = api_json.get('optional_parameters') or []
+        for para in opt_params:
+            name = change_name(standardize(para['name']))
+            param_type = map_type.get(para.get('type', ''), 'string')
+            prompt = {
+                'type': param_type,
+                'description': (para.get('description') or '')[:description_max_length],
+            }
+            default_value = para.get('default', None)
+            if default_value not in (None, ''):
+                prompt['example_value'] = default_value
 
-                default_value = para['default']
-                if len(str(default_value)) != 0:
-                    prompt = {
-                        'type': param_type,
-                        'description': para['description'][:description_max_length],
-                        'example_value': default_value,
-                    }
-                else:
-                    prompt = {
-                        'type': param_type,
-                        'description': para['description'][:description_max_length],
-                    }
+            templete['parameters']['properties'][name] = prompt
+            templete['parameters']['optional'].append(name)
 
-                templete['parameters']['properties'][name] = prompt
-                templete['parameters']['optional'].append(name)
+        function_templete = {'type': 'function', 'function': templete}
 
-        return templete, api_json['category_name'], pure_api_name, openai_function_name
+        return (
+            function_templete,
+            templete,
+            api_json['category_name'],
+            pure_api_name,
+            openai_function_name,
+        )
 
     def check_success(self):
         return self.success
@@ -278,8 +261,6 @@ You have access of the following tools:\n"""
 
     def step(self, action, input_str):
         obs, code = self._step(action_name=action, action_input=input_str)
-        if len(obs) > self.max_observation_length:
-            obs = obs[: self.max_observation_length] + '...'
         return obs, code
 
     def _step(self, action_name='', action_input=''):
@@ -298,6 +279,7 @@ You have access of the following tools:\n"""
         11 message contains "error" field
         12 error sending request
         """
+        breakpoint()
         if action_name == 'Finish':
             try:
                 json_data = json.loads(action_input, strict=False)
@@ -333,7 +315,8 @@ You have access of the following tools:\n"""
             else:
                 return '{error:""return_type" is not a valid choice"}', 2
         else:
-            for k, function in enumerate(self.functions):
+            for k, function_dict in enumerate(self.functions):
+                function = function_dict['function']
                 if function['name'].endswith(action_name):
                     pure_api_name = self.api_name_reflect[function['name']]
                     payload = {
@@ -359,32 +342,35 @@ You have access of the following tools:\n"""
                     else:
                         time.sleep(2)  # rate limit: 30 per minute
                         headers = {'toolbench_key': self.toolbench_key}
-                        response = requests.post(
-                            self.service_url, json=payload, headers=headers, timeout=15
-                        )
-                        if response.status_code != 200:
-                            return (
-                                json.dumps(
-                                    {
-                                        'error': f'request invalid, data error. status_code={response.status_code}',
-                                        'response': '',
-                                    }
-                                ),
-                                12,
+                        timeout = None if self.service_url.endswith('virtual') else 15
+                        try:
+                            response = requests.post(
+                                self.service_url,
+                                json=payload,
+                                headers=headers,
+                                timeout=timeout,
                             )
+                        except requests.exceptions.Timeout:
+                            return json.dumps(
+                                {'error': f'Timeout error...', 'response': ''}
+                            ), 5
+                        if response.status_code != 200:
+                            return json.dumps(
+                                {
+                                    'error': f'request invalid, data error. status_code={response.status_code}',
+                                    'response': '',
+                                }
+                            ), 12
                         try:
                             response = response.json()
-                        except json.JSONDecodeError:
+                        except:
                             print(response)
-                            return (
-                                json.dumps(
-                                    {
-                                        'error': 'request invalid, data error',
-                                        'response': '',
-                                    }
-                                ),
-                                12,
-                            )
+                            return json.dumps(
+                                {
+                                    'error': f'request invalid, data error',
+                                    'response': '',
+                                }
+                            ), 12
                     # 1 Hallucinating function names
                     # 4 means that the model decides to pruning by itself
                     # 5 represents api call timeout

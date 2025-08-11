@@ -10,12 +10,11 @@ from .api_server import standardize
 
 def method_converter(env, query):
     """Convert method using CTM"""
-    from ctm_ai.ctms import CTM
+    from ctm_ai.ctms import ToolCTM
 
-    ctm = CTM(io_function=env, ctm_name='toolbench')
-    answer = ctm.forward(
+    ctm = ToolCTM(api_manager=env, ctm_name='toolbench')
+    answer = ctm(
         query=query,
-        io_function=env,
     )
     return answer
 
@@ -48,6 +47,7 @@ def run_single_task(
 
     [callback.on_tool_retrieval_start() for callback in callbacks]
     env = rapidapi_wrapper(data_dict, tool_des, args, process_id=process_id)
+    breakpoint()
     [callback.on_tool_retrieval_end(tools=env.functions) for callback in callbacks]
     query = data_dict['query']
 
@@ -79,7 +79,15 @@ def run_single_task(
         )
         for callback in callbacks
     ]
-
+    if output_dir_path is not None:
+        with open(output_file_path, 'w') as writer:
+            data = {}
+            data['query'] = query
+            data['query_id'] = query_id
+            data['final_answer'] = answer
+            json.dump(data, writer, indent=2)
+            success = True
+            print(colored(f'[process({process_id})]valid={success}', 'green'))
     return answer
 
 

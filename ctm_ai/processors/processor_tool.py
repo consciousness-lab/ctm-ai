@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from ..apis import BaseEnv
 from ..chunks import Chunk
@@ -10,16 +10,23 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor('tool_processor')
 class ToolProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['OPENAI_API_KEY', 'TOOLBENCH_KEY']
+    def __init__(self, name: str, group_name: str = None, *args, **kwargs):
+        # Extract api_manager from kwargs before calling super().__init__
+        self.api_manager = kwargs.get('api_manager', None)
+        super().__init__(name, group_name, *args, **kwargs)
 
     def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger.create_messenger('tool_messenger')
+        return BaseMessenger('tool_messenger')
 
     def init_executor(
         self, system_prompt: str = None, model: str = None
     ) -> BaseExecutor:
         return BaseExecutor(
-            name='tool_executor', system_prompt=system_prompt, model=model
+            name='tool_executor',
+            system_prompt=system_prompt,
+            model=model,
+            api_manager=self.api_manager,
+            function_name=self.name,  # Pass processor name as function name
         )
 
     def init_scorer(self) -> BaseScorer:
@@ -28,38 +35,62 @@ class ToolProcessor(BaseProcessor):
     def ask(
         self,
         query: str,
-        api_manager: BaseEnv,
+        api_manager: Any = None,
+        use_memory: bool = True,  # Whether to condition on memory
+        store_memory: bool = True,  # Whether to store input-output pair in memory
         **kwargs,
     ) -> Chunk:
-        openai_function_name = self.name
+        # Collect executor messages with or without memory
         executor_messages = self.messenger.collect_executor_messages(
             query=query,
             api_manager=api_manager,
-            openai_function_name=openai_function_name,
+            use_memory=use_memory,
+            store_memory=store_memory,
+            function_name=self.name,
         )
 
+        # Ask executor
         executor_output = self.executor.ask(
             messages=executor_messages,
             api_manager=api_manager,
-            openai_function_name=openai_function_name,
+            function_name=self.name,
+            query=query,
         )
 
+        # Collect scorer messages with or without memory
         scorer_messages = self.messenger.collect_scorer_messages(
             query=query,
+            executor_output=executor_output,
             api_manager=api_manager,
-            openai_function_name=openai_function_name,
-            executor_output=executor_output,
+            use_memory=use_memory,
+            store_memory=store_memory,
+            function_name=self.name,
+        )
+        scorer_use_llm = (
+            getattr(self.config, 'scorer_use_llm', True)
+            if hasattr(self, 'config')
+            else True
+        )
+        scorer_output = self.scorer.ask(
+            messages=scorer_messages, use_llm=scorer_use_llm
         )
 
-        scorer_output = self.scorer.ask(messages=scorer_messages)
+        # Store in memory if specified
+        if store_memory:
+            self.messenger.update(
+                executor_output=executor_output,
+                scorer_output=scorer_output,
+            )
 
-        self.messenger.update(
-            executor_output=executor_output,
-            scorer_output=scorer_output,
-        )
+        # Use additional_question from executor output
+        additional_question = executor_output.additional_question or ''
 
+        # Merge outputs into a chunk
         chunk = self.merge_outputs_into_chunk(
-            name=self.name, scorer_output=scorer_output, executor_output=executor_output
+            name=self.name,
+            scorer_output=scorer_output,
+            executor_output=executor_output,
+            additional_question=additional_question,
         )
         return chunk
 
