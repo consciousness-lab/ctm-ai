@@ -12,21 +12,21 @@ from ..utils import ask_llm_standard, configure_litellm, score_exponential_backo
 
 
 class BaseScorer(object):
-    _scorer_registry: Dict[str, Type['BaseScorer']] = {}
+    _scorer_registry: Dict[str, Type["BaseScorer"]] = {}
 
     @classmethod
     def register_scorer(
         cls, name: str
-    ) -> Callable[[Type['BaseScorer']], Type['BaseScorer']]:
+    ) -> Callable[[Type["BaseScorer"]], Type["BaseScorer"]]:
         def decorator(
-            subclass: Type['BaseScorer'],
-        ) -> Type['BaseScorer']:
+            subclass: Type["BaseScorer"],
+        ) -> Type["BaseScorer"]:
             cls._scorer_registry[name] = subclass
             return subclass
 
         return decorator
 
-    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> 'BaseScorer':
+    def __new__(cls, name: str, *args: Any, **kwargs: Any) -> "BaseScorer":
         if name not in cls._scorer_registry:
             raise ValueError(f"No scorer registered with name '{name}'")
         instance = super(BaseScorer, cls).__new__(cls._scorer_registry[name])
@@ -40,11 +40,11 @@ class BaseScorer(object):
     def init_scorer(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the scorer with LiteLLM support."""
         # Default configuration for LiteLLM
-        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
-        self.embedding_model = kwargs.get('embedding_model', 'text-embedding-3-small')
-        self.relevance_model = kwargs.get('relevance_model', self.model_name)
-        self.confidence_model = kwargs.get('confidence_model', self.model_name)
-        self.surprise_model = kwargs.get('scorer_model', self.model_name)
+        self.model_name = kwargs.get("model", "gemini/gemini-2.0-flash-lite")
+        self.embedding_model = kwargs.get("embedding_model", "text-embedding-3-small")
+        self.relevance_model = kwargs.get("relevance_model", self.model_name)
+        self.confidence_model = kwargs.get("confidence_model", self.model_name)
+        self.surprise_model = kwargs.get("scorer_model", self.model_name)
 
         # Configure LiteLLM
         configure_litellm(model_name=self.model_name)
@@ -53,9 +53,9 @@ class BaseScorer(object):
         """Get embedding using LiteLLM."""
         try:
             response = embedding(model=self.embedding_model, input=[text])
-            return np.array(response.data[0]['embedding'], dtype=np.float32)
+            return np.array(response.data[0]["embedding"], dtype=np.float32)
         except Exception as e:
-            print(f'Error getting embedding: {e}')
+            print(f"Error getting embedding: {e}")
             # Return zero vector as fallback
             return np.zeros(1536, dtype=np.float32)
 
@@ -97,21 +97,16 @@ class BaseScorer(object):
     def _ask_llm_relevance(self, query: str, gist: str) -> float:
         relevance_prompt = [
             Message(
-                role='user',
-                content=f"""Please evaluate how relevant the answer is to the question on a scale from 0.0 to 1.0.
+                role="user",
+                content=f"""Please evaluate how relevant the answer is to the question on a scale from 0.0 to 1.0. Extra explanation should increase the score if it supports or clarifies the judgment. 
 
 Question: {query}
 Answer: {gist}
 
 Consider:
-- 1.0 = Perfectly relevant, directly answers the question with specific information
-- 0.8 = Highly relevant, mostly answers the question with useful information
-- 0.6 = Moderately relevant, partially answers the question
-- 0.4 = Somewhat relevant, tangentially related but not very helpful
-- 0.2 = Barely relevant, weak connection or very general response
+- 1.0 = Perfectly relevant, answers the question with specific information
+- 0.5 = Somewhat relevant, tangentially related but not very helpful
 - 0.0 = Not relevant, refuses to answer, says "cannot determine", or completely unrelated
-
-IMPORTANT: If the answer says "I cannot determine", "I don't know", "cannot answer", or refuses to provide information, score it as 0.0.
 
 Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
             )
@@ -147,7 +142,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
             else:
                 topical_score = cosine_similarity([query_emb], [gist_emb])[0][0]
         except Exception as e:
-            print(f'[Embedding Error] {e}')
+            print(f"[Embedding Error] {e}")
             topical_score = 0.0
         return float(topical_score)
 
@@ -179,7 +174,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
         """Use LLM to assess confidence in the response."""
         confidence_prompt = [
             Message(
-                role='user',
+                role="user",
                 content=f"""Please evaluate how confident this response appears to be on a scale from 0.0 to 1.0.
 
 Response: {gist}
@@ -240,7 +235,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
     def ask_surprise(
         self,
         messages: List[Message],
-        lang: str = 'en',
+        lang: str = "en",
         use_llm: bool = True,
     ) -> float:
         """
@@ -269,7 +264,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
         """Use LLM to assess how surprising or novel the response is."""
         surprise_prompt = [
             Message(
-                role='user',
+                role="user",
                 content=f"""Please evaluate how surprising, unexpected, or novel this response is on a scale from 0.0 to 1.0.
 
 Response: {gist}
@@ -341,7 +336,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
         surprise = self.ask_surprise(messages, use_llm=use_llm, **kwargs)
 
         # Calculate composite weight
-        weight = relevance * confidence * surprise
+        weight = relevance + confidence + (surprise * 0.2)
 
         return Message(
             relevance=relevance,
