@@ -10,7 +10,7 @@ from ..configs import ConsciousTuringMachineConfig
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-from ..utils import logging_func_with_count
+from ..utils import logger, logging_func_with_count
 
 if TYPE_CHECKING:
     pass
@@ -216,10 +216,13 @@ class BaseConsciousTuringMachine(ABC):
         )
 
         for chunk in chunks:
-            if chunk.relevance >= 0.8:
+            if chunk.relevance >= 0.5:
                 self.processor_graph.add_link(
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
+                )
+                logger.info(
+                    f'Added link between {winning_chunk.processor_name} and {chunk.processor_name}'
                 )
             elif chunk.relevance <= 0.2:
                 self.processor_graph.remove_link(
