@@ -33,8 +33,8 @@ def run_instance(test_file, output_file='ctm.jsonl'):
     answer = ctm(
         query=query,
         text=target_sentence,
-        # video_frames_path=file_paths,
-        # audio_path=audio_path,
+        video_frames_path=file_paths,
+        audio_path=audio_path,
     )
 
     print('------------------------------------------')
@@ -58,7 +58,8 @@ if __name__ == '__main__':
 
     test_list = list(dataset.keys())
     print(f'Total Test Cases: {len(test_list)}')
-    test_list = test_list[30:]
+    run_instance('2_477')
+    # test_list = test_list[30:]
 
-    for test_file in test_list:
-        run_instance(test_file)
+    # for test_file in test_list:
+    #     run_instance(test_file)

@@ -10,7 +10,7 @@ from ..configs import ConsciousTuringMachineConfig
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-from ..utils import logging_func_with_count
+from ..utils import logger, logging_func_with_count
 
 if TYPE_CHECKING:
     pass
@@ -221,10 +221,18 @@ class BaseConsciousTuringMachine(ABC):
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
                 )
+                logger.info(
+                    f'Added processor link: {winning_chunk.processor_name} -> {chunk.processor_name} '
+                    f'(relevance: {chunk.relevance:.3f})'
+                )
             elif chunk.relevance <= 0.2:
                 self.processor_graph.remove_link(
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
+                )
+                logger.info(
+                    f'Removed processor link: {winning_chunk.processor_name} -> {chunk.processor_name} '
+                    f'(relevance: {chunk.relevance:.3f})'
                 )
 
     @logging_func_with_count
@@ -245,11 +253,16 @@ class BaseConsciousTuringMachine(ABC):
                     dirty.add(nbr)
                     continue
 
+                logger.info(f'[CHUNK_ASK] {chunk.processor_name} -> {nbr}: {q}')
                 answer_chunk = proc_map[nbr].ask(
                     query=q,
                     use_memory=False,
                     store_memory=False,
                     **input_kwargs,
+                )
+                logger.info(
+                    f'[CHUNK_QUESTION] {nbr} -> {chunk.processor_name}: {q}'
+                    f'[CHUNK_RESPONSE] {nbr} -> {chunk.processor_name}: {answer_chunk.gist}'
                 )
                 input_kwargs['text'] += '(additional information: {})'.format(
                     answer_chunk.gist

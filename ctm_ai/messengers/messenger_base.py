@@ -2,6 +2,18 @@ from typing import Any, Callable, Dict, List, Optional, Type
 
 from .message import Message
 
+JSON_FORMAT_INSTRUCTION = """
+You should utilize the other information in the context history and modality-specific information to answer the query.
+In the context history, there might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones in the context history.
+Please respond in JSON format with the following structure:
+{
+    "response": "Your detailed response to the query",
+    "additional_question": "If you are not sure about the answer, you should generate a question that potentially can be answered by other modality models or other tools like search engine."
+}
+
+Your additional_question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about.
+Your additional_question should be just about what kind of information you need to get from other modality models or other tools like search engine, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what is the caption of the image, etc. The question needs to be short and clean."""
+
 
 class BaseMessenger(object):
     _messenger_registry: Dict[str, Type['BaseMessenger']] = {}
@@ -122,7 +134,7 @@ class BaseMessenger(object):
         self.executor_messages.clear()
         self.scorer_messages.clear()
 
-    def _build_executor_content(
+    def _build_executor_memory_content(
         self,
         query: str,
         text: Optional[str] = None,
@@ -139,20 +151,20 @@ class BaseMessenger(object):
 
         if self.include_video_note and video_frames_path:
             content += f'Note: The input contains {len(video_frames_path)} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n'
+        return content
 
-        # Add JSON format requirement
-        content += """
-You should utilize the other information in the context history and modality-specific information to answer the query.
-In the context history, there might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones in the context history.
-Please respond in JSON format with the following structure:
-{
-    "response": "Your detailed response to the query",
-    "additional_question": "If you are not sure about the answer, you should generate a question that potentially can be answered by other modality models or other tools like search engine."
-}
+    def _build_executor_inference_content(
+        self,
+        query: str,
+        text: Optional[str] = None,
+        video_frames_path: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> str:
+        content = self._build_executor_memory_content(
+            query=query, text=text, video_frames_path=video_frames_path, **kwargs
+        )
 
-Your additional_question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about.
-Your additional_question should be just about what kind of information you need to get from other modality models or other tools like search engine, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what is the caption of the image, etc. The question needs to be short and clean."""
-
+        # Removed JSON format requirement from here, it will be added to the system prompt
         return content
 
     def collect_executor_messages(
@@ -171,36 +183,41 @@ Your additional_question should be just about what kind of information you need 
         store_memory: bool = True,
         **kwargs: Any,
     ) -> List[Message]:
-        content = self._build_executor_content(
+        # Content for the current inference call (includes instructions)
+        inference_content = self._build_executor_inference_content(
             query=query, text=text, video_frames_path=video_frames_path, **kwargs
         )
 
-        message_data = {
+        # Content for storing in memory (does not include instructions)
+        memory_content = self._build_executor_memory_content(
+            query=query, text=text, video_frames_path=video_frames_path, **kwargs
+        )
+
+        # Prepare message for the current inference call
+        inference_message_data = {
             'role': self.default_executor_role,
         }
-
         if self.use_query_field:
-            message_data['query'] = content
+            inference_message_data['query'] = inference_content
         else:
-            message_data['content'] = content
+            inference_message_data['content'] = inference_content
 
-        # Add multimodal information to message
         if image is not None:
-            message_data['image'] = image
+            inference_message_data['image'] = image
         if image_path is not None:
-            message_data['image_path'] = image_path
+            inference_message_data['image_path'] = image_path
         if audio is not None:
-            message_data['audio'] = audio
+            inference_message_data['audio'] = audio
         if audio_path is not None:
-            message_data['audio'] = audio_path
+            inference_message_data['audio'] = audio_path
         if video_frames is not None:
-            message_data['video_frames'] = video_frames
+            inference_message_data['video_frames'] = video_frames
         if video_frames_path is not None:
-            message_data['video_frames_path'] = video_frames_path
+            inference_message_data['video_frames_path'] = video_frames_path
         if video_path is not None:
-            message_data['video_path'] = video_path
+            inference_message_data['video_path'] = video_path
 
-        current_message = Message(**message_data)
+        current_inference_message = Message(**inference_message_data)
 
         # Build the list of messages for the current inference
         messages_for_inference = []
@@ -210,11 +227,36 @@ Your additional_question should be just about what kind of information you need 
         if use_memory:
             messages_for_inference.extend(self.executor_messages)
 
-        messages_for_inference.append(current_message)
+        messages_for_inference.append(current_inference_message)
 
         # Store the current user message in memory if required
         if store_memory:
-            self.executor_messages.append(current_message)
+            memory_message_data = {
+                'role': self.default_executor_role,
+            }
+            if self.use_query_field:
+                memory_message_data['query'] = memory_content
+            else:
+                memory_message_data['content'] = memory_content
+
+            # Add multimodal information to message for memory
+            if image is not None:
+                memory_message_data['image'] = image
+            if image_path is not None:
+                memory_message_data['image_path'] = image_path
+            if audio is not None:
+                memory_message_data['audio'] = audio
+            if audio_path is not None:
+                memory_message_data['audio'] = audio_path
+            if video_frames is not None:
+                memory_message_data['video_frames'] = video_frames
+            if video_frames_path is not None:
+                memory_message_data['video_frames_path'] = video_frames_path
+            if video_path is not None:
+                memory_message_data['video_path'] = video_path
+
+            current_memory_message = Message(**memory_message_data)
+            self.executor_messages.append(current_memory_message)
 
         return messages_for_inference
 

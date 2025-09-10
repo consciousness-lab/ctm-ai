@@ -6,8 +6,9 @@ from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..executors import BaseExecutor
-from ..messengers import BaseMessenger, Message
+from ..messengers import JSON_FORMAT_INSTRUCTION, BaseMessenger, Message
 from ..scorers import BaseScorer
+from ..utils import logger, logging_func_with_count
 
 
 class BaseProcessor(object):
@@ -49,6 +50,12 @@ class BaseProcessor(object):
         self.group_name = group_name
         self.system_prompt = kwargs.get('system_prompt')
         self.model = kwargs.get('model')
+
+        # Append the JSON format instruction to the system prompt
+        if self.system_prompt:
+            self.system_prompt += '\n' + JSON_FORMAT_INSTRUCTION
+        else:
+            self.system_prompt = JSON_FORMAT_INSTRUCTION
 
         self.executor = self.init_executor(
             system_prompt=self.system_prompt, model=self.model
@@ -200,18 +207,20 @@ class BaseProcessor(object):
 
         return {
             'processor_name': self.name,
-            'memory_mode': self.memory_mode,
+            # 'memory_mode': self.memory_mode,
             'executor_message_count': executor_count,
             'scorer_message_count': scorer_count,
             'recent_executor_gist': recent_executor.gist if recent_executor else None,
-            'recent_scorer_scores': {
-                'relevance': recent_scorer.relevance if recent_scorer else None,
-                'confidence': recent_scorer.confidence if recent_scorer else None,
-                'surprise': recent_scorer.surprise if recent_scorer else None,
-                'weight': recent_scorer.weight if recent_scorer else None,
-            }
-            if recent_scorer
-            else None,
+            'recent_scorer_scores': (
+                {
+                    'relevance': recent_scorer.relevance if recent_scorer else None,
+                    'confidence': recent_scorer.confidence if recent_scorer else None,
+                    'surprise': recent_scorer.surprise if recent_scorer else None,
+                    'weight': recent_scorer.weight if recent_scorer else None,
+                }
+                if recent_scorer
+                else None
+            ),
         }
 
     def update(self, chunk: Chunk) -> None:
