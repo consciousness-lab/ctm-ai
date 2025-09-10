@@ -32,6 +32,24 @@ class AudioExecutor(BaseExecutor):
             raise ValueError(f'Unsupported audio format: {extension}')
         return self.mime_types[extension]
 
+    def _ensure_user_tail(self, litellm_messages: List[dict]) -> int:
+        for i in range(len(litellm_messages) - 1, -1, -1):
+            if litellm_messages[i].get('role') == 'user':
+                return i
+        litellm_messages.append({'role': 'user', 'content': []})
+        return len(litellm_messages) - 1
+
+    def _ensure_content_list(self, msg: dict) -> None:
+        c = msg.get('content')
+        if c is None:
+            msg['content'] = []
+        elif isinstance(c, str):
+            msg['content'] = [{'type': 'text', 'text': c}]
+        elif isinstance(c, list):
+            pass
+        else:
+            msg['content'] = [{'type': 'text', 'text': str(c)}]
+
     @message_exponential_backoff()
     def ask(
         self,
@@ -57,7 +75,12 @@ class AudioExecutor(BaseExecutor):
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f'Audio file not found: {audio_path}')
 
-        query = messages[-1].content
+        litellm_messages = [
+            self.convert_message_to_litellm_format(msg) for msg in messages
+        ]
+
+        tail_idx = self._ensure_user_tail(litellm_messages)
+        self._ensure_content_list(litellm_messages[tail_idx])
 
         try:
             # Get MIME type for audio file
@@ -69,23 +92,18 @@ class AudioExecutor(BaseExecutor):
 
             encoded_data = base64.b64encode(audio_bytes).decode('utf-8')
 
-            # Create message with audio content for LiteLLM (following Gemini docs)
-            audio_message = {
-                'role': 'user',
-                'content': [
-                    {'type': 'text', 'text': query},
-                    {
-                        'type': 'file',
-                        'file': {
-                            'file_data': f'data:{mime_type};base64,{encoded_data}',
-                        },
+            litellm_messages[tail_idx]['content'].append(
+                {
+                    'type': 'file',
+                    'file': {
+                        'file_data': f'data:{mime_type};base64,{encoded_data}',
                     },
-                ],
-            }
+                }
+            )
 
             # Use the unified ask_base method
             return self.ask_base(
-                messages=[audio_message],
+                messages=litellm_messages,
                 model=model,
                 default_additional_question='Would you like me to analyze any specific aspects of this audio in more detail?',
             )
