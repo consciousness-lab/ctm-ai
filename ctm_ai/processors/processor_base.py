@@ -93,6 +93,7 @@ class BaseProcessor(object):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        api_manager: Any = None,
         use_memory: bool = True,  # Whether to condition on memory
         store_memory: bool = True,  # Whether to store input-output pair in memory
     ) -> Chunk:
@@ -107,6 +108,7 @@ class BaseProcessor(object):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
+            api_manager=api_manager,
             use_memory=use_memory,
             store_memory=store_memory,
         )
@@ -118,6 +120,7 @@ class BaseProcessor(object):
             audio_path=audio_path,
             video_frames_path=video_frames_path,
             video_path=video_path,
+            api_manager=api_manager,
         )
 
         # Collect scorer messages with or without memory
@@ -132,6 +135,7 @@ class BaseProcessor(object):
             video_frames_path=video_frames_path,
             video_path=video_path,
             executor_output=executor_output,
+            api_manager=api_manager,
             use_memory=use_memory,
             store_memory=store_memory,
         )

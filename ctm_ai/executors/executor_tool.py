@@ -17,7 +17,7 @@ class ToolExecutor(BaseExecutor):
         self,
         name: str,
         use_builtin_tools: bool = True,
-        io_function=None,
+        api_manager=None,
         openai_function_names: Optional[Union[str, List[str]]] = None,
         custom_functions: Optional[List[Dict[str, Any]]] = None,
         *args,
@@ -29,14 +29,14 @@ class ToolExecutor(BaseExecutor):
         Args:
             name: Executor name
             use_builtin_tools: Whether to use builtin tools (default: True)
-            io_function: External tool interface (optional)
+            api_manager: External tool interface (optional)
             openai_function_names: External tool function name list (optional)
             custom_functions: Custom function list (optional)
         """
         super().__init__(name, *args, **kwargs)
 
         # Initialize tool configuration
-        self.io_function = io_function
+        self.api_manager = api_manager
         self.configured_functions = []
 
         # Add builtin tools
@@ -44,13 +44,13 @@ class ToolExecutor(BaseExecutor):
             self.configured_functions.extend(get_builtin_tool_definitions())
 
         # Add external tools
-        if io_function and openai_function_names:
+        if api_manager and openai_function_names:
             if isinstance(openai_function_names, str):
                 openai_function_names = [openai_function_names]
 
             for func_name in openai_function_names:
                 try:
-                    external_function = io_function.openai_name_reflect_all_info[
+                    external_function = api_manager.openai_name_reflect_all_info[
                         func_name
                     ][0]
                     self.configured_functions.append(external_function)
@@ -146,9 +146,9 @@ class ToolExecutor(BaseExecutor):
                 )
 
             # Handle external tool calls
-            elif self.io_function:
+            elif self.api_manager:
                 return self._handle_external_tool_call(
-                    messages, self.io_function, function_name, function_arguments
+                    messages, self.api_manager, function_name, function_arguments
                 )
 
             # Unknown tool
@@ -174,17 +174,17 @@ class ToolExecutor(BaseExecutor):
         """Dynamically add custom function"""
         self.configured_functions.append(function_definition)
 
-    def add_external_tool(self, io_function, openai_function_name: str):
+    def add_external_tool(self, api_manager, openai_function_name: str):
         """Dynamically add external tool"""
         try:
-            external_function = io_function.openai_name_reflect_all_info[
+            external_function = api_manager.openai_name_reflect_all_info[
                 openai_function_name
             ][0]
             self.configured_functions.append(external_function)
             if openai_function_name not in self.openai_function_names:
                 self.openai_function_names.append(openai_function_name)
-            if not self.io_function:
-                self.io_function = io_function
+            if not self.api_manager:
+                self.api_manager = api_manager
         except Exception as e:
             print(f'Unable to add external tool {openai_function_name}: {e}')
 
@@ -235,13 +235,13 @@ class ToolExecutor(BaseExecutor):
     def _handle_external_tool_call(
         self,
         messages: List[Message],
-        io_function,
+        api_manager,
         function_name: str,
         function_arguments: str,
     ) -> Message:
         """Handle external tool calls"""
         try:
-            observation, status = io_function.step(function_name, function_arguments)
+            observation, status = api_manager.step(function_name, function_arguments)
 
             # Get original query
             original_query = ''
