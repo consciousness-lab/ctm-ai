@@ -29,7 +29,7 @@ class APIProcessor(BaseProcessor):
         query: str,
         api_manager: Any = None,
         use_memory: bool = True,  # Whether to condition on memory
-        store_memory: bool = True,  # Whether to store input-output pair in memory
+        store_memory: bool = False,  # Whether to store input-output pair in memory
         **kwargs,
     ) -> Chunk:
         # Collect executor messages with or without memory

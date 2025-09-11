@@ -180,7 +180,7 @@ class BaseMessenger(object):
         video_path: Optional[str] = None,
         api_manager: Any = None,
         use_memory: bool = True,
-        store_memory: bool = True,
+        store_memory: bool = False,
         **kwargs: Any,
     ) -> List[Message]:
         # Content for the current inference call (includes instructions)
@@ -257,6 +257,7 @@ class BaseMessenger(object):
 
             current_memory_message = Message(**memory_message_data)
             self.executor_messages.append(current_memory_message)
+            breakpoint()
 
         return messages_for_inference
 
@@ -265,7 +266,7 @@ class BaseMessenger(object):
         executor_output: Message,
         query: str,
         use_memory: bool = True,
-        store_memory: bool = True,
+        store_memory: bool = False,
         **kwargs: Any,
     ) -> List[Message]:
         message_data = {

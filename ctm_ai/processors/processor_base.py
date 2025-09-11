@@ -102,7 +102,7 @@ class BaseProcessor(object):
         video_path: Optional[str] = None,
         api_manager: Any = None,
         use_memory: bool = True,  # Whether to condition on memory
-        store_memory: bool = True,  # Whether to store input-output pair in memory
+        store_memory: bool = False,  # Whether to store input-output pair in memory
     ) -> Chunk:
         # Collect executor messages with or without memory
         executor_messages = self.messenger.collect_executor_messages(
@@ -119,7 +119,9 @@ class BaseProcessor(object):
             use_memory=use_memory,
             store_memory=store_memory,
         )
-
+        print(store_memory)
+        print(len(executor_messages))
+        print(executor_messages)
         # Ask executor
         executor_output = self.executor.ask(
             messages=executor_messages,
