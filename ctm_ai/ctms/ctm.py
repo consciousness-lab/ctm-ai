@@ -5,7 +5,7 @@ from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..configs import ConsciousTuringMachineConfig
-from ..utils import logging_func_with_count
+from ..utils import logger, logging_func_with_count
 from .ctm_base import BaseConsciousTuringMachine
 
 if TYPE_CHECKING:
@@ -85,10 +85,7 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
 
     @logging_func_with_count
     def go_up(self, query: str, **input_kwargs) -> Tuple[Chunk, List[Chunk]]:
-        for processor in self.processor_graph.nodes:
-            processor.clear_memory()
-
-        chunks = self.ask_processors(query, **input_kwargs)
+        chunks = self.ask_processors(query, use_memory=True, store_memory=False,**input_kwargs)
         chunks = self.fuse_processor(chunks, query, **input_kwargs)
         winning_chunk = self.uptree_competition(chunks)
         return winning_chunk, chunks

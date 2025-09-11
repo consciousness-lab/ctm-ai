@@ -22,6 +22,24 @@ class VideoExecutor(BaseExecutor):
         img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
         return img_str
 
+    def _ensure_user_tail(self, litellm_messages: List[dict]) -> int:
+        for i in range(len(litellm_messages) - 1, -1, -1):
+            if litellm_messages[i].get('role') == 'user':
+                return i
+        litellm_messages.append({'role': 'user', 'content': []})
+        return len(litellm_messages) - 1
+
+    def _ensure_content_list(self, msg: dict) -> None:
+        c = msg.get('content')
+        if c is None:
+            msg['content'] = []
+        elif isinstance(c, str):
+            msg['content'] = [{'type': 'text', 'text': c}]
+        elif isinstance(c, list):
+            pass
+        else:
+            msg['content'] = [{'type': 'text', 'text': str(c)}]
+
     @message_exponential_backoff()
     def ask(
         self,
@@ -50,20 +68,17 @@ class VideoExecutor(BaseExecutor):
 
         # Load video frames (returns PIL Image objects)
         pil_images = load_images(video_frames_path)
+        litellm_messages = [
+            self.convert_message_to_litellm_format(msg) for msg in messages
+        ]
 
-        # Convert messages to text
-        message_text = ' '.join([msg.content for msg in messages if msg.content])
-
-        # Create message with video frames for LiteLLM (following Gemini docs)
-        video_message = {
-            'role': 'user',
-            'content': [{'type': 'text', 'text': message_text}],
-        }
+        tail_idx = self._ensure_user_tail(litellm_messages)
+        self._ensure_content_list(litellm_messages[tail_idx])
 
         # Add image frames to the message (convert PIL images to base64)
         for pil_image in pil_images:
             base64_image = self.pil_to_base64(pil_image)
-            video_message['content'].append(
+            litellm_messages[tail_idx]['content'].append(
                 {
                     'type': 'image_url',
                     'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
@@ -72,7 +87,7 @@ class VideoExecutor(BaseExecutor):
 
         # Use the unified ask_base method
         return self.ask_base(
-            messages=[video_message],
+            messages=litellm_messages,
             model=model,
             default_additional_question='Would you like me to analyze any specific aspects of this video in more detail?',
         )
