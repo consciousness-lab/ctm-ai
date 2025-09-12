@@ -17,7 +17,6 @@ class VisionProcessor(BaseProcessor):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        self._init_info(*args, **kwargs)
         image_path = kwargs.get('image_path')
         if not image_path:
             return [{'role': 'assistant', 'content': ''}]

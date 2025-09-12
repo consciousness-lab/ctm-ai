@@ -11,9 +11,6 @@ from .processor_base import BaseProcessor
 class VideoProcessor(BaseProcessor):
     REQUIRED_KEYS = ['GEMINI_API_KEY']
 
-    def _init_info(self, *args: Any, **kwargs: Any) -> None:
-        self.system_prompt = 'You are an expert in video analysis. Your task is to watch the provided video frames and answer questions about the events, objects, and actions depicted.'
-
     def pil_to_base64(self, image) -> str:
         """Convert PIL image to base64 string."""
         buffer = io.BytesIO()
@@ -27,7 +24,6 @@ class VideoProcessor(BaseProcessor):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        self._init_info(*args, **kwargs)
         video_frames_path = kwargs.get('video_frames_path')
         if not video_frames_path:
             return [{'role': 'assistant', 'content': ''}]

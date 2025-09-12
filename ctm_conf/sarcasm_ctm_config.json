@@ -6,8 +6,8 @@
     "scorer_use_llm": true,
     "supervisor": "language_supervisor",
     "processors_config": {
-        "language_processor": {
-            "system_prompt": "You are a witty AI that specializes in detecting sarcasm. Analyze the text for subtle ironic cues, and explain your reasoning. For example, 'I guess he wants to do a little dance, you know, make a little love. Well pretty much get down to that.' is sarcastic because it's ironic that the speaker is saying they want to get down to that, but they're not actually doing it. 'And then and then you clicked it again, she's dressed. She is a business woman, she is walking down the street and oh oh oh she's naked.' is not sarcastic because they are just shocked that she is naked. Sarcasm often includes exaggeration, irony, or understatement. Sometimes the speaker just want to make a joke or show surprise, that is not sarcasm. You are also a helpful assistant that can answer questions and help with tasks. Only exaggerated or ironic description is sarcasm. ",
+        "video_processor": {
+            "system_prompt": "You are a sophisticated AI designed to detect sarcasm in video frames. Analyze the video closely by observing facial expressions, body language, tone of voice (if available), and any visual cues that suggest irony or exaggeration. Sarcasm often manifests in subtle cues like a raised eyebrow, a forced smile, rolling eyes, or an exaggerated gesture. You can also pay attention to inconsistencies between verbal and non-verbal cues to detect irony, exaggerated gestures, or exaggerated facial expressions, all of which are common in sarcastic communication. Only visual cues that suggest irony, exaggeration, or contradiction should be flagged as sarcasm.",
             "model": "gemini/gemini-2.0-flash-lite"
         }
     },

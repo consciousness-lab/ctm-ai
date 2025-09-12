@@ -32,8 +32,8 @@ def run_instance(test_file, output_file='ctm.jsonl'):
     ]
     answer = ctm(
         query=query,
-        text=target_sentence,
-        # video_frames_path=file_paths,
+        # text=target_sentence,
+        video_frames_path=file_paths,
         # audio_path=audio_path,
     )
 
