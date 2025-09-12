@@ -1,8 +1,8 @@
 import json
 
 JSON_FORMAT = """
-You should utilize the other information in the context history and modality-specific information to answer the query.
-In the context history, there might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones in the context history.
+You should utilize the information in the context history and modality-specific information to answer the query.
+There might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones.
 Please respond in JSON format with the following structure:
 {
     "response": "Your detailed response to the query",
