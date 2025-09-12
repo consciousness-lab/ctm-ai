@@ -102,11 +102,11 @@ class BaseProcessor(object):
         if len(self.fuse_history) > 0:
             content += '\nThere are some previous answers from other processors about the additional questions:\n'
             for i, item in enumerate(self.fuse_history, 1):
-                content += f'{i}. Question: {item["additional_question"]}\n'
+                content += f'{i}. Additional Questions: {item["additional_question"]}\n'
                 content += f'   Answer: {item["answer"]}\n'
 
         if len(self.winner_answer) > 0:
-            content += '\nThere are some previous answers from to the query:\n'
+            content += '\nThere are some previous answers to the same query, you should consider these answers, remeber these answers may not be correct:\n'
             for i, item in enumerate(self.winner_answer, 1):
                 content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
@@ -164,6 +164,7 @@ class BaseProcessor(object):
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
+        clean_query = query
         query = self._build_executor_content(
             query=query,
             text=text,
@@ -192,9 +193,11 @@ class BaseProcessor(object):
             default_additional_question='Would you like me to explain any specific aspects in more detail?',
         )
         if is_fuse:
-            self.add_fuse_history(query, executor_output['response'])
+            self.add_fuse_history(clean_query, executor_output['response'])
         self.add_all_context_history(
-            query, executor_output['response'], executor_output['additional_question']
+            clean_query,
+            executor_output['response'],
+            executor_output['additional_question'],
         )
 
         scorer = BaseScorer(*args, **kwargs)
