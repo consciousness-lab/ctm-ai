@@ -258,9 +258,7 @@ class BaseConsciousTuringMachine(ABC):
         for idx, chunk in enumerate(chunks):
             if chunk.processor_name in dirty:
                 p = proc_map[chunk.processor_name]
-                chunks[idx] = p.ask(
-                    query=query, **input_kwargs
-                )
+                chunks[idx] = p.ask(query=query, **input_kwargs)
         return chunks
 
     @abstractmethod
