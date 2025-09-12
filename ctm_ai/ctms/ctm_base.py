@@ -247,8 +247,7 @@ class BaseConsciousTuringMachine(ABC):
 
                 answer_chunk = proc_map[nbr].ask(
                     query=q,
-                    use_memory=False,
-                    store_memory=False,
+                    is_fuse=True,
                     **input_kwargs,
                 )
                 input_kwargs['text'] += '(additional information: {})'.format(
@@ -260,7 +259,7 @@ class BaseConsciousTuringMachine(ABC):
             if chunk.processor_name in dirty:
                 p = proc_map[chunk.processor_name]
                 chunks[idx] = p.ask(
-                    query=query, use_memory=True, store_memory=True, **input_kwargs
+                    query=query, **input_kwargs
                 )
         return chunks
 
