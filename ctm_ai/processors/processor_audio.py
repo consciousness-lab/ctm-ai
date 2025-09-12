@@ -1,6 +1,7 @@
-from ..executors.executor_base import BaseExecutor
-from ..messengers.messenger_base import BaseMessenger
-from ..scorers.scorer_base import BaseScorer
+import base64
+import os
+from typing import Any, Dict, List
+
 from .processor_base import BaseProcessor
 
 
@@ -8,15 +9,54 @@ from .processor_base import BaseProcessor
 class AudioProcessor(BaseProcessor):
     REQUIRED_KEYS = ['GEMINI_API_KEY']
 
-    def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger.create_messenger('audio_messenger')
+    def _init_info(self, *args: Any, **kwargs: Any) -> None:
+        self.system_prompt = 'You are an expert in audio analysis. Your task is to listen to the provided audio and answer questions about its content, such as tone, emotion, or spoken words.'
+        self.supported_formats = {'mp3', 'wav', 'aac', 'flac', 'mp4'}
+        self.mime_types = {
+            'mp3': 'audio/mp3',
+            'wav': 'audio/wav',
+            'aac': 'audio/aac',
+            'flac': 'audio/flac',
+            'mp4': 'audio/mp4',
+        }
 
-    def init_executor(
-        self, system_prompt: str = None, model: str = None
-    ) -> BaseExecutor:
-        return BaseExecutor(
-            name='audio_executor', system_prompt=system_prompt, model=model
-        )
+    def get_mime_type(self, file_path: str) -> str:
+        """Get MIME type for audio file."""
+        extension = file_path.split('.')[-1].lower()
+        if extension not in self.mime_types:
+            raise ValueError(f'Unsupported audio format: {extension}')
+        return self.mime_types[extension]
 
-    def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='language_scorer')
+    def build_executor_messages(
+        self,
+        query: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
+        self._init_info(*args, **kwargs)
+        audio_path = kwargs.get('audio_path')
+        if not audio_path:
+            return [{'role': 'assistant', 'content': ''}]
+        if not os.path.exists(audio_path):
+            raise FileNotFoundError(f'Audio file not found: {audio_path}')
+        try:
+            mime_type = self.get_mime_type(audio_path)
+            with open(audio_path, 'rb') as f:
+                audio_bytes = f.read()
+            encoded_data = base64.b64encode(audio_bytes).decode('utf-8')
+            return [
+                {
+                    'role': 'user',
+                    'content': [
+                        {'type': 'text', 'text': query},
+                        {
+                            'type': 'file',
+                            'file': {
+                                'file_data': f'data:{mime_type};base64,{encoded_data}'
+                            },
+                        },
+                    ],
+                }
+            ]
+        except Exception as e:
+            raise RuntimeError(f'Error building executor messages: {str(e)}')

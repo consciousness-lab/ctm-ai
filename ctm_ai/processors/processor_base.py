@@ -2,12 +2,12 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 import numpy as np
+from litellm import completion
 from numpy.typing import NDArray
 
 from ..chunks import Chunk
-from ..executors import BaseExecutor
-from ..messengers import BaseMessenger, Message
 from ..scorers import BaseScorer
+from .utils import JSON_FORMAT, message_exponential_backoff, parse_json_response
 
 
 class BaseProcessor(object):
@@ -50,17 +50,14 @@ class BaseProcessor(object):
         self.system_prompt = kwargs.get('system_prompt')
         self.model = kwargs.get('model')
 
-        self.executor = self.init_executor(
-            system_prompt=self.system_prompt, model=self.model
-        )
-        self.messenger = self.init_messenger()
-        self.scorer = self.init_scorer()
-
-        # Set the system prompt in the messenger after initialization
-        if self.system_prompt:
-            self.messenger.system_prompt_message = Message(
-                role='system', content=self.system_prompt
-            )
+        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
+        self.try_times = kwargs.get('try_times', 3)
+        self.max_tokens = kwargs.get('max_tokens', 4096)
+        self.return_num = kwargs.get('return_num', 1)
+        self.temperature = kwargs.get('temperature', 0.0)
+        self.fuse_history = {}
+        self.winner_answer = {}
+        self.all_context_history = {}
 
     def check_required_env_vars(self) -> None:
         missing_vars = [var for var in self.REQUIRED_KEYS if var not in os.environ]
@@ -69,18 +66,62 @@ class BaseProcessor(object):
                 f'[{self.name}] Missing required environment variables: {missing_vars}'
             )
 
-    def init_executor(
-        self, system_prompt: Optional[str] = None, model: Optional[str] = None
-    ) -> BaseExecutor:
-        return BaseExecutor(
-            name='language_executor', system_prompt=system_prompt, model=model
+    def _build_executor_content(
+        self,
+        query: str,
+        text: Optional[str] = None,
+        video_frames_path: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> str:
+        content = query
+
+        if self.format_query_with_prefix:
+            content = f'Query: {query}\n'
+
+        if self.include_text_in_content and text is not None:
+            content += f'Text: {text}\n'
+
+        if self.include_video_note and video_frames_path:
+            content += f'Note: The input contains {len(video_frames_path)} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n'
+
+        content += JSON_FORMAT
+
+        return content
+
+    @message_exponential_backoff()
+    def ask_executor(
+        self,
+        messages: List[Dict[str, Any]],
+        default_additional_question: str = '',
+        *args: Any,
+        **kwargs: Any,
+    ) -> Dict[str, str]:
+        response = completion(
+            model=self.model,
+            messages=messages,
+            max_tokens=self.max_token,
+            n=self.return_num,
+            *args,
+            **kwargs,
         )
+        contents = [
+            response.choices[i].message.content for i in range(len(response.choices))
+        ]
+        gist, additional_question = parse_json_response(
+            contents[0], default_additional_question
+        )
+        return {
+            'response': gist,
+            'additional_question': additional_question,
+        }
 
-    def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger.create_messenger('language_messenger')
-
-    def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='language_scorer')
+    def build_executor_messages(
+        self,
+        query: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
+        raise NotImplementedError('Subclasses must implement this method')
 
     def ask(
         self,
@@ -94,11 +135,11 @@ class BaseProcessor(object):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
         api_manager: Any = None,
-        use_memory: bool = True,  # Whether to condition on memory
-        store_memory: bool = True,  # Whether to store input-output pair in memory
+        is_fuse: bool = False,
+        *args: Any,
+        **kwargs: Any,
     ) -> Chunk:
-        # Collect executor messages with or without memory
-        executor_messages = self.messenger.collect_executor_messages(
+        executor_messages = self.build_executor_messages(
             query=query,
             text=text,
             image=image,
@@ -109,58 +150,16 @@ class BaseProcessor(object):
             video_frames_path=video_frames_path,
             video_path=video_path,
             api_manager=api_manager,
-            use_memory=use_memory,
-            store_memory=store_memory,
         )
-
-        # Ask executor
-        executor_output = self.executor.ask(
+        executor_output = self.ask_executor(
             messages=executor_messages,
-            image_path=image_path,
-            audio_path=audio_path,
-            video_frames_path=video_frames_path,
-            video_path=video_path,
-            api_manager=api_manager,
+            default_additional_question='Would you like me to explain any specific aspects in more detail?',
         )
+        scorer = BaseScorer(*args, **kwargs)
+        scorer_output = scorer.ask(messages=executor_output)
 
-        # Collect scorer messages with or without memory
-        scorer_messages = self.messenger.collect_scorer_messages(
-            query=query,
-            text=text,
-            image=image,
-            image_path=image_path,
-            audio=audio,
-            audio_path=audio_path,
-            video_frames=video_frames,
-            video_frames_path=video_frames_path,
-            video_path=video_path,
-            executor_output=executor_output,
-            api_manager=api_manager,
-            use_memory=use_memory,
-            store_memory=store_memory,
-        )
+        additional_question = executor_output['additional_question'] or ''
 
-        # Ask scorer
-        scorer_use_llm = (
-            getattr(self.config, 'scorer_use_llm', True)
-            if hasattr(self, 'config')
-            else True
-        )
-        scorer_output = self.scorer.ask(
-            messages=scorer_messages, use_llm=scorer_use_llm
-        )
-
-        # Store in memory if specified
-        if store_memory:
-            self.messenger.update(
-                executor_output=executor_output,
-                scorer_output=scorer_output,
-            )
-
-        # Use additional_question from executor output
-        additional_question = executor_output.additional_question or ''
-
-        # Merge outputs into a chunk
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,
@@ -169,91 +168,34 @@ class BaseProcessor(object):
         )
         return chunk
 
-    def clear_memory(self) -> None:
-        """Clear all stored messages in messenger"""
-        self.messenger.clear_memory()
-
-    def get_memory_size(self) -> Tuple[int, int]:
-        """Get the number of stored executor and scorer messages"""
-        return (
-            len(self.messenger.executor_messages),
-            len(self.messenger.scorer_messages),
-        )
-
-    def get_memory_content(self) -> Dict[str, List[Message]]:
-        """Get the content of processor memory"""
+    def get_memory_info(self) -> Tuple[int, int]:
         return {
-            'executor_messages': self.messenger.executor_messages.copy(),
-            'scorer_messages': self.messenger.scorer_messages.copy(),
-        }
-
-    def get_memory_summary(self) -> Dict[str, Any]:
-        """Get a summary of processor memory"""
-        executor_count = len(self.messenger.executor_messages)
-        scorer_count = len(self.messenger.scorer_messages)
-
-        # Get recent messages for summary
-        recent_executor = (
-            self.messenger.executor_messages[-1] if executor_count > 0 else None
-        )
-        recent_scorer = self.messenger.scorer_messages[-1] if scorer_count > 0 else None
-
-        return {
-            'processor_name': self.name,
-            'memory_mode': self.memory_mode,
-            'executor_message_count': executor_count,
-            'scorer_message_count': scorer_count,
-            'recent_executor_gist': recent_executor.gist if recent_executor else None,
-            'recent_scorer_scores': {
-                'relevance': recent_scorer.relevance if recent_scorer else None,
-                'confidence': recent_scorer.confidence if recent_scorer else None,
-                'surprise': recent_scorer.surprise if recent_scorer else None,
-                'weight': recent_scorer.weight if recent_scorer else None,
-            }
-            if recent_scorer
-            else None,
+            'all_history': self.all_context_history,
+            'fuse_history': self.fuse_history,
+            'winner_answer': self.winner_answer,
         }
 
     def update(self, chunk: Chunk) -> None:
         if chunk.processor_name != self.name:
-            executor_output, scorer_output = self.split_chunk_into_outputs(chunk)
-            self.messenger.update(
-                executor_output=executor_output,
-                scorer_output=scorer_output,
-            )
+            self.winner_answer.append(chunk.gist)
 
     def merge_outputs_into_chunk(
         self,
         name: str,
-        scorer_output: Message,
-        executor_output: Message,
+        executor_output: Dict[str, Any],
+        scorer_output: Dict[str, float],
         additional_question: str = '',
     ) -> Chunk:
         return Chunk(
             time_step=0,
             processor_name=name,
-            gist=executor_output.gist,
-            relevance=scorer_output.relevance,
-            confidence=scorer_output.confidence,
-            surprise=scorer_output.surprise,
-            weight=scorer_output.weight,
-            intensity=scorer_output.weight,
-            mood=scorer_output.weight,
+            gist=executor_output['response'],
+            relevance=scorer_output['relevance'],
+            confidence=scorer_output['confidence'],
+            surprise=scorer_output['surprise'],
+            weight=scorer_output['weight'],
             additional_question=additional_question,
         )
-
-    def split_chunk_into_outputs(self, chunk: Chunk) -> Tuple[Message, Message]:
-        executor_output = Message(
-            role='assistant',
-            gist=chunk.gist,
-        )
-        scorer_output = Message(
-            relevance=chunk.relevance,
-            confidence=chunk.confidence,
-            surprise=chunk.surprise,
-            weight=chunk.weight,
-        )
-        return executor_output, scorer_output
 
     def __hash__(self):
         return hash(self.name)

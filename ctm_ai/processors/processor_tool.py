@@ -1,70 +1,55 @@
-from typing import List
+from typing import Any, Dict, List
 
-from ..apis import BaseEnv
-from ..chunks import Chunk
-from ..executors import BaseExecutor
-from ..messengers import BaseMessenger
-from ..scorers import BaseScorer
 from .processor_base import BaseProcessor
+
+FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION = """You are an expert in solving tasks with or without the help of external tools.
+
+I will give you a task and a tool description. Your job is to first decide whether the tool `{openai_function_name}` is necessary to solve the task according to the task description and the tool description. You should use the tool if it can solve part of the task.
+
+At each step, you must:
+- Provide a brief **Thought** (max 5 sentences) explaining your reasoning.
+- If you decide to use the tool, provide an `Action`, `Action Input`, and `End Action`. The tool name must be `{openai_function_name}`.
+- If you decide **not** to use the tool, explain your reasoning in the Thought and do not output Action.
+
+Format (if you use the tool):
+Thought:
+Action: {openai_function_name}
+Action Input: <valid JSON input>
+End Action
+
+Format (if not using the tool):
+Thought: <reason why not using the tool>
+
+Task description:
+{task_description}
+Let's Begin!
+"""
 
 
 @BaseProcessor.register_processor('tool_processor')
 class ToolProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['OPENAI_API_KEY', 'TOOLBENCH_KEY']
+    REQUIRED_KEYS = ['OPENAI_API_KEY']
 
-    def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger.create_messenger('tool_messenger')
+    def _init_info(self, *args: Any, **kwargs: Any) -> None:
+        self.system_prompt = 'You are an expert in tool calling.'
 
-    def init_executor(
-        self, system_prompt: str = None, model: str = None
-    ) -> BaseExecutor:
-        return BaseExecutor(
-            name='tool_executor', system_prompt=system_prompt, model=model
-        )
-
-    def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='language_scorer')
-
-    def ask(
+    def build_executor_messages(
         self,
         query: str,
-        api_manager: BaseEnv,
-        **kwargs,
-    ) -> Chunk:
-        openai_function_name = self.name
-        executor_messages = self.messenger.collect_executor_messages(
-            query=query,
-            api_manager=api_manager,
-            openai_function_name=openai_function_name,
+        api_manager: Any,
+        openai_function_name: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
+        self._init_info(*args, **kwargs)
+        system = FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
+        system = system.replace('{openai_function_name}', openai_function_name)
+        task_description = api_manager.openai_name_reflect_all_info[
+            openai_function_name
+        ][1]
+        system = system.replace(
+            '{task_description}',
+            task_description,
         )
-
-        executor_output = self.executor.ask(
-            messages=executor_messages,
-            api_manager=api_manager,
-            openai_function_name=openai_function_name,
-        )
-
-        scorer_messages = self.messenger.collect_scorer_messages(
-            query=query,
-            api_manager=api_manager,
-            openai_function_name=openai_function_name,
-            executor_output=executor_output,
-        )
-
-        scorer_output = self.scorer.ask(messages=scorer_messages)
-
-        self.messenger.update(
-            executor_output=executor_output,
-            scorer_output=scorer_output,
-        )
-
-        chunk = self.merge_outputs_into_chunk(
-            name=self.name, scorer_output=scorer_output, executor_output=executor_output
-        )
-        return chunk
-
-
-def register_tool_processors(openai_function_names: List[str]):
-    for openai_function_name in openai_function_names:
-        processor_name = openai_function_name
-        BaseProcessor._processor_registry[processor_name] = ToolProcessor
+        query_all = system + '\n' + query
+        return [{'role': 'user', 'content': f'Query: {query_all}\n'}]
