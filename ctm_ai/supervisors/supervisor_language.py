@@ -1,25 +1,23 @@
 from typing import Any, Optional
 
-from ..utils import (
-    info_exponential_backoff,
-    score_exponential_backoff,
-)
-from .supervisor_base import BaseSupervisor
 from litellm import completion
 
+from ..utils import info_exponential_backoff, score_exponential_backoff
+from .supervisor_base import BaseSupervisor
 
-@BaseSupervisor.register_supervisor("language_supervisor")
+
+@BaseSupervisor.register_supervisor('language_supervisor')
 class LanguageSupervisor(BaseSupervisor):
     def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
         super().init_supervisor(*args, **kwargs)
-        self.model_name = kwargs.get("supervisor_model", "gemini/gemini-2.0-flash-lite")
+        self.model_name = kwargs.get('supervisor_model', 'gemini/gemini-2.0-flash-lite')
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def ask_info(self, query: str, context: Optional[str] = None) -> Optional[str]:
         messages = [
             {
-                "role": "user",
-                "content": f"The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.",
+                'role': 'user',
+                'content': f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.',
             }
         ]
 
@@ -31,9 +29,9 @@ class LanguageSupervisor(BaseSupervisor):
                 temperature=self.temperature,
                 n=5,
             )
-            return responses[0] if responses else None
+            return responses.choices[0].message.content.strip() if responses else None
         except Exception as e:
-            print(f"Error in ask_info: {e}")
+            print(f'Error in ask_info: {e}')
             return None
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
@@ -43,8 +41,8 @@ class LanguageSupervisor(BaseSupervisor):
 
         messages = [
             {
-                "role": "user",
-                "content": f"""Please evaluate the relevance between the query and the information on a scale from 0.0 to 1.0.
+                'role': 'user',
+                'content': f"""Please evaluate the relevance between the query and the information on a scale from 0.0 to 1.0.
 
 Query: {query}
 Information: {gist}
@@ -72,10 +70,10 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
                 n=1,
             )
 
-            if responses and responses[0]:
+            if responses and responses.choices:
                 try:
                     # Extract numerical score
-                    score_text = responses[0].strip()
+                    score_text = responses.choices[0].message.content.strip()
                     score = float(score_text)
                     return max(0.0, min(1.0, score))  # Clamp to [0, 1]
                 except (ValueError, TypeError):
@@ -85,7 +83,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
                 return 0.0
 
         except Exception as e:
-            print(f"Error in ask_score: {e}")
+            print(f'Error in ask_score: {e}')
             return self._fallback_similarity_score(query, gist)
 
     def _fallback_similarity_score(self, query: str, gist: str) -> float:

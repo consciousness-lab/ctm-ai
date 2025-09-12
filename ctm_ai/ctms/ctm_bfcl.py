@@ -18,7 +18,6 @@ class BFCLConsciousTuringMachine(BaseConsciousTuringMachine):
         inference_data: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.api_manager = BFCLManager(inference_data)
-        breakpoint()
         self.config = ConsciousTuringMachineConfig()
 
         self.load_ctm()

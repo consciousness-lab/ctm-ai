@@ -14,7 +14,7 @@ Your additional_question should be just about what kind of information you need 
 
 
 def parse_json_response(
-    content: str, default_additional_question: str = ""
+    content: str, default_additional_question: str = ''
 ) -> tuple[str, str]:
     """
     Parse JSON response to extract response and additional_question.
@@ -27,9 +27,9 @@ def parse_json_response(
         tuple: (parsed_content, additional_question)
     """
     try:
-        if "```json" in content and "```" in content:
-            start_idx = content.find("```json") + 7
-            end_idx = content.rfind("```")
+        if '```json' in content and '```' in content:
+            start_idx = content.find('```json') + 7
+            end_idx = content.rfind('```')
             if start_idx > 6 and end_idx > start_idx:
                 json_content = content[start_idx:end_idx].strip()
                 parsed_response = json.loads(json_content)
@@ -38,11 +38,11 @@ def parse_json_response(
         else:
             parsed_response = json.loads(content)
 
-        parsed_content = parsed_response.get("response", content)
+        parsed_content = parsed_response.get('response', content)
         additional_question = parsed_response.get(
-            "additional_question", default_additional_question
+            'additional_question', default_additional_question
         )
-        if additional_question == "":
+        if additional_question == '':
             additional_question = default_additional_question
 
         return parsed_content, additional_question

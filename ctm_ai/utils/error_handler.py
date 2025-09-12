@@ -1,7 +1,7 @@
 import math
 import time
 from functools import wraps
-from typing import Any, Callable, List, Union, Dict
+from typing import Any, Callable, Dict, List, Union
 
 from .logger import logger
 
@@ -30,8 +30,8 @@ def multi_info_exponential_backoff(
                     return func(*args, **kwargs)
                 except Exception as e:
                     wait_time = base_wait_time * (2**attempts)
-                    logger.error(f"Attempt {attempts + 1} failed: {e}")
-                    logger.error(f"Waiting {wait_time} seconds before retrying...")
+                    logger.error(f'Attempt {attempts + 1} failed: {e}')
+                    logger.error(f'Waiting {wait_time} seconds before retrying...')
                     time.sleep(wait_time)
                     attempts += 1
             logger.error(
@@ -64,8 +64,8 @@ def info_exponential_backoff(
                     return func(*args, **kwargs)
                 except Exception as e:
                     wait_time = base_wait_time * (2**attempts)
-                    logger.error(f"Attempt {attempts + 1} failed: {e}")
-                    logger.error(f"Waiting {wait_time} seconds before retrying...")
+                    logger.error(f'Attempt {attempts + 1} failed: {e}')
+                    logger.error(f'Waiting {wait_time} seconds before retrying...')
                     time.sleep(wait_time)
                     attempts += 1
             logger.error(
@@ -96,8 +96,8 @@ def message_exponential_backoff(
                     return func(*args, **kwargs)
                 except Exception as e:
                     wait_time = base_wait_time * (2**attempts)
-                    logger.error(f"Attempt {attempts + 1} failed: {e}")
-                    logger.error(f"Waiting {wait_time} seconds before retrying...")
+                    logger.error(f'Attempt {attempts + 1} failed: {e}')
+                    logger.error(f'Waiting {wait_time} seconds before retrying...')
                     time.sleep(wait_time)
                     attempts += 1
             logger.error(
@@ -128,8 +128,8 @@ def score_exponential_backoff(
                     return func(*args, **kwargs)
                 except Exception as e:
                     wait_time = base_wait_time * (2**attempts)
-                    logger.error(f"Attempt {attempts + 1} failed: {e}")
-                    logger.error(f"Waiting {wait_time} seconds before retrying...")
+                    logger.error(f'Attempt {attempts + 1} failed: {e}')
+                    logger.error(f'Waiting {wait_time} seconds before retrying...')
                     time.sleep(wait_time)
                     attempts += 1
             logger.error(

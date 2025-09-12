@@ -7,21 +7,21 @@ from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..scorers import BaseScorer
+from ..utils import configure_litellm, message_exponential_backoff
 from .utils import JSON_FORMAT, parse_json_response
-from ..utils import message_exponential_backoff, configure_litellm
 
 
 class BaseProcessor(object):
-    _processor_registry: Dict[str, Type["BaseProcessor"]] = {}
+    _processor_registry: Dict[str, Type['BaseProcessor']] = {}
     REQUIRED_KEYS: List[str] = []
 
     @classmethod
     def register_processor(
         cls, name: str
-    ) -> Callable[[Type["BaseProcessor"]], Type["BaseProcessor"]]:
+    ) -> Callable[[Type['BaseProcessor']], Type['BaseProcessor']]:
         def decorator(
-            subclass: Type["BaseProcessor"],
-        ) -> Type["BaseProcessor"]:
+            subclass: Type['BaseProcessor'],
+        ) -> Type['BaseProcessor']:
             cls._processor_registry[name] = subclass
             return subclass
 
@@ -33,7 +33,7 @@ class BaseProcessor(object):
         group_name: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> "BaseProcessor":
+    ) -> 'BaseProcessor':
         if name not in cls._processor_registry:
             raise ValueError(f"No processor registered with name '{name}'")
         subclass = cls._processor_registry[name]
@@ -48,14 +48,14 @@ class BaseProcessor(object):
         self.check_required_env_vars()
         self.name = name
         self.group_name = group_name
-        self.system_prompt = kwargs.get("system_prompt")
-        self.model = kwargs.get("model")
+        self.system_prompt = kwargs.get('system_prompt')
+        self.model = kwargs.get('model')
 
-        self.model_name = kwargs.get("model", "gemini/gemini-2.0-flash-lite")
-        self.try_times = kwargs.get("try_times", 3)
-        self.max_tokens = kwargs.get("max_tokens", 4096)
-        self.return_num = kwargs.get("return_num", 1)
-        self.temperature = kwargs.get("temperature", 0.0)
+        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
+        self.try_times = kwargs.get('try_times', 3)
+        self.max_tokens = kwargs.get('max_tokens', 4096)
+        self.return_num = kwargs.get('return_num', 1)
+        self.temperature = kwargs.get('temperature', 0.0)
         self.fuse_history = []
         self.winner_answer = []
         self.all_context_history = []
@@ -65,20 +65,20 @@ class BaseProcessor(object):
         missing_vars = [var for var in self.REQUIRED_KEYS if var not in os.environ]
         if missing_vars:
             raise EnvironmentError(
-                f"[{self.name}] Missing required environment variables: {missing_vars}"
+                f'[{self.name}] Missing required environment variables: {missing_vars}'
             )
 
     def add_fuse_history(self, question: str, answer: str) -> None:
-        self.fuse_history.append({"additional_question": question, "answer": answer})
+        self.fuse_history.append({'additional_question': question, 'answer': answer})
 
     def add_all_context_history(
         self, query: str, answer: str, additional_question: str
     ) -> None:
         self.all_context_history.append(
             {
-                "query": query,
-                "answer": answer,
-                "additional_question": additional_question,
+                'query': query,
+                'answer': answer,
+                'additional_question': additional_question,
             }
         )
 
@@ -91,22 +91,22 @@ class BaseProcessor(object):
     ) -> str:
         content = query
 
-        content = f"Query: {query}\n"
+        content = f'Query: {query}\n'
 
         if text is not None:
-            content += f"Text: {text}\n"
+            content += f'Text: {text}\n'
 
         if video_frames_path:
-            content += f"Note: The input contains {len(video_frames_path)} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n"
+            content += f'Note: The input contains {len(video_frames_path)} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n'
 
         if len(self.fuse_history) > 0:
-            content += "\nThere are some previous answers from other processors about the additional questions:\n"
+            content += '\nThere are some previous answers from other processors about the additional questions:\n'
             for i, item in enumerate(self.fuse_history, 1):
                 content += f'{i}. Question: {item["additional_question"]}\n'
                 content += f'   Answer: {item["answer"]}\n'
 
         if len(self.winner_answer) > 0:
-            content += "\nThere are some previous answers from to the query:\n"
+            content += '\nThere are some previous answers from to the query:\n'
             for i, item in enumerate(self.winner_answer, 1):
                 content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
@@ -117,7 +117,7 @@ class BaseProcessor(object):
     def ask_executor(
         self,
         messages: List[Dict[str, Any]],
-        default_additional_question: str = "",
+        default_additional_question: str = '',
         *args: Any,
         **kwargs: Any,
     ) -> Dict[str, str]:
@@ -136,8 +136,8 @@ class BaseProcessor(object):
             contents[0], default_additional_question
         )
         return {
-            "response": gist,
-            "additional_question": additional_question,
+            'response': gist,
+            'additional_question': additional_question,
         }
 
     def build_executor_messages(
@@ -146,7 +146,7 @@ class BaseProcessor(object):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        raise NotImplementedError("Subclasses must implement this method")
+        raise NotImplementedError('Subclasses must implement this method')
 
     def ask(
         self,
@@ -189,17 +189,17 @@ class BaseProcessor(object):
         )
         executor_output = self.ask_executor(
             messages=executor_messages,
-            default_additional_question="Would you like me to explain any specific aspects in more detail?",
+            default_additional_question='Would you like me to explain any specific aspects in more detail?',
         )
         if is_fuse:
-            self.add_fuse_history(query, executor_output["response"])
+            self.add_fuse_history(query, executor_output['response'])
         self.add_all_context_history(
-            query, executor_output["response"], executor_output["additional_question"]
+            query, executor_output['response'], executor_output['additional_question']
         )
 
         scorer = BaseScorer(*args, **kwargs)
         scorer_output = scorer.ask(query=query, messages=executor_output)
-        additional_question = executor_output["additional_question"] or ""
+        additional_question = executor_output['additional_question'] or ''
 
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
@@ -211,15 +211,15 @@ class BaseProcessor(object):
 
     def get_memory_info(self) -> Tuple[int, int]:
         return {
-            "all_history": self.all_context_history,
-            "fuse_history": self.fuse_history,
-            "winner_answer": self.winner_answer,
+            'all_history': self.all_context_history,
+            'fuse_history': self.fuse_history,
+            'winner_answer': self.winner_answer,
         }
 
     def update(self, chunk: Chunk) -> None:
         if chunk.processor_name != self.name:
             self.winner_answer.append(
-                {"processor_name": chunk.processor_name, "answer": chunk.gist}
+                {'processor_name': chunk.processor_name, 'answer': chunk.gist}
             )
 
     def merge_outputs_into_chunk(
@@ -227,16 +227,16 @@ class BaseProcessor(object):
         name: str,
         executor_output: Dict[str, Any],
         scorer_output: Dict[str, float],
-        additional_question: str = "",
+        additional_question: str = '',
     ) -> Chunk:
         return Chunk(
             time_step=0,
             processor_name=name,
-            gist=executor_output["response"],
-            relevance=scorer_output["relevance"],
-            confidence=scorer_output["confidence"],
-            surprise=scorer_output["surprise"],
-            weight=scorer_output["weight"],
+            gist=executor_output['response'],
+            relevance=scorer_output['relevance'],
+            confidence=scorer_output['confidence'],
+            surprise=scorer_output['surprise'],
+            weight=scorer_output['weight'],
             additional_question=additional_question,
         )
 

@@ -6,7 +6,6 @@ from litellm import completion
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 
-
 def convert_messages_to_litellm_format(messages: List[Any]) -> List[Dict[str, str]]:
     """Convert CTM messages to LiteLLM format."""
     result = []
