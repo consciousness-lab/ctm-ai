@@ -70,8 +70,8 @@ class BaseConsciousTuringMachine(ABC):
             self.processor_graph.add_node(
                 processor_name=processor_name,
                 processor_group_name=None,
-                system_prompt=processor_config.get('system_prompt'),
-                model=processor_config.get('model'),
+                system_prompt=processor_config.get("system_prompt"),
+                model=processor_config.get("model"),
             )
 
         self.add_supervisor(self.config.supervisor)
@@ -85,8 +85,8 @@ class BaseConsciousTuringMachine(ABC):
         self.processor_graph.add_node(
             processor_name=processor_name,
             processor_group_name=group_name,
-            system_prompt=processor_config.get('system_prompt'),
-            model=processor_config.get('model'),
+            system_prompt=processor_config.get("system_prompt"),
+            model=processor_config.get("model"),
         )
 
     def remove_processor(self, processor_name: str) -> None:
@@ -230,7 +230,7 @@ class BaseConsciousTuringMachine(ABC):
                 continue
 
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
-                if nbr == chunk.processor_name:  # ⇢ self‑link
+                if nbr == chunk.processor_name:
                     proc_map[nbr].update(chunk)
                     dirty.add(nbr)
                     continue
@@ -240,7 +240,7 @@ class BaseConsciousTuringMachine(ABC):
                     is_fuse=True,
                     **input_kwargs,
                 )
-                input_kwargs['text'] += '(additional information: {})'.format(
+                input_kwargs["text"] += "(additional information: {})".format(
                     answer_chunk.gist
                 )
                 dirty.add(chunk.processor_name)

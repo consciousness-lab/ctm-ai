@@ -1,31 +1,30 @@
 from typing import Any, Optional
 
-from ..messengers import Message
 from ..utils import (
-    ask_llm_standard,
     info_exponential_backoff,
     score_exponential_backoff,
 )
 from .supervisor_base import BaseSupervisor
+from litellm import completion
 
 
-@BaseSupervisor.register_supervisor('language_supervisor')
+@BaseSupervisor.register_supervisor("language_supervisor")
 class LanguageSupervisor(BaseSupervisor):
     def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
         super().init_supervisor(*args, **kwargs)
-        self.model_name = kwargs.get('supervisor_model', 'gemini/gemini-2.0-flash-lite')
+        self.model_name = kwargs.get("supervisor_model", "gemini/gemini-2.0-flash-lite")
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def ask_info(self, query: str, context: Optional[str] = None) -> Optional[str]:
         messages = [
-            Message(
-                role='user',
-                content=f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.',
-            )
+            {
+                "role": "user",
+                "content": f"The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.",
+            }
         ]
 
         try:
-            responses = ask_llm_standard(
+            responses = completion(
                 messages=messages,
                 model=self.info_model,
                 max_tokens=self.max_tokens,
@@ -34,7 +33,7 @@ class LanguageSupervisor(BaseSupervisor):
             )
             return responses[0] if responses else None
         except Exception as e:
-            print(f'Error in ask_info: {e}')
+            print(f"Error in ask_info: {e}")
             return None
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
@@ -43,9 +42,9 @@ class LanguageSupervisor(BaseSupervisor):
             return 0.0
 
         messages = [
-            Message(
-                role='user',
-                content=f"""Please evaluate the relevance between the query and the information on a scale from 0.0 to 1.0.
+            {
+                "role": "user",
+                "content": f"""Please evaluate the relevance between the query and the information on a scale from 0.0 to 1.0.
 
 Query: {query}
 Information: {gist}
@@ -61,11 +60,11 @@ Consider:
 IMPORTANT: If the answer says "I cannot determine", "I don't know", "cannot answer", or refuses to provide information, score it as 0.0.
 
 Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
-            )
+            }
         ]
 
         try:
-            responses = ask_llm_standard(
+            responses = completion(
                 messages=messages,
                 model=self.score_model,
                 max_tokens=self.max_tokens,
@@ -86,7 +85,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
                 return 0.0
 
         except Exception as e:
-            print(f'Error in ask_score: {e}')
+            print(f"Error in ask_score: {e}")
             return self._fallback_similarity_score(query, gist)
 
     def _fallback_similarity_score(self, query: str, gist: str) -> float:

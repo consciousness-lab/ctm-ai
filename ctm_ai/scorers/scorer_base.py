@@ -15,26 +15,28 @@ class BaseScorer(object):
         self.init_scorer(*args, **kwargs)
 
     def init_scorer(self, *args: Any, **kwargs: Any) -> None:
-        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
-        self.embedding_model = kwargs.get('embedding_model', 'text-embedding-3-small')
-        self.relevance_model = kwargs.get('relevance_model', self.model_name)
-        self.confidence_model = kwargs.get('confidence_model', self.model_name)
-        self.surprise_model = kwargs.get('scorer_model', self.model_name)
+        self.model_name = kwargs.get("model", "gemini/gemini-2.0-flash-lite")
+        self.embedding_model = kwargs.get("embedding_model", "text-embedding-3-small")
+        self.relevance_model = kwargs.get("relevance_model", self.model_name)
+        self.confidence_model = kwargs.get("confidence_model", self.model_name)
+        self.surprise_model = kwargs.get("scorer_model", self.model_name)
 
         configure_litellm(model_name=self.model_name)
 
     def get_embedding(self, text: str) -> np.ndarray:
         try:
             response = embedding(model=self.embedding_model, input=[text])
-            return np.array(response.data[0]['embedding'], dtype=np.float32)
+            return np.array(response.data[0]["embedding"], dtype=np.float32)
         except Exception as e:
-            print(f'Error getting embedding: {e}')
+            print(f"Error getting embedding: {e}")
             return np.zeros(1536, dtype=np.float32)
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
-    def ask_relevance(self, messages: Dict[str, Any], use_llm: bool = True) -> float:
-        query = messages['response']
-        gist = messages['additional_question']
+    def ask_relevance(
+        self, query: str, messages: Dict[str, Any], use_llm: bool = True
+    ) -> float:
+        query = query
+        gist = messages["response"]
 
         if use_llm:
             final_relevance = self._ask_llm_relevance(query, gist)
@@ -46,8 +48,8 @@ class BaseScorer(object):
     def _ask_llm_relevance(self, query: str, gist: str) -> float:
         relevance_prompt = [
             {
-                'role': 'user',
-                'content': f"""Please evaluate how relevant the answer is to the question on a scale from 0.0 to 1.0.
+                "role": "user",
+                "content": f"""Please evaluate how relevant the answer is to the question on a scale from 0.0 to 1.0.
 
 Question: {query}
 Answer: {gist}
@@ -75,7 +77,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
                 n=1,
             )
 
-            score_text = responses[0].strip()
+            score_text = responses.choices[0].message.content.strip()
             score = float(score_text)
             return max(0.0, min(1.0, score))
 
@@ -92,30 +94,27 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
             else:
                 topical_score = cosine_similarity([query_emb], [gist_emb])[0][0]
         except Exception as e:
-            print(f'[Embedding Error] {e}')
+            print(f"[Embedding Error] {e}")
             topical_score = 0.0
         return float(topical_score)
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_confidence(self, messages: Dict[str, Any], use_llm: bool = True) -> float:
-        if not messages or not messages[-1].gist:
-            return 0.0
 
-        gist = messages[-1].gist
-        gists = messages[-1].gists if messages[-1].gists else [gist]
+        gist = messages["response"]
 
         if use_llm:
             final_confidence = self._ask_llm_confidence(gist)
         else:
-            final_confidence = self._ask_statistical_confidence(gists)
+            final_confidence = self._ask_statistical_confidence(gist)
 
         return float(np.clip(final_confidence, 0.0, 1.0))
 
     def _ask_llm_confidence(self, gist: str) -> float:
         confidence_prompt = [
             {
-                'role': 'user',
-                'content': f"""Please evaluate how confident this response appears to be on a scale from 0.0 to 1.0.
+                "role": "user",
+                "content": f"""Please evaluate how confident this response appears to be on a scale from 0.0 to 1.0.
 
 Response: {gist}
 
@@ -142,7 +141,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
                 n=1,
             )
 
-            score_text = responses[0].strip()
+            score_text = responses.choices[0].message.content.strip()
             score = float(score_text)
             return max(0.0, min(1.0, score))
 
@@ -171,29 +170,29 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
     @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_surprise(
         self,
+        query: str,
         messages: Dict[str, Any],
-        lang: str = 'en',
+        lang: str = "en",
         use_llm: bool = True,
     ) -> float:
-        if not messages or not messages[-1].gist:
-            return 0.0
 
-        gist = messages[-1].gist
+        gist = messages["response"]
 
         if use_llm:
-            final_surprise = self._ask_llm_surprise(gist)
+            final_surprise = self._ask_llm_surprise(query, gist)
         else:
             final_surprise = self._ask_statistical_surprise(gist, lang)
 
         return float(np.clip(final_surprise, 0.0, 1.0))
 
-    def _ask_llm_surprise(self, gist: str) -> float:
+    def _ask_llm_surprise(self, query: str, gist: str) -> float:
         """Use LLM to assess how surprising or novel the response is."""
         surprise_prompt = [
             {
-                'role': 'user',
-                'content': f"""Please evaluate how surprising, unexpected, or novel this response is on a scale from 0.0 to 1.0.
+                "role": "user",
+                "content": f"""Please evaluate how surprising, unexpected, or novel this response is on a scale from 0.0 to 1.0.
 
+Question: {query}
 Response: {gist}
 
 Consider:
@@ -217,7 +216,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
                 n=1,
             )
 
-            score_text = responses[0].strip()
+            score_text = responses.choices[0].message.content.strip()
             score = float(score_text)
             return max(0.0, min(1.0, score))
 
@@ -244,17 +243,17 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
             return 0.0
 
     def ask(
-        self, messages: Dict[str, Any], use_llm: bool = True, **kwargs
+        self, query: str, messages: Dict[str, Any], use_llm: bool = True, **kwargs
     ) -> Dict[str, float]:
-        relevance = self.ask_relevance(messages, use_llm=use_llm)
+        relevance = self.ask_relevance(query, messages, use_llm=use_llm)
         confidence = self.ask_confidence(messages, use_llm=use_llm)
-        surprise = self.ask_surprise(messages, use_llm=use_llm, **kwargs)
+        surprise = self.ask_surprise(query, messages, use_llm=use_llm, **kwargs)
 
-        weight = relevance * confidence * surprise
+        weight = relevance + confidence + (surprise * 0.2)
 
         return {
-            'relevance': relevance,
-            'confidence': confidence,
-            'surprise': surprise,
-            'weight': weight,
+            "relevance": relevance,
+            "confidence": confidence,
+            "surprise": surprise,
+            "weight": weight,
         }
