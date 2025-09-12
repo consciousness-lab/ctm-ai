@@ -118,8 +118,6 @@ class BaseConsciousTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        use_memory: bool = True,
-        store_memory: bool = True,
     ) -> Chunk:
         """Ask processor with support for both standard and tool processors"""
         return processor.ask(
@@ -132,8 +130,6 @@ class BaseConsciousTuringMachine(ABC):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
-            use_memory=use_memory,
-            store_memory=store_memory,
         )
 
     @logging_func_with_count
@@ -148,8 +144,6 @@ class BaseConsciousTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        use_memory: bool = True,
-        store_memory: bool = True,
     ) -> List[Chunk]:
         """Ask all processors with support for both standard and tool processors"""
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -166,8 +160,6 @@ class BaseConsciousTuringMachine(ABC):
                     video_frames,
                     video_frames_path,
                     video_path,
-                    use_memory,
-                    store_memory,
                 )
                 for processor in self.processor_graph.nodes
             ]
@@ -211,8 +203,6 @@ class BaseConsciousTuringMachine(ABC):
         chunks = self.ask_processors(
             query=additional_question,
             **input_kwargs,
-            use_memory=False,
-            store_memory=False,
         )
 
         for chunk in chunks:
