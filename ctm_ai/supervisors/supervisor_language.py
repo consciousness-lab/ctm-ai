@@ -6,19 +6,24 @@ from ..utils import info_exponential_backoff, score_exponential_backoff
 from .supervisor_base import BaseSupervisor
 
 
-@BaseSupervisor.register_supervisor('language_supervisor')
+@BaseSupervisor.register_supervisor("language_supervisor")
 class LanguageSupervisor(BaseSupervisor):
     def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
         super().init_supervisor(*args, **kwargs)
-        self.model_name = kwargs.get('supervisor_model', 'gemini/gemini-2.0-flash-lite')
+        self.model_name = kwargs.get("supervisor_model", "gemini/gemini-2.0-flash-lite")
+        self.supervisors_prompt = kwargs.get("supervisors_prompt", "")
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def ask_info(self, query: str, context: Optional[str] = None) -> Optional[str]:
         messages = [
             {
-                'role': 'user',
-                'content': f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.',
-            }
+                "role": "system",
+                "content": self.supervisors_prompt,
+            },
+            {
+                "role": "user",
+                "content": f"The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.",
+            },
         ]
 
         try:
@@ -31,7 +36,7 @@ class LanguageSupervisor(BaseSupervisor):
             )
             return responses.choices[0].message.content.strip() if responses else None
         except Exception as e:
-            print(f'Error in ask_info: {e}')
+            print(f"Error in ask_info: {e}")
             return None
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
@@ -41,23 +46,20 @@ class LanguageSupervisor(BaseSupervisor):
 
         messages = [
             {
-                'role': 'user',
-                'content': f"""Please evaluate the relevance between the query and the information on a scale from 0.0 to 1.0.
+                "role": "user",
+                "content": f"""You are given a query and an answer. 
+Task: Decide whether the answer confirms that the query is true/positive, false/negative, or uncertain.
 
 Query: {query}
-Information: {gist}
+Answer: {gist}
 
-Consider:
-- 1.0 = Perfectly relevant, directly answers the question with specific information
-- 0.8 = Highly relevant, mostly answers the question with useful information
-- 0.6 = Moderately relevant, partially answers the question
-- 0.4 = Somewhat relevant, tangentially related but not very helpful
-- 0.2 = Barely relevant, weak connection or very general response
-- 0.0 = Not relevant, refuses to answer, says "cannot determine", or completely unrelated
+Output rules:
+- If the answer clearly confirms the positive case (e.g., "Yes", "scarstic", "The person is being scarsm"), output 2.
+- If the answer clearly confirms the negative case (e.g., "No", "Not scarstic", "The person is not being scarsm"), output 0.
+- If the answer is uncertain, ambiguous, or does not confirm either, output 1.
 
-IMPORTANT: If the answer says "I cannot determine", "I don't know", "cannot answer", or refuses to provide information, score it as 0.0.
-
-Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
+Respond with a single number only: 0, 1, or 2.
+""",
             }
         ]
 
@@ -75,7 +77,8 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
                     # Extract numerical score
                     score_text = responses.choices[0].message.content.strip()
                     score = float(score_text)
-                    return max(0.0, min(1.0, score))  # Clamp to [0, 1]
+                    return score
+                    # return max(0.0, min(1.0, score))  # Clamp to [0, 1]
                 except (ValueError, TypeError):
                     # Fallback to semantic similarity
                     return self._fallback_similarity_score(query, gist)
@@ -83,7 +86,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
                 return 0.0
 
         except Exception as e:
-            print(f'Error in ask_score: {e}')
+            print(f"Error in ask_score: {e}")
             return self._fallback_similarity_score(query, gist)
 
     def _fallback_similarity_score(self, query: str, gist: str) -> float:

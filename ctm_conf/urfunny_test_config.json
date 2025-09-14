@@ -1,6 +1,6 @@
 {
     "ctm_name": "urfunny_test",
-    "max_iter_num": 1,
+    "max_iter_num": 3,
     "output_threshold": 0.9,
     "scorer": "language_scorer",
     "scorer_use_llm": true,

@@ -5,7 +5,12 @@ from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..configs import ConsciousTuringMachineConfig
-from ..utils import logger, logging_func_with_count
+from ..utils import (
+    logger,
+    logging_func_with_count,
+    log_forward_iteration,
+    log_go_up_iteration,
+)
 from .ctm_base import BaseConsciousTuringMachine
 
 if TYPE_CHECKING:
@@ -22,12 +27,12 @@ except ImportError:
 
 class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def __init__(
-        self, ctm_name: Optional[str] = None, api_manager: Optional['BaseEnv'] = None
+        self, ctm_name: Optional[str] = None, api_manager: Optional["BaseEnv"] = None
     ) -> None:
         self.api_manager = api_manager
         self.config = (
             ConsciousTuringMachineConfig.from_ctm(ctm_name)
-            if ctm_name != 'toolbench'
+            if ctm_name != "toolbench"
             else ConsciousTuringMachineConfig()
         )
 
@@ -80,10 +85,11 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         for openai_function_name in openai_function_names:
             processor_name = openai_function_name
             self.processor_graph.add_node(
-                processor_name=processor_name, processor_group_name='tools'
+                processor_name=processor_name, processor_group_name="tools"
             )
 
     @logging_func_with_count
+    @log_go_up_iteration
     def go_up(self, query: str, **input_kwargs) -> Tuple[Chunk, List[Chunk]]:
         chunks = self.ask_processors(query, **input_kwargs)
         chunks = self.fuse_processor(chunks, query, **input_kwargs)
@@ -94,10 +100,11 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def go_down(
         self, winning_chunk: Chunk, chunks: List[Chunk], **input_kwargs
     ) -> None:
-        logger.info(f'Going down with winning chunk: {winning_chunk.processor_name}')
+        logger.info(f"Going down with winning chunk: {winning_chunk.processor_name}")
         self.downtree_broadcast(winning_chunk)
         self.link_form(chunks, winning_chunk, **input_kwargs)
 
+    @log_forward_iteration
     def forward(
         self,
         query: str,
@@ -113,23 +120,23 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         """Forward pass supporting both standard and tool-based processing"""
         # Collect all input parameters for reuse
         input_params = {
-            'text': text,
-            'image': image,
-            'image_path': image_path,
-            'audio': audio,
-            'audio_path': audio_path,
-            'video_frames': video_frames,
-            'video_frames_path': video_frames_path,
-            'video_path': video_path,
+            "text": text,
+            "image": image,
+            "image_path": image_path,
+            "audio": audio,
+            "audio_path": audio_path,
+            "video_frames": video_frames,
+            "video_frames_path": video_frames_path,
+            "video_path": video_path,
         }
 
-        for _ in range(self.config.max_iter_num):
+        for i in range(self.config.max_iter_num):
             winning_chunk, chunks = self.go_up(
                 query,
                 **input_params,
             )
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
-            if confidence_score > self.config.output_threshold:
+            if i == self.config.max_iter_num - 1:
                 return answer, confidence_score
             self.go_down(winning_chunk, chunks, **input_params)
         return answer, confidence_score
@@ -138,12 +145,12 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def forward_tool(
         self,
         query: str,
-        api_manager: 'BaseEnv',
+        api_manager: "BaseEnv",
     ) -> Tuple[str, float]:
         """Forward pass for tool-only processing (backward compatibility)"""
         if not TOOLBENCH_AVAILABLE:
             raise ImportError(
-                'ToolBench is not available. Please install ToolBench to use tool functionality.'
+                "ToolBench is not available. Please install ToolBench to use tool functionality."
             )
 
         return self.forward(query=query)
