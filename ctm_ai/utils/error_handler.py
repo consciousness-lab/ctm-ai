@@ -1,9 +1,8 @@
 import math
 import time
 from functools import wraps
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, Dict, List, Union
 
-from ..messengers import Message
 from .logger import logger
 
 INF = float(math.inf)
@@ -81,16 +80,16 @@ def info_exponential_backoff(
 
 def message_exponential_backoff(
     retries: int = 5, base_wait_time: int = 1
-) -> Callable[[Callable[..., Message]], Callable[..., Message]]:
+) -> Callable[[Callable[..., Dict[str, Any]]], Callable[..., Dict[str, Any]]]:
     """
     Decorator for applying exponential backoff to a function.
     :param retries: Maximum number of retries.
     :param base_wait_time: Base wait time in seconds for the exponential backoff.
     """
 
-    def decorator(func: Callable[..., Message]) -> Callable[..., Message]:
+    def decorator(func: Callable[..., Dict[str, Any]]) -> Callable[..., Dict[str, Any]]:
         @wraps(func)
-        def wrapper(*args: Any, **kwargs: Any) -> Message:
+        def wrapper(*args: Any, **kwargs: Any) -> Dict[str, Any]:
             attempts = 0
             while attempts < retries:
                 try:
@@ -104,7 +103,7 @@ def message_exponential_backoff(
             logger.error(
                 f"Failed to execute '{func.__name__}' after {retries} retries.",
             )
-            return Message()
+            return Dict[str, Any]
 
         return wrapper
 
