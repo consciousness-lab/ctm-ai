@@ -20,7 +20,7 @@ class LanguageSupervisor(BaseSupervisor):
         messages = [
             Message(
                 role='user',
-                content=f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.',
+                content=f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Provide your reasons to your answer.',
             )
         ]
 

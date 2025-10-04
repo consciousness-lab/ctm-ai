@@ -51,7 +51,7 @@ class ChunkManager:
     def _get_similarity_matrix(self) -> NDArray[np.float32]:
         if self.tfidf_matrix is not None:
             return cosine_similarity(self.tfidf_matrix)
-        return np.array([])  # Return an empty array if no data is available
+        return np.array([])
 
     def reset(self) -> None:
         """Clears all chunks and resets the TF-IDF matrix."""
