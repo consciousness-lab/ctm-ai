@@ -1,22 +1,17 @@
-from ..executors.executor_base import BaseExecutor
-from ..messengers.messenger_base import BaseMessenger
-from ..scorers.scorer_base import BaseScorer
+from typing import Any, Dict, List
+
 from .processor_base import BaseProcessor
 
 
-@BaseProcessor.register_processor('math_processor')
-class MathProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['OPENAI_API_KEY']
+@BaseProcessor.register_processor('language_processor')
+class LanguageProcessor(BaseProcessor):
+    REQUIRED_KEYS = ['GEMINI_API_KEY']
 
-    def init_messenger(self) -> BaseMessenger:
-        return BaseMessenger.create_messenger('math_messenger')
-
-    def init_executor(
-        self, system_prompt: str = None, model: str = None
-    ) -> BaseExecutor:
-        return BaseExecutor(
-            name='math_executor', system_prompt=system_prompt, model=model
-        )
-
-    def init_scorer(self) -> BaseScorer:
-        return BaseScorer(name='language_scorer')
+    def build_executor_messages(
+        self,
+        query: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
+        self._init_info(*args, **kwargs)
+        return [{'role': 'user', 'content': f'Query: {query}\n'}]

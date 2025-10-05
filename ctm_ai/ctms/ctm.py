@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -8,28 +8,10 @@ from ..configs import ConsciousTuringMachineConfig
 from ..utils import logging_func_with_count
 from .ctm_base import BaseConsciousTuringMachine
 
-if TYPE_CHECKING:
-    from ..apis import BaseEnv
-
-try:
-    from ..apis import BaseEnv
-
-    TOOLBENCH_AVAILABLE = True
-except ImportError:
-    TOOLBENCH_AVAILABLE = False
-    BaseEnv = None
-
 
 class ConsciousTuringMachine(BaseConsciousTuringMachine):
-    def __init__(
-        self, ctm_name: Optional[str] = None, api_manager: Optional['BaseEnv'] = None
-    ) -> None:
-        self.api_manager = api_manager
-        self.config = (
-            ConsciousTuringMachineConfig.from_ctm(ctm_name)
-            if ctm_name != 'toolbench'
-            else ConsciousTuringMachineConfig()
-        )
+    def __init__(self, ctm_name: Optional[str] = None) -> None:
+        self.config = ConsciousTuringMachineConfig.from_ctm(ctm_name)
 
         self.load_ctm()
 
@@ -58,36 +40,10 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         )
 
     def load_ctm(self) -> None:
-        """Load CTM with support for both standard processors and tool processors"""
-        # First, run the base class's loading logic to handle standard processors
         super().load_ctm()
-
-        # Then, add the specialized logic for this subclass to load tool processors
-        if self.api_manager and TOOLBENCH_AVAILABLE:
-            self._load_tool_processors()
-
-    def _load_tool_processors(self) -> None:
-        """Load tool processors if ToolBench is available."""
-        if not TOOLBENCH_AVAILABLE:
-            return
-
-        from ..processors import register_tool_processors
-
-        openai_function_names = [
-            name for name in self.api_manager.openai_function_names
-        ]
-        register_tool_processors(openai_function_names)
-        for openai_function_name in openai_function_names:
-            processor_name = openai_function_name
-            self.processor_graph.add_node(
-                processor_name=processor_name, processor_group_name='tools'
-            )
 
     @logging_func_with_count
     def go_up(self, query: str, **input_kwargs) -> Tuple[Chunk, List[Chunk]]:
-        for processor in self.processor_graph.nodes:
-            processor.clear_memory()
-
         chunks = self.ask_processors(query, **input_kwargs)
         chunks = self.fuse_processor(chunks, query, **input_kwargs)
         winning_chunk = self.uptree_competition(chunks)
@@ -135,17 +91,3 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
                 return answer, confidence_score
             self.go_down(winning_chunk, chunks, **input_params)
         return answer, confidence_score
-
-    # Convenience method for tool-only usage (backward compatibility)
-    def forward_tool(
-        self,
-        query: str,
-        api_manager: 'BaseEnv',
-    ) -> Tuple[str, float]:
-        """Forward pass for tool-only processing (backward compatibility)"""
-        if not TOOLBENCH_AVAILABLE:
-            raise ImportError(
-                'ToolBench is not available. Please install ToolBench to use tool functionality.'
-            )
-
-        return self.forward(query=query)
