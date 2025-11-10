@@ -66,4 +66,4 @@ if __name__ == "__main__":
     print(f"Total Test Cases: {len(test_list)}")
 
     # for test_file in test_list:
-    run_instance("2_5772_7", log_dir="logs/mustard_results")
+    run_instance("2_69", log_dir="logs/mustard_results")

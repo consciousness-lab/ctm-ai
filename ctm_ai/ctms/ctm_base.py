@@ -1,6 +1,6 @@
 import concurrent.futures
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union, Dict, Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -172,9 +172,12 @@ class BaseConsciousTuringMachine(ABC):
     @logging_func_with_count
     @log_supervisor_result
     def ask_supervisor(
-        self, query: str, chunk: Chunk
-    ) -> Tuple[Union[str, None], float]:
-        final_answer, score = self.supervisors[0].ask(query, chunk.gist)
+        self,
+        query: str,
+        chunk: Chunk,
+        action_history: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[Union[str, None], Any]:
+        final_answer, score = self.supervisors[0].ask(query, chunk.gist, action_history)
         return final_answer, score
 
     @logging_func_with_count
@@ -207,7 +210,7 @@ class BaseConsciousTuringMachine(ABC):
         )
 
         for chunk in chunks:
-            if chunk.relevance >= 0.8:
+            if chunk.relevance >= 0.9:
                 logger.info(
                     f"Adding link between {winning_chunk.processor_name} and {chunk.processor_name}"
                 )

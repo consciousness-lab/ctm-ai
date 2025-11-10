@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
+import random
 
 from ..chunks import Chunk
 from ..configs import ConsciousTuringMachineConfig

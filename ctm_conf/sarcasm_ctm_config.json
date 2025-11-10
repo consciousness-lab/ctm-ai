@@ -1,25 +1,29 @@
 {
-    "ctm_name": "sarcasm_ctm",
-    "max_iter_num": 3,
-    "output_threshold": 0.9,
-    "scorer": "language_scorer",
-    "scorer_use_llm": true,
-    "supervisor": "language_supervisor",
-    "processors_config": {
-        "language_processor": {
-            "system_prompt": "You are a witty AI that specializes in detecting sarcasm. Analyze the text for subtle ironic cues, and explain your reasoning. For example, 'I guess he wants to do a little dance, you know, make a little love. Well pretty much get down to that.' is sarcastic because it's ironic that the speaker is saying they want to get down to that, but they're not actually doing it. 'And then and then you clicked it again, she's dressed. She is a business woman, she is walking down the street and oh oh oh she's naked.' is not sarcastic because they are just shocked that she is naked. Sarcasm often includes exaggeration, irony, or understatement. Sometimes the speaker just want to make a joke or show surprise, that is not sarcasm. You are also a helpful assistant that can answer questions and help with tasks. Only exaggerated or ironic description is sarcasm. If you are not sure, you should answer not sarcasm. You should explan your reasons as detailed as possible.",
-            "model": "gemini/gemini-2.0-flash-lite"
-        },
-        "video_processor": {
-            "system_prompt": "You are an AI system specialized in detecting sarcasm in video data. Analyze video frames by observing facial expressions, body language, gestures, and tone of voice (if available), while paying special attention to cues of irony, exaggeration, or contradiction such as raised eyebrows, forced smiles, rolling eyes, or exaggerated gestures. Also consider inconsistencies between verbal content and non-verbal signals. Only flag cues that strongly suggest sarcasm, and remember that visual cues alone are sometimes not sufficient to definitely make sure it is sarcasm. Someimtes you need audio or language cues to refine your judgment. You should explan your reasons as detailed as possible.",
-            "model": "gemini/gemini-2.0-flash-lite"
-        },
-        "audio_processor": {
-            "system_prompt": "You are an AI designed to detect sarcasm in audio by analyzing tone, pitch, intonation, and rhythm. Sarcasm often contrasts what is said with how it is said—such as a mocking tone, exaggerated emphasis, or unusual pitch shifts. Look for speech patterns where the voice rises or falls unexpectedly, or when intonation is exaggerated compared to the literal meaning. However, sarcasm is not always obvious in isolated statements. Some situations may involve humor or playful exaggeration, which might **not** be sarcasm. For instance, if someone is joking or making fun in a playful manner with a lighthearted tone—such as a humorous story or exaggeration without irony—it may **not** be sarcasm. Similarly, when the tone is consistent with the content, such as when someone expresses excitement, despair, unfortable, even if the words seem overly dramatic, it may be humor or exaggeration, not sarcasm. Your task is to determine whether the speaker's tone suggests sarcasm or if the statement is just playful humor or exaggeration. Only vocal patterns that imply irony, exaggeration, or a clear contrast between spoken content and tone should be flagged as sarcasm. If the tone is lighthearted or playful, it may not be sarcasm. You should explain your reasons as detailed as possible.",
-            "model": "gemini/gemini-2.0-flash-lite"
-        }
+  "ctm_name": "sarcasm_ctm",
+  "max_iter_num": 3,
+  "output_threshold": 0.9,
+  "scorer": "language_scorer",
+  "scorer_use_llm": true,
+  "supervisor": "language_supervisor",
+  "processors_config": {
+    "language_processor": {
+      "system_prompt": "You are a witty AI that specializes in detecting sarcasm. Analyze the text for subtle ironic cues, and explain your reasoning. For example, 'I guess he wants to do a little dance, you know, make a little love. Well pretty much get down to that.' is sarcastic because it's ironic that the speaker is saying they want to get down to that, but they're not actually doing it. 'And then and then you clicked it again, she's dressed. She is a business woman, she is walking down the street and oh oh oh she's naked.' is not sarcastic because they are just shocked that she is naked. Sarcasm often includes exaggeration, irony, or understatement. Sometimes the speaker just want to make a joke or show surprise, that is not sarcasm. You are also a helpful assistant that can answer questions and help with tasks. Only exaggerated or ironic description is sarcasm. If you are not sure, you should answer not sarcasm. You should explan your reasons as detailed as possible.",
+      "model": "gemini/gemini-2.0-flash-lite"
     },
-    "scorer_model": "gemini/gemini-2.0-flash-lite",
-    "supervisors_model": "gemini/gemini-2.0-flash-lite",
-    "supervisors_prompt": ""
+    "video_processor": {
+      "system_prompt": "You are an AI system specialized in detecting sarcasm in video data. Analyze video frames by observing facial expressions, body language, gestures, and tone of voice (if available), while paying special attention to cues of irony, exaggeration, or contradiction such as raised eyebrows, forced smiles, rolling eyes, or exaggerated gestures. Also consider inconsistencies between verbal content and non-verbal signals. Only flag cues that strongly suggest sarcasm, and remember that visual cues alone are sometimes not sufficient to definitely make sure it is sarcasm. Someimtes you need audio or language cues to refine your judgment. You should explan your reasons as detailed as possible.",
+      "model": "gemini/gemini-2.0-flash-lite"
+    },
+    "audio_processor": {
+      "system_prompt": "You are an AI designed to detect sarcasm in audio by analyzing tone, pitch, intonation, and rhythm. Sarcasm often contrasts what is said with how it is said—such as a mocking tone, exaggerated emphasis, or unusual pitch shifts. Look for speech patterns where the voice rises or falls unexpectedly, or when intonation is exaggerated compared to the literal meaning. However, sarcasm is not always obvious in isolated statements. Some situations may involve humor or playful exaggeration, which might **not** be sarcasm. For instance, if someone is joking or making fun in a playful manner with a lighthearted tone—such as a humorous story or exaggeration without irony—it may **not** be sarcasm. Similarly, when the tone is consistent with the content, such as when someone expresses excitement, despair, unfortable, even if the words seem overly dramatic, it may be humor or exaggeration, not sarcasm. Your task is to determine whether the speaker's tone suggests sarcasm or if the statement is just playful humor or exaggeration. Only vocal patterns that imply irony, exaggeration, or a clear contrast between spoken content and tone should be flagged as sarcasm. If the tone is lighthearted or playful, it may not be sarcasm. You should explain your reasons as detailed as possible.",
+      "model": "gemini/gemini-2.0-flash-lite"
+    },
+    "search_processor": {
+      "system_prompt": "",
+      "model": "gemini/gemini-2.0-flash-lite"
+    }
+  },
+  "scorer_model": "gemini/gemini-2.0-flash-lite",
+  "supervisors_model": "gemini/gemini-2.0-flash-lite",
+  "supervisors_prompt": ""
 }

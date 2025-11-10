@@ -7,9 +7,17 @@ from ..utils import load_image
 from .processor_base import BaseProcessor
 
 
-@BaseProcessor.register_processor('vision_processor')
+def pil_to_base64(image) -> str:
+    """Convert PIL image to base64 string."""
+    buffer = io.BytesIO()
+    image.save(buffer, format="JPEG")
+    img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return img_str
+
+
+@BaseProcessor.register_processor("vision_processor")
 class VisionProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['GEMINI_API_KEY']
+    REQUIRED_KEYS = ["GEMINI_API_KEY"]
 
     def build_executor_messages(
         self,
@@ -17,22 +25,27 @@ class VisionProcessor(BaseProcessor):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        image_path = kwargs.get('image_path')
-        if not image_path:
-            return [{'role': 'assistant', 'content': ''}]
-        if not os.path.exists(image_path):
-            raise FileNotFoundError(f'Image file not found: {image_path}')
-        base64_image = load_image(image_path)
+        image_path = kwargs.get("image_path")
+        image = kwargs.get("image")
+        if not image_path and not image:
+            raise ValueError("Image path or image is required")
+        if image_path:
+            base64_image = load_image(image_path)
+        if image:
+            base64_image = pil_to_base64(image)
 
-        all_messages = [{'role': 'system', 'content': self.system_prompt}]
+        all_messages = [{"role": "system", "content": self.system_prompt}]
 
         image_message = {
-            'role': 'user',
-            'content': [
-                {'type': 'text', 'text': query},
+            "role": "user",
+            "content": [
                 {
-                    'type': 'image_url',
-                    'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
+                    "type": "text",
+                    "text": f"{query}\n Based on the cartoon image,please select the caption you think is the most humorous and most likely to win the New Yorker Caption Contest. After giving the caption, explain your analysis and reasoning for why it fits well.",
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
                 },
             ],
         }

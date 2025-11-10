@@ -65,7 +65,12 @@ class ChunkManager:
         elif chunk1 < chunk2:
             winner = chunk2
         else:
-            winner = random.choice([chunk1, chunk2])
+            if chunk1.processor_name == "language_processor":
+                winner = chunk1
+            elif chunk2.processor_name == "language_processor":
+                winner = chunk2
+            else:
+                winner = random.choice([chunk1, chunk2])
         return winner
 
     def uptree_competition(self) -> Chunk:

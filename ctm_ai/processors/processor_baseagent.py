@@ -6,22 +6,23 @@ from litellm import completion
 from numpy.typing import NDArray
 
 from ..chunks import Chunk
-from ..scorers import WebScorer
+from ..scorers import BaseScorer
 from ..utils import configure_litellm, message_exponential_backoff
 from .utils import JSON_FORMAT, parse_json_response
 
 
-class BaseProcessor(object):
-    _processor_registry: Dict[str, Type["BaseProcessor"]] = {}
+class BaseAgentProcessor(object):
+    _processor_registry: Dict[str, Type["BaseAgentProcessor"]] = {}
     REQUIRED_KEYS: List[str] = []
 
     @classmethod
     def register_processor(
         cls, name: str
-    ) -> Callable[[Type["BaseProcessor"]], Type["BaseProcessor"]]:
+    ) -> Callable[[Type["BaseAgentProcessor"]], Type["BaseAgentProcessor"]]:
+
         def decorator(
-            subclass: Type["BaseProcessor"],
-        ) -> Type["BaseProcessor"]:
+            subclass: Type["BaseAgentProcessor"],
+        ) -> Type["BaseAgentProcessor"]:
             cls._processor_registry[name] = subclass
             return subclass
 
@@ -33,11 +34,11 @@ class BaseProcessor(object):
         group_name: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> "BaseProcessor":
+    ) -> "BaseAgentProcessor":
         if name not in cls._processor_registry:
             raise ValueError(f"No processor registered with name '{name}'")
         subclass = cls._processor_registry[name]
-        instance = super(BaseProcessor, cls).__new__(subclass)
+        instance = super(BaseAgentProcessor, cls).__new__(subclass)
         instance.name = name
         instance.group_name = group_name
         return instance
@@ -84,10 +85,12 @@ class BaseProcessor(object):
 
     def _build_executor_content(
         self,
-        other_info: Optional[Dict[str, Any]] = None,
+        query: str,
+        text: Optional[str] = None,
+        is_fuse: bool = False,
         **kwargs: Any,
     ) -> str:
-        content = f"{other_info}"
+        content = ""
 
         if len(self.fuse_history) > 0:
             content += "\nThere are extra information from other processors:\n"
@@ -99,6 +102,7 @@ class BaseProcessor(object):
             for i, item in enumerate(self.winner_answer, 1):
                 content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
+        content += JSON_FORMAT
         return content
 
     @message_exponential_backoff()
@@ -142,42 +146,37 @@ class BaseProcessor(object):
         self,
         query: str,
         text: Optional[str],
-        action_space: Optional[str],
         action_history: Optional[Dict[str, Any]],
         html: Optional[Any],
         axtree: Optional[Any],
         screenshot: Optional[Any],
         is_fuse: bool = False,
-        other_info: Optional[Dict[str, Any]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
         clean_query = query
-        other_info_content = self._build_executor_content(
+        history_info = self._build_executor_content(
             query=query,
             text=text,
-            action_space=action_space,
             action_history=action_history,
             html=html,
             axtree=axtree,
             screenshot=screenshot,
             is_fuse=is_fuse,
-            other_info=other_info,
         )
         executor_messages = self.build_executor_messages(
             query=query,
             text=text,
-            action_space=action_space,
             action_history=action_history,
             html=html,
             axtree=axtree,
             screenshot=screenshot,
-            other_info=other_info_content,
+            other_info=history_info,
             is_fuse=is_fuse,
         )
         executor_output = self.ask_executor(
             messages=executor_messages,
-            default_additional_question="",
+            default_additional_question="Would you like me to explain any specific aspects in more detail?",
         )
         if is_fuse:
             self.add_fuse_history(clean_query, executor_output["response"])
@@ -187,13 +186,8 @@ class BaseProcessor(object):
             executor_output["additional_question"],
         )
 
-        scorer = WebScorer(*args, **kwargs)
-        scorer_output = scorer.ask(
-            query=clean_query,
-            messages=executor_output,
-            action_history=action_history,
-            action_space=action_space,
-        )
+        scorer = BaseScorer(*args, **kwargs)
+        scorer_output = scorer.ask(query=clean_query, messages=executor_output)
         additional_question = executor_output["additional_question"] or ""
 
         chunk = self.merge_outputs_into_chunk(
@@ -204,7 +198,7 @@ class BaseProcessor(object):
         )
         return chunk
 
-    def get_memory_info(self) -> Dict[str, Any]:
+    def get_memory_info(self) -> Tuple[int, int]:
         return {
             "all_history": self.all_context_history,
             "fuse_history": self.fuse_history,
@@ -239,4 +233,4 @@ class BaseProcessor(object):
         return hash(self.name)
 
     def __eq__(self, other):
-        return isinstance(other, BaseProcessor) and self.name == other.name
+        return isinstance(other, BaseAgentProcessor) and self.name == other.name
