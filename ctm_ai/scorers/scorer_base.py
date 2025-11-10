@@ -82,20 +82,20 @@ class BaseScorer(object):
         self.init_scorer(*args, **kwargs)
 
     def init_scorer(self, *args: Any, **kwargs: Any) -> None:
-        self.model_name = kwargs.get("model", "gemini/gemini-2.0-flash-lite")
-        self.embedding_model = kwargs.get("embedding_model", "text-embedding-3-small")
-        self.relevance_model = kwargs.get("relevance_model", self.model_name)
-        self.confidence_model = kwargs.get("confidence_model", self.model_name)
-        self.surprise_model = kwargs.get("scorer_model", self.model_name)
+        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
+        self.embedding_model = kwargs.get('embedding_model', 'text-embedding-3-small')
+        self.relevance_model = kwargs.get('relevance_model', self.model_name)
+        self.confidence_model = kwargs.get('confidence_model', self.model_name)
+        self.surprise_model = kwargs.get('scorer_model', self.model_name)
 
         configure_litellm(model_name=self.model_name)
 
     def get_embedding(self, text: str) -> np.ndarray:
         try:
             response = embedding(model=self.embedding_model, input=[text])
-            return np.array(response.data[0]["embedding"], dtype=np.float32)
+            return np.array(response.data[0]['embedding'], dtype=np.float32)
         except Exception as e:
-            print(f"Error getting embedding: {e}")
+            print(f'Error getting embedding: {e}')
             return np.zeros(1536, dtype=np.float32)
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
@@ -103,7 +103,7 @@ class BaseScorer(object):
         self, query: str, messages: Dict[str, Any], use_llm: bool = True
     ) -> float:
         query = query
-        gist = messages["response"]
+        gist = messages['response']
 
         if use_llm:
             final_relevance = self._ask_llm_relevance(query, gist)
@@ -115,8 +115,8 @@ class BaseScorer(object):
     def _ask_llm_relevance(self, query: str, gist: str) -> float:
         relevance_prompt = [
             {
-                "role": "user",
-                "content": RELEVANCE_PROMPT_OPTION.format(query=query, gist=gist),
+                'role': 'user',
+                'content': RELEVANCE_PROMPT_OPTION.format(query=query, gist=gist),
             }
         ]
 
@@ -133,7 +133,7 @@ class BaseScorer(object):
 
             import re
 
-            number_match = re.search(r"(\d+\.?\d*)", score_text)
+            number_match = re.search(r'(\d+\.?\d*)', score_text)
             if number_match:
                 score = float(number_match.group(1))
             else:
@@ -142,7 +142,7 @@ class BaseScorer(object):
             return max(0.0, min(1.0, score))
 
         except (ValueError, TypeError, IndexError):
-            raise ValueError("Error getting relevance score")
+            raise ValueError('Error getting relevance score')
 
     def _ask_statistical_relevance(self, query: str, gist: str) -> float:
         try:
@@ -154,13 +154,13 @@ class BaseScorer(object):
             else:
                 topical_score = cosine_similarity([query_emb], [gist_emb])[0][0]
         except Exception as e:
-            print(f"[Embedding Error] {e}")
+            print(f'[Embedding Error] {e}')
             topical_score = 0.0
         return float(topical_score)
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_confidence(self, messages: Dict[str, Any], use_llm: bool = True) -> float:
-        gist = messages["response"]
+        gist = messages['response']
 
         if use_llm:
             final_confidence = self._ask_llm_confidence(gist)
@@ -172,8 +172,8 @@ class BaseScorer(object):
     def _ask_llm_confidence(self, gist: str) -> float:
         confidence_prompt = [
             {
-                "role": "user",
-                "content": f"""Please evaluate how confident this response appears to be on a scale from 0.0 to 1.0. 
+                'role': 'user',
+                'content': f"""Please evaluate how confident this response appears to be on a scale from 0.0 to 1.0. 
 
 Response: {gist}
 
@@ -204,7 +204,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
 
             import re
 
-            number_match = re.search(r"(\d+\.?\d*)", score_text)
+            number_match = re.search(r'(\d+\.?\d*)', score_text)
             if number_match:
                 score = float(number_match.group(1))
             else:
@@ -239,10 +239,10 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
         self,
         query: str,
         messages: Dict[str, Any],
-        lang: str = "en",
+        lang: str = 'en',
         use_llm: bool = True,
     ) -> float:
-        gist = messages["response"]
+        gist = messages['response']
 
         if use_llm:
             final_surprise = self._ask_llm_surprise(query, gist)
@@ -255,8 +255,8 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
         """Use LLM to assess how surprising or novel the response is."""
         surprise_prompt = [
             {
-                "role": "user",
-                "content": f"""You are asked to evaluate whether the given response is the best caption choice (most funny for humans) for the New Yorker Caption Contest.
+                'role': 'user',
+                'content': f"""You are asked to evaluate whether the given response is the best caption choice (most funny for humans) for the New Yorker Caption Contest.
 
 Here are examples of past winners to illustrate the style of humor:
 
@@ -299,7 +299,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
 
             import re
 
-            number_match = re.search(r"(\d+\.?\d*)", score_text)
+            number_match = re.search(r'(\d+\.?\d*)', score_text)
             if number_match:
                 score = float(number_match.group(1))
             else:
@@ -339,8 +339,8 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
         weight = relevance + confidence + surprise
 
         return {
-            "relevance": relevance,
-            "confidence": confidence,
-            "surprise": surprise,
-            "weight": weight,
+            'relevance': relevance,
+            'confidence': confidence,
+            'surprise': surprise,
+            'weight': weight,
         }

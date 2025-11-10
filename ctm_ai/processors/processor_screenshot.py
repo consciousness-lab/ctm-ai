@@ -63,9 +63,9 @@ Additional guidelines:
 """
 
 
-@BaseProcessor.register_processor("screenshot_processor")
+@BaseProcessor.register_processor('screenshot_processor')
 class ScreenProcessor(BaseProcessor):
-    REQUIRED_KEYS = ["GEMINI_API_KEY"]
+    REQUIRED_KEYS = ['GEMINI_API_KEY']
 
     def build_executor_messages(
         self,
@@ -83,15 +83,15 @@ class ScreenProcessor(BaseProcessor):
     ) -> List[Dict[str, Any]]:
         message = [
             {
-                "role": "system",
-                "content": "You are a UI Assistant, your goal is to help the user perform tasks using a web browser.",
+                'role': 'system',
+                'content': 'You are a UI Assistant, your goal is to help the user perform tasks using a web browser.',
             },
             {
-                "role": "user",
-                "content": [
+                'role': 'user',
+                'content': [
                     {
-                        "type": "text",
-                        "content": PROMPT.format(
+                        'type': 'text',
+                        'content': PROMPT.format(
                             objective=query,
                             axtree=axtree,
                             action_history=action_history,
@@ -100,8 +100,8 @@ class ScreenProcessor(BaseProcessor):
                         ),
                     },
                     {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{screenshot}"},
+                        'type': 'image_url',
+                        'image_url': {'url': f'data:image/jpeg;base64,{screenshot}'},
                     },
                 ],
             },

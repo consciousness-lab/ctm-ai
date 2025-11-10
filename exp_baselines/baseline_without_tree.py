@@ -19,8 +19,8 @@ class ConsciousTuringMachineBaseline(BaseCTM):
             self.processor_graph.add_node(
                 processor_name=processor_name,
                 processor_group_name=None,
-                system_prompt=processor_config.get("system_prompt"),
-                model=processor_config.get("model"),
+                system_prompt=processor_config.get('system_prompt'),
+                model=processor_config.get('model'),
             )
 
         self.add_supervisor(self.config.supervisor)
@@ -59,13 +59,13 @@ class ConsciousTuringMachineBaseline(BaseCTM):
         )
 
         prompt_header = (
-            f"Based on the following processor outputs across different modalities, please provide the most accurate and comprehensive answer to the query: {query}.\n\n"
-            "### Processor Outputs:\n"
+            f'Based on the following processor outputs across different modalities, please provide the most accurate and comprehensive answer to the query: {query}.\n\n'
+            '### Processor Outputs:\n'
         )
 
-        processor_outputs = "\n".join(
+        processor_outputs = '\n'.join(
             [
-                f"**Processor [{chunk.processor_name}] Output:**\n{chunk.gist}\n"
+                f'**Processor [{chunk.processor_name}] Output:**\n{chunk.gist}\n'
                 for chunk in chunks
             ]
         )

@@ -12,17 +12,16 @@ from .utils import JSON_FORMAT, parse_json_response
 
 
 class BaseAgentProcessor(object):
-    _processor_registry: Dict[str, Type["BaseAgentProcessor"]] = {}
+    _processor_registry: Dict[str, Type['BaseAgentProcessor']] = {}
     REQUIRED_KEYS: List[str] = []
 
     @classmethod
     def register_processor(
         cls, name: str
-    ) -> Callable[[Type["BaseAgentProcessor"]], Type["BaseAgentProcessor"]]:
-
+    ) -> Callable[[Type['BaseAgentProcessor']], Type['BaseAgentProcessor']]:
         def decorator(
-            subclass: Type["BaseAgentProcessor"],
-        ) -> Type["BaseAgentProcessor"]:
+            subclass: Type['BaseAgentProcessor'],
+        ) -> Type['BaseAgentProcessor']:
             cls._processor_registry[name] = subclass
             return subclass
 
@@ -34,7 +33,7 @@ class BaseAgentProcessor(object):
         group_name: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> "BaseAgentProcessor":
+    ) -> 'BaseAgentProcessor':
         if name not in cls._processor_registry:
             raise ValueError(f"No processor registered with name '{name}'")
         subclass = cls._processor_registry[name]
@@ -49,14 +48,14 @@ class BaseAgentProcessor(object):
         self.check_required_env_vars()
         self.name = name
         self.group_name = group_name
-        self.system_prompt = kwargs.get("system_prompt")
-        self.model = kwargs.get("model")
+        self.system_prompt = kwargs.get('system_prompt')
+        self.model = kwargs.get('model')
 
-        self.model_name = kwargs.get("model", "gemini/gemini-2.0-flash-lite")
-        self.try_times = kwargs.get("try_times", 3)
-        self.max_tokens = kwargs.get("max_tokens", 4096)
-        self.return_num = kwargs.get("return_num", 1)
-        self.temperature = kwargs.get("temperature", 0.0)
+        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
+        self.try_times = kwargs.get('try_times', 3)
+        self.max_tokens = kwargs.get('max_tokens', 4096)
+        self.return_num = kwargs.get('return_num', 1)
+        self.temperature = kwargs.get('temperature', 0.0)
         self.fuse_history = []
         self.winner_answer = []
         self.all_context_history = []
@@ -66,20 +65,20 @@ class BaseAgentProcessor(object):
         missing_vars = [var for var in self.REQUIRED_KEYS if var not in os.environ]
         if missing_vars:
             raise EnvironmentError(
-                f"[{self.name}] Missing required environment variables: {missing_vars}"
+                f'[{self.name}] Missing required environment variables: {missing_vars}'
             )
 
     def add_fuse_history(self, question: str, answer: str) -> None:
-        self.fuse_history.append({"additional_question": question, "answer": answer})
+        self.fuse_history.append({'additional_question': question, 'answer': answer})
 
     def add_all_context_history(
         self, query: str, answer: str, additional_question: str
     ) -> None:
         self.all_context_history.append(
             {
-                "query": query,
-                "answer": answer,
-                "additional_question": additional_question,
+                'query': query,
+                'answer': answer,
+                'additional_question': additional_question,
             }
         )
 
@@ -90,15 +89,15 @@ class BaseAgentProcessor(object):
         is_fuse: bool = False,
         **kwargs: Any,
     ) -> str:
-        content = ""
+        content = ''
 
         if len(self.fuse_history) > 0:
-            content += "\nThere are extra information from other processors:\n"
+            content += '\nThere are extra information from other processors:\n'
             for i, item in enumerate(self.fuse_history, 1):
                 content += f'{i}. {item["answer"]}\n'
 
         if len(self.winner_answer) > 0:
-            content += "\nThere are some previous answers to the same query, think further based on this answer.\n"
+            content += '\nThere are some previous answers to the same query, think further based on this answer.\n'
             for i, item in enumerate(self.winner_answer, 1):
                 content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
@@ -109,7 +108,7 @@ class BaseAgentProcessor(object):
     def ask_executor(
         self,
         messages: List[Dict[str, Any]],
-        default_additional_question: str = "",
+        default_additional_question: str = '',
         *args: Any,
         **kwargs: Any,
     ) -> Dict[str, str]:
@@ -129,9 +128,9 @@ class BaseAgentProcessor(object):
             contents[0], default_additional_question
         )
         return {
-            "response": gist,
-            "action": action,
-            "additional_question": additional_question,
+            'response': gist,
+            'action': action,
+            'additional_question': additional_question,
         }
 
     def build_executor_messages(
@@ -140,7 +139,7 @@ class BaseAgentProcessor(object):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        raise NotImplementedError("Subclasses must implement this method")
+        raise NotImplementedError('Subclasses must implement this method')
 
     def ask(
         self,
@@ -176,19 +175,19 @@ class BaseAgentProcessor(object):
         )
         executor_output = self.ask_executor(
             messages=executor_messages,
-            default_additional_question="Would you like me to explain any specific aspects in more detail?",
+            default_additional_question='Would you like me to explain any specific aspects in more detail?',
         )
         if is_fuse:
-            self.add_fuse_history(clean_query, executor_output["response"])
+            self.add_fuse_history(clean_query, executor_output['response'])
         self.add_all_context_history(
             clean_query,
-            executor_output["response"],
-            executor_output["additional_question"],
+            executor_output['response'],
+            executor_output['additional_question'],
         )
 
         scorer = BaseScorer(*args, **kwargs)
         scorer_output = scorer.ask(query=clean_query, messages=executor_output)
-        additional_question = executor_output["additional_question"] or ""
+        additional_question = executor_output['additional_question'] or ''
 
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
@@ -200,15 +199,15 @@ class BaseAgentProcessor(object):
 
     def get_memory_info(self) -> Tuple[int, int]:
         return {
-            "all_history": self.all_context_history,
-            "fuse_history": self.fuse_history,
-            "winner_answer": self.winner_answer,
+            'all_history': self.all_context_history,
+            'fuse_history': self.fuse_history,
+            'winner_answer': self.winner_answer,
         }
 
     def update(self, chunk: Chunk) -> None:
         if chunk.processor_name != self.name:
             self.winner_answer.append(
-                {"processor_name": chunk.processor_name, "answer": chunk.gist}
+                {'processor_name': chunk.processor_name, 'answer': chunk.gist}
             )
 
     def merge_outputs_into_chunk(
@@ -216,16 +215,16 @@ class BaseAgentProcessor(object):
         name: str,
         executor_output: Dict[str, Any],
         scorer_output: Dict[str, float],
-        additional_question: str = "",
+        additional_question: str = '',
     ) -> Chunk:
         return Chunk(
             time_step=0,
             processor_name=name,
-            gist=executor_output["response"],
-            relevance=scorer_output["relevance"],
-            confidence=scorer_output["confidence"],
-            surprise=scorer_output["surprise"],
-            weight=scorer_output["weight"],
+            gist=executor_output['response'],
+            relevance=scorer_output['relevance'],
+            confidence=scorer_output['confidence'],
+            surprise=scorer_output['surprise'],
+            weight=scorer_output['weight'],
             additional_question=additional_question,
         )
 

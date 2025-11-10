@@ -63,9 +63,9 @@ Additional guidelines:
 """
 
 
-@BaseProcessor.register_processor("html_processor")
+@BaseProcessor.register_processor('html_processor')
 class HtmlProcessor(BaseProcessor):
-    REQUIRED_KEYS = ["GEMINI_API_KEY"]
+    REQUIRED_KEYS = ['GEMINI_API_KEY']
 
     def build_executor_messages(
         self,
@@ -82,12 +82,12 @@ class HtmlProcessor(BaseProcessor):
     ) -> List[Dict[str, Any]]:
         message = [
             {
-                "role": "system",
-                "content": "You are a UI Assistant, your goal is to help the user perform tasks using a web browser.",
+                'role': 'system',
+                'content': 'You are a UI Assistant, your goal is to help the user perform tasks using a web browser.',
             },
             {
-                "role": "user",
-                "content": PROMPT.format(
+                'role': 'user',
+                'content': PROMPT.format(
                     objective=query,
                     html=html,
                     action_history=action_history,

@@ -2,9 +2,9 @@ from typing import Any, Dict
 
 import numpy as np
 from litellm import completion, embedding
-from .scorer_base import BaseScorer
 
 from ..utils import configure_litellm, score_exponential_backoff
+from .scorer_base import BaseScorer
 
 RELEVANCE_PROMPT_OPTION = """
 You are scoring a ONE-STEP web agent proposal for its task fit.
@@ -64,20 +64,20 @@ class WebScorer(BaseScorer):
         self.init_scorer(*args, **kwargs)
 
     def init_scorer(self, *args: Any, **kwargs: Any) -> None:
-        self.model_name = kwargs.get("model", "gemini/gemini-2.0-flash-lite")
-        self.embedding_model = kwargs.get("embedding_model", "text-embedding-3-small")
-        self.relevance_model = kwargs.get("relevance_model", self.model_name)
-        self.confidence_model = kwargs.get("confidence_model", self.model_name)
-        self.surprise_model = kwargs.get("scorer_model", self.model_name)
+        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
+        self.embedding_model = kwargs.get('embedding_model', 'text-embedding-3-small')
+        self.relevance_model = kwargs.get('relevance_model', self.model_name)
+        self.confidence_model = kwargs.get('confidence_model', self.model_name)
+        self.surprise_model = kwargs.get('scorer_model', self.model_name)
 
         configure_litellm(model_name=self.model_name)
 
     def get_embedding(self, text: str) -> np.ndarray:
         try:
             response = embedding(model=self.embedding_model, input=[text])
-            return np.array(response.data[0]["embedding"], dtype=np.float32)
+            return np.array(response.data[0]['embedding'], dtype=np.float32)
         except Exception as e:
-            print(f"Error getting embedding: {e}")
+            print(f'Error getting embedding: {e}')
             return np.zeros(1536, dtype=np.float32)
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
@@ -90,7 +90,7 @@ class WebScorer(BaseScorer):
         use_llm: bool = True,
     ) -> float:
         query = query
-        gist = messages["response"]
+        gist = messages['response']
 
         if use_llm:
             final_relevance = self._ask_llm_relevance(
@@ -106,8 +106,8 @@ class WebScorer(BaseScorer):
     ) -> float:
         relevance_prompt = [
             {
-                "role": "user",
-                "content": RELEVANCE_PROMPT_OPTION.format(
+                'role': 'user',
+                'content': RELEVANCE_PROMPT_OPTION.format(
                     objective=query,
                     gist=gist,
                     action_history=action_history,
@@ -129,7 +129,7 @@ class WebScorer(BaseScorer):
 
             import re
 
-            number_match = re.search(r"(\d+\.?\d*)", score_text)
+            number_match = re.search(r'(\d+\.?\d*)', score_text)
             if number_match:
                 score = float(number_match.group(1))
             else:
@@ -138,7 +138,7 @@ class WebScorer(BaseScorer):
             return max(0.0, min(1.0, score))
 
         except (ValueError, TypeError, IndexError):
-            raise ValueError("Error getting relevance score")
+            raise ValueError('Error getting relevance score')
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
     def ask_confidence(
@@ -166,11 +166,11 @@ class WebScorer(BaseScorer):
         action_space: str,
         use_llm: bool = True,
     ) -> float:
-        gist = messages["response"]
+        gist = messages['response']
         confidence_prompt = [
             {
-                "role": "user",
-                "content": CONFIDENCT_PROMPT_OPTION.format(
+                'role': 'user',
+                'content': CONFIDENCT_PROMPT_OPTION.format(
                     objective=query,
                     gist=gist,
                     action_history=action_history,
@@ -192,7 +192,7 @@ class WebScorer(BaseScorer):
 
             import re
 
-            number_match = re.search(r"(\d+\.?\d*)", score_text)
+            number_match = re.search(r'(\d+\.?\d*)', score_text)
             if number_match:
                 score = float(number_match.group(1))
             else:
@@ -222,8 +222,8 @@ class WebScorer(BaseScorer):
         weight = relevance + confidence
 
         return {
-            "relevance": relevance,
-            "confidence": confidence,
-            "surprise": 0.0,
-            "weight": weight,
+            'relevance': relevance,
+            'confidence': confidence,
+            'surprise': 0.0,
+            'weight': weight,
         }

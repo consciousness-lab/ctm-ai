@@ -26,12 +26,12 @@ Let's Begin!
 """
 
 
-@BaseProcessor.register_processor("tool_processor")
+@BaseProcessor.register_processor('tool_processor')
 class ToolProcessor(BaseProcessor):
-    REQUIRED_KEYS = ["OPENAI_API_KEY"]
+    REQUIRED_KEYS = ['OPENAI_API_KEY']
 
     def _init_info(self, *args: Any, **kwargs: Any) -> None:
-        self.system_prompt = "You are an expert in tool calling."
+        self.system_prompt = 'You are an expert in tool calling.'
 
     def build_executor_messages(
         self,
@@ -43,11 +43,11 @@ class ToolProcessor(BaseProcessor):
     ) -> List[Dict[str, Any]]:
         self._init_info(*args, **kwargs)
         system = FORMAT_INSTRUCTIONS_SYSTEM_FUNCTION
-        system = system.replace("{openai_function_name}", openai_function_name)
+        system = system.replace('{openai_function_name}', openai_function_name)
         action_space = api_manager.openai_name_reflect_all_info[openai_function_name][1]
         system = system.replace(
-            "{action_space}",
+            '{action_space}',
             action_space,
         )
-        query_all = system + "\n" + query
-        return [{"role": "user", "content": f"Query: {query_all}\n"}]
+        query_all = system + '\n' + query
+        return [{'role': 'user', 'content': f'Query: {query_all}\n'}]

@@ -9,25 +9,17 @@ python run_batch.py --categories shopping shopping_admin wikipedia map reddit --
 import argparse
 from pathlib import Path
 
-from ctm_webagent import CTMAgentArgs
 from browsergym.experiments import EnvArgs, ExpArgs, get_exp_result
-
-from task_by_category import (
-    gitlab,
-    map,
-    reddit,
-    shopping,
-    shopping_admin,
-    wikipedia,
-)
+from ctm_webagent import CTMAgentArgs
+from task_by_category import gitlab, map, reddit, shopping, shopping_admin, wikipedia
 
 CATEGORY_TASKS = {
-    "gitlab": gitlab,
-    "map": map,
-    "reddit": reddit,
-    "shopping": shopping,
-    "shopping_admin": shopping_admin,
-    "wikipedia": wikipedia,
+    'gitlab': gitlab,
+    'map': map,
+    'reddit': reddit,
+    'shopping': shopping,
+    'shopping_admin': shopping_admin,
+    'wikipedia': wikipedia,
 }
 
 ALL_CATEGORIES = list(CATEGORY_TASKS.keys())
@@ -36,17 +28,17 @@ ALL_CATEGORIES = list(CATEGORY_TASKS.keys())
 def str2bool(v):
     if isinstance(v, bool):
         return v
-    if v.lower() in ("yes", "true", "t", "y", "1"):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
-    elif v.lower() in ("no", "false", "f", "n", "0"):
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
         return False
     else:
-        raise argparse.ArgumentTypeError("Boolean value expected.")
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Batch run CTM web agent experiments",
+        description='Batch run CTM web agent experiments',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -64,44 +56,44 @@ Examples:
     # Category selection
     category_group = parser.add_mutually_exclusive_group(required=True)
     category_group.add_argument(
-        "--all",
-        action="store_true",
-        help="Run all categories",
+        '--all',
+        action='store_true',
+        help='Run all categories',
     )
     category_group.add_argument(
-        "--categories",
-        nargs="+",
+        '--categories',
+        nargs='+',
         choices=ALL_CATEGORIES,
-        help=f"Specify categories to run, options: {', '.join(ALL_CATEGORIES)}",
+        help=f'Specify categories to run, options: {", ".join(ALL_CATEGORIES)}',
     )
 
     # CTM configuration parameters
     parser.add_argument(
-        "--ctm_name",
+        '--ctm_name',
         type=str,
-        default="web",
-        help="CTM configuration name",
+        default='web',
+        help='CTM configuration name',
     )
     parser.add_argument(
-        "--visual_effects",
+        '--visual_effects',
         type=str2bool,
         default=True,
-        help="Add visual effects when performing actions",
+        help='Add visual effects when performing actions',
     )
     parser.add_argument(
-        "--use_html",
+        '--use_html',
         type=str2bool,
         default=True,
         help="Use HTML in agent's observation space",
     )
     parser.add_argument(
-        "--use_axtree",
+        '--use_axtree',
         type=str2bool,
         default=True,
         help="Use AXTree in agent's observation space",
     )
     parser.add_argument(
-        "--use_screenshot",
+        '--use_screenshot',
         type=str2bool,
         default=True,
         help="Use screenshot in agent's observation space",
@@ -109,16 +101,16 @@ Examples:
 
     # Environment parameters
     parser.add_argument(
-        "--max_steps",
+        '--max_steps',
         type=int,
         default=10,
-        help="Maximum steps per task",
+        help='Maximum steps per task',
     )
     parser.add_argument(
-        "--headless",
+        '--headless',
         type=str2bool,
         default=True,
-        help="Whether to run browser in headless mode",
+        help='Whether to run browser in headless mode',
     )
 
     return parser.parse_args()
@@ -133,10 +125,10 @@ def run_single_task(
     headless: bool,
 ):
     """Run a single task using CTM agent (same logic as run_web.py)"""
-    task_name = f"webarena.{task_id}"
-    print(f"\n{'='*80}")
-    print(f"Running task: {task_name} (category: {category})")
-    print(f"{'='*80}")
+    task_name = f'webarena.{task_id}'
+    print(f'\n{"=" * 80}')
+    print(f'Running task: {task_name} (category: {category})')
+    print(f'{"=" * 80}')
 
     # Create environment arguments (same as run_web.py)
     env_args = EnvArgs(
@@ -166,19 +158,19 @@ def run_single_task(
         exp_result = get_exp_result(exp_args.exp_dir)
         exp_record = exp_result.get_exp_record()
 
-        print(f"\nTask {task_name} completed!")
-        print(f"Result directory: {exp_args.exp_dir}")
+        print(f'\nTask {task_name} completed!')
+        print(f'Result directory: {exp_args.exp_dir}')
         for key, val in exp_record.items():
-            if key not in ["exp_dir"]:  # exp_dir already printed
-                print(f"  {key}: {val}")
+            if key not in ['exp_dir']:  # exp_dir already printed
+                print(f'  {key}: {val}')
 
         return True, exp_record
     except Exception as e:
-        print(f"\nTask {task_name} failed: {e}")
+        print(f'\nTask {task_name} failed: {e}')
         import traceback
 
         traceback.print_exc()
-        return False, {"error": str(e)}
+        return False, {'error': str(e)}
 
 
 def main():
@@ -190,22 +182,22 @@ def main():
     else:
         categories_to_run = args.categories
 
-    print(f"Will run the following categories: {', '.join(categories_to_run)}")
-    print(f"Total number of categories: {len(categories_to_run)}")
+    print(f'Will run the following categories: {", ".join(categories_to_run)}')
+    print(f'Total number of categories: {len(categories_to_run)}')
 
     # Create CTM agent arguments (same as run_web.py)
     # This ensures each task uses CTM agent with the same configuration
     agent_args = CTMAgentArgs(
         ctm_name=args.ctm_name,
         chat_mode=False,  # Same as run_web.py
-        demo_mode="default" if args.visual_effects else "off",  # Same as run_web.py
+        demo_mode='default' if args.visual_effects else 'off',  # Same as run_web.py
         use_html=args.use_html,
         use_axtree=args.use_axtree,
         use_screenshot=args.use_screenshot,
     )
 
     # Base result directory - each category will have its own subfolder
-    result_base_dir = Path("./results_1111")
+    result_base_dir = Path('./results_1111')
     result_base_dir.mkdir(parents=True, exist_ok=True)
 
     # Statistics
@@ -222,10 +214,10 @@ def main():
         category_result_dir = result_base_dir / category
         category_result_dir.mkdir(parents=True, exist_ok=True)
 
-        print(f"\n{'#'*80}")
-        print(f"Category: {category} (total {len(task_ids)} tasks)")
-        print(f"Results will be saved to: {category_result_dir.absolute()}")
-        print(f"{'#'*80}")
+        print(f'\n{"#" * 80}')
+        print(f'Category: {category} (total {len(task_ids)} tasks)')
+        print(f'Results will be saved to: {category_result_dir.absolute()}')
+        print(f'{"#" * 80}')
 
         category_completed = 0
         category_failed = 0
@@ -250,31 +242,31 @@ def main():
                 category_failed += 1
 
         category_stats[category] = {
-            "total": len(task_ids),
-            "completed": category_completed,
-            "failed": category_failed,
+            'total': len(task_ids),
+            'completed': category_completed,
+            'failed': category_failed,
         }
 
     # Print summary
-    print(f"\n{'='*80}")
-    print("Batch run summary")
-    print(f"{'='*80}")
-    print(f"Total tasks: {total_tasks}")
-    print(f"Success: {completed_tasks}")
-    print(f"Failed: {failed_tasks}")
-    print("\nStatistics by category:")
+    print(f'\n{"=" * 80}')
+    print('Batch run summary')
+    print(f'{"=" * 80}')
+    print(f'Total tasks: {total_tasks}')
+    print(f'Success: {completed_tasks}')
+    print(f'Failed: {failed_tasks}')
+    print('\nStatistics by category:')
     for category, stats in category_stats.items():
         print(
-            f"  {category}: {stats['completed']}/{stats['total']} success, "
-            f"{stats['failed']}/{stats['total']} failed"
+            f'  {category}: {stats["completed"]}/{stats["total"]} success, '
+            f'{stats["failed"]}/{stats["total"]} failed'
         )
-    print(f"\nResults saved in: {result_base_dir.absolute()}")
-    print("\nFolder structure:")
+    print(f'\nResults saved in: {result_base_dir.absolute()}')
+    print('\nFolder structure:')
     for category in categories_to_run:
         category_dir = result_base_dir / category
-        print(f"  {category}/ -> {category_dir.absolute()}")
-    print(f"{'='*80}\n")
+        print(f'  {category}/ -> {category_dir.absolute()}')
+    print(f'{"=" * 80}\n')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

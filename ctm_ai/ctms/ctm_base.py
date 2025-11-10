@@ -1,6 +1,6 @@
 import concurrent.futures
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union, Dict, Any
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -10,7 +10,7 @@ from ..configs import ConsciousTuringMachineConfig
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-from ..utils import logger, logging_func_with_count, log_supervisor_result
+from ..utils import log_supervisor_result, logger, logging_func_with_count
 
 if TYPE_CHECKING:
     pass
@@ -70,8 +70,8 @@ class BaseConsciousTuringMachine(ABC):
             self.processor_graph.add_node(
                 processor_name=processor_name,
                 processor_group_name=None,
-                system_prompt=processor_config.get("system_prompt"),
-                model=processor_config.get("model"),
+                system_prompt=processor_config.get('system_prompt'),
+                model=processor_config.get('model'),
             )
 
         self.add_supervisor(self.config.supervisor)
@@ -85,8 +85,8 @@ class BaseConsciousTuringMachine(ABC):
         self.processor_graph.add_node(
             processor_name=processor_name,
             processor_group_name=group_name,
-            system_prompt=processor_config.get("system_prompt"),
-            model=processor_config.get("model"),
+            system_prompt=processor_config.get('system_prompt'),
+            model=processor_config.get('model'),
         )
 
     def remove_processor(self, processor_name: str) -> None:
@@ -212,7 +212,7 @@ class BaseConsciousTuringMachine(ABC):
         for chunk in chunks:
             if chunk.relevance >= 0.9:
                 logger.info(
-                    f"Adding link between {winning_chunk.processor_name} and {chunk.processor_name}"
+                    f'Adding link between {winning_chunk.processor_name} and {chunk.processor_name}'
                 )
                 self.processor_graph.add_link(
                     processor1_name=winning_chunk.processor_name,
@@ -247,7 +247,7 @@ class BaseConsciousTuringMachine(ABC):
                     is_fuse=True,
                     **input_kwargs,
                 )
-                input_kwargs["text"] += "(additional information: {})".format(
+                input_kwargs['text'] += '(additional information: {})'.format(
                     answer_chunk.gist
                 )
                 dirty.add(chunk.processor_name)

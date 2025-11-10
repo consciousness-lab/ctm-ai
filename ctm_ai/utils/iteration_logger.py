@@ -9,11 +9,11 @@ from typing import Any, Dict, List, Optional
 class IterationLogger:
     """Thread-safe logger for CTM iteration information."""
 
-    def __init__(self, output_file: str = "ctm_iterations.jsonl"):
+    def __init__(self, output_file: str = 'ctm_iterations.jsonl'):
         self.output_file = output_file
         self.current_test_file = None
         self.current_iteration = 0
-        self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.session_id = datetime.now().strftime('%Y%m%d_%H%M%S')
         self._lock = Lock()
 
     def set_test_file(self, test_file: str):
@@ -36,38 +36,38 @@ class IterationLogger:
         chunk_info = []
         for i, chunk in enumerate(all_chunks, 1):
             chunk_data = {
-                "rank": i,
-                "processor_name": getattr(chunk, "processor_name", "unknown"),
-                "gist": getattr(chunk, "gist", ""),
-                "additional_question": getattr(chunk, "additional_question", ""),
-                "relevance": getattr(chunk, "relevance", 0.0),
-                "confidence": getattr(chunk, "confidence", 0.0),
-                "surprise": getattr(chunk, "surprise", 0.0),
-                "weight": getattr(chunk, "weight", 0.0),
+                'rank': i,
+                'processor_name': getattr(chunk, 'processor_name', 'unknown'),
+                'gist': getattr(chunk, 'gist', ''),
+                'additional_question': getattr(chunk, 'additional_question', ''),
+                'relevance': getattr(chunk, 'relevance', 0.0),
+                'confidence': getattr(chunk, 'confidence', 0.0),
+                'surprise': getattr(chunk, 'surprise', 0.0),
+                'weight': getattr(chunk, 'weight', 0.0),
             }
             chunk_info.append(chunk_data)
 
         # Log entry
         log_entry = {
-            "session_id": self.session_id,
-            "test_file": self.current_test_file,
-            "iteration": iteration,
-            "timestamp": datetime.now().isoformat(),
-            "query": query,
-            "winning_chunk": {
-                "processor_name": getattr(winning_chunk, "processor_name", "unknown"),
-                "gist": getattr(winning_chunk, "gist", ""),
-                "additional_question": getattr(
-                    winning_chunk, "additional_question", ""
+            'session_id': self.session_id,
+            'test_file': self.current_test_file,
+            'iteration': iteration,
+            'timestamp': datetime.now().isoformat(),
+            'query': query,
+            'winning_chunk': {
+                'processor_name': getattr(winning_chunk, 'processor_name', 'unknown'),
+                'gist': getattr(winning_chunk, 'gist', ''),
+                'additional_question': getattr(
+                    winning_chunk, 'additional_question', ''
                 ),
-                "relevance": getattr(winning_chunk, "relevance", 0.0),
-                "confidence": getattr(winning_chunk, "confidence", 0.0),
-                "surprise": getattr(winning_chunk, "surprise", 0.0),
-                "weight": getattr(winning_chunk, "weight", 0.0),
+                'relevance': getattr(winning_chunk, 'relevance', 0.0),
+                'confidence': getattr(winning_chunk, 'confidence', 0.0),
+                'surprise': getattr(winning_chunk, 'surprise', 0.0),
+                'weight': getattr(winning_chunk, 'weight', 0.0),
             },
-            "all_chunks": chunk_info,
-            "confidence_score": confidence_score,
-            "total_chunks": len(all_chunks),
+            'all_chunks': chunk_info,
+            'confidence_score': confidence_score,
+            'total_chunks': len(all_chunks),
         }
 
         # Add additional info if provided
@@ -76,15 +76,15 @@ class IterationLogger:
 
         # Write to file with thread safety
         with self._lock:
-            with open(self.output_file, "a", encoding="utf-8") as f:
-                f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+            with open(self.output_file, 'a', encoding='utf-8') as f:
+                f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
 
 
 # Thread-local storage for loggers
 _thread_local = threading.local()
 
 
-def set_iteration_log_file(test_file: str, output_file: str = "ctm_iterations.jsonl"):
+def set_iteration_log_file(test_file: str, output_file: str = 'ctm_iterations.jsonl'):
     """Set the current test file and output file for logging (thread-safe)."""
     logger = IterationLogger(output_file)
     logger.set_test_file(test_file)
@@ -93,7 +93,7 @@ def set_iteration_log_file(test_file: str, output_file: str = "ctm_iterations.js
 
 def _get_logger():
     """Get the thread-local logger instance."""
-    if not hasattr(_thread_local, "logger"):
+    if not hasattr(_thread_local, 'logger'):
         # Fallback to default logger if not set
         _thread_local.logger = IterationLogger()
     return _thread_local.logger
@@ -108,19 +108,19 @@ def log_ctm_iteration(func):
         result = func(self, *args, **kwargs)
 
         # Extract information for logging
-        if hasattr(self, "_current_iteration_info"):
+        if hasattr(self, '_current_iteration_info'):
             info = self._current_iteration_info
             logger = _get_logger()
             logger.log_iteration(
-                iteration=info.get("iteration", 0),
-                winning_chunk=info.get("winning_chunk"),
-                all_chunks=info.get("all_chunks", []),
-                query=info.get("query", ""),
-                confidence_score=info.get("confidence_score", 0.0),
-                additional_info=info.get("additional_info", {}),
+                iteration=info.get('iteration', 0),
+                winning_chunk=info.get('winning_chunk'),
+                all_chunks=info.get('all_chunks', []),
+                query=info.get('query', ''),
+                confidence_score=info.get('confidence_score', 0.0),
+                additional_info=info.get('additional_info', {}),
             )
             # Clear the info after logging
-            delattr(self, "_current_iteration_info")
+            delattr(self, '_current_iteration_info')
 
         return result
 
@@ -136,7 +136,7 @@ def log_go_up_iteration(func):
         winning_chunk, chunks = func(self, query, **input_kwargs)
 
         # Store iteration info for later logging
-        if not hasattr(self, "_iteration_counter"):
+        if not hasattr(self, '_iteration_counter'):
             self._iteration_counter = 0
         self._iteration_counter += 1
 
@@ -176,9 +176,9 @@ def log_supervisor_result(func):
 
         # If we have stored iteration data, log it now
         if (
-            hasattr(self, "_current_winning_chunk")
-            and hasattr(self, "_current_chunks")
-            and hasattr(self, "_current_iteration")
+            hasattr(self, '_current_winning_chunk')
+            and hasattr(self, '_current_chunks')
+            and hasattr(self, '_current_iteration')
         ):
             logger = _get_logger()
             logger.log_iteration(
@@ -188,7 +188,7 @@ def log_supervisor_result(func):
                 query=query,
                 confidence_score=confidence_score,
                 additional_info={
-                    "supervisor_answer": answer,
+                    'supervisor_answer': answer,
                 },
             )
 
