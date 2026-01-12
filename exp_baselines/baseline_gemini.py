@@ -1,8 +1,11 @@
 import glob
 import os
-from typing import Dict, List, Optional, Union, cast
+import time
+import random
+from typing import Dict, List, Optional, Tuple, Union, cast
 
 import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted
 from PIL import Image
 
 
@@ -64,7 +67,7 @@ class GeminiMultimodalLLM:
         except Exception as e:
             raise RuntimeError(f'Failed to upload audio {self.audio_file_path}: {e}')
 
-    def generate_response(self) -> Optional[str]:
+    def generate_response(self) -> Tuple[Optional[str], Dict[str, int]]:
         prompt = f'### Query:\n{self.query}\n\n### Context:\n{self.context}\n\n'
 
         inputs: List[Union[str, Image.Image, Dict[str, Union[str, bytes]]]] = [prompt]
@@ -73,8 +76,34 @@ class GeminiMultimodalLLM:
 
         inputs.append(self.audio_file)
 
-        try:
-            response = self.model.generate_content(inputs)
-            return cast(Optional[str], getattr(response, 'text', None))
-        except Exception as e:
-            raise RuntimeError(f'Failed to generate response: {e}')
+        max_retries = 5
+        base_delay = 2
+
+        for attempt in range(max_retries + 1):
+            try:
+                response = self.model.generate_content(inputs)
+                text = cast(Optional[str], getattr(response, 'text', None))
+                
+                # Extract usage metadata
+                usage = {
+                    'prompt_tokens': 0,
+                    'completion_tokens': 0
+                }
+                if hasattr(response, 'usage_metadata'):
+                    usage['prompt_tokens'] = response.usage_metadata.prompt_token_count
+                    usage['completion_tokens'] = response.usage_metadata.candidates_token_count
+                
+                return text, usage
+
+            except ResourceExhausted:
+                if attempt < max_retries:
+                    # Exponential backoff with jitter: 2^attempt + random(0, 1)
+                    sleep_time = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                    print(f"Rate limit hit. Retrying in {sleep_time:.2f} seconds (Attempt {attempt + 1}/{max_retries})...")
+                    time.sleep(sleep_time)
+                else:
+                    raise RuntimeError(f'Failed to generate response after {max_retries} retries due to rate limiting.')
+            except Exception as e:
+                raise RuntimeError(f'Failed to generate response: {e}')
+        
+        return None, {'prompt_tokens': 0, 'completion_tokens': 0}

@@ -131,6 +131,7 @@ class BaseProcessor(object):
             video_path=video_path,
             api_manager=api_manager,
         )
+        print(len(self.messenger.executor_messages))
 
         # Collect scorer messages with or without memory
         scorer_messages = self.messenger.collect_scorer_messages(
