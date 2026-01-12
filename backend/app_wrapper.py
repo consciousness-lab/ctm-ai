@@ -344,9 +344,7 @@ class FlaskAppWrapper:
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
-            if self.state.winning_chunk and isinstance(
-                self.state.winning_chunk, Chunk
-            ):
+            if self.state.winning_chunk and isinstance(self.state.winning_chunk, Chunk):
                 ChunkProcessor.downtree_broadcast(
                     ctm_instance=self.ctm,
                     winning_chunk=self.state.winning_chunk,

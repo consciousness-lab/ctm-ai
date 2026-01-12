@@ -67,7 +67,9 @@ class ChunkProcessor:
         )
 
     @staticmethod
-    def uptree_competition(ctm_instance: ConsciousTuringMachine, chunks: List[Chunk]) -> Chunk:
+    def uptree_competition(
+        ctm_instance: ConsciousTuringMachine, chunks: List[Chunk]
+    ) -> Chunk:
         """
         调用 uptree_competition 进行上树竞争。
 

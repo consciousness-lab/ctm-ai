@@ -5,10 +5,8 @@ import litellm
 from litellm import completion
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
-from ..messengers import Message
 
-
-def convert_messages_to_litellm_format(messages: List[Message]) -> List[Dict[str, str]]:
+def convert_messages_to_litellm_format(messages: List[Any]) -> List[Dict[str, str]]:
     """Convert CTM messages to LiteLLM format."""
     result = []
     for m in messages:
@@ -21,7 +19,7 @@ def convert_messages_to_litellm_format(messages: List[Message]) -> List[Dict[str
 
 @retry(wait=wait_random_exponential(min=1, max=40), stop=stop_after_attempt(3))
 def litellm_completion_request(
-    messages: List[Message],
+    messages: List[Any],
     functions=None,
     model: str = 'gpt-4o',
     max_tokens: int = 1024,
@@ -51,7 +49,7 @@ def litellm_completion_request(
     return response
 
 
-def convert_message_to_litellm_format(message: Message) -> Dict[str, str]:
+def convert_message_to_litellm_format(message: Any) -> Dict[str, str]:
     """Convert Message to LiteLLM format."""
     # Use gist if content is None, otherwise use content
     content = message.content if message.content is not None else message.gist
@@ -62,7 +60,7 @@ def convert_message_to_litellm_format(message: Message) -> Dict[str, str]:
 
 
 def call_llm(
-    messages: List[Message],
+    messages: List[Any],
     functions=None,
     function_call=None,
     model: str = 'gpt-4o',
@@ -132,7 +130,7 @@ def call_llm(
 
 
 def ask_llm_standard(
-    messages: List[Message],
+    messages: List[Any],
     model: str = 'gpt-4o',
     max_tokens: int = 300,
     temperature: float = 0.0,

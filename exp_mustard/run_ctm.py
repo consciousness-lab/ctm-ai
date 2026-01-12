@@ -3,6 +3,7 @@ import os
 import sys
 
 from ctm_ai.ctms.ctm import ConsciousTuringMachine
+from ctm_ai.utils import set_iteration_log_file
 
 sys.path.append('..')
 
@@ -13,8 +14,13 @@ def load_data(file_path):
     return data
 
 
-def run_instance(test_file, output_file='ctm.jsonl'):
+def run_instance(test_file, output_file='ctm.jsonl', log_dir='logs'):
     dataset = load_data('mustard_dataset/mustard_dataset_test.json')
+
+    os.makedirs(log_dir, exist_ok=True)
+    iteration_log_file = os.path.join(log_dir, f'ctm_iterations_{test_file}.jsonl')
+    set_iteration_log_file(test_file, iteration_log_file)
+
     ctm = ConsciousTuringMachine('sarcasm_ctm')
     target_sentence = dataset[test_file]['utterance']
     query = 'Is the person sarcasm or not?'
@@ -33,8 +39,8 @@ def run_instance(test_file, output_file='ctm.jsonl'):
     answer = ctm(
         query=query,
         text=target_sentence,
-        # video_frames_path=file_paths,
-        # audio_path=audio_path,
+        video_frames_path=file_paths,
+        audio_path=audio_path,
     )
 
     print('------------------------------------------')
@@ -58,7 +64,6 @@ if __name__ == '__main__':
 
     test_list = list(dataset.keys())
     print(f'Total Test Cases: {len(test_list)}')
-    test_list = test_list[30:]
 
-    for test_file in test_list:
-        run_instance(test_file)
+    # for test_file in test_list:
+    run_instance('2_5772_7', log_dir='logs/mustard_results')

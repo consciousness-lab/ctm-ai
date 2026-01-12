@@ -49,21 +49,35 @@ class BaseScorer(object):
         relevance_prompt = [
             {
                 'role': 'user',
-                'content': """Please evaluate how relevant the answer is to the question on a scale from 0.0 to 1.0.
+                'content': f"""Please evaluate how relevant the answer is to the question on a scale from 0.0 to 1.0. 
+Here, "relevant" means that the answer engages with the question and provides information 
+that is useful or connected to addressing it. Even if the answer expresses uncertainty 
+(e.g., "difficult to determine") but still explains reasoning, it should be considered relevant. 
+Only answers that completely refuse, ignore, or go off-topic should be scored as 0.0. 
 
 Question: {query}
 Answer: {gist}
 
 Consider:
-- 1.0 = Perfectly relevant, directly answers the question with specific information
-- 0.8 = Highly relevant, mostly answers the question with useful information
-- 0.6 = Moderately relevant, partially answers the question
-- 0.4 = Somewhat relevant, tangentially related but not very helpful
-- 0.2 = Barely relevant, weak connection or very general response
-- 0.0 = Not relevant, refuses to answer, says "cannot determine", or completely unrelated
+- 1.0 = Perfectly relevant, directly answers the question with specific and precise information
+- 0.8 = Highly relevant, mostly answers the question and provides useful supporting details
+- 0.6 = Moderately relevant, engages with the question but is limited, uncertain, or incomplete
+- 0.4 = Somewhat relevant, loosely connected to the question but not very helpful
+- 0.2 = Barely relevant, only a weak or indirect connection
+- 0.0 = Not relevant, completely unrelated, refuses to answer, or provides information irrelevant to the question
 
-IMPORTANT: If the answer says "I cannot determine", "I don't know", "cannot answer", or refuses to provide information, score it as 0.0.
+Examples:
+- Question: Is the person sarcastic or not?
+- Answer: Based on the visual cues, it appears that he is using sarcasm. His facial expressions, specifically the raised eyebrow and the exaggerated gesture of raising his hand, combined with the context of a conversation between friends, suggest he is likely being sarcastic. There's a hint of amusement and irony in his expressions.
+- Score: 0.85 or higher (clearly addresses the question with useful details).
 
+- Question: What is the audio dialogue?
+- Answer: The audio dialogue is "Hello, how are you?"
+- Score: 1.0 (exactly answers the question).
+
+- Question: What is the facial expression of the person?
+- Answer: I cannot provide the facial expression of the person. But I can provide the audio dialogue.
+- Score: 0.0 (does not address the question).
 Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
             }
         ]
@@ -206,6 +220,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
                 'role': 'user',
                 'content': f"""Please evaluate how surprising, unexpected, or novel this response is on a scale from 0.0 to 1.0.
 
+Question: {query}
 Response: {gist}
 
 Consider:
@@ -270,7 +285,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
         confidence = self.ask_confidence(messages, use_llm=use_llm)
         surprise = self.ask_surprise(query, messages, use_llm=use_llm, **kwargs)
 
-        weight = relevance + confidence + surprise
+        weight = relevance + confidence + (surprise * 0.2)
 
         return {
             'relevance': relevance,

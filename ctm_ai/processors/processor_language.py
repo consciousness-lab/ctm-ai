@@ -17,11 +17,7 @@ class LanguageProcessor(BaseProcessor):
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
         self._init_info(*args, **kwargs)
-        text = kwargs.get('text')
-        language_message = {
-            'role': 'user',
-            'content': f'{query}\n Details about the query: {text}',
-        }
+        language_message = {'role': 'user', 'content': f'Query: {query}\n'}
         all_messages = [{'role': 'system', 'content': self.system_prompt}]
         all_messages.append(language_message)
         return all_messages
