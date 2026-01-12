@@ -14,6 +14,7 @@ class ConsciousTuringMachineConfig:
         processors_config: Optional[Dict[str, Any]] = None,
         scorer_model: str = 'gemini/gemini-2.0-flash-lite',
         supervisors_model: str = 'gemini/gemini-2.0-flash-lite',
+        supervisors_prompt: str = None,
         **kwargs: Any,
     ) -> None:
         self.ctm_name: Optional[str] = ctm_name
@@ -27,6 +28,7 @@ class ConsciousTuringMachineConfig:
         )
         self.scorer_model = scorer_model
         self.supervisors_model = supervisors_model
+        self.supervisors_prompt = supervisors_prompt
         for key, value in kwargs.items():
             setattr(self, key, value)
 

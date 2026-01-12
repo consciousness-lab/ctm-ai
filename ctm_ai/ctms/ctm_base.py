@@ -1,6 +1,6 @@
 import concurrent.futures
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -10,7 +10,18 @@ from ..configs import ConsciousTuringMachineConfig
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-from ..utils import log_supervisor_result, logging_func_with_count
+from ..utils import logger, logging_func_with_count
+
+if TYPE_CHECKING:
+    pass
+
+try:
+    from ..apis import BaseEnv
+
+    TOOLBENCH_AVAILABLE = True
+except ImportError:
+    TOOLBENCH_AVAILABLE = False
+    BaseEnv = None
 
 
 class BaseConsciousTuringMachine(ABC):
@@ -108,6 +119,7 @@ class BaseConsciousTuringMachine(ABC):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
     ) -> Chunk:
+        """Ask processor with support for both standard and tool processors"""
         return processor.ask(
             query=query,
             text=text,
@@ -133,6 +145,7 @@ class BaseConsciousTuringMachine(ABC):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
     ) -> List[Chunk]:
+        """Ask all processors with support for both standard and tool processors"""
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
@@ -157,7 +170,6 @@ class BaseConsciousTuringMachine(ABC):
         return chunks
 
     @logging_func_with_count
-    @log_supervisor_result
     def ask_supervisor(
         self, query: str, chunk: Chunk
     ) -> Tuple[Union[str, None], float]:
@@ -178,7 +190,16 @@ class BaseConsciousTuringMachine(ABC):
     def link_form(
         self, chunks: List[Chunk], winning_chunk: Chunk, **input_kwargs
     ) -> None:
+        """
+        Form links between processors based on additional question processing.
+
+        Args:
+            chunks: List of chunks from previous processing
+            winning_chunk: The winning chunk that contains additional_question
+            **input_kwargs: All input parameters (text, image, audio, etc.)
+        """
         additional_question = winning_chunk.additional_question
+        # Use the same input parameters for processing additional question
         chunks = self.ask_processors(
             query=additional_question,
             **input_kwargs,
@@ -186,6 +207,9 @@ class BaseConsciousTuringMachine(ABC):
 
         for chunk in chunks:
             if chunk.relevance >= 0.8:
+                logger.info(
+                    f'Adding link between {winning_chunk.processor_name} and {chunk.processor_name}'
+                )
                 self.processor_graph.add_link(
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
@@ -201,7 +225,8 @@ class BaseConsciousTuringMachine(ABC):
         self, chunks: List[Chunk], query: str, **input_kwargs
     ) -> List[Chunk]:
         proc_map = {p.name: p for p in self.processor_graph.nodes}
-        dirty: set[str] = set()
+        dirty: set[str] = set()  # processors whose memory got new info
+
         for chunk in chunks:
             q = chunk.additional_question
             if not q:

@@ -6,7 +6,7 @@ from litellm import completion
 from numpy.typing import NDArray
 
 from ..chunks import Chunk
-from ..scorers import WebScorer
+from ..scorers import BaseScorer
 from ..utils import configure_litellm, message_exponential_backoff
 from .utils import JSON_FORMAT, parse_json_response
 
@@ -86,20 +86,30 @@ class BaseProcessor(object):
         self,
         query: str,
         text: Optional[str] = None,
+        video_frames_path: Optional[List[str]] = None,
         is_fuse: bool = False,
         **kwargs: Any,
     ) -> str:
-        content = 'Additional_information: '
+        content = query
 
-        if len(self.fuse_history) > 0:
-            content += '\nThere are extra information from other processors:\n'
-            for i, item in enumerate(self.fuse_history, 1):
-                content += f'{i}. {item["answer"]}\n'
+        content = f'Query: {query}\n'
 
-        if len(self.winner_answer) > 0:
-            content += '\nThere are some previous answers to the same query, think further based on this answer.\n'
-            for i, item in enumerate(self.winner_answer, 1):
-                content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
+        if text is not None:
+            content += f'Text: {text}\n'
+
+        if video_frames_path:
+            content += f'Note: The input contains {len(video_frames_path)} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n'
+
+        if not is_fuse:
+            if len(self.fuse_history) > 0:
+                content += '\nThere are extra information from other processors:\n'
+                for i, item in enumerate(self.fuse_history, 1):
+                    content += f'{i}. {item["answer"]}\n'
+
+            if len(self.winner_answer) > 0:
+                content += '\nThere are some previous answers to the same query, think further based on this answer:\n'
+                for i, item in enumerate(self.winner_answer, 1):
+                    content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
         content += JSON_FORMAT
         return content
@@ -120,7 +130,6 @@ class BaseProcessor(object):
             *args,
             **kwargs,
         )
-
         contents = [
             response.choices[i].message.content for i in range(len(response.choices))
         ]
@@ -143,34 +152,43 @@ class BaseProcessor(object):
     def ask(
         self,
         query: str,
-        text: Optional[str],
-        action_history: Optional[Dict[str, Any]],
-        html: Optional[Any],
-        axtree: Optional[Any],
-        screenshot: Optional[Any],
+        text: Optional[str] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
+        api_manager: Any = None,
         is_fuse: bool = False,
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
         clean_query = query
-        history_info = self._build_executor_content(
+        query = self._build_executor_content(
             query=query,
             text=text,
-            action_history=action_history,
-            html=html,
-            axtree=axtree,
-            screenshot=screenshot,
+            image=image,
+            image_path=image_path,
+            audio=audio,
+            audio_path=audio_path,
+            video_frames=video_frames,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
             is_fuse=is_fuse,
         )
         executor_messages = self.build_executor_messages(
             query=query,
             text=text,
-            action_history=action_history,
-            html=html,
-            axtree=axtree,
-            screenshot=screenshot,
-            history_info=history_info,
-            is_fuse=is_fuse,
+            image=image,
+            image_path=image_path,
+            audio=audio,
+            audio_path=audio_path,
+            video_frames=video_frames,
+            video_frames_path=video_frames_path,
+            video_path=video_path,
+            api_manager=api_manager,
         )
         executor_output = self.ask_executor(
             messages=executor_messages,
@@ -184,8 +202,8 @@ class BaseProcessor(object):
             executor_output['additional_question'],
         )
 
-        scorer = WebScorer(*args, **kwargs)
-        scorer_output = scorer.ask(query=clean_query, messages=executor_output)
+        scorer = BaseScorer(*args, **kwargs)
+        scorer_output = scorer.ask(query=query, messages=executor_output)
         additional_question = executor_output['additional_question'] or ''
 
         chunk = self.merge_outputs_into_chunk(

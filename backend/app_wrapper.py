@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from chunk_processor import ChunkProcessor
 from config import Config
@@ -24,6 +24,60 @@ class FlaskAppWrapper:
         self.chunk_manager: ChunkManager = ChunkManager()
         self.setup_app_config()
         self.register_routes()
+
+    def _get_input_params(self) -> Dict[str, Any]:
+        """获取当前的输入参数，用于传递给CTM核心方法"""
+        image_filename = (
+            self.state.saved_files['images'][0]
+            if self.state.saved_files['images']
+            else None
+        )
+        image_path = (
+            os.path.join(self.app.config['UPLOAD_FOLDER'], 'images', image_filename)
+            if image_filename
+            else None
+        )
+
+        audio_filename = (
+            self.state.saved_files['audios'][0]
+            if self.state.saved_files['audios']
+            else None
+        )
+        audio_path = (
+            os.path.join(self.app.config['UPLOAD_FOLDER'], 'audios', audio_filename)
+            if audio_filename
+            else None
+        )
+
+        video_filename = (
+            self.state.saved_files['videos'][0]
+            if self.state.saved_files['videos']
+            else None
+        )
+        video_path = (
+            os.path.join(self.app.config['UPLOAD_FOLDER'], 'videos', video_filename)
+            if video_filename
+            else None
+        )
+
+        video_frames_path = (
+            [
+                os.path.join(
+                    self.app.config['UPLOAD_FOLDER'], 'video_frames', frame_filename
+                )
+                for frame_filename in self.state.saved_files['video_frames']
+            ]
+            if self.state.saved_files['video_frames']
+            else None
+        )
+
+        return {
+            'text': self.state.text,
+            'image_path': image_path,
+            'audio_path': audio_path,
+            'video_frames_path': video_frames_path,
+            'video_path': video_path,
+        }
 
     def setup_app_config(self) -> None:
         self.app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
@@ -127,63 +181,32 @@ class FlaskAppWrapper:
 
         @self.app.route('/api/output-gist', methods=['POST', 'OPTIONS'])
         def handle_output_gist() -> ResponseType:
+            """
+            处理 output-gist 步骤：调用 ask_processors 获取所有处理器的输出。
+            对应 CTM 核心的 ask_processors 方法。
+            """
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
             data = request.get_json() or {}
             updates: List[Dict[str, str]] = data.get('updates', [])
 
-            image_filename = (
-                self.state.saved_files['images'][0]
-                if self.state.saved_files['images']
-                else None
-            )
-            image_absolute_path = (
-                os.path.join(self.app.config['UPLOAD_FOLDER'], 'images', image_filename)
-                if image_filename
-                else None
-            )
+            # 获取输入参数
+            input_params = self._get_input_params()
 
-            audio_filename = (
-                self.state.saved_files['audios'][0]
-                if self.state.saved_files['audios']
-                else None
-            )
-            audio_absolute_path = (
-                os.path.join(self.app.config['UPLOAD_FOLDER'], 'audios', audio_filename)
-                if audio_filename
-                else None
-            )
-            video_filename = (
-                self.state.saved_files['videos'][0]
-                if self.state.saved_files['videos']
-                else None
-            )
-            video_absolute_path = (
-                os.path.join(self.app.config['UPLOAD_FOLDER'], 'videos', video_filename)
-                if video_filename
-                else None
-            )
-
-            video_frames_path = (
-                [
-                    os.path.join(
-                        self.app.config['UPLOAD_FOLDER'], 'video_frames', frame_filename
-                    )
-                    for frame_filename in self.state.saved_files['video_frames']
-                ]
-                if self.state.saved_files['video_frames']
-                else []
-            )
-
-            gists = ChunkProcessor.process_chunks(
+            # 调用 ask_processors
+            gists, chunks = ChunkProcessor.process_chunks(
                 ctm_instance=self.ctm,
                 query=self.state.query,
-                image_path=image_absolute_path,
-                audio_path=audio_absolute_path,
-                video_frames_path=video_frames_path,
-                video_path=video_absolute_path,
+                text=input_params.get('text'),
+                image_path=input_params.get('image_path'),
+                audio_path=input_params.get('audio_path'),
+                video_frames_path=input_params.get('video_frames_path'),
+                video_path=input_params.get('video_path'),
             )
+
+            # 存储 chunks 用于后续步骤
+            self.state.chunks = chunks
 
             for update in updates:
                 proc_id = update.get('processor_id', '')
@@ -202,6 +225,10 @@ class FlaskAppWrapper:
 
         @self.app.route('/api/uptree', methods=['POST', 'OPTIONS'])
         def handle_uptree() -> ResponseType:
+            """
+            处理 uptree 步骤：进行上树竞争。
+            对应 CTM 核心的 uptree_competition 方法（通过 ChunkManager）。
+            """
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
@@ -218,6 +245,7 @@ class FlaskAppWrapper:
                     else:
                         self.state.node_parents[node_id].extend(parent_nodes)
 
+            # 使用 ChunkManager 进行两两竞争
             for node_id, parents_ids in self.state.node_parents.items():
                 if node_id not in self.state.node_details and len(parents_ids) >= 2:
                     parent_id1, parent_id2 = parents_ids[0], parents_ids[1]
@@ -225,13 +253,27 @@ class FlaskAppWrapper:
                         parent_id1 in self.state.node_details
                         and parent_id2 in self.state.node_details
                     ):
-                        self.state.node_details[node_id] = (
-                            ChunkProcessor.compete_chunks(
-                                self.chunk_manager,
-                                self.state.node_details[parent_id1],
-                                self.state.node_details[parent_id2],
+                        parent_chunk1 = self.state.node_details[parent_id1]
+                        parent_chunk2 = self.state.node_details[parent_id2]
+
+                        # 只有当两个都是 Chunk 时才进行竞争
+                        if isinstance(parent_chunk1, Chunk) and isinstance(
+                            parent_chunk2, Chunk
+                        ):
+                            self.state.node_details[node_id] = (
+                                ChunkProcessor.compete_chunks(
+                                    self.chunk_manager,
+                                    parent_chunk1,
+                                    parent_chunk2,
+                                )
                             )
-                        )
+                        else:
+                            # 如果不是 Chunk，取第一个有效的
+                            self.state.node_details[node_id] = (
+                                parent_chunk1
+                                if isinstance(parent_chunk1, Chunk)
+                                else parent_chunk2
+                            )
 
             return self.add_cors_headers(
                 jsonify(
@@ -244,6 +286,10 @@ class FlaskAppWrapper:
 
         @self.app.route('/api/final-node', methods=['POST', 'OPTIONS'])
         def handle_final_node() -> ResponseType:
+            """
+            处理 final-node 步骤：调用 ask_supervisor 获取最终答案。
+            对应 CTM 核心的 ask_supervisor 方法。
+            """
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
@@ -258,15 +304,27 @@ class FlaskAppWrapper:
                     if curr_node_id not in self.state.node_details and parents_ids:
                         parent_id = parents_ids[0]
                         if parent_id in self.state.node_details:
-                            answer, confidence_score = self.ctm.ask_supervisor(
-                                self.state.query, self.state.node_details[parent_id]
-                            )
-                            self.state.node_details[curr_node_id] = (
-                                f'Answer: {answer}\n\nConfidence score: {confidence_score}'
-                            )
-                            self.state.winning_chunk = self.state.node_details[
-                                parent_id
-                            ]
+                            parent_chunk = self.state.node_details[parent_id]
+
+                            # 只有当父节点是 Chunk 时才调用 ask_supervisor
+                            if isinstance(parent_chunk, Chunk) and self.state.query:
+                                answer, confidence_score = (
+                                    ChunkProcessor.ask_supervisor(
+                                        ctm_instance=self.ctm,
+                                        query=self.state.query,
+                                        winning_chunk=parent_chunk,
+                                    )
+                                )
+                                self.state.node_details[curr_node_id] = (
+                                    f'Answer: {answer}\n\n'
+                                    f'Confidence score: {confidence_score}'
+                                )
+                                self.state.winning_chunk = parent_chunk
+                            else:
+                                # 如果不是 Chunk，直接使用父节点的内容
+                                self.state.node_details[curr_node_id] = str(
+                                    parent_chunk
+                                )
 
             return self.add_cors_headers(
                 jsonify(
@@ -279,11 +337,18 @@ class FlaskAppWrapper:
 
         @self.app.route('/api/reverse', methods=['POST', 'OPTIONS'])
         def handle_reverse() -> ResponseType:
+            """
+            处理 reverse 步骤：调用 downtree_broadcast 进行下树广播。
+            对应 CTM 核心的 downtree_broadcast 方法。
+            """
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
-            if self.state.winning_chunk:
-                self.ctm.downtree_broadcast(self.state.winning_chunk)
+            if self.state.winning_chunk and isinstance(self.state.winning_chunk, Chunk):
+                ChunkProcessor.downtree_broadcast(
+                    ctm_instance=self.ctm,
+                    winning_chunk=self.state.winning_chunk,
+                )
 
             return self.add_cors_headers(
                 jsonify({'message': 'Reverse broadcast processed'})
@@ -291,35 +356,67 @@ class FlaskAppWrapper:
 
         @self.app.route('/api/update-processors', methods=['POST', 'OPTIONS'])
         def update_processors() -> ResponseType:
+            """
+            处理 update-processors 步骤：调用 link_form 形成处理器之间的链接。
+            对应 CTM 核心的 link_form 方法。
+            """
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
             data = request.get_json() or {}
             updates: List[Dict[str, str]] = data.get('updates', [])
 
-            # Update processor states (no need to call link_form here)
-            # self.ctm.link_form(self.state.chunks, winning_chunk=None)
+            # 获取输入参数
+            input_params = self._get_input_params()
+
+            # 调用 link_form 形成处理器之间的链接
+            if (
+                self.state.chunks
+                and self.state.winning_chunk
+                and isinstance(self.state.winning_chunk, Chunk)
+            ):
+                ChunkProcessor.link_form(
+                    ctm_instance=self.ctm,
+                    chunks=self.state.chunks,
+                    winning_chunk=self.state.winning_chunk,
+                    **input_params,
+                )
+
+            # 重置状态准备下一轮迭代
             self.state.chunks = []
             self.state.node_details.clear()
             self.state.node_parents.clear()
             self.state.node_gists.clear()
 
-            for update in updates:
-                proc_id = update.get('processor_id', '')
-                if proc_id in self.state.node_details:
-                    self.state.node_details[proc_id] = f'Updated processor {proc_id}'
+            # 重新初始化处理器节点详情
+            for processor in self.ctm.processor_graph.nodes:
+                self.state.node_details[processor.name] = processor.name
 
             return self.add_cors_headers(jsonify({'message': 'Processors updated'}))
 
         @self.app.route('/api/fuse-gist', methods=['POST', 'OPTIONS'])
         def handle_fuse_gist() -> ResponseType:
+            """
+            处理 fuse-gist 步骤：调用 fuse_processor 融合处理器输出。
+            对应 CTM 核心的 fuse_processor 方法。
+            """
             if request.method == 'OPTIONS':
                 return self.handle_options_request()
 
             data = request.get_json() or {}
             updates: List[Dict[str, Any]] = data.get('updates', [])
 
-            self.state.chunks = ChunkProcessor.fuse_chunks(self.ctm, self.state.chunks)
+            # 获取输入参数
+            input_params = self._get_input_params()
+
+            # 调用 fuse_processor，传递正确的参数
+            if self.state.chunks and self.state.query:
+                self.state.chunks = ChunkProcessor.fuse_chunks(
+                    ctm_instance=self.ctm,
+                    chunks=self.state.chunks,
+                    query=self.state.query,
+                    **input_params,
+                )
 
             for update in updates:
                 fused_node_id = update.get('fused_node_id', '')
@@ -356,12 +453,16 @@ class FlaskAppWrapper:
 
         @self.app.route('/api/upload', methods=['POST', 'OPTIONS'])
         def upload_files() -> Tuple[ResponseType, int]:
+            """
+            处理文件上传，保存查询和文本参数。
+            """
             if request.method == 'OPTIONS':
                 return self.handle_options_request(), 200
 
             # Get form data
             self.state.query = request.form.get('query', '') or ''
-            text = request.form.get('text', '') or ''
+            self.state.text = request.form.get('text', '') or ''
+            text = self.state.text
 
             saved_files: Dict[str, List[str]] = {
                 'images': [],
