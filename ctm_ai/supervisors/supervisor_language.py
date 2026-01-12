@@ -6,23 +6,23 @@ from ..utils import info_exponential_backoff, score_exponential_backoff
 from .supervisor_base import BaseSupervisor
 
 
-@BaseSupervisor.register_supervisor("language_supervisor")
+@BaseSupervisor.register_supervisor('language_supervisor')
 class LanguageSupervisor(BaseSupervisor):
     def init_supervisor(self, *args: Any, **kwargs: Any) -> None:
         super().init_supervisor(*args, **kwargs)
-        self.model_name = kwargs.get("supervisor_model", "gemini/gemini-2.0-flash-lite")
-        self.supervisors_prompt = kwargs.get("supervisors_prompt", "")
+        self.model_name = kwargs.get('supervisor_model', 'gemini/gemini-2.0-flash-lite')
+        self.supervisors_prompt = kwargs.get('supervisors_prompt', '')
 
     @info_exponential_backoff(retries=5, base_wait_time=1)
     def ask_info(self, query: str, context: Optional[str] = None) -> Optional[str]:
         messages = [
             {
-                "role": "system",
-                "content": self.supervisors_prompt,
+                'role': 'system',
+                'content': self.supervisors_prompt,
             },
             {
-                "role": "user",
-                "content": f"The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.",
+                'role': 'user',
+                'content': f'The following is detailed information on the topic: {context}. Based on this information, answer the question: {query}. Answer with a straightforward answer.',
             },
         ]
 
@@ -36,7 +36,7 @@ class LanguageSupervisor(BaseSupervisor):
             )
             return responses.choices[0].message.content.strip() if responses else None
         except Exception as e:
-            print(f"Error in ask_info: {e}")
+            print(f'Error in ask_info: {e}')
             return None
 
     @score_exponential_backoff(retries=5, base_wait_time=1)
@@ -46,8 +46,8 @@ class LanguageSupervisor(BaseSupervisor):
 
         messages = [
             {
-                "role": "user",
-                "content": f"""You are given a query and an answer. 
+                'role': 'user',
+                'content': f"""You are given a query and an answer. 
 Task: Decide whether the answer confirms that the query is true/positive, false/negative, or uncertain.
 
 Query: {query}
@@ -86,7 +86,7 @@ Respond with a single number only: 0, 1, or 2.
                 return 0.0
 
         except Exception as e:
-            print(f"Error in ask_score: {e}")
+            print(f'Error in ask_score: {e}')
             return self._fallback_similarity_score(query, gist)
 
     def _fallback_similarity_score(self, query: str, gist: str) -> float:
