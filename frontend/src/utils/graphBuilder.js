@@ -17,7 +17,6 @@ export function addProcessorNodes(kVal, processorNames) {
             processorCounts[processorType]++;
         }
 
-        const nodeLabel = `${processorType}_${processorCounts[processorType]}`;
         nodes.push({
             data: {
                 id: processorId,

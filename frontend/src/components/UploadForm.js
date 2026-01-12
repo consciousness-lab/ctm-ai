@@ -1,80 +1,92 @@
 // src/components/UploadForm.js
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { uploadFiles } from '../utils/api';
 
 const UploadForm = () => {
     const [query, setQuery] = useState('');
     const [text, setText] = useState('');
-    const [imageFiles, setImageFiles] = useState([]);
-    const [audioFiles, setAudioFiles] = useState([]);
-    const [videoFiles, setVideoFiles] = useState([]);
+    const [files, setFiles] = useState([]);
+    const [isDragging, setIsDragging] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [uploadProgress, setUploadProgress] = useState(0);
     const [serverResponse, setServerResponse] = useState(null);
+    const fileInputRef = useRef(null);
 
     const MAX_FILE_SIZE = 1000 * 1024 * 1024;
 
-    const isFileAlreadyAdded = (file, fileList) => {
-        return fileList.some(
+    const getFileType = (file) => {
+        if (file.type.startsWith('image/')) return 'image';
+        if (file.type.startsWith('audio/')) return 'audio';
+        if (file.type.startsWith('video/')) return 'video';
+        return 'other';
+    };
+
+    const getFileIcon = (type) => {
+        switch (type) {
+            case 'image': return '🖼️';
+            case 'audio': return '🎵';
+            case 'video': return '🎬';
+            default: return '📄';
+        }
+    };
+
+    const isFileAlreadyAdded = (file) => {
+        return files.some(
             (existingFile) =>
                 existingFile.name === file.name && existingFile.size === file.size
         );
     };
 
-    const handleImagesChange = (e) => {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            const newFiles = Array.from(files).filter(
-                (file) => !isFileAlreadyAdded(file, imageFiles) && file.size <= MAX_FILE_SIZE
-            );
+    const processFiles = (fileList) => {
+        const validFiles = Array.from(fileList).filter((file) => {
+            const isValid = file.size <= MAX_FILE_SIZE && !isFileAlreadyAdded(file);
+            const isAcceptedType = file.type.startsWith('image/') || 
+                                   file.type.startsWith('audio/') || 
+                                   file.type.startsWith('video/');
+            return isValid && isAcceptedType;
+        });
 
-            if (newFiles.length !== files.length) {
-                setErrorMessage('File size exceeds the limit');
-            }
+        if (validFiles.length !== fileList.length) {
+            setErrorMessage('Some files were skipped (duplicate, too large, or unsupported type)');
+            setTimeout(() => setErrorMessage(''), 3000);
+        }
 
-            if (newFiles.length > 0) {
-                setImageFiles((prevFiles) => [...prevFiles, ...newFiles]);
-            }
+        if (validFiles.length > 0) {
+            setFiles((prev) => [...prev, ...validFiles]);
         }
     };
 
-    const handleAudioChange = (e) => {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            const newFiles = Array.from(files).filter(
-                (file) => !isFileAlreadyAdded(file, audioFiles) && file.size <= MAX_FILE_SIZE
-            );
-
-            if (newFiles.length !== files.length) {
-                setErrorMessage('File size exceeds the limit.');
-            }
-
-            if (newFiles.length > 0) {
-                setAudioFiles((prevFiles) => [...prevFiles, ...newFiles]);
-            }
+    const handleFileChange = (e) => {
+        if (e.target.files) {
+            processFiles(e.target.files);
         }
     };
 
-    const handleVideoChange = (e) => {
-        const files = e.target.files;
-        if (files && files.length > 0) {
-            const newFiles = Array.from(files).filter(
-                (file) => !isFileAlreadyAdded(file, videoFiles) && file.size <= MAX_FILE_SIZE
-            );
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
 
-            if (newFiles.length !== files.length) {
-                setErrorMessage('File size exceeds the limit.');
-            }
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
 
-            if (newFiles.length > 0) {
-                setVideoFiles((prevFiles) => [...prevFiles, ...newFiles]);
-            }
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files) {
+            processFiles(e.dataTransfer.files);
         }
     };
 
-    const removeFile = (fileToRemove, fileList, setFileList) => {
-        setFileList(fileList.filter((file) => file !== fileToRemove));
+    const removeFile = (fileToRemove) => {
+        setFiles(files.filter((file) => file !== fileToRemove));
+    };
+
+    const handleDropZoneClick = () => {
+        fileInputRef.current?.click();
     };
 
     const handleSubmit = async (e) => {
@@ -83,27 +95,21 @@ const UploadForm = () => {
         setServerResponse(null);
         setUploadProgress(0);
 
-        if (imageFiles.length === 0 && audioFiles.length === 0 && videoFiles.length === 0 && !query.trim() && !text.trim()) {
+        if (files.length === 0 && !query.trim() && !text.trim()) {
             setErrorMessage('Please select at least one file or enter a query and text.');
             return;
         }
 
         try {
             const formData = new FormData();
-
             formData.append('query', query);
             formData.append('text', text);
 
-            imageFiles.forEach((file) => {
-                formData.append('images', file);
-            });
-
-            audioFiles.forEach((file) => {
-                formData.append('audios', file);
-            });
-
-            videoFiles.forEach((file) => {
-                formData.append('videos', file);
+            files.forEach((file) => {
+                const type = getFileType(file);
+                if (type === 'image') formData.append('images', file);
+                else if (type === 'audio') formData.append('audios', file);
+                else if (type === 'video') formData.append('videos', file);
             });
 
             const result = await uploadFiles(formData, (progressEvent) => {
@@ -118,6 +124,9 @@ const UploadForm = () => {
         }
     };
 
+    const imageCount = files.filter(f => getFileType(f) === 'image').length;
+    const audioCount = files.filter(f => getFileType(f) === 'audio').length;
+    const videoCount = files.filter(f => getFileType(f) === 'video').length;
 
     return (
         <div className="upload-form-container">
@@ -145,87 +154,61 @@ const UploadForm = () => {
                         />
                     </div>
 
-                    <div className="file-upload-section">
-                        <div className="file-group">
-                            <label className="form-label"><strong>Image</strong></label>
+                    <div className="form-group">
+                        <label className="form-label"><strong>Files</strong></label>
+                        <div
+                            className={`drop-zone ${isDragging ? 'dragging' : ''}`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            onClick={handleDropZoneClick}
+                        >
                             <input
+                                ref={fileInputRef}
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,audio/*,video/*"
                                 multiple
-                                onChange={handleImagesChange}
-                                className="file-input"
+                                onChange={handleFileChange}
+                                style={{ display: 'none' }}
                             />
-                            {imageFiles.length > 0 && (
-                                <ul className="file-list">
-                                    {imageFiles.map((file, idx) => (
-                                        <li key={idx} className="file-item">
-                                            <span className="file-name">{file.name}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeFile(file, imageFiles, setImageFiles)}
-                                                className="remove-button"
-                                            >
-                                                ×
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
+                            <div className="drop-zone-content">
+                                <span className="drop-zone-icon">📁</span>
+                                <span className="drop-zone-text">
+                                    {isDragging 
+                                        ? 'Drop files here' 
+                                        : 'Drag & drop files here, or click to browse'}
+                                </span>
+                                <span className="drop-zone-hint">
+                                    Supports images, audio, and video files
+                                </span>
+                            </div>
                         </div>
 
-                        <div className="file-group">
-                            <label className="form-label"><strong>Audio</strong></label>
-                            <input
-                                type="file"
-                                accept="audio/*"
-                                multiple
-                                onChange={handleAudioChange}
-                                className="file-input"
-                            />
-                            {audioFiles.length > 0 && (
-                                <ul className="file-list">
-                                    {audioFiles.map((file, idx) => (
-                                        <li key={idx} className="file-item">
-                                            <span className="file-name">{file.name}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeFile(file, audioFiles, setAudioFiles)}
-                                                className="remove-button"
-                                            >
-                                                ×
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
+                        {files.length > 0 && (
+                            <div className="file-summary">
+                                {imageCount > 0 && <span className="file-badge">🖼️ {imageCount}</span>}
+                                {audioCount > 0 && <span className="file-badge">🎵 {audioCount}</span>}
+                                {videoCount > 0 && <span className="file-badge">🎬 {videoCount}</span>}
+                            </div>
+                        )}
 
-                        <div className="file-group">
-                            <label className="form-label"><strong>Video</strong></label>
-                            <input
-                                type="file"
-                                accept="video/*"
-                                multiple
-                                onChange={handleVideoChange}
-                                className="file-input"
-                            />
-                            {videoFiles.length > 0 && (
-                                <ul className="file-list">
-                                    {videoFiles.map((file, idx) => (
-                                        <li key={idx} className="file-item">
-                                            <span className="file-name">{file.name}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeFile(file, videoFiles, setVideoFiles)}
-                                                className="remove-button"
-                                            >
-                                                ×
-                                            </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
+                        {files.length > 0 && (
+                            <ul className="file-list">
+                                {files.map((file, idx) => (
+                                    <li key={idx} className="file-item">
+                                        <span className="file-type-icon">{getFileIcon(getFileType(file))}</span>
+                                        <span className="file-name">{file.name}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeFile(file)}
+                                            className="remove-button"
+                                        >
+                                            ×
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 </div>
 
@@ -234,9 +217,7 @@ const UploadForm = () => {
                         <div
                             className="progress-bar"
                             style={{ width: `${uploadProgress}%` }}
-                        >
-                            {uploadProgress}%
-                        </div>
+                        />
                     </div>
                 )}
 
@@ -246,8 +227,8 @@ const UploadForm = () => {
                     <div className="success-message">Upload Success!</div>
                 )}
 
-                <button type="submit" className={`control-button start`}>
-                    Submit
+                <button type="submit" className="control-button start">
+                    Upload Data
                 </button>
             </form>
         </div>
