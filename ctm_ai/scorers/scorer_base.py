@@ -87,16 +87,24 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
                 messages=relevance_prompt,
                 model=self.relevance_model,
                 max_tokens=10,
-                temperature=0.0,
+                temperature=0.2,
                 n=1,
             )
 
             score_text = responses.choices[0].message.content.strip()
-            score = float(score_text)
+
+            import re
+
+            number_match = re.search(r'(\d+\.?\d*)', score_text)
+            if number_match:
+                score = float(number_match.group(1))
+            else:
+                score = float(score_text)
+
             return max(0.0, min(1.0, score))
 
         except (ValueError, TypeError, IndexError):
-            return 0.5
+            raise ValueError('Error getting relevance score')
 
     def _ask_statistical_relevance(self, query: str, gist: str) -> float:
         try:
@@ -127,7 +135,7 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
         confidence_prompt = [
             {
                 'role': 'user',
-                'content': f"""Please evaluate how confident this response appears to be on a scale from 0.0 to 1.0. 
+                'content': f"""Please evaluate how confident this response appears to be on a scale from 0.0 to 1.0.
 
 Response: {gist}
 
@@ -150,12 +158,20 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.75).""",
                 messages=confidence_prompt,
                 model=self.confidence_model,
                 max_tokens=10,
-                temperature=0.0,
+                temperature=0.2,
                 n=1,
             )
 
             score_text = responses.choices[0].message.content.strip()
-            score = float(score_text)
+
+            import re
+
+            number_match = re.search(r'(\d+\.?\d*)', score_text)
+            if number_match:
+                score = float(number_match.group(1))
+            else:
+                score = float(score_text)
+
             return max(0.0, min(1.0, score))
 
         except (ValueError, TypeError, IndexError):
@@ -224,12 +240,20 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.65).""",
                 messages=surprise_prompt,
                 model=self.surprise_model,
                 max_tokens=10,
-                temperature=0.0,
+                temperature=0.2,
                 n=1,
             )
 
             score_text = responses.choices[0].message.content.strip()
-            score = float(score_text)
+
+            import re
+
+            number_match = re.search(r'(\d+\.?\d*)', score_text)
+            if number_match:
+                score = float(number_match.group(1))
+            else:
+                score = float(score_text)
+
             return max(0.0, min(1.0, score))
 
         except (ValueError, TypeError, IndexError):

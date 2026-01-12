@@ -55,7 +55,7 @@ class BaseProcessor(object):
         self.try_times = kwargs.get('try_times', 3)
         self.max_tokens = kwargs.get('max_tokens', 4096)
         self.return_num = kwargs.get('return_num', 1)
-        self.temperature = kwargs.get('temperature', 0.0)
+        self.temperature = kwargs.get('temperature', 0.2)
         self.fuse_history = []
         self.winner_answer = []
         self.all_context_history = []

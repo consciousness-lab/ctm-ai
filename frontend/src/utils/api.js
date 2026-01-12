@@ -89,11 +89,6 @@ export const getNodeDetails = async (nodeId) => {
   return fetchWithError(`${BASE_URL}/nodes/${nodeId}`);
 };
 
-export const getCurrentState = async () => {
-  return fetchWithError(`${BASE_URL}/state`);
-};
-
-
 export const uploadFiles = async (formData, onUploadProgress) => {
   try {
     const response = await axios.post(`${BASE_URL}/upload`, formData, {

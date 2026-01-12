@@ -49,11 +49,10 @@ const ProcessPhase = ({ phase, displayPhase, description }) => {
 const BASE_URL = process.env.REACT_APP_API_URL || 'http://18.224.61.142:5000/api';
 
 const App = () => {
-    const [availableProcessors, setAvailableProcessors] = useState([
+    const [availableProcessors] = useState([
         'VisionProcessor',
         'LanguageProcessor',
         'SearchProcessor',
-        'MathProcessor',
         'CodeProcessor',
         'AudioProcessor',
         'VideoProcessor'
@@ -64,7 +63,6 @@ const App = () => {
     const [processorNames, setProcessorNames] = useState([]);
     const [initialized, setInitialized] = useState(false);
     const [selectedNode, setSelectedNode] = useState(null);
-    const [nodeDetailText, setNodeDetailText] = useState('');
     const [currentStep, setCurrentStep] = useState(PHASES.INIT);
     const [uptreeStep, setUptreeStep] = useState(1);
     const [displayPhase, setDisplayPhase] = useState(PHASES.INIT);
@@ -72,14 +70,6 @@ const App = () => {
     const allProcessors = availableProcessors;
     const [neighborhoods, setNeighborhoods] = useState(null);
     const [uploadKey, setUploadKey] = useState(Date.now());
-
-    const toggleProcessor = (proc) => {
-        if (selectedProcessors.includes(proc)) {
-            setSelectedProcessors(selectedProcessors.filter(p => p !== proc));
-        } else {
-            setSelectedProcessors([...selectedProcessors, proc]);
-        }
-    };
 
     const modifyGraph = () => {
         const updateElementsForPhase = (newElements) => {
@@ -301,7 +291,6 @@ const App = () => {
         setProcessorNames([]);
         setSelectedNode(null);
         setNodeDetailJSX(null);
-        setNodeDetailText('');
         setCurrentStep(PHASES.INIT);
         setDisplayPhase(PHASES.INIT);
         setUptreeStep(1);
@@ -368,72 +357,69 @@ const App = () => {
 
   return (
     <div className="app-container">
-      <h1 className="app-title">CTM-AI Visualization</h1>
+      {/* Header */}
+      <header className="app-header">
+        <h1 className="app-title">CTM-AI Visualization</h1>
+        <p className="app-subtitle">Conscious Turing Machine - Interactive System Visualization</p>
+      </header>
 
-    <div className="panel-card">
-        <h2 className="panel-title">
-            Instructions
-        </h2>
-        <div className="info-content">
-            <p className="intro-text">
-                Welcome to the CTM-AI System Visualization Tool. Follow these steps to explore how the system processes and analyzes data to answer your questions.
-            </p>
-            <ol className="instruction-list">
-                <li>
-                    <span className="step-content">
-                        <strong>Input your query</strong> - What you'd like the CTM-AI system to answer
-                    </span>
-                </li>
-                <li>
-                    <span className="step-content">
-                        <strong>Upload your data</strong> - Support for images, text, and other formats
-                    </span>
-                </li>
-                <li>
-                    <span className="step-content">
-                        <strong>Select processors</strong> - Choose the analysis modules to use
-                    </span>
-                </li>
-                <li>
-                    <span className="step-content">
-                        <strong>Start visualization</strong> - Begin the analysis process
-                    </span>
-                </li>
-                <li>
-                    <span className="step-content">
-                        <strong>Monitor phases</strong> - Track progress in the Process Phases section
-                    </span>
-                </li>
-                <li>
-                    <span className="step-content">
-                        <strong>View system graph</strong> - Examine the CTM Visualization structure
-                    </span>
-                </li>
-                <li>
-                    <span className="step-content">
-                        <strong>Interact with nodes</strong> - Click on nodes to view detailed information
-                    </span>
-                </li>
-                <li>
-                    <span className="step-content">
-                        <strong>Progress steps</strong> - Use "Next Step" to advance through phases
-                    </span>
-                </li>
-                <li>
-                    <span className="step-content">
-                        <strong>View results</strong> - Find your answer in the final node details
-                    </span>
-                </li>
-            </ol>
-        </div>
-    </div>
-
-    <div className="upload-section">
+      {/* Instructions Panel */}
+      <div className="instructions-panel">
         <div className="panel-card">
-        <h2 className="panel-title">Upload Files</h2>
-            <UploadForm key={uploadKey} />
+          <h2 className="panel-title">Quick Start Guide</h2>
+          <div className="info-content">
+            <p className="intro-text">
+              Welcome to the CTM-AI System Visualization Tool. Follow these steps to explore how the system processes and analyzes data.
+            </p>
+            <ul className="instruction-list">
+              <li>
+                <span className="step-number">1</span>
+                <span className="step-content">
+                  <strong>Input your query</strong> — What you'd like the CTM-AI system to answer
+                </span>
+              </li>
+              <li>
+                <span className="step-number">2</span>
+                <span className="step-content">
+                  <strong>Upload your data</strong> — Support for images, audio, video, and text
+                </span>
+              </li>
+              <li>
+                <span className="step-number">3</span>
+                <span className="step-content">
+                  <strong>Select processors</strong> — Choose the analysis modules to use
+                </span>
+              </li>
+              <li>
+                <span className="step-number">4</span>
+                <span className="step-content">
+                  <strong>Start & Monitor</strong> — Begin visualization and track progress
+                </span>
+              </li>
+              <li>
+                <span className="step-number">5</span>
+                <span className="step-content">
+                  <strong>Explore the graph</strong> — Click nodes to view detailed information
+                </span>
+              </li>
+              <li>
+                <span className="step-number">6</span>
+                <span className="step-content">
+                  <strong>View results</strong> — Find your answer in the final output node
+                </span>
+              </li>
+            </ul>
+          </div>
         </div>
-    </div>
+      </div>
+
+      {/* Upload Section */}
+      <div className="upload-section">
+        <div className="panel-card">
+          <h2 className="panel-title">Data Input</h2>
+          <UploadForm key={uploadKey} />
+        </div>
+      </div>
 
       <div className="main-grid">
         {/* Left Panel - Process Control */}

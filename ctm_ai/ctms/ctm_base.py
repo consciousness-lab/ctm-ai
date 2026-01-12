@@ -10,7 +10,7 @@ from ..configs import ConsciousTuringMachineConfig
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-from ..utils import logger, logging_func_with_count, log_supervisor_result
+from ..utils import logger, logging_func_with_count
 
 if TYPE_CHECKING:
     pass
@@ -170,7 +170,6 @@ class BaseConsciousTuringMachine(ABC):
         return chunks
 
     @logging_func_with_count
-    @log_supervisor_result
     def ask_supervisor(
         self, query: str, chunk: Chunk
     ) -> Tuple[Union[str, None], float]:
