@@ -15,7 +15,6 @@ class Config:
         'VisionProcessor': 'vision_processor',
         'LanguageProcessor': 'language_processor',
         'SearchProcessor': 'search_processor',
-        'MathProcessor': 'math_processor',
         'CodeProcessor': 'code_processor',
         'AudioProcessor': 'audio_processor',
         'VideoProcessor': 'video_processor',

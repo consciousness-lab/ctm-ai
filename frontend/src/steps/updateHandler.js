@@ -1,5 +1,4 @@
 // steps/updateHandler.js
-import { PHASES } from '../constants';
 import { updateProcessors } from '../utils/api';
 
 export const handleUpdateStep = async ({
