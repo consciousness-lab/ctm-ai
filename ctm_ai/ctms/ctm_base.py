@@ -70,8 +70,8 @@ class BaseConsciousTuringMachine(ABC):
             self.processor_graph.add_node(
                 processor_name=processor_name,
                 processor_group_name=None,
-                system_prompt=processor_config.get("system_prompt"),
-                model=processor_config.get("model"),
+                system_prompt=processor_config.get('system_prompt'),
+                model=processor_config.get('model'),
             )
 
         self.add_supervisor(self.config.supervisor)
@@ -85,8 +85,8 @@ class BaseConsciousTuringMachine(ABC):
         self.processor_graph.add_node(
             processor_name=processor_name,
             processor_group_name=group_name,
-            system_prompt=processor_config.get("system_prompt"),
-            model=processor_config.get("model"),
+            system_prompt=processor_config.get('system_prompt'),
+            model=processor_config.get('model'),
         )
 
     def remove_processor(self, processor_name: str) -> None:
@@ -208,7 +208,7 @@ class BaseConsciousTuringMachine(ABC):
         for chunk in chunks:
             if chunk.relevance >= 0.8:
                 logger.info(
-                    f"Adding link between {winning_chunk.processor_name} and {chunk.processor_name}"
+                    f'Adding link between {winning_chunk.processor_name} and {chunk.processor_name}'
                 )
                 self.processor_graph.add_link(
                     processor1_name=winning_chunk.processor_name,
@@ -243,7 +243,7 @@ class BaseConsciousTuringMachine(ABC):
                     is_fuse=True,
                     **input_kwargs,
                 )
-                input_kwargs["text"] += "(additional information: {})".format(
+                input_kwargs['text'] += '(additional information: {})'.format(
                     answer_chunk.gist
                 )
                 dirty.add(chunk.processor_name)
@@ -277,7 +277,7 @@ class BaseConsciousTuringMachine(ABC):
                     is_fuse=True,
                     **input_kwargs,
                 )
-                input_kwargs["text"] += "(additional information: {})".format(
+                input_kwargs['text'] += '(additional information: {})'.format(
                     answer_chunk.gist
                 )
                 dirty.add(chunk.processor_name)

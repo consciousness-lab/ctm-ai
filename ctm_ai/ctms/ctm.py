@@ -5,10 +5,7 @@ from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..configs import ConsciousTuringMachineConfig
-from ..utils import (
-    logger,
-    logging_func_with_count,
-)
+from ..utils import logger, logging_func_with_count
 from .ctm_base import BaseConsciousTuringMachine
 
 
@@ -64,7 +61,7 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def go_down(
         self, winning_chunk: Chunk, chunks: List[Chunk], **input_kwargs
     ) -> None:
-        logger.info(f"Going down with winning chunk: {winning_chunk.processor_name}")
+        logger.info(f'Going down with winning chunk: {winning_chunk.processor_name}')
         self.downtree_broadcast(winning_chunk)
         self.link_form(chunks, winning_chunk, **input_kwargs)
 
@@ -82,14 +79,14 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
     ) -> Tuple[str, float]:
         """Forward pass supporting both standard and tool-based processing"""
         input_params = {
-            "text": text,
-            "image": image,
-            "image_path": image_path,
-            "audio": audio,
-            "audio_path": audio_path,
-            "video_frames": video_frames,
-            "video_frames_path": video_frames_path,
-            "video_path": video_path,
+            'text': text,
+            'image': image,
+            'image_path': image_path,
+            'audio': audio,
+            'audio_path': audio_path,
+            'video_frames': video_frames,
+            'video_frames_path': video_frames_path,
+            'video_path': video_path,
         }
 
         prev_chunks: Optional[List[Chunk]] = None
