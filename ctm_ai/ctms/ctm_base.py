@@ -70,8 +70,8 @@ class BaseConsciousTuringMachine(ABC):
             self.processor_graph.add_node(
                 processor_name=processor_name,
                 processor_group_name=None,
-                system_prompt=processor_config.get('system_prompt'),
-                model=processor_config.get('model'),
+                system_prompt=processor_config.get("system_prompt"),
+                model=processor_config.get("model"),
             )
 
         self.add_supervisor(self.config.supervisor)
@@ -85,8 +85,8 @@ class BaseConsciousTuringMachine(ABC):
         self.processor_graph.add_node(
             processor_name=processor_name,
             processor_group_name=group_name,
-            system_prompt=processor_config.get('system_prompt'),
-            model=processor_config.get('model'),
+            system_prompt=processor_config.get("system_prompt"),
+            model=processor_config.get("model"),
         )
 
     def remove_processor(self, processor_name: str) -> None:
@@ -208,7 +208,7 @@ class BaseConsciousTuringMachine(ABC):
         for chunk in chunks:
             if chunk.relevance >= 0.8:
                 logger.info(
-                    f'Adding link between {winning_chunk.processor_name} and {chunk.processor_name}'
+                    f"Adding link between {winning_chunk.processor_name} and {chunk.processor_name}"
                 )
                 self.processor_graph.add_link(
                     processor1_name=winning_chunk.processor_name,
@@ -243,11 +243,46 @@ class BaseConsciousTuringMachine(ABC):
                     is_fuse=True,
                     **input_kwargs,
                 )
-                input_kwargs['text'] += '(additional information: {})'.format(
+                input_kwargs["text"] += "(additional information: {})".format(
                     answer_chunk.gist
                 )
                 dirty.add(chunk.processor_name)
 
+        for idx, chunk in enumerate(chunks):
+            if chunk.processor_name in dirty:
+                p = proc_map[chunk.processor_name]
+                chunks[idx] = p.ask(query=query, **input_kwargs)
+        return chunks
+
+    @logging_func_with_count
+    def fuse_with_prev_chunks(
+        self, prev_chunks: List[Chunk], query: str, **input_kwargs
+    ) -> List[Chunk]:
+        proc_map = {p.name: p for p in self.processor_graph.nodes}
+        dirty: set[str] = set()
+
+        for chunk in prev_chunks:
+            q = chunk.additional_question
+            if not q:
+                continue
+
+            for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
+                if nbr == chunk.processor_name:
+                    proc_map[nbr].update(chunk)
+                    dirty.add(nbr)
+                    continue
+
+                answer_chunk = proc_map[nbr].ask(
+                    query=q,
+                    is_fuse=True,
+                    **input_kwargs,
+                )
+                input_kwargs["text"] += "(additional information: {})".format(
+                    answer_chunk.gist
+                )
+                dirty.add(chunk.processor_name)
+
+        chunks = list(prev_chunks)
         for idx, chunk in enumerate(chunks):
             if chunk.processor_name in dirty:
                 p = proc_map[chunk.processor_name]
