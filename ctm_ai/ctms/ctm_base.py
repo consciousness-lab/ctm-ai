@@ -254,6 +254,41 @@ class BaseConsciousTuringMachine(ABC):
                 chunks[idx] = p.ask(query=query, **input_kwargs)
         return chunks
 
+    @logging_func_with_count
+    def fuse_with_prev_chunks(
+        self, prev_chunks: List[Chunk], query: str, **input_kwargs
+    ) -> List[Chunk]:
+        proc_map = {p.name: p for p in self.processor_graph.nodes}
+        dirty: set[str] = set()
+
+        for chunk in prev_chunks:
+            q = chunk.additional_question
+            if not q:
+                continue
+
+            for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
+                if nbr == chunk.processor_name:
+                    proc_map[nbr].update(chunk)
+                    dirty.add(nbr)
+                    continue
+
+                answer_chunk = proc_map[nbr].ask(
+                    query=q,
+                    is_fuse=True,
+                    **input_kwargs,
+                )
+                input_kwargs['text'] += '(additional information: {})'.format(
+                    answer_chunk.gist
+                )
+                dirty.add(chunk.processor_name)
+
+        chunks = list(prev_chunks)
+        for idx, chunk in enumerate(chunks):
+            if chunk.processor_name in dirty:
+                p = proc_map[chunk.processor_name]
+                chunks[idx] = p.ask(query=query, **input_kwargs)
+        return chunks
+
     @abstractmethod
     def forward(
         self,

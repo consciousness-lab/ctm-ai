@@ -5,10 +5,7 @@ from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..configs import ConsciousTuringMachineConfig
-from ..utils import (
-    logger,
-    logging_func_with_count,
-)
+from ..utils import logger, logging_func_with_count
 from .ctm_base import BaseConsciousTuringMachine
 
 
@@ -53,6 +50,14 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         return winning_chunk, chunks
 
     @logging_func_with_count
+    def go_up_with_prev(
+        self, query: str, prev_chunks: List[Chunk], **input_kwargs
+    ) -> Tuple[Chunk, List[Chunk]]:
+        chunks = self.fuse_with_prev_chunks(prev_chunks, query, **input_kwargs)
+        winning_chunk = self.uptree_competition(chunks)
+        return winning_chunk, chunks
+
+    @logging_func_with_count
     def go_down(
         self, winning_chunk: Chunk, chunks: List[Chunk], **input_kwargs
     ) -> None:
@@ -73,7 +78,6 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         video_path: Optional[str] = None,
     ) -> Tuple[str, float]:
         """Forward pass supporting both standard and tool-based processing"""
-        # Collect all input parameters for reuse
         input_params = {
             'text': text,
             'image': image,
@@ -85,13 +89,21 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
             'video_path': video_path,
         }
 
+        prev_chunks: Optional[List[Chunk]] = None
+
         for i in range(self.config.max_iter_num):
-            winning_chunk, chunks = self.go_up(
-                query,
-                **input_params,
-            )
+            if i == 0:
+                winning_chunk, chunks = self.go_up(query, **input_params)
+            else:
+                winning_chunk, chunks = self.go_up_with_prev(
+                    query, prev_chunks, **input_params
+                )
+
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
             if i == self.config.max_iter_num - 1:
                 return answer, confidence_score
+
             self.go_down(winning_chunk, chunks, **input_params)
+            prev_chunks = chunks
+
         return answer, confidence_score
