@@ -46,7 +46,7 @@ const ProcessPhase = ({ phase, displayPhase, description }) => {
   );
 };
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://18.224.61.142:5000/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const App = () => {
     const [availableProcessors] = useState([
@@ -119,7 +119,10 @@ const App = () => {
             case PHASES.REVERSE: {
                 setElements((prevElements) => {
                     const processorNodes = prevElements.filter((element) =>
-                        element.data?.label?.toLowerCase().includes('processor')
+                        element.data && 
+                        element.data.id && 
+                        !element.data.source && 
+                        processorNames.includes(element.data.id)
                     );
                     const processorIds = new Set(processorNodes.map(node => node.data.id));
 
@@ -150,14 +153,19 @@ const App = () => {
 
             case PHASES.UPDATE: {
                 const updateElements = async () => {
-                    const processorNodes = elements.filter((element) =>
-                        element.data?.label?.toLowerCase().includes('processor')
-                    );
+                    // Filter nodes that are processors (keep them, remove others like gists/fused nodes)
+                    const processorNodes = elements.filter((element) => {
+                        // Keep elements that are nodes and have an ID in the processor list
+                        return element.data && 
+                               element.data.id && 
+                               !element.data.source && // ensure it's a node, not an edge
+                               processorNames.includes(element.data.id);
+                    });
 
                     const neighborhoods = await fetchProcessorNeighborhoods();
                     setNeighborhoods(neighborhoods);
                     if (neighborhoods) {
-                        const newEdges = addProcessorEdges(neighborhoods);
+                        const newEdges = addProcessorEdges(neighborhoods, processorNames);
                         setElements([...processorNodes, ...newEdges]);
                     } else {
                         setElements(processorNodes);
@@ -257,16 +265,23 @@ const App = () => {
         setCurrentStep(PHASES.OUTPUT_GIST);
 
         if (namesFromBackend) {
+            console.log('Backend returned names:', namesFromBackend);
             const initialElements = addProcessorNodes(dynamicK, namesFromBackend);
-            setElements(initialElements.nodes);
+            console.log('Created nodes:', initialElements.nodes);
+            let allElements = initialElements.nodes;
 
             const neighborhoods = await fetchProcessorNeighborhoods();
             setNeighborhoods(neighborhoods);
 
             if (neighborhoods) {
-                const edges = addProcessorEdges(neighborhoods);
-                setElements(prev => [...prev, ...edges]);
+                console.log('Neighborhoods:', neighborhoods);
+                const edges = addProcessorEdges(neighborhoods, namesFromBackend);
+                console.log('Created edges:', edges);
+                allElements = [...allElements, ...edges];
             }
+            
+            console.log('All Elements sent to Cytoscape:', allElements);
+            setElements(allElements);
             setInitialized(true);
             setProcessorNames(namesFromBackend);
         }
@@ -314,6 +329,59 @@ const App = () => {
                     return;
                 }
 
+                // Check if this is a processor node
+                if (data.processor_info) {
+                    const info = data.processor_info;
+                    const linkedCount = info.linked_processors?.length || 0;
+                    const memoryCount = (info.memory?.fuse_history?.length || 0) + 
+                                       (info.memory?.winner_answer?.length || 0) +
+                                       (info.memory?.all_context_history?.length || 0);
+
+                    const processorJSX = (
+                        <div className="processor-details">
+                            <h3>Processor: {info.type}</h3>
+                            
+                            <div className="detail-section">
+                                <p><span className="detail-label">Model:</span> {info.model}</p>
+                            </div>
+
+                            <div className="detail-section">
+                                <p className="detail-label">Linked Processors ({linkedCount}):</p>
+                                {linkedCount > 0 ? (
+                                    <div className="linked-list">
+                                        {info.linked_processors.map((p, idx) => (
+                                            <span key={idx} className="linked-badge">
+                                                {p.split('_')[0].replace('Processor', '')}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="no-data">No linked processors</p>
+                                )}
+                            </div>
+
+                            <div className="detail-section">
+                                <p className="detail-label">Memory ({memoryCount} entries):</p>
+                                {info.memory?.all_context_history?.length > 0 ? (
+                                    <div className="memory-list">
+                                        {info.memory.all_context_history.slice(-3).map((item, idx) => (
+                                            <div key={idx} className="memory-item">
+                                                <p><strong>Q:</strong> {item.query?.substring(0, 100)}...</p>
+                                                <p><strong>A:</strong> {item.answer?.substring(0, 100)}...</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="no-data">No memory entries yet</p>
+                                )}
+                            </div>
+                        </div>
+                    );
+                    setNodeDetailJSX(processorJSX);
+                    return;
+                }
+
+                // Regular node details
                 const nodeSelfLines = parseDetailString(data.self);
 
                 let parentLines = null;
@@ -520,7 +588,7 @@ const App = () => {
                 {currentStep === PHASES.UPTREE && (
                   <p><strong>Uptree Step:</strong> {uptreeStep} of {k-1}</p>
                 )}
-                <p><strong>Processors:</strong> {processorNames.join(', ')}</p>
+                <p><strong>Processors:</strong> {processorNames.map(p => p.split('_')[0].replace('Processor', '')).join(', ')}</p>
               </div>
             </div>
           )}
