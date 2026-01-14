@@ -42,6 +42,9 @@ class ConsciousTuringMachineConfig:
         return cls(**json.loads(text))
 
     @classmethod
-    def from_ctm(cls, ctm_name: str) -> 'ConsciousTuringMachineConfig':
+    def from_ctm(cls, ctm_name: Optional[str]) -> 'ConsciousTuringMachineConfig':
+        if ctm_name is None:
+            # 当 ctm_name 为 None 时，返回使用默认值的配置
+            return cls()
         config_file = f'../ctm_conf/{ctm_name}_config.json'
         return cls.from_json_file(config_file)

@@ -16,6 +16,9 @@ from ctm_ai.utils import extract_audio_from_video, extract_video_frames
 ResponseType = Union[FlaskResponse, WerkzeugResponse]
 
 
+from ctm_ai.graphs import ProcessorGraph
+
+
 class FlaskAppWrapper:
     def __init__(self) -> None:
         self.app: Flask = Flask(__name__)
@@ -83,29 +86,11 @@ class FlaskAppWrapper:
         self.app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
         self.app.config['MAX_CONTENT_LENGTH'] = Config.MAX_CONTENT_LENGTH
 
-    def add_cors_headers(self, response: ResponseType) -> ResponseType:
-        allowed_origins = ['http://localhost:3000', 'http://18.224.61.142']
-        origin = request.headers.get('Origin', '')
-
-        if origin in allowed_origins:
-            response.headers.add('Access-Control-Allow-Origin', origin)
-        response.headers.add(
-            'Access-Control-Allow-Headers', 'Content-Type,Authorization'
-        )
-        response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
-        return response
-
-    def handle_options_request(self) -> ResponseType:
-        return self.add_cors_headers(make_response())
-
     def register_routes(self) -> None:
-        @self.app.route('/api/refresh', methods=['POST', 'OPTIONS'])
+        @self.app.route('/api/refresh', methods=['POST'])
         def handle_refresh() -> ResponseType:
-            if request.method == 'OPTIONS':
-                return self.handle_options_request()
-
             self.state.reset()
-            return self.add_cors_headers(jsonify({'message': 'Server data refreshed'}))
+            return jsonify({'message': 'Server data refreshed'})
 
         @self.app.route('/api/nodes/<node_id>')
         def get_node_details(node_id: str) -> ResponseType:
@@ -128,21 +113,48 @@ class FlaskAppWrapper:
                         else str(raw_parent_detail)
                     )
 
-            return self.add_cors_headers(
-                jsonify({'self': node_self, 'parents': parent_data})
+            # Check if this is a processor node and get additional info
+            processor_info: Optional[Dict[str, Any]] = None
+            processor = self.ctm.processor_graph.get_node(node_id)
+            if processor:
+                # Get linked processors
+                linked_processors = self.ctm.processor_graph.adjacency_list.get(
+                    node_id, []
+                )
+
+                # Get processor memory (history)
+                memory = {
+                    'fuse_history': getattr(processor, 'fuse_history', []),
+                    'winner_answer': getattr(processor, 'winner_answer', []),
+                    'all_context_history': getattr(
+                        processor, 'all_context_history', []
+                    ),
+                }
+
+                processor_info = {
+                    'name': processor.name,
+                    'type': processor.name.split('_')[0].replace('Processor', ''),
+                    'model': getattr(processor, 'model_name', 'N/A'),
+                    'linked_processors': linked_processors,
+                    'memory': memory,
+                }
+
+            return jsonify(
+                {
+                    'self': node_self,
+                    'parents': parent_data,
+                    'processor_info': processor_info,
+                }
             )
 
-        @self.app.route('/api/init', methods=['POST', 'OPTIONS'])
+        @self.app.route('/api/init', methods=['POST'])
         def initialize_processors() -> Tuple[ResponseType, int]:
-            if request.method == 'OPTIONS':
-                return self.handle_options_request(), 200
-
             data = request.get_json() or {}
             selected_processors: List[str] = data.get('selected_processors', [])
 
             if not selected_processors:
                 return (
-                    self.add_cors_headers(jsonify({'error': 'No processors provided'})),
+                    jsonify({'error': 'No processors provided'}),
                     400,
                 )
 
@@ -151,6 +163,7 @@ class FlaskAppWrapper:
             self.state.node_gists.clear()
 
             self.ctm.reset()
+            self.ctm.processor_graph = ProcessorGraph()
             created_processor_names: List[str] = []
 
             for frontend_label in selected_processors:
@@ -168,26 +181,21 @@ class FlaskAppWrapper:
             self.ctm.add_scorer('language_scorer')
 
             return (
-                self.add_cors_headers(
-                    jsonify(
-                        {
-                            'message': 'Processors initialized',
-                            'processorNames': created_processor_names,
-                        }
-                    )
+                jsonify(
+                    {
+                        'message': 'Processors initialized',
+                        'processorNames': created_processor_names,
+                    }
                 ),
                 200,
             )
 
-        @self.app.route('/api/output-gist', methods=['POST', 'OPTIONS'])
+        @self.app.route('/api/output-gist', methods=['POST'])
         def handle_output_gist() -> ResponseType:
             """
             处理 output-gist 步骤：调用 ask_processors 获取所有处理器的输出。
             对应 CTM 核心的 ask_processors 方法。
             """
-            if request.method == 'OPTIONS':
-                return self.handle_options_request()
-
             data = request.get_json() or {}
             updates: List[Dict[str, str]] = data.get('updates', [])
 
@@ -219,19 +227,14 @@ class FlaskAppWrapper:
                     else:
                         self.state.node_parents[target_id].append(proc_id)
 
-            return self.add_cors_headers(
-                jsonify({'message': 'Gist outputs processed', 'updates': updates})
-            )
+            return jsonify({'message': 'Gist outputs processed', 'updates': updates})
 
-        @self.app.route('/api/uptree', methods=['POST', 'OPTIONS'])
+        @self.app.route('/api/uptree', methods=['POST'])
         def handle_uptree() -> ResponseType:
             """
             处理 uptree 步骤：进行上树竞争。
             对应 CTM 核心的 uptree_competition 方法（通过 ChunkManager）。
             """
-            if request.method == 'OPTIONS':
-                return self.handle_options_request()
-
             data = request.get_json() or {}
             updates: List[Dict[str, Any]] = data.get('updates', [])
 
@@ -249,10 +252,11 @@ class FlaskAppWrapper:
             for node_id, parents_ids in self.state.node_parents.items():
                 if node_id not in self.state.node_details and len(parents_ids) >= 2:
                     parent_id1, parent_id2 = parents_ids[0], parents_ids[1]
-                    if (
-                        parent_id1 in self.state.node_details
-                        and parent_id2 in self.state.node_details
-                    ):
+
+                    has_p1 = parent_id1 in self.state.node_details
+                    has_p2 = parent_id2 in self.state.node_details
+
+                    if has_p1 and has_p2:
                         parent_chunk1 = self.state.node_details[parent_id1]
                         parent_chunk2 = self.state.node_details[parent_id2]
 
@@ -274,25 +278,30 @@ class FlaskAppWrapper:
                                 if isinstance(parent_chunk1, Chunk)
                                 else parent_chunk2
                             )
+                    elif has_p1:
+                        # 只有一个父节点有值，直接晋级
+                        self.state.node_details[node_id] = self.state.node_details[
+                            parent_id1
+                        ]
+                    elif has_p2:
+                        # 只有一个父节点有值，直接晋级
+                        self.state.node_details[node_id] = self.state.node_details[
+                            parent_id2
+                        ]
 
-            return self.add_cors_headers(
-                jsonify(
-                    {
-                        'message': 'Uptree updates processed',
-                        'node_parents': self.state.node_parents,
-                    }
-                )
+            return jsonify(
+                {
+                    'message': 'Uptree updates processed',
+                    'node_parents': self.state.node_parents,
+                }
             )
 
-        @self.app.route('/api/final-node', methods=['POST', 'OPTIONS'])
+        @self.app.route('/api/final-node', methods=['POST'])
         def handle_final_node() -> ResponseType:
             """
             处理 final-node 步骤：调用 ask_supervisor 获取最终答案。
             对应 CTM 核心的 ask_supervisor 方法。
             """
-            if request.method == 'OPTIONS':
-                return self.handle_options_request()
-
             data = request.get_json() or {}
             node_id: str = data.get('node_id', '')
             parents: List[str] = data.get('parents', [])
@@ -326,43 +335,33 @@ class FlaskAppWrapper:
                                     parent_chunk
                                 )
 
-            return self.add_cors_headers(
-                jsonify(
-                    {
-                        'message': 'Final node updated',
-                        'node_parents': self.state.node_parents,
-                    }
-                )
+            return jsonify(
+                {
+                    'message': 'Final node updated',
+                    'node_parents': self.state.node_parents,
+                }
             )
 
-        @self.app.route('/api/reverse', methods=['POST', 'OPTIONS'])
+        @self.app.route('/api/reverse', methods=['POST'])
         def handle_reverse() -> ResponseType:
             """
             处理 reverse 步骤：调用 downtree_broadcast 进行下树广播。
             对应 CTM 核心的 downtree_broadcast 方法。
             """
-            if request.method == 'OPTIONS':
-                return self.handle_options_request()
-
             if self.state.winning_chunk and isinstance(self.state.winning_chunk, Chunk):
                 ChunkProcessor.downtree_broadcast(
                     ctm_instance=self.ctm,
                     winning_chunk=self.state.winning_chunk,
                 )
 
-            return self.add_cors_headers(
-                jsonify({'message': 'Reverse broadcast processed'})
-            )
+            return jsonify({'message': 'Reverse broadcast processed'})
 
-        @self.app.route('/api/update-processors', methods=['POST', 'OPTIONS'])
+        @self.app.route('/api/update-processors', methods=['POST'])
         def update_processors() -> ResponseType:
             """
             处理 update-processors 步骤：调用 link_form 形成处理器之间的链接。
             对应 CTM 核心的 link_form 方法。
             """
-            if request.method == 'OPTIONS':
-                return self.handle_options_request()
-
             data = request.get_json() or {}
             updates: List[Dict[str, str]] = data.get('updates', [])
 
@@ -392,17 +391,14 @@ class FlaskAppWrapper:
             for processor in self.ctm.processor_graph.nodes:
                 self.state.node_details[processor.name] = processor.name
 
-            return self.add_cors_headers(jsonify({'message': 'Processors updated'}))
+            return jsonify({'message': 'Processors updated'})
 
-        @self.app.route('/api/fuse-gist', methods=['POST', 'OPTIONS'])
+        @self.app.route('/api/fuse-gist', methods=['POST'])
         def handle_fuse_gist() -> ResponseType:
             """
             处理 fuse-gist 步骤：调用 fuse_processor 融合处理器输出。
             对应 CTM 核心的 fuse_processor 方法。
             """
-            if request.method == 'OPTIONS':
-                return self.handle_options_request()
-
             data = request.get_json() or {}
             updates: List[Dict[str, Any]] = data.get('updates', [])
 
@@ -434,31 +430,25 @@ class FlaskAppWrapper:
                         self.state.node_details[fused_node_id] = fused_chunk
                         self.state.node_parents[fused_node_id] = source_nodes
 
-            return self.add_cors_headers(
-                jsonify({'message': 'Fused gists processed', 'updates': updates})
-            )
+            return jsonify({'message': 'Fused gists processed', 'updates': updates})
 
-        @self.app.route('/api/fetch-neighborhood', methods=['GET', 'OPTIONS'])
+        @self.app.route('/api/fetch-neighborhood', methods=['GET'])
         def get_processor_neighborhoods() -> ResponseType:
-            if request.method == 'OPTIONS':
-                return self.handle_options_request()
-
             neighborhoods: Dict[str, List[str]] = {}
-            graph = self.ctm.processor_graph.graph
 
-            for processor, connected_processors in graph.items():
-                neighborhoods[processor.name] = [p.name for p in connected_processors]
+            for (
+                processor_name,
+                connected_processor_names,
+            ) in self.ctm.processor_graph.adjacency_list.items():
+                neighborhoods[processor_name] = connected_processor_names
 
-            return self.add_cors_headers(jsonify(neighborhoods))
+            return jsonify(neighborhoods)
 
-        @self.app.route('/api/upload', methods=['POST', 'OPTIONS'])
+        @self.app.route('/api/upload', methods=['POST'])
         def upload_files() -> Tuple[ResponseType, int]:
             """
             处理文件上传，保存查询和文本参数。
             """
-            if request.method == 'OPTIONS':
-                return self.handle_options_request(), 200
-
             # Get form data
             self.state.query = request.form.get('query', '') or ''
             self.state.text = request.form.get('text', '') or ''
@@ -499,12 +489,10 @@ class FlaskAppWrapper:
                                 saved_files[file_type].append(unique_filename)
                         else:
                             return (
-                                self.add_cors_headers(
-                                    jsonify(
-                                        {
-                                            'error': f'Invalid {file_type} file: {file.filename}'
-                                        }
-                                    )
+                                jsonify(
+                                    {
+                                        'error': f'Invalid {file_type} file: {file.filename}'
+                                    }
                                 ),
                                 400,
                             )
@@ -524,12 +512,10 @@ class FlaskAppWrapper:
                         saved_files['audios'].append(extracted_audio)
                     except Exception as e:
                         return (
-                            self.add_cors_headers(
-                                jsonify(
-                                    {
-                                        'error': f'Extracting {video_filename} error: {str(e)}'
-                                    }
-                                )
+                            jsonify(
+                                {
+                                    'error': f'Extracting {video_filename} error: {str(e)}'
+                                }
                             ),
                             500,
                         )
@@ -547,22 +533,22 @@ class FlaskAppWrapper:
                 },
             }
 
-            return self.add_cors_headers(jsonify(response_data)), 200
+            return jsonify(response_data), 200
 
         @self.app.route('/uploads/<file_type>/<filename>')
         def uploaded_file(file_type: str, filename: str) -> Tuple[ResponseType, int]:
             if file_type not in ['images', 'audios', 'videos']:
                 return (
-                    self.add_cors_headers(jsonify({'error': 'Invalid file type'})),
+                    jsonify({'error': 'Invalid file type'}),
                     400,
                 )
 
             try:
                 file_path = os.path.join(self.app.config['UPLOAD_FOLDER'], file_type)
                 response = send_from_directory(file_path, filename)
-                return self.add_cors_headers(response), 200
+                return response, 200
             except FileNotFoundError:
-                return self.add_cors_headers(jsonify({'error': 'File not found'})), 404
+                return jsonify({'error': 'File not found'}), 404
 
     def run(self, **kwargs: Any) -> None:
         # Create upload directories

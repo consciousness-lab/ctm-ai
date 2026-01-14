@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://18.224.61.142:5000/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 
 const fetchWithError = async (url, options = {}) => {
