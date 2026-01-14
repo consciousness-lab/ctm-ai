@@ -69,11 +69,20 @@ class ChunkManager:
         return winner
 
     def uptree_competition(self) -> Chunk:
-        candidate_chunks: List[Chunk] = self.chunks
-        while len(candidate_chunks) > 1:
-            winning_chunks: List[Chunk] = []
-            for chunk1, chunk2 in zip(candidate_chunks[:-1], candidate_chunks[1:]):
-                winning_chunk = self.compete(chunk1, chunk2)
-                winning_chunks.append(winning_chunk)
-            candidate_chunks = winning_chunks
-        return candidate_chunks[0]
+        if not self.chunks:
+            raise ValueError('No chunks available for competition')
+
+        if len(self.chunks) == 1:
+            return self.chunks[0]
+
+        weights = [self._sanitize_weight(chunk.weight) for chunk in self.chunks]
+
+        total_weight = sum(weights)
+        if total_weight == 0:
+            normalized_weights = [1.0 / len(weights)] * len(weights)
+        else:
+            normalized_weights = [w / total_weight for w in weights]
+
+        winning_chunk = np.random.choice(self.chunks, p=normalized_weights)
+
+        return winning_chunk
