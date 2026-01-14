@@ -74,77 +74,42 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
 };
 
 
-// Separate functions for nodes and edges
-export function addGistNodes(kVal) {
-    const nodes = [];
-    const spacing = 100;
-    const startX = 400 - ((kVal - 1) * spacing) / 2;
-    const yPosition = 400;
-
-    for (let i = 0; i < kVal; i++) {
-        const nodeId = `g${i + 1}`;
-        const xPos = startX + i * spacing;
-        nodes.push({
-            data: { id: nodeId, label: nodeId },
-            position: { x: xPos, y: yPosition },
-            classes: 'gist-layer'
-        });
-    }
-
-    return { nodes, edges: [] };
-}
-
-export function addGistEdges(kVal, processorNames) {
-    const edges = [];
-    for (let i = 0; i < kVal; i++) {
-        edges.push({
-            data: {
-                source: processorNames[i],
-                target: `g${i + 1}`,
-                id: `ep${i + 1}-g${i + 1}`
-            }
-        });
-    }
-    return { nodes: [], edges };
-}
-
+// Fused nodes - directly connected from processors (simplified from gist + fused)
 export function addFusedNodes(kVal) {
     const nodes = [];
     const spacing = 100;
     const startX = 400 - ((kVal - 1) * spacing) / 2;
-    const yPosition = 300;
+    const yPosition = 350;
 
     for (let i = 0; i < kVal; i++) {
         const nodeId = `n${i + 1}`;
         const xPos = startX + i * spacing;
         nodes.push({
             data: { id: nodeId, label: nodeId },
-            position: { x: xPos, y: yPosition }
+            position: { x: xPos, y: yPosition },
+            classes: 'fused-layer'
         });
     }
 
     return { nodes, edges: [] };
 }
 
+// Edges from processors to fused nodes
 export const addFusedEdges = (k, processorNames, neighborhoods) => {
     const edges = [];
-    console.log('neighborhoods:', neighborhoods);
-    console.log('processorNames:', processorNames);
 
-    // Create edges between gist nodes and fused nodes
+    // Create edges from processors to fused nodes based on neighborhoods
     for (let i = 0; i < k; i++) {
         for (let j = 0; j < k; j++) {
-            // Check if indices match or processors are connected
             const sameIndex = i === j;
             const processorsConnected = neighborhoods &&
                 neighborhoods[processorNames[i]]?.includes(processorNames[j]);
 
             if (sameIndex || processorsConnected) {
-                // Add edge from gist to fused node
                 edges.push({
                     data: {
-                        id: `g${i+1}-n${j+1}`,
-                        source: `g${i+1}`,
+                        id: `${processorNames[i]}-n${j+1}`,
+                        source: processorNames[i],
                         target: `n${j+1}`,
                     },
                 });

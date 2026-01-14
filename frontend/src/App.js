@@ -5,8 +5,6 @@ import { addProcessorNodes } from './utils/graphBuilder';
 import { layout, stylesheet } from './config/cytoscapeConfig';
 import {
     addProcessorEdges,
-    addGistNodes,
-    addGistEdges,
     addFusedNodes,
     addFusedEdges,
     addUptreeNodes,
@@ -70,6 +68,7 @@ const App = () => {
     const allProcessors = availableProcessors;
     const [neighborhoods, setNeighborhoods] = useState(null);
     const [uploadKey, setUploadKey] = useState(Date.now());
+    const [cyInstance, setCyInstance] = useState(null);
 
     const modifyGraph = () => {
         const updateElementsForPhase = (newElements) => {
@@ -81,16 +80,9 @@ const App = () => {
         };
 
         switch (currentStep) {
-            case PHASES.OUTPUT_GIST: {
-                const newElements = {
-                    nodes: addGistNodes(k).nodes,
-                    edges: addGistEdges(k, processorNames).edges,
-                };
-                updateElementsForPhase(newElements);
-                break;
-            }
-
+            case PHASES.OUTPUT_GIST:
             case PHASES.FUSE_GIST: {
+                // Combined: create fused nodes with edges directly from processors
                 const nodes = addFusedNodes(k).nodes;
                 const edges = addFusedEdges(k, processorNames, neighborhoods);
                 const newElements = {
@@ -197,14 +189,10 @@ const App = () => {
         console.log('Current step:', currentStep);
         switch (currentStep) {
             case PHASES.OUTPUT_GIST:
-                setDisplayPhase(PHASES.OUTPUT_GIST);
-                await handleOutputGistStep(stepProps);
-                modifyGraph();
-                setCurrentStep(PHASES.FUSE_GIST);
-                break;
-
             case PHASES.FUSE_GIST:
+                // Combined: Output gist + Fuse gist in one step
                 setDisplayPhase(PHASES.FUSE_GIST);
+                await handleOutputGistStep(stepProps);
                 await handleFuseGistStep(stepProps);
                 modifyGraph();
                 setCurrentStep(PHASES.UPTREE);
@@ -311,9 +299,21 @@ const App = () => {
         setUptreeStep(1);
         setK(0);
         setNeighborhoods(null);
+        setCyInstance(null);
 
         setUploadKey(Date.now());
     };
+
+    // 当elements变化时，自动居中并适应大小
+    useEffect(() => {
+        if (cyInstance && elements.length > 0) {
+            // 延迟执行以确保布局完成
+            setTimeout(() => {
+                cyInstance.fit(undefined, 50); // 50px padding
+                cyInstance.center();
+            }, 100);
+        }
+    }, [cyInstance, elements]);
 
     useEffect(() => {
         if (!selectedNode) {
@@ -556,7 +556,15 @@ const App = () => {
                   layout={layout}
                   stylesheet={stylesheet}
                   style={{ width: '100%', height: '100%' }}
+                  userZoomingEnabled={false}
+                  userPanningEnabled={false}
+                  boxSelectionEnabled={false}
+                  autoungrabify={true}
                   cy={(cy) => {
+                    // 保存cy实例以便后续操作
+                    if (!cyInstance) {
+                      setCyInstance(cy);
+                    }
                     cy.on('tap', 'node', (evt) => {
                       setSelectedNode(evt.target.id());
                     });

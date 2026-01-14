@@ -49,9 +49,10 @@ class BaseProcessor(object):
         self.name = name
         self.group_name = group_name
         self.system_prompt = kwargs.get('system_prompt')
-        self.model = kwargs.get('model')
+        # 使用 or 确保即使传入 None 也能使用默认值
+        self.model = kwargs.get('model') or 'gemini/gemini-2.0-flash-lite'
 
-        self.model_name = kwargs.get('model', 'gemini/gemini-2.0-flash-lite')
+        self.model_name = kwargs.get('model') or 'gemini/gemini-2.0-flash-lite'
         self.try_times = kwargs.get('try_times', 3)
         self.max_tokens = kwargs.get('max_tokens', 4096)
         self.return_num = kwargs.get('return_num', 1)
@@ -190,6 +191,9 @@ class BaseProcessor(object):
             video_path=video_path,
             api_manager=api_manager,
         )
+        # 如果没有必要的输入，跳过这个处理器
+        if executor_messages is None:
+            return None
         executor_output = self.ask_executor(
             messages=executor_messages,
             default_additional_question='Would you like me to explain any specific aspects in more detail?',
