@@ -5,6 +5,12 @@ from .error_handler import (
     multi_info_exponential_backoff,
     score_exponential_backoff,
 )
+from .instance_logger import (
+    InstanceLogger,
+    get_instance_logger,
+    log_forward,
+    set_instance_logger,
+)
 from .litellm_utils import configure_litellm
 from .loader import (
     extract_audio_from_video,
@@ -31,6 +37,11 @@ __all__ = [
     'multi_info_exponential_backoff',
     'message_exponential_backoff',
     'MissingAPIKeyError',
+    # Instance logging
+    'InstanceLogger',
+    'get_instance_logger',
+    'set_instance_logger',
+    'log_forward',
     # LiteLLM utilities
     'ask_llm_standard',
     'call_llm',
