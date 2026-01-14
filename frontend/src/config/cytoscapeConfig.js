@@ -38,7 +38,7 @@ export const stylesheet = [
       width: 100,
       height: 40,
       'background-color': '#764ba2',
-      'background-opacity': 0.95,
+      'background-opacity': 0.7,
       'text-valign': 'center',
       'text-halign': 'center',
       color: '#ffffff',
@@ -48,6 +48,7 @@ export const stylesheet = [
       'text-outline-width': 0,
       'border-width': 2,
       'border-color': 'rgba(255, 255, 255, 0.25)',
+      'z-index': 1,
     }
   },
   {
@@ -83,25 +84,41 @@ export const stylesheet = [
     }
   },
   {
-    // Edges
+    // Edges - solid by default
     selector: 'edge',
     style: {
       'curve-style': 'bezier',
       width: 2,
+      'line-style': 'solid',
       'target-arrow-shape': 'triangle',
-      'line-color': 'rgba(255, 255, 255, 0.35)',
-      'target-arrow-color': 'rgba(255, 255, 255, 0.35)',
+      'line-color': 'rgba(255, 255, 255, 0.5)',
+      'target-arrow-color': 'rgba(255, 255, 255, 0.5)',
       'arrow-scale': 1.2,
       'target-distance-from-node': 5,
+      'z-index': 999,
     }
   },
   {
-    // Processor-to-processor edges
-    selector: 'edge[source *= "Processor"], edge[target *= "Processor"]',
+    // Processor-to-processor edges - dashed and more curved downwards
+    selector: 'edge.processor-edge',
     style: {
-      'line-color': 'rgba(118, 75, 162, 0.6)',
-      'target-arrow-color': 'rgba(118, 75, 162, 0.6)',
+      'line-style': 'dashed',
+      'line-dash-pattern': [6, 3],
+      'line-color': 'rgba(118, 75, 162, 0.8)',
+      'target-arrow-color': 'rgba(118, 75, 162, 0.8)',
       width: 2.5,
+      'curve-style': 'unbundled-bezier',
+      'source-endpoint': '90deg', // 强制从底部中心出发
+      'target-endpoint': '90deg', // 强制连入底部中心
+      'control-point-distances': (ele) => {
+        const sourcePos = ele.source().position();
+        const targetPos = ele.target().position();
+        const dx = targetPos.x - sourcePos.x;
+        // 增加弧度倍数，并加入基础偏移量
+        // dx > 0 表示目标在右边，垂下的弧度需要 dx * 0.8
+        return [dx * 0.8]; 
+      },
+      'control-point-weights': [0.5],
     }
   },
   {

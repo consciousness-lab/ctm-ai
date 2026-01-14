@@ -66,6 +66,7 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
           source: processorId,
           target: targetId,
         },
+        classes: 'processor-edge'
       });
     });
   });

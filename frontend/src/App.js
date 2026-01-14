@@ -152,37 +152,35 @@ const App = () => {
             }
 
             case PHASES.UPDATE: {
-                // Reset to only processor nodes (remove fused/uptree nodes)
-                const processorNodes = elements.filter((element) => {
-                    return element.data && 
-                           element.data.id && 
-                           !element.data.source &&
-                           processorNames.includes(element.data.id);
-                });
-                setElements(processorNodes);
+                // Reset to only processor nodes and fetch new edges from link_form
+                // link_form is called in handleUpdateStep, so we need to fetch new neighborhoods
+                const updateWithLinks = async () => {
+                    const newNeighborhoods = await fetchProcessorNeighborhoods();
+                    setNeighborhoods(newNeighborhoods);
+                    
+                    setElements((prevElements) => {
+                        const processorNodes = prevElements.filter((element) => {
+                            return element.data && 
+                                   element.data.id && 
+                                   !element.data.source &&
+                                   processorNames.includes(element.data.id);
+                        });
+
+                        if (newNeighborhoods) {
+                            const newEdges = addProcessorEdges(newNeighborhoods, processorNames);
+                            return [...processorNodes, ...newEdges];
+                        } else {
+                            return processorNodes;
+                        }
+                    });
+                };
+                updateWithLinks();
                 break;
             }
 
             case PHASES.FUSE: {
-                // Fetch updated neighborhoods and add processor edges
-                const updateWithFuse = async () => {
-                    const processorNodes = elements.filter((element) => {
-                        return element.data && 
-                               element.data.id && 
-                               !element.data.source &&
-                               processorNames.includes(element.data.id);
-                    });
-
-                    const newNeighborhoods = await fetchProcessorNeighborhoods();
-                    setNeighborhoods(newNeighborhoods);
-                    if (newNeighborhoods) {
-                        const newEdges = addProcessorEdges(newNeighborhoods, processorNames);
-                        setElements([...processorNodes, ...newEdges]);
-                    } else {
-                        setElements(processorNodes);
-                    }
-                };
-                updateWithFuse();
+                // FUSE stage: just refresh the view (edges already shown in UPDATE)
+                // Keep processor nodes and edges as-is, no changes needed
                 break;
             }
 

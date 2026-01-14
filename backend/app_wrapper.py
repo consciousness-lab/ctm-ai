@@ -568,12 +568,16 @@ class FlaskAppWrapper:
             Load example files using relative paths directly from assets folder.
             """
             data = request.get_json() or {}
-            image_path: str = data.get('image_path', '')
-            audio_path: str = data.get('audio_path', '')
+            image_path: str = data.get('image_path', '') or ''
+            audio_path: str = data.get('audio_path', '') or ''
+            query: str = data.get('query', '')
+            text: str = data.get('text', '')
             
-            # Set example query and text
-            self.state.query = 'Is the person saying sarcasm or not?'
-            self.state.text = 'You have no idea what you are talking about!'
+            # Set example query and text from request (or use defaults)
+            if query:
+                self.state.query = query
+            if text:
+                self.state.text = text
             
             # Get the project root directory (parent of backend)
             project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
