@@ -28,7 +28,8 @@ class VisionProcessor(BaseProcessor):
         image_path = kwargs.get('image_path')
         image = kwargs.get('image')
         if not image_path and not image:
-            raise ValueError('Image path or image is required')
+            # 没有图像输入时返回 None，让上层跳过这个处理器
+            return None
         if image_path:
             base64_image = load_image(image_path)
         if image:

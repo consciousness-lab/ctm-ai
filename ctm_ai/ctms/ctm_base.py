@@ -166,7 +166,8 @@ class BaseConsciousTuringMachine(ABC):
             chunks = [
                 future.result() for future in concurrent.futures.as_completed(futures)
             ]
-        assert len(chunks) == len(self.processor_graph.nodes)
+        # 过滤掉返回 None 的处理器（没有必要输入的情况）
+        chunks = [chunk for chunk in chunks if chunk is not None]
         return chunks
 
     @logging_func_with_count
