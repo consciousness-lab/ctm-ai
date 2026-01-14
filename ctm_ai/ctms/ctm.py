@@ -5,7 +5,7 @@ from numpy.typing import NDArray
 
 from ..chunks import Chunk
 from ..configs import ConsciousTuringMachineConfig
-from ..utils import logger, logging_func_with_count
+from ..utils import get_instance_logger, log_forward, logger, logging_func_with_count
 from .ctm_base import BaseConsciousTuringMachine
 
 
@@ -50,6 +50,7 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         self.downtree_broadcast(winning_chunk)
         self.link_form(chunks, winning_chunk, **input_kwargs)
 
+    @log_forward
     def forward(
         self,
         query: str,
@@ -73,20 +74,34 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
             'video_path': video_path,
         }
 
+        instance_logger = get_instance_logger()
+
         for i in range(self.config.max_iter_num):
+            instance_logger.set_iteration(i)
+
+            # 1. ask_processors
             chunks = self.ask_processors(query, **input_params)
+            instance_logger.log_ask_processors(chunks)
 
+            # 2. uptree_competition
             winning_chunk = self.uptree_competition(chunks)
+            instance_logger.log_uptree_competition(winning_chunk, chunks)
 
+            # 3. ask_supervisor
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
+            instance_logger.log_supervisor(answer, confidence_score)
 
             if i == self.config.max_iter_num - 1:
                 return answer, confidence_score
 
+            # 4. downtree_broadcast
             self.downtree_broadcast(winning_chunk)
+            instance_logger.log_downtree_broadcast(winning_chunk)
 
+            # 5. link_form (logging inside method)
             self.link_form(chunks, winning_chunk, **input_params)
 
+            # 6. fuse_processor (logging inside method)
             self.fuse_processor(chunks, query, **input_params)
 
         return answer, confidence_score

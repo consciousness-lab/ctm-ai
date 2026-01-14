@@ -10,7 +10,7 @@ from ..configs import ConsciousTuringMachineConfig
 from ..graphs import ProcessorGraph
 from ..scorers import BaseScorer
 from ..supervisors import BaseSupervisor
-from ..utils import logger, logging_func_with_count
+from ..utils import get_instance_logger, logger, logging_func_with_count
 
 if TYPE_CHECKING:
     pass
@@ -206,6 +206,9 @@ class BaseConsciousTuringMachine(ABC):
             **input_kwargs,
         )
 
+        added_links = []
+        removed_links = []
+
         for chunk in chunks:
             if chunk.relevance >= 0.8:
                 logger.info(
@@ -215,11 +218,19 @@ class BaseConsciousTuringMachine(ABC):
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
                 )
+                added_links.append((winning_chunk.processor_name, chunk.processor_name))
             elif chunk.relevance <= 0.2:
                 self.processor_graph.remove_link(
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
                 )
+                removed_links.append(
+                    (winning_chunk.processor_name, chunk.processor_name)
+                )
+
+        # Log link_form
+        instance_logger = get_instance_logger()
+        instance_logger.log_link_form(winning_chunk, added_links, removed_links)
 
     @logging_func_with_count
     def fuse_processor(
@@ -227,6 +238,7 @@ class BaseConsciousTuringMachine(ABC):
     ) -> List[Chunk]:
         proc_map = {p.name: p for p in self.processor_graph.nodes}
         dirty: set[str] = set()  # processors whose memory got new info
+        fuse_info = []  # for logging
 
         for chunk in chunks:
             q = chunk.additional_question
@@ -249,10 +261,25 @@ class BaseConsciousTuringMachine(ABC):
                 )
                 dirty.add(chunk.processor_name)
 
+                # Record fuse info for logging
+                fuse_info.append(
+                    {
+                        'source_processor': chunk.processor_name,
+                        'neighbor_processor': nbr,
+                        'additional_question': q,
+                        'answer_gist': answer_chunk.gist,
+                    }
+                )
+
         for idx, chunk in enumerate(chunks):
             if chunk.processor_name in dirty:
                 p = proc_map[chunk.processor_name]
                 chunks[idx] = p.ask(query=query, **input_kwargs)
+
+        # Log fuse
+        instance_logger = get_instance_logger()
+        instance_logger.log_fuse(list(dirty), fuse_info)
+
         return chunks
 
     @logging_func_with_count
