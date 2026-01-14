@@ -1,7 +1,9 @@
 // src/components/UploadForm.js
 
 import React, { useState, useRef } from 'react';
-import { uploadFiles } from '../utils/api';
+import { uploadFiles, loadExampleFiles } from '../utils/api';
+
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const UploadForm = () => {
     const [query, setQuery] = useState('');
@@ -11,9 +13,53 @@ const UploadForm = () => {
     const [errorMessage, setErrorMessage] = useState('');
     const [uploadProgress, setUploadProgress] = useState(0);
     const [serverResponse, setServerResponse] = useState(null);
+    const [loadingExample, setLoadingExample] = useState(false);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [audioPreview, setAudioPreview] = useState(null);
     const fileInputRef = useRef(null);
 
     const MAX_FILE_SIZE = 1000 * 1024 * 1024;
+
+    // Example input from sarcasm_detection.py
+    const EXAMPLE_INPUT = {
+        query: 'Is the person saying sarcasm or not?',
+        text: 'You have no idea what you are talking about!',
+        imagePath: 'assets/sarcasm_example1.png',
+        audioPath: 'assets/sarcasm_example1.mp4'
+    };
+
+    const handleLoadExample = async () => {
+        setLoadingExample(true);
+        setErrorMessage('');
+        
+        // Set query and text
+        setQuery(EXAMPLE_INPUT.query);
+        setText(EXAMPLE_INPUT.text);
+        
+        try {
+            // Load example files from server
+            const result = await loadExampleFiles(EXAMPLE_INPUT.imagePath, EXAMPLE_INPUT.audioPath);
+            if (result.success) {
+                setServerResponse({ message: 'Example loaded successfully!' });
+                
+                // Set previews
+                const serverUrl = BASE_URL.replace('/api', '');
+                if (result.image_url) {
+                    setImagePreview(`${serverUrl}${result.image_url}`);
+                }
+                if (result.audio_url) {
+                    setAudioPreview(`${serverUrl}${result.audio_url}`);
+                }
+            } else {
+                setErrorMessage(result.error || 'Failed to load example files');
+            }
+        } catch (error) {
+            console.error('Error loading example:', error);
+            setErrorMessage('Example text loaded. Please manually upload files from assets/ folder.');
+        }
+        
+        setLoadingExample(false);
+    };
 
     const getFileType = (file) => {
         if (file.type.startsWith('image/')) return 'image';
@@ -39,6 +85,10 @@ const UploadForm = () => {
     };
 
     const processFiles = (fileList) => {
+        // Clear example previews when new files are manually added
+        setImagePreview(null);
+        setAudioPreview(null);
+
         const validFiles = Array.from(fileList).filter((file) => {
             const isValid = file.size <= MAX_FILE_SIZE && !isFileAlreadyAdded(file);
             const isAcceptedType = file.type.startsWith('image/') || 
@@ -209,6 +259,25 @@ const UploadForm = () => {
                                 ))}
                             </ul>
                         )}
+
+                        {/* Example Previews */}
+                        {(imagePreview || audioPreview) && files.length === 0 && (
+                            <div className="example-previews">
+                                <p className="preview-title"><strong>File Preview:</strong></p>
+                                {imagePreview && (
+                                    <div className="preview-item">
+                                        <img src={imagePreview} alt="Example Preview" className="image-preview" />
+                                    </div>
+                                )}
+                                {audioPreview && (
+                                    <div className="preview-item">
+                                        <audio controls src={audioPreview} className="audio-preview">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -227,9 +296,19 @@ const UploadForm = () => {
                     <div className="success-message">Upload Success!</div>
                 )}
 
-                <button type="submit" className="control-button start">
-                    Upload
-                </button>
+                <div className="form-buttons">
+                    <button 
+                        type="button" 
+                        onClick={handleLoadExample}
+                        disabled={loadingExample}
+                        className="control-button refresh"
+                    >
+                        {loadingExample ? 'Loading...' : '📋 Load Sarcasm Example'}
+                    </button>
+                    <button type="submit" className="control-button start">
+                        Upload
+                    </button>
+                </div>
             </form>
         </div>
     );

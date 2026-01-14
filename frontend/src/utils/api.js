@@ -159,3 +159,14 @@ export const handleFuse = async () => {
     method: 'POST',
   });
 };
+
+// Load example files from server
+export const loadExampleFiles = async (imagePath, audioPath) => {
+  return fetchWithError(`${BASE_URL}/load-example`, {
+    method: 'POST',
+    body: JSON.stringify({
+      image_path: imagePath,
+      audio_path: audioPath,
+    }),
+  });
+};

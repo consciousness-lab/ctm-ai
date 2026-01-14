@@ -326,6 +326,20 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.node-timestep {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(79, 70, 229, 0.3));
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+    color: #fff;
+    border: 1px solid rgba(124, 58, 237, 0.4);
+}
+
+.node-timestep strong {
+    color: rgba(255, 255, 255, 0.9);
+}
+
 .info-panel p {
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.9rem;
@@ -542,6 +556,17 @@
     margin-bottom: 16px;
 }
 
+/* Form Buttons */
+.form-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.form-buttons .control-button {
+    flex: 1;
+}
+
 /* Processor Selector */
 .processor-selector {
     margin-bottom: 16px;
@@ -675,6 +700,42 @@
     color: rgba(255, 255, 255, 0.4);
     font-size: 0.85rem;
     font-style: italic;
+}
+
+/* Example Previews */
+.example-previews {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.preview-title {
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.preview-item {
+    margin-bottom: 12px;
+}
+
+.preview-item:last-child {
+    margin-bottom: 0;
+}
+
+.image-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: block;
+}
+
+.audio-preview {
+    width: 100%;
+    height: 40px;
 }
 
 /* Responsive */

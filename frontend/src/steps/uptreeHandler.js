@@ -9,8 +9,9 @@ export const handleUptreeStep = async ({
     const updates = [];
 
     console.log('handleUptreeStep:', k, uptreeStep);
-    const { nodes } = addUptreeNodes(k, uptreeStep+1);
-    const { edges } = addUptreeEdges(k, uptreeStep+1);
+    // Use uptreeStep directly (matches modifyGraph in App.js)
+    const { nodes } = addUptreeNodes(k, uptreeStep);
+    const { edges } = addUptreeEdges(k, uptreeStep);
 
     console.log('nodes:', nodes);
     console.log('edges:', edges);
