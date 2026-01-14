@@ -8,7 +8,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from ..configs import ConsciousTuringMachineConfig
-from ..utils import logging_chunk_compete
 from .chunk import Chunk
 
 
@@ -75,15 +74,8 @@ class ChunkManager:
         elif chunk1 < chunk2:
             winner = chunk2
         else:
-            winner = random.choice([chunk1, chunk2])
-        return winner
+            normalized_weights = [w / total_weight for w in weights]
 
-    def uptree_competition(self) -> Chunk:
-        candidate_chunks: List[Chunk] = self.chunks
-        while len(candidate_chunks) > 1:
-            winning_chunks: List[Chunk] = []
-            for chunk1, chunk2 in zip(candidate_chunks[:-1], candidate_chunks[1:]):
-                winning_chunk = self.compete(chunk1, chunk2)
-                winning_chunks.append(winning_chunk)
-            candidate_chunks = winning_chunks
-        return candidate_chunks[0]
+        winning_chunk = np.random.choice(self.chunks, p=normalized_weights)
+
+        return winning_chunk

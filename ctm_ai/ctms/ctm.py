@@ -43,21 +43,6 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         super().load_ctm()
 
     @logging_func_with_count
-    def go_up(self, query: str, **input_kwargs) -> Tuple[Chunk, List[Chunk]]:
-        chunks = self.ask_processors(query, **input_kwargs)
-        chunks = self.fuse_processor(chunks, query, **input_kwargs)
-        winning_chunk = self.uptree_competition(chunks)
-        return winning_chunk, chunks
-
-    @logging_func_with_count
-    def go_up_with_prev(
-        self, query: str, prev_chunks: List[Chunk], **input_kwargs
-    ) -> Tuple[Chunk, List[Chunk]]:
-        chunks = self.fuse_with_prev_chunks(prev_chunks, query, **input_kwargs)
-        winning_chunk = self.uptree_competition(chunks)
-        return winning_chunk, chunks
-
-    @logging_func_with_count
     def go_down(
         self, winning_chunk: Chunk, chunks: List[Chunk], **input_kwargs
     ) -> None:
@@ -77,7 +62,6 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
     ) -> Tuple[str, float]:
-        """Forward pass supporting both standard and tool-based processing"""
         input_params = {
             'text': text,
             'image': image,
@@ -89,21 +73,20 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
             'video_path': video_path,
         }
 
-        prev_chunks: Optional[List[Chunk]] = None
-
         for i in range(self.config.max_iter_num):
-            if i == 0:
-                winning_chunk, chunks = self.go_up(query, **input_params)
-            else:
-                winning_chunk, chunks = self.go_up_with_prev(
-                    query, prev_chunks, **input_params
-                )
+            chunks = self.ask_processors(query, **input_params)
+
+            winning_chunk = self.uptree_competition(chunks)
 
             answer, confidence_score = self.ask_supervisor(query, winning_chunk)
+
             if i == self.config.max_iter_num - 1:
                 return answer, confidence_score
 
-            self.go_down(winning_chunk, chunks, **input_params)
-            prev_chunks = chunks
+            self.downtree_broadcast(winning_chunk)
+
+            self.link_form(chunks, winning_chunk, **input_params)
+
+            self.fuse_processor(chunks, query, **input_params)
 
         return answer, confidence_score
