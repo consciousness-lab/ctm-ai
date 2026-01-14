@@ -228,7 +228,7 @@ const UploadForm = () => {
                 )}
 
                 <button type="submit" className="control-button start">
-                    Upload Data
+                    Upload
                 </button>
             </form>
         </div>

@@ -145,3 +145,17 @@ export const fetchProcessorNeighborhoods = async () => {
     return null;
   }
 };
+
+// Downtree broadcast
+export const handleDowntree = async () => {
+  return fetchWithError(`${BASE_URL}/downtree`, {
+    method: 'POST',
+  });
+};
+
+// Fuse processors
+export const handleFuse = async () => {
+  return fetchWithError(`${BASE_URL}/fuse`, {
+    method: 'POST',
+  });
+};
