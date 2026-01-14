@@ -8,7 +8,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from ..configs import ConsciousTuringMachineConfig
-from ..utils import logging_chunk_compete
 from .chunk import Chunk
 
 
@@ -57,16 +56,6 @@ class ChunkManager:
         """Clears all chunks and resets the TF-IDF matrix."""
         self.chunks.clear()
         self.tfidf_matrix = None
-
-    @logging_chunk_compete
-    def compete(self, chunk1: Chunk, chunk2: Chunk) -> Chunk:
-        if chunk1 > chunk2:
-            winner = chunk1
-        elif chunk1 < chunk2:
-            winner = chunk2
-        else:
-            winner = random.choice([chunk1, chunk2])
-        return winner
 
     def uptree_competition(self) -> Chunk:
         if not self.chunks:
