@@ -615,6 +615,68 @@
     color: rgba(255, 255, 255, 0.7);
 }
 
+/* Processor Details */
+.processor-details h3 {
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-section {
+    margin-bottom: 16px;
+}
+
+.detail-label {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+}
+
+.linked-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.linked-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(102, 126, 234, 0.2);
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.memory-list {
+    margin-top: 8px;
+}
+
+.memory-item {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+}
+
+.memory-item p {
+    margin: 4px 0;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
+}
+
+.memory-item strong {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.no-data {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
 /* Responsive */
 @media (max-width: 1400px) {
     .main-grid {

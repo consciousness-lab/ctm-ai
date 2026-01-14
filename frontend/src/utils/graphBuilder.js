@@ -1,14 +1,22 @@
 
+// Format processor name for display (e.g., "VideoProcessor_1" -> "Video")
+function formatProcessorLabel(processorId) {
+    const baseName = processorId.split('_')[0];
+    return baseName.replace('Processor', '');
+}
+
 export function addProcessorNodes(kVal, processorNames) {
     const nodes = [];
-    const spacing = Math.min(100, 800 / (kVal + 1));
-    const startX = 400 - ((kVal - 1) * spacing) / 2;
+    const count = processorNames && processorNames.length > 0 ? processorNames.length : kVal;
+    const spacing = Math.min(100, 800 / (count + 1));
+    const startX = 400 - ((count - 1) * spacing) / 2;
     const startY = 500;
 
     const processorCounts = {};
 
-    for (let i = 0; i < kVal; i++) {
+    for (let i = 0; i < count; i++) {
         const processorId = processorNames?.[i] || `p${i + 1}`;
+        console.log(`Creating node: ${processorId}, index: ${i}`);
         const processorType = processorId.split('_')[0];
 
         if (!processorCounts[processorType]) {
@@ -20,7 +28,7 @@ export function addProcessorNodes(kVal, processorNames) {
         nodes.push({
             data: {
                 id: processorId,
-                label: processorId,
+                label: formatProcessorLabel(processorId),
                 type: processorType
             },
             position: { x: startX + i * spacing, y: startY },
@@ -31,11 +39,27 @@ export function addProcessorNodes(kVal, processorNames) {
     return { nodes, edges: [] };
 }
 
-export const addProcessorEdges = (neighborhoods) => {
+export const addProcessorEdges = (neighborhoods, processorNames) => {
   const edges = [];
+  const validProcessors = new Set(processorNames || []);
+  
+  console.log('Valid processors:', processorNames);
+  console.log('Neighborhoods:', neighborhoods);
 
   Object.entries(neighborhoods).forEach(([processorId, connectedProcessors]) => {
+    // Skip if source processor is not in the valid list
+    if (!validProcessors.has(processorId)) {
+        console.warn(`Skipping edge from invalid processor: ${processorId}`);
+        return;
+    }
+
     connectedProcessors.forEach(targetId => {
+      // Skip if target processor is not in the valid list
+      if (!validProcessors.has(targetId)) {
+          console.warn(`Skipping edge to invalid processor: ${targetId} (from ${processorId})`);
+          return;
+      }
+
       edges.push({
         data: {
           id: `${processorId}-${targetId}`,
