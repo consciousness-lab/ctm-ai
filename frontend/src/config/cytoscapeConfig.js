@@ -2,8 +2,9 @@
 export const layout = {
   name: 'preset',
   directed: true,
-  padding: 30,
-  fit: true
+  padding: 50,
+  fit: true,
+  animate: false
 };
 
 export const stylesheet = [
@@ -50,8 +51,8 @@ export const stylesheet = [
     }
   },
   {
-    // Gist nodes
-    selector: 'node.gist-layer',
+    // Fused nodes (combined gist + fused layer)
+    selector: 'node.fused-layer',
     style: {
       'background-color': '#11998e',
       'background-opacity': 0.9,
