@@ -121,27 +121,48 @@ export const addFusedEdges = (k, processorNames, neighborhoods) => {
 };
 
 
+// Helper: calculate nodes count for each layer using ceil(prev/2)
+function getLayerNodeCounts(k) {
+    const counts = [k]; // layer 0 (fused layer) has k nodes
+    let current = k;
+    while (current > 1) {
+        current = Math.ceil(current / 2);
+        counts.push(current);
+    }
+    return counts;
+}
+
+// Helper: get starting node ID for a given layer
+function getLayerStartId(k, layerIndex) {
+    const counts = getLayerNodeCounts(k);
+    let startId = 1;
+    for (let i = 0; i < layerIndex; i++) {
+        startId += counts[i];
+    }
+    return startId;
+}
+
 export function addUptreeNodes(kVal, layerIndex) {
     const nodes = [];
-    const spacing = 100; // Horizontal spacing between nodes
-    const nodesInThisLayer = kVal - layerIndex + 1; // Number of nodes in the current layer
+    const horizontalSpacing = 100;
+    const verticalSpacing = 120; // Vertical gap between layers
+    
+    const counts = getLayerNodeCounts(kVal);
+    const nodesInThisLayer = counts[layerIndex] || 0;
 
     if (nodesInThisLayer <= 0) return { nodes: [], edges: [] };
 
-    const startX = 400 - ((nodesInThisLayer - 1) * spacing) / 2; // Center alignment
-    const yPosition = 300 - ((layerIndex - 1) * 100); // Vertical positioning
+    const startX = 400 - ((nodesInThisLayer - 1) * horizontalSpacing) / 2;
+    // Fused layer is at y=350, uptree layers go up from y=230
+    const yPosition = 230 - ((layerIndex - 1) * verticalSpacing);
 
-    // Calculate the starting node number for this layer
-    let startId = 1;
-    for (let i = 1; i < layerIndex; i++) {
-        startId += (kVal - i + 1); // Increment startId by the number of nodes in previous layers
-    }
+    const startId = getLayerStartId(kVal, layerIndex);
 
     for (let i = 0; i < nodesInThisLayer; i++) {
         const nodeId = `n${startId + i}`;
         nodes.push({
             data: { id: nodeId, label: nodeId },
-            position: { x: startX + i * spacing, y: yPosition },
+            position: { x: startX + i * horizontalSpacing, y: yPosition },
         });
     }
 
@@ -150,71 +171,75 @@ export function addUptreeNodes(kVal, layerIndex) {
 
 
 export function addUptreeEdges(kVal, layerIndex) {
-    if (layerIndex === 1) return { nodes: [], edges: [] };
+    // layerIndex=0 is fused layer (edges created by addFusedEdges)
+    // layerIndex=1+ are uptree layers that need edges from previous layer
+    if (layerIndex === 0) return { nodes: [], edges: [] };
     const edges = [];
-    const nodesInThisLayer = kVal - layerIndex + 1; // Nodes in the current layer
-    const nodesInPrevLayer = kVal - layerIndex + 2; // Nodes in the previous layer
+    
+    const counts = getLayerNodeCounts(kVal);
+    const nodesInThisLayer = counts[layerIndex] || 0;
+    const nodesInPrevLayer = counts[layerIndex - 1] || 0;
 
     if (nodesInThisLayer <= 0 || nodesInPrevLayer <= 0) return { nodes: [], edges: [] };
 
-    // Calculate the start IDs for the previous and current layers
-    let currentLayerStartId = 1;
-    for (let i = 1; i < layerIndex; i++) {
-        currentLayerStartId += (kVal - i + 1); // Increment by the number of nodes in each previous layer
-    }
-    const prevLayerStartId = currentLayerStartId - nodesInPrevLayer; // Start ID for the current layer
-    console.log('prevLayerStartId:', prevLayerStartId);
-    console.log('currentLayerStartId:', currentLayerStartId);
-    console.log('nodesInPrevLayer:', nodesInPrevLayer);
-    console.log('nodesInThisLayer:', nodesInThisLayer);
-    console.log('kVal:', kVal);
-    console.log('layerIndex:', layerIndex);
+    const currentLayerStartId = getLayerStartId(kVal, layerIndex);
+    const prevLayerStartId = getLayerStartId(kVal, layerIndex - 1);
 
-    // Generate edges from the previous layer to the current layer
+    // Tournament-style pairing: adjacent pairs compete
+    // For 6 nodes: (n1,n2)->n7, (n3,n4)->n8, (n5,n6)->n9
+    // For 3 nodes: (n7,n8)->n10, n9 alone->n11
+    
+    let prevIdx = 0;
     for (let i = 0; i < nodesInThisLayer; i++) {
         const currentNode = `n${currentLayerStartId + i}`;
-
-        // Distribute parent nodes evenly from the previous layer
-        const lowerNode1Index = Math.floor(i * (nodesInPrevLayer / nodesInThisLayer));
-        const lowerNode2Index = Math.min(lowerNode1Index + 1, nodesInPrevLayer - 1);
-
-        const lowerNode1 = `n${prevLayerStartId + lowerNode1Index}`;
-        const lowerNode2 = `n${prevLayerStartId + lowerNode2Index}`;
-
-        // Create edges connecting lower nodes to the current node
-        if (lowerNode1) {
+        
+        // First node of the pair
+        const node1 = `n${prevLayerStartId + prevIdx}`;
+        edges.push({
+            data: {
+                source: node1,
+                target: currentNode,
+                id: `e${node1}-${currentNode}`,
+            },
+        });
+        prevIdx++;
+        
+        // Second node of the pair (if exists)
+        if (prevIdx < nodesInPrevLayer) {
+            const node2 = `n${prevLayerStartId + prevIdx}`;
             edges.push({
                 data: {
-                    source: lowerNode1,
+                    source: node2,
                     target: currentNode,
-                    id: `e${lowerNode1}-${currentNode}`,
+                    id: `e${node2}-${currentNode}`,
                 },
             });
-        }
-
-        if (lowerNode2 && lowerNode1 !== lowerNode2) {
-            edges.push({
-                data: {
-                    source: lowerNode2,
-                    target: currentNode,
-                    id: `e${lowerNode2}-${currentNode}`,
-                },
-            });
+            prevIdx++;
         }
     }
 
     return { nodes: [], edges };
 }
 
-export function addFinalNode(kVal) {
-    let topNodeId = 1;
-    for (let i = 1; i < kVal; i++) {
-        topNodeId += (kVal - i + 1);
-    }
+// Calculate total uptree layers needed
+export function calculateTotalUptreeLayers(k) {
+    return getLayerNodeCounts(k).length - 1; // exclude fused layer
+}
 
-    const totalLayers = calculateTotalLayers(kVal);
-    const topUptreeY = 300 - ((totalLayers - 1) * 100);
-    const finalNodeY = topUptreeY - 200;
+export function addFinalNode(kVal) {
+    // Calculate the ID of the top node (last node in the uptree)
+    const counts = getLayerNodeCounts(kVal);
+    let topNodeId = 0;
+    for (let i = 0; i < counts.length; i++) {
+        topNodeId += counts[i];
+    }
+    // topNodeId is now the total count, the last node ID is topNodeId
+
+    const totalLayers = calculateTotalUptreeLayers(kVal);
+    // Match the vertical spacing in addUptreeNodes: y = 230 - (layerIndex-1)*120
+    const verticalSpacing = 120;
+    const topUptreeY = 230 - ((totalLayers - 1) * verticalSpacing);
+    const finalNodeY = topUptreeY - 150; // Gap between top uptree node and final node
 
     return {
         nodes: [{
@@ -233,5 +258,5 @@ export function addFinalNode(kVal) {
 }
 
 export function calculateTotalLayers(k) {
-    return k - 1;
+    return calculateTotalUptreeLayers(k);
 }

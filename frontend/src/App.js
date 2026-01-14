@@ -10,16 +10,17 @@ import {
     addUptreeNodes,
     addUptreeEdges,
     addFinalNode,
+    calculateTotalUptreeLayers,
 } from './utils/graphBuilder';
 
 import {
     handleInitialStep,
     handleOutputGistStep,
-    handleFuseGistStep,
     handleUptreeStep,
-    handleFinalNodeStep,
-    handleReverseStep,
+    handleGenerateStep,
+    handleDowntreeStep,
     handleUpdateStep,
+    handleFuseStep,
 } from './steps/index';
 import './App.css';
 import { fetchProcessorNeighborhoods } from './utils/api';
@@ -94,29 +95,25 @@ const App = () => {
             }
 
             case PHASES.UPTREE: {
+                // uptreeStep starts at 1, corresponds to counts[1] (first uptree layer)
                 const newElements = {
-                    nodes: addUptreeNodes(k, uptreeStep + 1).nodes,
-                    edges: addUptreeEdges(k, uptreeStep + 1).edges,
+                    nodes: addUptreeNodes(k, uptreeStep).nodes,
+                    edges: addUptreeEdges(k, uptreeStep).edges,
                 };
                 updateElementsForPhase(newElements);
                 break;
             }
 
-            case PHASES.FINAL_NODE: {
+            case PHASES.GENERATE: {
                 const newElements = addFinalNode(k);
                 updateElementsForPhase(newElements);
                 break;
             }
 
-            case PHASES.REVERSE: {
+            case PHASES.DOWNTREE: {
+                // Reverse edge directions (except processor-to-processor edges)
                 setElements((prevElements) => {
-                    const processorNodes = prevElements.filter((element) =>
-                        element.data && 
-                        element.data.id && 
-                        !element.data.source && 
-                        processorNames.includes(element.data.id)
-                    );
-                    const processorIds = new Set(processorNodes.map(node => node.data.id));
+                    const processorIds = new Set(processorNames);
 
                     return prevElements.map((element) => {
                         if (!element.data?.source || !element.data?.target) {
@@ -144,28 +141,37 @@ const App = () => {
             }
 
             case PHASES.UPDATE: {
-                const updateElements = async () => {
-                    // Filter nodes that are processors (keep them, remove others like gists/fused nodes)
+                // Reset to only processor nodes (remove fused/uptree nodes)
+                const processorNodes = elements.filter((element) => {
+                    return element.data && 
+                           element.data.id && 
+                           !element.data.source &&
+                           processorNames.includes(element.data.id);
+                });
+                setElements(processorNodes);
+                break;
+            }
+
+            case PHASES.FUSE: {
+                // Fetch updated neighborhoods and add processor edges
+                const updateWithFuse = async () => {
                     const processorNodes = elements.filter((element) => {
-                        // Keep elements that are nodes and have an ID in the processor list
                         return element.data && 
                                element.data.id && 
-                               !element.data.source && // ensure it's a node, not an edge
+                               !element.data.source &&
                                processorNames.includes(element.data.id);
                     });
 
-                    const neighborhoods = await fetchProcessorNeighborhoods();
-                    setNeighborhoods(neighborhoods);
-                    if (neighborhoods) {
-                        const newEdges = addProcessorEdges(neighborhoods, processorNames);
+                    const newNeighborhoods = await fetchProcessorNeighborhoods();
+                    setNeighborhoods(newNeighborhoods);
+                    if (newNeighborhoods) {
+                        const newEdges = addProcessorEdges(newNeighborhoods, processorNames);
                         setElements([...processorNodes, ...newEdges]);
                     } else {
                         setElements(processorNodes);
                     }
                 };
-
-                // Execute the update
-                updateElements();
+                updateWithFuse();
                 break;
             }
 
@@ -187,6 +193,7 @@ const App = () => {
         };
 
         console.log('Current step:', currentStep);
+        // New flow: output gist → up-tree → generate → down-tree → update → fuse → back to output gist
         switch (currentStep) {
             case PHASES.OUTPUT_GIST:
             case PHASES.FUSE_GIST:
@@ -196,31 +203,33 @@ const App = () => {
                 await handleFuseGistStep(stepProps);
                 modifyGraph();
                 setCurrentStep(PHASES.UPTREE);
-                break
+                break;
 
             case PHASES.UPTREE:
                 setDisplayPhase(PHASES.UPTREE);
                 await handleUptreeStep(stepProps);
                 modifyGraph();
 
-                if (uptreeStep >= k - 1) {
-                    setCurrentStep(PHASES.FINAL_NODE);
+                // Check if we've completed all uptree layers
+                const totalUptreeLayers = calculateTotalUptreeLayers(k);
+                if (uptreeStep >= totalUptreeLayers) {
+                    setCurrentStep(PHASES.GENERATE);
                     setUptreeStep(1);
                 } else {
                     setUptreeStep((prev) => prev + 1);
                 }
                 break;
 
-            case PHASES.FINAL_NODE:
-                setDisplayPhase(PHASES.FINAL_NODE);
-                await handleFinalNodeStep(stepProps);
+            case PHASES.GENERATE:
+                setDisplayPhase(PHASES.GENERATE);
+                await handleGenerateStep(stepProps);
                 modifyGraph();
-                setCurrentStep(PHASES.REVERSE);
+                setCurrentStep(PHASES.DOWNTREE);
                 break;
 
-            case PHASES.REVERSE:
-                setDisplayPhase(PHASES.REVERSE);
-                await handleReverseStep(stepProps);
+            case PHASES.DOWNTREE:
+                setDisplayPhase(PHASES.DOWNTREE);
+                await handleDowntreeStep(stepProps);
                 modifyGraph();
                 setCurrentStep(PHASES.UPDATE);
                 break;
@@ -228,6 +237,13 @@ const App = () => {
             case PHASES.UPDATE:
                 setDisplayPhase(PHASES.UPDATE);
                 await handleUpdateStep(stepProps);
+                modifyGraph();
+                setCurrentStep(PHASES.FUSE);
+                break;
+
+            case PHASES.FUSE:
+                setDisplayPhase(PHASES.FUSE);
+                await handleFuseStep(stepProps);
                 modifyGraph();
                 setCurrentStep(PHASES.OUTPUT_GIST);
                 break;
@@ -594,7 +610,7 @@ const App = () => {
               <div className="status-content">
                 <p><strong>Current Phase:</strong> {displayPhase}</p>
                 {currentStep === PHASES.UPTREE && (
-                  <p><strong>Uptree Step:</strong> {uptreeStep} of {k-1}</p>
+                  <p><strong>Uptree Step:</strong> {uptreeStep} of {calculateTotalUptreeLayers(k)}</p>
                 )}
                 <p><strong>Processors:</strong> {processorNames.map(p => p.split('_')[0].replace('Processor', '')).join(', ')}</p>
               </div>

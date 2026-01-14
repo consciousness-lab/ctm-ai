@@ -8,6 +8,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from ..configs import ConsciousTuringMachineConfig
+from ..utils import logging_chunk_compete
 from .chunk import Chunk
 
 
