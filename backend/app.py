@@ -5,7 +5,7 @@ from flask_cors import CORS
 flask_wrapper = FlaskAppWrapper()
 
 # Enable CORS on the underlying Flask app - 允许所有来源（开发环境）
-CORS(flask_wrapper.app, resources={r"/*": {"origins": "*"}})
+CORS(flask_wrapper.app, resources={r'/*': {'origins': '*'}})
 
 # Export the underlying Flask app as the global WSGI callable.
 app = flask_wrapper.app
