@@ -46,30 +46,30 @@ def clean_tools_for_vertex_ai(tools: List[Dict[str, Any]]) -> List[Dict[str, Any
     """
     cleaned_tools = []
     for tool in tools:
-        if tool.get("type") == "function" and "function" in tool:
-            function_def = tool["function"].copy()
+        if tool.get('type') == 'function' and 'function' in tool:
+            function_def = tool['function'].copy()
 
             # Clean parameters
-            if "parameters" in function_def:
-                params = function_def["parameters"].copy()
+            if 'parameters' in function_def:
+                params = function_def['parameters'].copy()
 
                 # Remove 'optional' field
-                if "optional" in params:
-                    del params["optional"]
+                if 'optional' in params:
+                    del params['optional']
 
                 # Clean properties to remove 'example_value'
-                if "properties" in params:
+                if 'properties' in params:
                     cleaned_properties = {}
-                    for prop_name, prop_def in params["properties"].items():
+                    for prop_name, prop_def in params['properties'].items():
                         cleaned_prop = prop_def.copy()
-                        if "example_value" in cleaned_prop:
-                            del cleaned_prop["example_value"]
+                        if 'example_value' in cleaned_prop:
+                            del cleaned_prop['example_value']
                         cleaned_properties[prop_name] = cleaned_prop
-                    params["properties"] = cleaned_properties
+                    params['properties'] = cleaned_properties
 
-                function_def["parameters"] = params
+                function_def['parameters'] = params
 
-            cleaned_tool = {"type": "function", "function": function_def}
+            cleaned_tool = {'type': 'function', 'function': function_def}
             cleaned_tools.append(cleaned_tool)
         else:
             cleaned_tools.append(tool)
@@ -83,9 +83,9 @@ def register_tool_processors(openai_function_names: List[str]):
         BaseProcessor._processor_registry[processor_name] = ToolProcessor
 
 
-@BaseProcessor.register_processor("tool_processor")
+@BaseProcessor.register_processor('tool_processor')
 class ToolProcessor(BaseProcessor):
-    REQUIRED_KEYS = ["OPENAI_API_KEY"]
+    REQUIRED_KEYS = ['OPENAI_API_KEY']
 
     def _build_executor_content(
         self,
@@ -95,7 +95,7 @@ class ToolProcessor(BaseProcessor):
         *args: Any,
         **kwargs: Any,
     ) -> str:
-        content = f"Task Description: {query}\n"
+        content = f'Task Description: {query}\n'
 
         content += f"""
 You should utilize the information in the context history and the tool `{function_name}` to solve the task.
@@ -118,12 +118,12 @@ OUTPUT PROTOCOL (MUST follow strictly):
 """
 
         if len(self.fuse_history) > 0:
-            content += "\nThere are extra information from other tools:\n"
+            content += '\nThere are extra information from other tools:\n'
             for i, item in enumerate(self.fuse_history, 1):
                 content += f'{i}. {item["answer"]}\n'
 
         if len(self.winner_answer) > 0:
-            content += "\nThere are some previous answers to the same query, think further based on this answer:\n"
+            content += '\nThere are some previous answers to the same query, think further based on this answer:\n'
             for i, item in enumerate(self.winner_answer, 1):
                 content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
         return content
@@ -137,14 +137,14 @@ OUTPUT PROTOCOL (MUST follow strictly):
         **kwargs: Any,
     ) -> Dict[str, str]:
         messages = [
-            {"role": "system", "content": TOOL_SYSTEM_PROMPT},
-            {"role": "user", "content": query},
+            {'role': 'system', 'content': TOOL_SYSTEM_PROMPT},
+            {'role': 'user', 'content': query},
         ]
 
         # Check if api_manager is None
         if api_manager is None:
             raise ValueError(
-                f"api_manager is None for function {function_name}. This should not happen in tool processors."
+                f'api_manager is None for function {function_name}. This should not happen in tool processors.'
             )
 
         # Clean tools for Vertex AI compatibility
@@ -155,14 +155,14 @@ OUTPUT PROTOCOL (MUST follow strictly):
             model=self.model,
             messages=messages,
             tools=cleaned_tools,
-            tool_choice="auto",
+            tool_choice='auto',
         )
         response_message = response.choices[0].message
         retry_times = 3
 
         # Initialize default values
-        gist = ""
-        additional_question = ""
+        gist = ''
+        additional_question = ''
 
         if response_message.content is not None and response_message.tool_calls is None:
             execuotr_answer = response_message.content
@@ -170,34 +170,34 @@ OUTPUT PROTOCOL (MUST follow strictly):
                 query=query, new_message=execuotr_answer
             )
             if len(self.fuse_history) > 0:
-                text_prompt += "\nThere are extra information from other tools:\n"
+                text_prompt += '\nThere are extra information from other tools:\n'
                 for i, item in enumerate(self.fuse_history, 1):
                     text_prompt += f'{i}. {item["answer"]}\n'
 
             if len(self.winner_answer) > 0:
-                text_prompt += "\nThere are some previous answers to the same query, think further based on this answer:\n"
+                text_prompt += '\nThere are some previous answers to the same query, think further based on this answer:\n'
                 for i, item in enumerate(self.winner_answer, 1):
                     text_prompt += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
             response = completion(
                 model=self.model,
-                messages=[{"role": "user", "content": text_prompt}],
+                messages=[{'role': 'user', 'content': text_prompt}],
                 *args,
                 **kwargs,
             )
             gist, additional_question = parse_json_response(
-                response.choices[0].message.content, "Can you provide more information?"
+                response.choices[0].message.content, 'Can you provide more information?'
             )
         elif (
             response_message.tool_calls is not None and response_message.content is None
         ):
             tool_call = response_message.tool_calls[0]
-            func_name = getattr(tool_call.function, "name", None) or function_name
-            func_args = getattr(tool_call.function, "arguments", "{}")
+            func_name = getattr(tool_call.function, 'name', None) or function_name
+            func_args = getattr(tool_call.function, 'arguments', '{}')
 
             if isinstance(func_args, dict):
                 function_args = json.dumps(func_args, ensure_ascii=False)
             else:
-                function_args = str(func_args) if func_args is not None else "{}"
+                function_args = str(func_args) if func_args is not None else '{}'
             for i in range(retry_times):
                 try:
                     tool_answer, status_code = api_manager.step(
@@ -210,39 +210,39 @@ OUTPUT PROTOCOL (MUST follow strictly):
                         continue
                     else:
                         tool_answer = {
-                            "error": f"tool execution failed: {type(e).__name__}: {e}",
-                            "response": "",
+                            'error': f'tool execution failed: {type(e).__name__}: {e}',
+                            'response': '',
                         }
             tool_prompt = TOOL_ANSWER_PROMPT.format(
                 query=query, new_message=tool_answer
             )
             if len(self.fuse_history) > 0:
-                tool_prompt += "\nThere are extra information from other tools:\n"
+                tool_prompt += '\nThere are extra information from other tools:\n'
                 for i, item in enumerate(self.fuse_history, 1):
                     tool_prompt += f'{i}. {item["answer"]}\n'
 
             if len(self.winner_answer) > 0:
-                tool_prompt += "\nThere are some previous answers to the same query, think further based on this answer:\n"
+                tool_prompt += '\nThere are some previous answers to the same query, think further based on this answer:\n'
                 for i, item in enumerate(self.winner_answer, 1):
                     tool_prompt += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
             response = completion(
                 model=self.model,
-                messages=[{"role": "user", "content": tool_prompt}],
+                messages=[{'role': 'user', 'content': tool_prompt}],
                 *args,
                 **kwargs,
             )
             gist, additional_question = parse_json_response(
-                response.choices[0].message.content, "Can you provide more information?"
+                response.choices[0].message.content, 'Can you provide more information?'
             )
         else:
             # Handle case where both content and tool_calls are None, or both have values
             # This is an unexpected case, provide a default response
-            gist = "No valid response received from the model"
-            additional_question = "Can you provide more information?"
+            gist = 'No valid response received from the model'
+            additional_question = 'Can you provide more information?'
 
         return {
-            "response": gist,
-            "additional_question": additional_question,
+            'response': gist,
+            'additional_question': additional_question,
         }
 
     def ask(
@@ -264,15 +264,15 @@ OUTPUT PROTOCOL (MUST follow strictly):
             function_name=self.name,
         )
         if is_fuse:
-            self.add_fuse_history(query, executor_output["response"])
+            self.add_fuse_history(query, executor_output['response'])
         self.add_all_context_history(
             query,
-            executor_output["response"],
-            executor_output["additional_question"],
+            executor_output['response'],
+            executor_output['additional_question'],
         )
         scorer = ToolScorer(*args, **kwargs)
         scorer_output = scorer.ask(query=query, messages=executor_output)
-        additional_question = executor_output["additional_question"] or ""
+        additional_question = executor_output['additional_question'] or ''
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,
