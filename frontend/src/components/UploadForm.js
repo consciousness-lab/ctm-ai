@@ -347,22 +347,6 @@ const UploadForm = () => {
                     <div className="success-message">{serverResponse.message || 'Upload Success!'}</div>
                 )}
 
-                {/* Server Response Preview */}
-                {serverResponse && (
-                    <div className="server-response" style={{ marginTop: '16px' }}>
-                        <p className="preview-title"><strong>Server Response:</strong></p>
-                        <pre className="response-content" style={{ 
-                            fontSize: '0.75rem', 
-                            padding: '12px', 
-                            background: 'rgba(0,0,0,0.2)', 
-                            borderRadius: '8px',
-                            maxHeight: '150px',
-                            overflow: 'auto'
-                        }}>
-                            {JSON.stringify(serverResponse, null, 2)}
-                        </pre>
-                    </div>
-                )}
 
                 <div className="form-buttons">
                     <button 

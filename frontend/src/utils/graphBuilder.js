@@ -44,6 +44,12 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
   const validProcessors = new Set(processorNames || []);
   const addedEdges = new Set(); // Track added edges to avoid duplicates
   
+  // Create index map for consistent left-to-right ordering
+  const positionIndex = {};
+  (processorNames || []).forEach((name, idx) => {
+    positionIndex[name] = idx;
+  });
+  
   console.log('Valid processors:', processorNames);
   console.log('Neighborhoods:', neighborhoods);
 
@@ -55,14 +61,22 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
     }
 
     connectedProcessors.forEach(targetId => {
+      // Skip self-loops (processor connecting to itself)
+      if (processorId === targetId) {
+          return;
+      }
+
       // Skip if target processor is not in the valid list
       if (!validProcessors.has(targetId)) {
           console.warn(`Skipping edge to invalid processor: ${targetId} (from ${processorId})`);
           return;
       }
 
-      // Create a canonical edge id (smaller id first) to avoid duplicates
-      const edgeKey = [processorId, targetId].sort().join('-');
+      // Sort by position index to ensure consistent left-to-right direction
+      // This makes all edges curve in the same direction
+      const pair = [processorId, targetId];
+      pair.sort((a, b) => (positionIndex[a] ?? 0) - (positionIndex[b] ?? 0));
+      const edgeKey = pair.join('-');
       
       // Skip if this edge already exists
       if (addedEdges.has(edgeKey)) {
@@ -73,8 +87,8 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
       edges.push({
         data: {
           id: edgeKey,
-          source: processorId,
-          target: targetId,
+          source: pair[0],  // 左边的节点作为 source
+          target: pair[1],  // 右边的节点作为 target
         },
         classes: 'processor-edge'
       });

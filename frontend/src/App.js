@@ -395,11 +395,18 @@ const App = () => {
                                 <p className="detail-label">Memory ({memoryCount} entries):</p>
                                 {info.memory?.all_context_history?.length > 0 ? (
                                     <div className="memory-list">
-                                        {info.memory.all_context_history.slice(-3).map((item, idx) => (
-                                            <div key={idx} className="memory-item">
-                                                <p><strong>Q:</strong> {item.query?.substring(0, 100)}...</p>
-                                                <p><strong>A:</strong> {item.answer?.substring(0, 100)}...</p>
-                                            </div>
+                                        {info.memory.all_context_history.map((item, idx) => (
+                                            <details key={idx} className="memory-item-expandable">
+                                                <summary className="memory-summary">
+                                                    Entry {idx + 1}: {item.query?.substring(0, 50)}{item.query?.length > 50 ? '...' : ''}
+                                                </summary>
+                                                <div className="memory-content">
+                                                    <p><strong>Query:</strong></p>
+                                                    <p className="memory-text">{item.query}</p>
+                                                    <p><strong>Answer:</strong></p>
+                                                    <p className="memory-text">{item.answer}</p>
+                                                </div>
+                                            </details>
                                         ))}
                                     </div>
                                 ) : (
@@ -438,9 +445,6 @@ const App = () => {
                 const finalJSX = (
                     <div>
                         <h3>Node Details:</h3>
-                        {nodeTimestep !== undefined && (
-                            <p className="node-timestep"><strong>Timestep:</strong> {nodeTimestep}</p>
-                        )}
                         {nodeSelfLines}
 
                         {parentLines ? parentLines : <p>No parent details available.</p>}

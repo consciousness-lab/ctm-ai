@@ -33,6 +33,9 @@ class FlaskAppWrapper:
         example_image = getattr(self.state, 'example_image_path', None)
         example_audio = getattr(self.state, 'example_audio_path', None)
         
+        print(f"[DEBUG] example_image: {example_image}")
+        print(f"[DEBUG] example_audio: {example_audio}")
+        
         # Use example paths if available, otherwise use uploaded files
         if example_image or example_audio:
             image_path = example_image

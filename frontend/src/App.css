@@ -696,6 +696,57 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
+/* Expandable memory items */
+.memory-item-expandable {
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.memory-summary {
+    padding: 10px 12px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.85rem;
+    font-weight: 500;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.memory-summary:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.memory-item-expandable[open] .memory-summary {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.memory-content {
+    padding: 12px;
+    font-size: 0.8rem;
+}
+
+.memory-content p {
+    margin: 4px 0;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.memory-content strong {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.memory-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 8px;
+    border-radius: 4px;
+    margin: 4px 0 12px 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
 .no-data {
     color: rgba(255, 255, 255, 0.4);
     font-size: 0.85rem;

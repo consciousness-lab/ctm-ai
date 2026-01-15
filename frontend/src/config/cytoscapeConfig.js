@@ -99,7 +99,7 @@ export const stylesheet = [
     }
   },
   {
-    // Processor-to-processor edges - dashed, curved downwards, undirected (no arrow)
+    // Processor-to-processor edges - dashed, go downward, undirected (no arrow)
     selector: 'edge.processor-edge',
     style: {
       'line-style': 'dashed',
@@ -108,10 +108,9 @@ export const stylesheet = [
       'target-arrow-shape': 'none',  // 无向边，不显示箭头
       width: 2.5,
       'curve-style': 'unbundled-bezier',
-      'source-endpoint': '180deg',   // 从节点底部中心出发 (180deg = 下方，6点钟方向)
-      'target-endpoint': '180deg',   // 连入节点底部中心
-      'control-point-distances': [80],  // 控制点向下偏移，形成向下的弧线
-      'control-point-weights': [0.5],
+      'control-point-distances': [60],      // 控制点距离边中点的距离
+      'control-point-weights': [0.5],       // 控制点在边上的位置（0.5 = 中间）
+      'edge-distances': 'node-position',
     }
   },
   {
