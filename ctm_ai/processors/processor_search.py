@@ -112,7 +112,7 @@ class SearchProcessor(BaseProcessor):
             *args,
             **kwargs,
         )
-        print(additional_content)
+        print(query)
         executor_output['additional_question'] = response.choices[0].message.content
 
         self.add_all_context_history(

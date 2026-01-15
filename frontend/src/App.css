@@ -753,6 +753,54 @@
     font-style: italic;
 }
 
+/* Memory Categories */
+.memory-category {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.memory-category-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Winner Memory - Gold/Yellow theme */
+.winner-memory {
+    border-left: 3px solid #f59e0b;
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.winner-memory .memory-summary:hover {
+    background: rgba(245, 158, 11, 0.12);
+}
+
+/* Fuse Memory - Blue/Cyan theme */
+.fuse-memory {
+    border-left: 3px solid #06b6d4;
+    background: rgba(6, 182, 212, 0.08);
+}
+
+.fuse-memory .memory-summary:hover {
+    background: rgba(6, 182, 212, 0.12);
+}
+
+/* Context Memory - Purple theme */
+.context-memory {
+    border-left: 3px solid #8b5cf6;
+    background: rgba(139, 92, 246, 0.08);
+}
+
+.context-memory .memory-summary:hover {
+    background: rgba(139, 92, 246, 0.12);
+}
+
 /* Example Previews */
 .example-previews {
     margin-top: 16px;

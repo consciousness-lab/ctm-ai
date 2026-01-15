@@ -54,7 +54,12 @@ const App = () => {
         'SearchProcessor',
         'CodeProcessor',
         'AudioProcessor',
-        'VideoProcessor'
+        'VideoProcessor',
+        'FinanceProcessor',
+        'GeoDBProcessor',
+        'TwitterProcessor',
+        'WeatherProcessor',
+        'YouTubeProcessor'
     ]);
     const [nodeDetailJSX, setNodeDetailJSX] = useState(null);
     const [k, setK] = useState(0);
@@ -93,8 +98,7 @@ const App = () => {
         };
 
         switch (currentStep) {
-            case PHASES.OUTPUT_GIST:
-            case PHASES.FUSE_GIST: {
+            case PHASES.OUTPUT_GIST: {
                 // Combined: create fused nodes with edges directly from processors
                 const nodes = addFusedNodes(k).nodes;
                 const edges = addFusedEdges(k, processorNames, neighborhoods);
@@ -210,9 +214,8 @@ const App = () => {
         // New flow: output gist → up-tree → generate → down-tree → update → fuse → back to output gist
         switch (currentStep) {
             case PHASES.OUTPUT_GIST:
-            case PHASES.FUSE_GIST:
                 // Combined: Output gist + Fuse gist in one step
-                setDisplayPhase(PHASES.FUSE_GIST);
+                setDisplayPhase(PHASES.OUTPUT_GIST);
                 await handleOutputGistStep(stepProps);
                 modifyGraph(newTimestep);
                 setCurrentStep(PHASES.UPTREE);
@@ -396,23 +399,73 @@ const App = () => {
 
                             <div className="detail-section">
                                 <p className="detail-label">Memory ({memoryCount} entries):</p>
-                                {info.memory?.all_context_history?.length > 0 ? (
-                                    <div className="memory-list">
-                                        {info.memory.all_context_history.map((item, idx) => (
-                                            <details key={idx} className="memory-item-expandable">
-                                                <summary className="memory-summary">
-                                                    Entry {idx + 1}: {item.query?.substring(0, 50)}{item.query?.length > 50 ? '...' : ''}
-                                                </summary>
-                                                <div className="memory-content">
-                                                    <p><strong>Query:</strong></p>
-                                                    <p className="memory-text">{item.query}</p>
-                                                    <p><strong>Answer:</strong></p>
-                                                    <p className="memory-text">{item.answer}</p>
-                                                </div>
-                                            </details>
-                                        ))}
+                                
+                                {/* Winner Answers from Downtree Broadcast */}
+                                {info.memory?.winner_answer?.length > 0 && (
+                                    <div className="memory-category">
+                                        <p className="memory-category-title">🏆 Winner Answers ({info.memory.winner_answer.length}):</p>
+                                        <div className="memory-list">
+                                            {info.memory.winner_answer.map((item, idx) => (
+                                                <details key={`winner-${idx}`} className="memory-item-expandable winner-memory">
+                                                    <summary className="memory-summary">
+                                                        From {item.processor_name?.split('_')[0]?.replace('Processor', '')}: {item.answer?.substring(0, 40)}{item.answer?.length > 40 ? '...' : ''}
+                                                    </summary>
+                                                    <div className="memory-content">
+                                                        <p><strong>Source Processor:</strong> {item.processor_name}</p>
+                                                        <p><strong>Answer:</strong></p>
+                                                        <p className="memory-text">{item.answer}</p>
+                                                    </div>
+                                                </details>
+                                            ))}
+                                        </div>
                                     </div>
-                                ) : (
+                                )}
+
+                                {/* Memory from neighbor processors */}
+                                {info.memory?.fuse_history?.length > 0 && (
+                                    <div className="memory-category">
+                                        <p className="memory-category-title">Memory ({info.memory.fuse_history.length}):</p>
+                                        <div className="memory-list">
+                                            {info.memory.fuse_history.map((item, idx) => (
+                                                <details key={`fuse-${idx}`} className="memory-item-expandable fuse-memory">
+                                                    <summary className="memory-summary">
+                                                        Q: {item.additional_question?.substring(0, 40)}{item.additional_question?.length > 40 ? '...' : ''}
+                                                    </summary>
+                                                    <div className="memory-content">
+                                                        <p><strong>Question:</strong></p>
+                                                        <p className="memory-text">{item.additional_question}</p>
+                                                        <p><strong>Answer:</strong></p>
+                                                        <p className="memory-text">{item.answer}</p>
+                                                    </div>
+                                                </details>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* All Context Logs */}
+                                {info.memory?.all_context_history?.length > 0 && (
+                                    <div className="memory-category">
+                                        <p className="memory-category-title">Logs ({info.memory.all_context_history.length}):</p>
+                                        <div className="memory-list">
+                                            {info.memory.all_context_history.map((item, idx) => (
+                                                <details key={`ctx-${idx}`} className="memory-item-expandable context-memory">
+                                                    <summary className="memory-summary">
+                                                        Entry {idx + 1}: {item.query?.substring(0, 40)}{item.query?.length > 40 ? '...' : ''}
+                                                    </summary>
+                                                    <div className="memory-content">
+                                                        <p><strong>Query:</strong></p>
+                                                        <p className="memory-text">{item.query}</p>
+                                                        <p><strong>Answer:</strong></p>
+                                                        <p className="memory-text">{item.answer}</p>
+                                                    </div>
+                                                </details>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {memoryCount === 0 && (
                                     <p className="no-data">No memory entries yet</p>
                                 )}
                             </div>

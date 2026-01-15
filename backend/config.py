@@ -18,4 +18,9 @@ class Config:
         'CodeProcessor': 'code_processor',
         'AudioProcessor': 'audio_processor',
         'VideoProcessor': 'video_processor',
+        'FinanceProcessor': 'finance_processor',
+        'GeoDBProcessor': 'geodb_processor',
+        'TwitterProcessor': 'twitter_processor',
+        'WeatherProcessor': 'weather_processor',
+        'YouTubeProcessor': 'youtube_processor',
     }

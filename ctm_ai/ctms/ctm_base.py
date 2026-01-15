@@ -249,7 +249,9 @@ class BaseConsciousTuringMachine(ABC):
                 )
                 if answer_chunk is not None:
                     # A 把 B 的回答存入 A 的 fuse_history
-                    proc_map[chunk.processor_name].add_fuse_history(q, answer_chunk.gist)
+                    proc_map[chunk.processor_name].add_fuse_history(
+                        q, answer_chunk.gist, nbr
+                    )
 
     @abstractmethod
     def forward(
