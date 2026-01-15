@@ -10,10 +10,11 @@ export const handleOutputGistStep = async ({
 
         for (let i = 0; i < k; i++) {
             const initNodeId = processorNames[i];
-            const bottomNodeId = `g${i + 1}`;
+            // Use n instead of g since we merged gist and fused layers
+            const fusedNodeId = `n${i + 1}`;
             updates.push({
                 processor_id: initNodeId,
-                target_id: bottomNodeId,
+                target_id: fusedNodeId,
             });
         }
 

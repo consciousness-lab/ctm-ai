@@ -42,6 +42,7 @@ export function addProcessorNodes(kVal, processorNames) {
 export const addProcessorEdges = (neighborhoods, processorNames) => {
   const edges = [];
   const validProcessors = new Set(processorNames || []);
+  const addedEdges = new Set(); // Track added edges to avoid duplicates
   
   console.log('Valid processors:', processorNames);
   console.log('Neighborhoods:', neighborhoods);
@@ -60,12 +61,22 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
           return;
       }
 
+      // Create a canonical edge id (smaller id first) to avoid duplicates
+      const edgeKey = [processorId, targetId].sort().join('-');
+      
+      // Skip if this edge already exists
+      if (addedEdges.has(edgeKey)) {
+          return;
+      }
+      addedEdges.add(edgeKey);
+
       edges.push({
         data: {
-          id: `${processorId}-${targetId}`,
+          id: edgeKey,
           source: processorId,
           target: targetId,
         },
+        classes: 'processor-edge'
       });
     });
   });

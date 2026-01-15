@@ -227,6 +227,7 @@ class BaseConsciousTuringMachine(ABC):
     ) -> List[Chunk]:
         proc_map = {p.name: p for p in self.processor_graph.nodes}
         dirty: set[str] = set()  # processors whose memory got new info
+        additional_context_parts = []  # collect additional context separately
 
         for chunk in chunks:
             q = chunk.additional_question
@@ -244,10 +245,13 @@ class BaseConsciousTuringMachine(ABC):
                     is_fuse=True,
                     **input_kwargs,
                 )
-                input_kwargs['text'] += '(additional information: {})'.format(
-                    answer_chunk.gist
-                )
+                if answer_chunk is not None:
+                    additional_context_parts.append(f'[{nbr}]: {answer_chunk.gist}')
                 dirty.add(chunk.processor_name)
+
+        # Pass additional context as a separate parameter, not polluting text
+        if additional_context_parts:
+            input_kwargs['additional_context'] = '\n'.join(additional_context_parts)
 
         for idx, chunk in enumerate(chunks):
             if chunk.processor_name in dirty:
@@ -261,6 +265,7 @@ class BaseConsciousTuringMachine(ABC):
     ) -> List[Chunk]:
         proc_map = {p.name: p for p in self.processor_graph.nodes}
         dirty: set[str] = set()
+        additional_context_parts = []  # collect additional context separately
 
         for chunk in prev_chunks:
             q = chunk.additional_question
@@ -278,10 +283,13 @@ class BaseConsciousTuringMachine(ABC):
                     is_fuse=True,
                     **input_kwargs,
                 )
-                input_kwargs['text'] += '(additional information: {})'.format(
-                    answer_chunk.gist
-                )
+                if answer_chunk is not None:
+                    additional_context_parts.append(f'[{nbr}]: {answer_chunk.gist}')
                 dirty.add(chunk.processor_name)
+
+        # Pass additional context as a separate parameter, not polluting text
+        if additional_context_parts:
+            input_kwargs['additional_context'] = '\n'.join(additional_context_parts)
 
         chunks = list(prev_chunks)
         for idx, chunk in enumerate(chunks):

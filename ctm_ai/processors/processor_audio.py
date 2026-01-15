@@ -36,8 +36,7 @@ class AudioProcessor(BaseProcessor):
         self._init_info(*args, **kwargs)
         audio_path = kwargs.get('audio_path')
         if not audio_path:
-            # 没有音频输入时返回 None，让上层跳过这个处理器
-            return None
+            return [{'role': 'assistant', 'content': ''}]
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f'Audio file not found: {audio_path}')
         try:
