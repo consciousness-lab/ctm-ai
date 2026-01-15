@@ -8,7 +8,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 from ..configs import ConsciousTuringMachineConfig
-from ..utils import logging_chunk_compete
 from .chunk import Chunk
 
 
@@ -58,52 +57,21 @@ class ChunkManager:
         self.chunks.clear()
         self.tfidf_matrix = None
 
-    @logging_chunk_compete
-    def compete(self, chunk1: Chunk, chunk2: Chunk) -> Chunk:
-        # 空 gist 的 chunk 不能获胜
-        chunk1_empty = not chunk1.gist or chunk1.gist.strip() == ''
-        chunk2_empty = not chunk2.gist or chunk2.gist.strip() == ''
-        
-        if chunk1_empty and not chunk2_empty:
-            return chunk2
-        if chunk2_empty and not chunk1_empty:
-            return chunk1
-        
-        # 两个都空或都有内容，按 weight 比较
-        if chunk1 > chunk2:
-            return chunk1
-        elif chunk1 < chunk2:
-            return chunk2
-        else:
-            # 权重相等时随机选择
-            return random.choice([chunk1, chunk2])
-
     def uptree_competition(self) -> Chunk:
-        """
-        Perform uptree competition until one winning chunk remains.
-        Uses tournament-style elimination.
-        """
         if not self.chunks:
-            raise ValueError("No chunks to compete")
-        
+            raise ValueError('No chunks available for competition')
+
         if len(self.chunks) == 1:
             return self.chunks[0]
-        
-        # Tournament-style competition
-        current_round = list(self.chunks)
-        
-        while len(current_round) > 1:
-            next_round = []
-            
-            # Pair up chunks and compete
-            for i in range(0, len(current_round), 2):
-                if i + 1 < len(current_round):
-                    winner = self.compete(current_round[i], current_round[i + 1])
-                    next_round.append(winner)
-                else:
-                    # Odd chunk advances automatically
-                    next_round.append(current_round[i])
-            
-            current_round = next_round
-        
-        return current_round[0]
+
+        weights = [self._sanitize_weight(chunk.weight) for chunk in self.chunks]
+
+        total_weight = sum(weights)
+        if total_weight == 0:
+            normalized_weights = [1.0 / len(weights)] * len(weights)
+        else:
+            normalized_weights = [w / total_weight for w in weights]
+
+        winning_chunk = np.random.choice(self.chunks, p=normalized_weights)
+
+        return winning_chunk

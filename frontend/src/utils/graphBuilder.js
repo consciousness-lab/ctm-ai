@@ -84,6 +84,7 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
       }
       addedEdges.add(edgeKey);
 
+
       edges.push({
         data: {
           id: edgeKey,

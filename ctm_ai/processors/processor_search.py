@@ -9,7 +9,7 @@ from ..chunks import Chunk
 from ..scorers import BaseScorer
 from .processor_base import BaseProcessor
 
-SEARCH_PROMPT = """You should utilize the information in the context history and the current response from the search tool to generate a additional question about the query. Your additional question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about. Your additional question should be just about what kind of information you need to get from other modality models or other tools like search engine, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what text description of the image, etc. The question needs to be short and clean.
+SEARCH_PROMPT = """You should utilize the information in the context history and the current response from the search tool to generate a additional question about the query. Your additional question should be potentially answerable by other modality models and about specific information that you are not sure about. Your additional question should be just about what kind of information you need to get from other modality models or other tools like search engine, nothing else about the task or original query should be included. For example, what is the facial expression of the person, what text of the image, etc. The question needs to be short and clean.
 There is the query: {query}
 There is the response from the search tool: {response}
 There is some additional information: {additional_information}
@@ -54,9 +54,8 @@ class SearchProcessor(BaseProcessor):
         client = genai.Client()
         grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
-        system_instruction = f"""You are an expert search agent specializing in understanding the New Yorker Caption Contest. 
-Search for answers about the query: {query}\n.
-If you can not find infromation based on the given query, you can search for some New Yorker caption in the internet to get more information."""
+        system_instruction = f"""You are an expert search agent specializing in understanding the query. 
+Search for answers about the query: {query}."""
 
         config = types.GenerateContentConfig(
             tools=[grounding_tool], system_instruction=system_instruction

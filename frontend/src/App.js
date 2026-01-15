@@ -93,8 +93,9 @@ const App = () => {
         };
 
         switch (currentStep) {
-            case PHASES.OUTPUT_GIST: {
-                // Create fused nodes with edges from processors
+            case PHASES.OUTPUT_GIST:
+            case PHASES.FUSE_GIST: {
+                // Combined: create fused nodes with edges directly from processors
                 const nodes = addFusedNodes(k).nodes;
                 const edges = addFusedEdges(k, processorNames, neighborhoods);
                 const newElements = {
@@ -209,7 +210,9 @@ const App = () => {
         // New flow: output gist → up-tree → generate → down-tree → update → fuse → back to output gist
         switch (currentStep) {
             case PHASES.OUTPUT_GIST:
-                setDisplayPhase(PHASES.OUTPUT_GIST);
+            case PHASES.FUSE_GIST:
+                // Combined: Output gist + Fuse gist in one step
+                setDisplayPhase(PHASES.FUSE_GIST);
                 await handleOutputGistStep(stepProps);
                 modifyGraph(newTimestep);
                 setCurrentStep(PHASES.UPTREE);
@@ -445,6 +448,9 @@ const App = () => {
                 const finalJSX = (
                     <div>
                         <h3>Node Details:</h3>
+                        {nodeTimestep !== undefined && (
+                            <p className="node-timestep"><strong>Timestep:</strong> {nodeTimestep}</p>
+                        )}
                         {nodeSelfLines}
 
                         {parentLines ? parentLines : <p>No parent details available.</p>}

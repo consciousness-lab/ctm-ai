@@ -49,7 +49,6 @@ class BaseProcessor(object):
         self.name = name
         self.group_name = group_name
         self.system_prompt = kwargs.get('system_prompt')
-        # 使用 or 确保即使传入 None 也能使用默认值
         self.model = kwargs.get('model') or 'gemini/gemini-2.0-flash-lite'
 
         self.model_name = kwargs.get('model') or 'gemini/gemini-2.0-flash-lite'
@@ -89,18 +88,24 @@ class BaseProcessor(object):
         text: Optional[str] = None,
         video_frames_path: Optional[List[str]] = None,
         is_fuse: bool = False,
+        additional_context: Optional[str] = None,
         **kwargs: Any,
     ) -> str:
-        content = query
-
         content = f'Query: {query}\n'
 
-        if text is not None:
-            content += f'Text: {text}\n'
+        # if text:
+        #     content += f"Text: {text}\n"
 
-        if video_frames_path:
-            content += f'Note: The input contains {len(video_frames_path)} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n'
+        # if video_frames_path:
+        #     content += f"Note: The input contains {len(video_frames_path)} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n"
 
+        # Add additional context from fuse operations (passed explicitly)
+        if additional_context:
+            content += (
+                f'\nAdditional context from other processors:\n{additional_context}\n'
+            )
+
+        # Add fuse history and winner answers (only when not in fuse mode to avoid duplication)
         if not is_fuse:
             if len(self.fuse_history) > 0:
                 content += '\nThere are extra information from other processors:\n'
@@ -163,6 +168,7 @@ class BaseProcessor(object):
         video_path: Optional[str] = None,
         api_manager: Any = None,
         is_fuse: bool = False,
+        additional_context: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
@@ -178,6 +184,7 @@ class BaseProcessor(object):
             video_frames_path=video_frames_path,
             video_path=video_path,
             is_fuse=is_fuse,
+            additional_context=additional_context,
         )
         executor_messages = self.build_executor_messages(
             query=query,
@@ -191,7 +198,6 @@ class BaseProcessor(object):
             video_path=video_path,
             api_manager=api_manager,
         )
-        # 如果没有必要的输入，跳过这个处理器
         if executor_messages is None:
             return None
         executor_output = self.ask_executor(

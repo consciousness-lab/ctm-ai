@@ -18,6 +18,7 @@ ResponseType = Union[FlaskResponse, WerkzeugResponse]
 
 from ctm_ai.graphs import ProcessorGraph
 
+
 class FlaskAppWrapper:
     def __init__(self) -> None:
         self.app: Flask = Flask(__name__)
@@ -134,15 +135,19 @@ class FlaskAppWrapper:
             processor = self.ctm.processor_graph.get_node(node_id)
             if processor:
                 # Get linked processors
-                linked_processors = self.ctm.processor_graph.adjacency_list.get(node_id, [])
-                
+                linked_processors = self.ctm.processor_graph.adjacency_list.get(
+                    node_id, []
+                )
+
                 # Get processor memory (history)
                 memory = {
                     'fuse_history': getattr(processor, 'fuse_history', []),
                     'winner_answer': getattr(processor, 'winner_answer', []),
-                    'all_context_history': getattr(processor, 'all_context_history', []),
+                    'all_context_history': getattr(
+                        processor, 'all_context_history', []
+                    ),
                 }
-                
+
                 processor_info = {
                     'name': processor.name,
                     'type': processor.name.split('_')[0].replace('Processor', ''),
@@ -151,11 +156,13 @@ class FlaskAppWrapper:
                     'memory': memory,
                 }
 
-            return jsonify({
-                'self': node_self, 
-                'parents': parent_data,
-                'processor_info': processor_info
-            })
+            return jsonify(
+                {
+                    'self': node_self,
+                    'parents': parent_data,
+                    'processor_info': processor_info,
+                }
+            )
 
         @self.app.route('/api/init', methods=['POST'])
         def initialize_processors() -> Tuple[ResponseType, int]:
@@ -448,7 +455,10 @@ class FlaskAppWrapper:
         def get_processor_neighborhoods() -> ResponseType:
             neighborhoods: Dict[str, List[str]] = {}
 
-            for processor_name, connected_processor_names in self.ctm.processor_graph.adjacency_list.items():
+            for (
+                processor_name,
+                connected_processor_names,
+            ) in self.ctm.processor_graph.adjacency_list.items():
                 neighborhoods[processor_name] = connected_processor_names
 
             return jsonify(neighborhoods)
