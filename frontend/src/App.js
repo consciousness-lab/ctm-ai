@@ -27,6 +27,7 @@ import { fetchProcessorNeighborhoods } from './utils/api';
 import {parseDetailString} from './utils/parseDetailString'
 import ProcessorSelector from "./components/ProcessorSelector";
 import UploadForm from "./components/UploadForm";
+import ProcessorInfo from "./components/ProcessorInfo";
 
 
 const ProcessPhase = ({ phase, displayPhase, description }) => {
@@ -59,7 +60,12 @@ const App = () => {
         'GeoDBProcessor',
         'TwitterProcessor',
         'WeatherProcessor',
-        'YouTubeProcessor'
+        'YouTubeProcessor',
+        'MathProcessor',
+        'NewsProcessor',
+        'SocialProcessor',
+        'ExerciseProcessor',
+        'MusicProcessor',
     ]);
     const [nodeDetailJSX, setNodeDetailJSX] = useState(null);
     const [k, setK] = useState(0);
@@ -531,6 +537,13 @@ const App = () => {
               </li>
             </ul>
           </div>
+        </div>
+      </div>
+
+      {/* Processor Info Panel */}
+      <div className="instructions-panel">
+        <div className="panel-card">
+          <ProcessorInfo />
         </div>
       </div>
 
