@@ -32,9 +32,9 @@ const UploadForm = () => {
         },
         paul: {
             name: 'Person Identification',
-            query: 'What is his name?',
-            text: 'He was a CMU PhD student',
-            imagePath: 'assets/paul_profile.jpg',
+            query: 'Who leads this research group mentioned in the image?',
+            text: 'The professor is an Assistant Professor at the MIT Media Lab and MIT EECS.',
+            imagePath: 'assets/paul_group.png',
             audioPath: null
         }
     };
@@ -347,22 +347,6 @@ const UploadForm = () => {
                     <div className="success-message">{serverResponse.message || 'Upload Success!'}</div>
                 )}
 
-                {/* Server Response Preview */}
-                {serverResponse && (
-                    <div className="server-response" style={{ marginTop: '16px' }}>
-                        <p className="preview-title"><strong>Server Response:</strong></p>
-                        <pre className="response-content" style={{ 
-                            fontSize: '0.75rem', 
-                            padding: '12px', 
-                            background: 'rgba(0,0,0,0.2)', 
-                            borderRadius: '8px',
-                            maxHeight: '150px',
-                            overflow: 'auto'
-                        }}>
-                            {JSON.stringify(serverResponse, null, 2)}
-                        </pre>
-                    </div>
-                )}
 
                 <div className="form-buttons">
                     <button 

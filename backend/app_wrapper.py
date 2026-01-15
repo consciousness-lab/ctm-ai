@@ -33,7 +33,10 @@ class FlaskAppWrapper:
         # Check for example paths first (from load-example endpoint)
         example_image = getattr(self.state, 'example_image_path', None)
         example_audio = getattr(self.state, 'example_audio_path', None)
-
+        
+        print(f"[DEBUG] example_image: {example_image}")
+        print(f"[DEBUG] example_audio: {example_audio}")
+        
         # Use example paths if available, otherwise use uploaded files
         if example_image or example_audio:
             image_path = example_image
@@ -403,16 +406,7 @@ class FlaskAppWrapper:
                     **input_params,
                 )
 
-            # 重置状态准备下一轮迭代
-            self.state.chunks = []
-            self.state.node_details.clear()
-            self.state.node_parents.clear()
-            self.state.node_gists.clear()
-
-            # 重新初始化处理器节点详情
-            for processor in self.ctm.processor_graph.nodes:
-                self.state.node_details[processor.name] = processor.name
-
+            # 注意：不在这里重置状态，等 fuse_processor 完成后再重置
             return jsonify({'message': 'Processors updated'})
 
         @self.app.route('/api/fuse-gist', methods=['POST'])
@@ -428,13 +422,18 @@ class FlaskAppWrapper:
             input_params = self._get_input_params()
 
             # 调用 fuse_processor，传递正确的参数
+            print(f"[DEBUG fuse-gist] chunks: {len(self.state.chunks) if self.state.chunks else 0}, query: {bool(self.state.query)}")
             if self.state.chunks and self.state.query:
+                print("[DEBUG fuse-gist] Calling fuse_processor...")
                 self.state.chunks = ChunkProcessor.fuse_chunks(
                     ctm_instance=self.ctm,
                     chunks=self.state.chunks,
                     query=self.state.query,
                     **input_params,
                 )
+                print("[DEBUG fuse-gist] fuse_processor completed")
+            else:
+                print("[DEBUG fuse-gist] SKIPPED - chunks or query is empty!")
 
             for update in updates:
                 fused_node_id = update.get('fused_node_id', '')
@@ -451,6 +450,16 @@ class FlaskAppWrapper:
                     if fused_chunk:
                         self.state.node_details[fused_node_id] = fused_chunk
                         self.state.node_parents[fused_node_id] = source_nodes
+
+            # 重置状态准备下一轮迭代（从 update-processors 移到这里）
+            self.state.chunks = []
+            self.state.node_details.clear()
+            self.state.node_parents.clear()
+            self.state.node_gists.clear()
+
+            # 重新初始化处理器节点详情
+            for processor in self.ctm.processor_graph.nodes:
+                self.state.node_details[processor.name] = processor.name
 
             return jsonify({'message': 'Fused gists processed', 'updates': updates})
 

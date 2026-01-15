@@ -68,8 +68,12 @@ class BaseProcessor(object):
                 f'[{self.name}] Missing required environment variables: {missing_vars}'
             )
 
-    def add_fuse_history(self, question: str, answer: str) -> None:
-        self.fuse_history.append({'additional_question': question, 'answer': answer})
+    def add_fuse_history(
+        self, question: str, answer: str, processor_name: str = ''
+    ) -> None:
+        self.fuse_history.append(
+            {'additional_question': question, 'answer': answer, 'processor_name': processor_name}
+        )
 
     def add_all_context_history(
         self, query: str, answer: str, additional_question: str
@@ -195,8 +199,8 @@ class BaseProcessor(object):
             messages=executor_messages,
             default_additional_question='Would you like me to explain any specific aspects in more detail?',
         )
-        if is_fuse:
-            self.add_fuse_history(clean_query, executor_output['response'])
+        if executor_output.get('response') is None:
+            return None
         self.add_all_context_history(
             clean_query,
             executor_output['response'],

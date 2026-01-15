@@ -94,9 +94,6 @@ class MathProcessor(BaseProcessor):
         executor_output = {'response': '', 'additional_question': ''}
         executor_output['response'] = wolfram_response
 
-        if is_fuse:
-            self.add_fuse_history(clean_query, executor_output['response'])
-
         additional_content = self._generate_additional_info(
             query=clean_query, response=executor_output['response']
         )

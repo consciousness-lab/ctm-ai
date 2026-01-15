@@ -8,8 +8,12 @@ function formatProcessorLabel(processorId) {
 export function addProcessorNodes(kVal, processorNames) {
     const nodes = [];
     const count = processorNames && processorNames.length > 0 ? processorNames.length : kVal;
-    const spacing = Math.min(100, 800 / (count + 1));
-    const startX = 400 - ((count - 1) * spacing) / 2;
+    
+    // 节点宽度 100px，最小间距 110px 确保不重叠
+    const minSpacing = 110;
+    const spacing = minSpacing;
+    const totalWidth = (count - 1) * spacing;
+    const startX = 400 - totalWidth / 2;
     const startY = 500;
 
     const processorCounts = {};
@@ -44,6 +48,12 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
   const validProcessors = new Set(processorNames || []);
   const addedEdges = new Set(); // Track added edges to avoid duplicates
   
+  // Create index map for consistent left-to-right ordering
+  const positionIndex = {};
+  (processorNames || []).forEach((name, idx) => {
+    positionIndex[name] = idx;
+  });
+  
   console.log('Valid processors:', processorNames);
   console.log('Neighborhoods:', neighborhoods);
 
@@ -55,14 +65,22 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
     }
 
     connectedProcessors.forEach(targetId => {
+      // Skip self-loops (processor connecting to itself)
+      if (processorId === targetId) {
+          return;
+      }
+
       // Skip if target processor is not in the valid list
       if (!validProcessors.has(targetId)) {
           console.warn(`Skipping edge to invalid processor: ${targetId} (from ${processorId})`);
           return;
       }
 
-      // Create a canonical edge id (smaller id first) to avoid duplicates
-      const edgeKey = [processorId, targetId].sort().join('-');
+      // Sort by position index to ensure consistent left-to-right direction
+      // This makes all edges curve in the same direction
+      const pair = [processorId, targetId];
+      pair.sort((a, b) => (positionIndex[a] ?? 0) - (positionIndex[b] ?? 0));
+      const edgeKey = pair.join('-');
       
       // Skip if this edge already exists
       if (addedEdges.has(edgeKey)) {
@@ -70,11 +88,12 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
       }
       addedEdges.add(edgeKey);
 
+
       edges.push({
         data: {
           id: edgeKey,
-          source: processorId,
-          target: targetId,
+          source: pair[0],  // 左边的节点作为 source
+          target: pair[1],  // 右边的节点作为 target
         },
         classes: 'processor-edge'
       });
@@ -88,7 +107,7 @@ export const addProcessorEdges = (neighborhoods, processorNames) => {
 // Fused nodes - directly connected from processors (simplified from gist + fused)
 export function addFusedNodes(kVal) {
     const nodes = [];
-    const spacing = 100;
+    const spacing = 110; // 与 processor nodes 保持一致
     const startX = 400 - ((kVal - 1) * spacing) / 2;
     const yPosition = 350;
 
@@ -155,7 +174,7 @@ function getLayerStartId(k, layerIndex) {
 
 export function addUptreeNodes(kVal, layerIndex) {
     const nodes = [];
-    const horizontalSpacing = 100;
+    const horizontalSpacing = 110; // 与其他层保持一致
     const verticalSpacing = 120; // Vertical gap between layers
     
     const counts = getLayerNodeCounts(kVal);

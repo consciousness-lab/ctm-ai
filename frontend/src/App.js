@@ -54,7 +54,12 @@ const App = () => {
         'SearchProcessor',
         'CodeProcessor',
         'AudioProcessor',
-        'VideoProcessor'
+        'VideoProcessor',
+        'FinanceProcessor',
+        'GeoDBProcessor',
+        'TwitterProcessor',
+        'WeatherProcessor',
+        'YouTubeProcessor'
     ]);
     const [nodeDetailJSX, setNodeDetailJSX] = useState(null);
     const [k, setK] = useState(0);
@@ -93,8 +98,7 @@ const App = () => {
         };
 
         switch (currentStep) {
-            case PHASES.OUTPUT_GIST:
-            case PHASES.FUSE_GIST: {
+            case PHASES.OUTPUT_GIST: {
                 // Combined: create fused nodes with edges directly from processors
                 const nodes = addFusedNodes(k).nodes;
                 const edges = addFusedEdges(k, processorNames, neighborhoods);
@@ -210,9 +214,8 @@ const App = () => {
         // New flow: output gist → up-tree → generate → down-tree → update → fuse → back to output gist
         switch (currentStep) {
             case PHASES.OUTPUT_GIST:
-            case PHASES.FUSE_GIST:
                 // Combined: Output gist + Fuse gist in one step
-                setDisplayPhase(PHASES.FUSE_GIST);
+                setDisplayPhase(PHASES.OUTPUT_GIST);
                 await handleOutputGistStep(stepProps);
                 modifyGraph(newTimestep);
                 setCurrentStep(PHASES.UPTREE);
@@ -368,8 +371,7 @@ const App = () => {
                     const info = data.processor_info;
                     const linkedCount = info.linked_processors?.length || 0;
                     const memoryCount = (info.memory?.fuse_history?.length || 0) + 
-                                       (info.memory?.winner_answer?.length || 0) +
-                                       (info.memory?.all_context_history?.length || 0);
+                                       (info.memory?.winner_answer?.length || 0);
 
                     const processorJSX = (
                         <div className="processor-details">
@@ -396,13 +398,30 @@ const App = () => {
 
                             <div className="detail-section">
                                 <p className="detail-label">Memory ({memoryCount} entries):</p>
-                                {info.memory?.all_context_history?.length > 0 ? (
+                                
+                                {memoryCount > 0 ? (
                                     <div className="memory-list">
-                                        {info.memory.all_context_history.slice(-3).map((item, idx) => (
-                                            <div key={idx} className="memory-item">
-                                                <p><strong>Q:</strong> {item.query?.substring(0, 100)}...</p>
-                                                <p><strong>A:</strong> {item.answer?.substring(0, 100)}...</p>
-                                            </div>
+                                        {info.memory?.fuse_history?.map((item, idx) => (
+                                            <details key={`fuse-${idx}`} className="memory-item-expandable">
+                                                <summary className="memory-summary">
+                                                    {item.additional_question?.substring(0, 50)}{item.additional_question?.length > 50 ? '...' : ''}
+                                                </summary>
+                                                <div className="memory-content">
+                                                    <p><strong>Q:</strong> {item.additional_question}</p>
+                                                    <p><strong>A:</strong> {item.answer}</p>
+                                                </div>
+                                            </details>
+                                        ))}
+                                        {info.memory?.winner_answer?.map((item, idx) => (
+                                            <details key={`winner-${idx}`} className="memory-item-expandable">
+                                                <summary className="memory-summary">
+                                                    🏆 {item.answer?.substring(0, 50)}{item.answer?.length > 50 ? '...' : ''}
+                                                </summary>
+                                                <div className="memory-content">
+                                                    <p><strong>From:</strong> {item.processor_name}</p>
+                                                    <p><strong>Answer:</strong> {item.answer}</p>
+                                                </div>
+                                            </details>
                                         ))}
                                     </div>
                                 ) : (
@@ -441,9 +460,6 @@ const App = () => {
                 const finalJSX = (
                     <div>
                         <h3>Node Details:</h3>
-                        {nodeTimestep !== undefined && (
-                            <p className="node-timestep"><strong>Timestep:</strong> {nodeTimestep}</p>
-                        )}
                         {nodeSelfLines}
 
                         {parentLines ? parentLines : <p>No parent details available.</p>}

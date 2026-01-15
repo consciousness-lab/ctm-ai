@@ -36,7 +36,7 @@ class AudioProcessor(BaseProcessor):
         self._init_info(*args, **kwargs)
         audio_path = kwargs.get('audio_path')
         if not audio_path:
-            return [{'role': 'assistant', 'content': ''}]
+            return None
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f'Audio file not found: {audio_path}')
         try:
