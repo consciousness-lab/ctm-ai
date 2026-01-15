@@ -1,18 +1,185 @@
-import requests
+"""
+LiteLLM + MCP 直接调用版本
+给一个 prompt，返回结果，完事
+"""
 
-url = 'https://zillow-com1.p.rapidapi.com/propertyByPolygon'
+import asyncio
+import json
+import os
+from typing import Optional, List, Dict, Any
 
-querystring = {
-    'polygon': '-118.50394248962402 34.02926010734425, -118.5084056854248 34.02926010734425, -118.51286888122559 34.028691046671696, -118.51527214050293 34.02570341552858, -118.51321220397949 34.02257340341831, -118.51750373840332 34.0215774662657, -118.51681709289551 34.017878168811684, -118.51286888122559 34.016455319170184, -118.51080894470215 34.013324966013194, -118.50789070129395 34.010621386310234, -118.50411415100098 34.008629219864694, -118.49982261657715 34.008486920473, -118.49570274353027 34.007063913440916, -118.4919261932373 34.00891381793271, -118.48849296569824 34.01119056813859, -118.4860897064209 34.014463289606894, -118.48471641540527 34.018020452464164, -118.48042488098145 34.01858958468914, -118.4780216217041 34.0215774662657, -118.47939491271973 34.0249920592766, -118.47681999206543 34.02797971546417, -118.47493171691895 34.03125178964367, -118.4721851348877 34.034381481654364, -118.47733497619629 34.035377268536706, -118.48231315612793 34.035377268536706, -118.48677635192871 34.035377268536706, -118.49141120910645 34.03495050416125, -118.49604606628418 34.034096968969656, -118.49621772766113 34.03054047990366, -118.50033760070801 34.02926010734425, -118.50239753723145 34.032532132148006, -118.50394248962402 34.02926010734425',
-    'status_type': 'ForSale',
-    'home_type': 'Houses',
-}
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+import litellm
 
-headers = {
-    'x-rapidapi-key': '',
-    'x-rapidapi-host': 'zillow-com1.p.rapidapi.com',
-}
 
-response = requests.get(url, headers=headers, params=querystring)
+class TwitterMCPAgent:
+    """简单的 Twitter MCP Agent"""
 
-print(response.json())
+    def __init__(self, model: str = 'gpt-4o-mini'):
+        self.model = model
+        self.session: Optional[ClientSession] = None
+        self.tools: List[Dict] = []
+
+        self.system_prompt = """你是一个 Twitter/X 数据分析助手。
+使用工具获取数据，然后用中文简洁地总结关键信息。"""
+
+    async def __aenter__(self):
+        """连接 MCP"""
+        server_params = StdioServerParameters(
+            command='npx',
+            args=[
+                'mcp-remote',
+                'https://mcp.rapidapi.com',
+                '--header',
+                'x-api-host: twitter241.p.rapidapi.com',
+                '--header',
+                'x-api-key: e8164c5895msh0c84e9103a0cd26p19ff47jsn4b0706614d59',
+            ],
+        )
+
+        self._streams_context = stdio_client(server_params)
+        streams = await self._streams_context.__aenter__()
+
+        self._session_context = ClientSession(*streams)
+        self.session = await self._session_context.__aenter__()
+
+        await self.session.initialize()
+
+        tools_response = await self.session.list_tools()
+        self.tools = tools_response.tools
+
+        return self
+
+    async def __aexit__(self, *args):
+        """断开连接"""
+        if self.session:
+            await self._session_context.__aexit__(*args)
+            await self._streams_context.__aexit__(*args)
+
+    def _get_tools_for_llm(self) -> List[Dict]:
+        """转换工具格式"""
+        return [
+            {
+                'type': 'function',
+                'function': {
+                    'name': tool.name,
+                    'description': tool.description,
+                    'parameters': getattr(
+                        tool, 'inputSchema', {'type': 'object', 'properties': {}}
+                    ),
+                },
+            }
+            for tool in self.tools
+        ]
+
+    async def _call_tool(self, name: str, args: Dict) -> str:
+        """调用 MCP 工具"""
+        result = await self.session.call_tool(name, args)
+        if result.content:
+            return '\n'.join(
+                item.text if hasattr(item, 'text') else str(item)
+                for item in result.content
+            )
+        return ''
+
+    async def run(self, prompt: str) -> str:
+        """
+        执行 prompt，返回结果
+
+        Args:
+            prompt: 用户的问题/指令
+
+        Returns:
+            LLM 的回复
+        """
+        messages = [
+            {'role': 'system', 'content': self.system_prompt},
+            {'role': 'user', 'content': prompt},
+        ]
+        tools = self._get_tools_for_llm()
+
+        # 调用 LLM
+        response = await litellm.acompletion(
+            model=self.model, messages=messages, tools=tools, tool_choice='auto'
+        )
+
+        assistant_message = response.choices[0].message
+
+        # 处理工具调用
+        while assistant_message.tool_calls:
+            messages.append(
+                {
+                    'role': 'assistant',
+                    'content': assistant_message.content,
+                    'tool_calls': [
+                        {
+                            'id': tc.id,
+                            'type': 'function',
+                            'function': {
+                                'name': tc.function.name,
+                                'arguments': tc.function.arguments,
+                            },
+                        }
+                        for tc in assistant_message.tool_calls
+                    ],
+                }
+            )
+
+            # 执行工具
+            for tc in assistant_message.tool_calls:
+                result = await self._call_tool(
+                    tc.function.name, json.loads(tc.function.arguments)
+                )
+                messages.append(
+                    {'role': 'tool', 'tool_call_id': tc.id, 'content': result[:10000]}
+                )
+
+            # 再次调用 LLM
+            response = await litellm.acompletion(
+                model=self.model, messages=messages, tools=tools, tool_choice='auto'
+            )
+            assistant_message = response.choices[0].message
+
+        return assistant_message.content or ''
+
+
+# ==================== 直接调用函数 ====================
+
+
+async def query(prompt: str, model: str = 'gpt-4o-mini') -> str:
+    """
+    一行代码调用
+
+    Example:
+        result = await query("搜索 MrBeast 的最新推文")
+    """
+    async with TwitterMCPAgent(model=model) as agent:
+        return await agent.run(prompt)
+
+
+def query_sync(prompt: str, model: str = 'gpt-4o-mini') -> str:
+    """
+    同步版本
+
+    Example:
+        result = query_sync("搜索 MrBeast 的最新推文")
+    """
+    return asyncio.run(query(prompt, model))
+
+
+# ==================== 直接运行 ====================
+
+if __name__ == '__main__':
+    # 设置你的 prompt
+    PROMPT = '搜索 MrBeast 的最新推文，总结他最近在聊什么'
+
+    # 设置模型 (可选)
+    MODEL = os.environ.get('LLM_MODEL', 'gpt-4o-mini')
+
+    print(f'Prompt: {PROMPT}')
+    print(f'Model: {MODEL}')
+    print('-' * 50)
+
+    result = query_sync(PROMPT, MODEL)
+    print(result)
