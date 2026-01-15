@@ -33,10 +33,10 @@ class FlaskAppWrapper:
         # Check for example paths first (from load-example endpoint)
         example_image = getattr(self.state, 'example_image_path', None)
         example_audio = getattr(self.state, 'example_audio_path', None)
-        
-        print(f"[DEBUG] example_image: {example_image}")
-        print(f"[DEBUG] example_audio: {example_audio}")
-        
+
+        print(f'[DEBUG] example_image: {example_image}')
+        print(f'[DEBUG] example_audio: {example_audio}')
+
         # Use example paths if available, otherwise use uploaded files
         if example_image or example_audio:
             image_path = example_image
@@ -422,18 +422,20 @@ class FlaskAppWrapper:
             input_params = self._get_input_params()
 
             # 调用 fuse_processor，传递正确的参数
-            print(f"[DEBUG fuse-gist] chunks: {len(self.state.chunks) if self.state.chunks else 0}, query: {bool(self.state.query)}")
+            print(
+                f'[DEBUG fuse-gist] chunks: {len(self.state.chunks) if self.state.chunks else 0}, query: {bool(self.state.query)}'
+            )
             if self.state.chunks and self.state.query:
-                print("[DEBUG fuse-gist] Calling fuse_processor...")
+                print('[DEBUG fuse-gist] Calling fuse_processor...')
                 self.state.chunks = ChunkProcessor.fuse_chunks(
                     ctm_instance=self.ctm,
                     chunks=self.state.chunks,
                     query=self.state.query,
                     **input_params,
                 )
-                print("[DEBUG fuse-gist] fuse_processor completed")
+                print('[DEBUG fuse-gist] fuse_processor completed')
             else:
-                print("[DEBUG fuse-gist] SKIPPED - chunks or query is empty!")
+                print('[DEBUG fuse-gist] SKIPPED - chunks or query is empty!')
 
             for update in updates:
                 fused_node_id = update.get('fused_node_id', '')
