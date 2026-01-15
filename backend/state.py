@@ -23,6 +23,9 @@ class AppState:
         }
         # 存储输入参数，用于后续的fuse_processor和link_form调用
         self.input_params: Dict[str, Any] = {}
+        # Example file paths (from load-example endpoint)
+        self.example_image_path: Optional[str] = None
+        self.example_audio_path: Optional[str] = None
 
     def get_input_params(self) -> Dict[str, Any]:
         """获取当前的输入参数字典"""

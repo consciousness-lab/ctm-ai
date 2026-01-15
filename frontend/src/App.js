@@ -70,12 +70,24 @@ const App = () => {
     const [neighborhoods, setNeighborhoods] = useState(null);
     const [uploadKey, setUploadKey] = useState(Date.now());
     const [cyInstance, setCyInstance] = useState(null);
+    const [timestep, setTimestep] = useState(0);
 
-    const modifyGraph = () => {
+    const modifyGraph = (currentTimestep) => {
+        // Add timestep to node data (not label)
+        const addTimestepToNodes = (nodes) => {
+            return nodes.map(node => ({
+                ...node,
+                data: {
+                    ...node.data,
+                    timestep: currentTimestep
+                }
+            }));
+        };
+
         const updateElementsForPhase = (newElements) => {
             setElements((prevElements) => [
                 ...prevElements,
-                ...newElements.nodes,
+                ...addTimestepToNodes(newElements.nodes),
                 ...newElements.edges,
             ]);
         };
@@ -141,37 +153,35 @@ const App = () => {
             }
 
             case PHASES.UPDATE: {
-                // Reset to only processor nodes (remove fused/uptree nodes)
-                const processorNodes = elements.filter((element) => {
-                    return element.data && 
-                           element.data.id && 
-                           !element.data.source &&
-                           processorNames.includes(element.data.id);
-                });
-                setElements(processorNodes);
+                // Reset to only processor nodes and fetch new edges from link_form
+                // link_form is called in handleUpdateStep, so we need to fetch new neighborhoods
+                const updateWithLinks = async () => {
+                    const newNeighborhoods = await fetchProcessorNeighborhoods();
+                    setNeighborhoods(newNeighborhoods);
+                    
+                    setElements((prevElements) => {
+                        const processorNodes = prevElements.filter((element) => {
+                            return element.data && 
+                                   element.data.id && 
+                                   !element.data.source &&
+                                   processorNames.includes(element.data.id);
+                        });
+
+                        if (newNeighborhoods) {
+                            const newEdges = addProcessorEdges(newNeighborhoods, processorNames);
+                            return [...processorNodes, ...newEdges];
+                        } else {
+                            return processorNodes;
+                        }
+                    });
+                };
+                updateWithLinks();
                 break;
             }
 
             case PHASES.FUSE: {
-                // Fetch updated neighborhoods and add processor edges
-                const updateWithFuse = async () => {
-                    const processorNodes = elements.filter((element) => {
-                        return element.data && 
-                               element.data.id && 
-                               !element.data.source &&
-                               processorNames.includes(element.data.id);
-                    });
-
-                    const newNeighborhoods = await fetchProcessorNeighborhoods();
-                    setNeighborhoods(newNeighborhoods);
-                    if (newNeighborhoods) {
-                        const newEdges = addProcessorEdges(newNeighborhoods, processorNames);
-                        setElements([...processorNodes, ...newEdges]);
-                    } else {
-                        setElements(processorNodes);
-                    }
-                };
-                updateWithFuse();
+                // FUSE stage: just refresh the view (edges already shown in UPDATE)
+                // Keep processor nodes and edges as-is, no changes needed
                 break;
             }
 
@@ -183,6 +193,10 @@ const App = () => {
 
 
     const handleStep = async() => {
+        // Increment timestep at the beginning of each step
+        const newTimestep = timestep + 1;
+        setTimestep(newTimestep);
+
         const stepProps = {
             k,
             processorNames,
@@ -192,7 +206,7 @@ const App = () => {
             setDisplayPhase,
         };
 
-        console.log('Current step:', currentStep);
+        console.log('Current step:', currentStep, 'Timestep:', newTimestep);
         // New flow: output gist → up-tree → generate → down-tree → update → fuse → back to output gist
         switch (currentStep) {
             case PHASES.OUTPUT_GIST:
@@ -200,15 +214,14 @@ const App = () => {
                 // Combined: Output gist + Fuse gist in one step
                 setDisplayPhase(PHASES.FUSE_GIST);
                 await handleOutputGistStep(stepProps);
-                await handleFuseGistStep(stepProps);
-                modifyGraph();
+                modifyGraph(newTimestep);
                 setCurrentStep(PHASES.UPTREE);
                 break;
 
             case PHASES.UPTREE:
                 setDisplayPhase(PHASES.UPTREE);
                 await handleUptreeStep(stepProps);
-                modifyGraph();
+                modifyGraph(newTimestep);
 
                 // Check if we've completed all uptree layers
                 const totalUptreeLayers = calculateTotalUptreeLayers(k);
@@ -223,28 +236,28 @@ const App = () => {
             case PHASES.GENERATE:
                 setDisplayPhase(PHASES.GENERATE);
                 await handleGenerateStep(stepProps);
-                modifyGraph();
+                modifyGraph(newTimestep);
                 setCurrentStep(PHASES.DOWNTREE);
                 break;
 
             case PHASES.DOWNTREE:
                 setDisplayPhase(PHASES.DOWNTREE);
                 await handleDowntreeStep(stepProps);
-                modifyGraph();
+                modifyGraph(newTimestep);
                 setCurrentStep(PHASES.UPDATE);
                 break;
 
             case PHASES.UPDATE:
                 setDisplayPhase(PHASES.UPDATE);
                 await handleUpdateStep(stepProps);
-                modifyGraph();
+                modifyGraph(newTimestep);
                 setCurrentStep(PHASES.FUSE);
                 break;
 
             case PHASES.FUSE:
                 setDisplayPhase(PHASES.FUSE);
                 await handleFuseStep(stepProps);
-                modifyGraph();
+                modifyGraph(newTimestep);
                 setCurrentStep(PHASES.OUTPUT_GIST);
                 break;
 
@@ -316,6 +329,7 @@ const App = () => {
         setK(0);
         setNeighborhoods(null);
         setCyInstance(null);
+        setTimestep(0);
 
         setUploadKey(Date.now());
     };
@@ -336,6 +350,10 @@ const App = () => {
             setNodeDetailJSX(null);
             return;
         }
+
+        // Get timestep from elements
+        const selectedElement = elements.find(el => el.data && el.data.id === selectedNode);
+        const nodeTimestep = selectedElement?.data?.timestep;
 
         fetch(`${BASE_URL}/nodes/${selectedNode}`)
             .then((response) => response.json())
@@ -423,6 +441,9 @@ const App = () => {
                 const finalJSX = (
                     <div>
                         <h3>Node Details:</h3>
+                        {nodeTimestep !== undefined && (
+                            <p className="node-timestep"><strong>Timestep:</strong> {nodeTimestep}</p>
+                        )}
                         {nodeSelfLines}
 
                         {parentLines ? parentLines : <p>No parent details available.</p>}
@@ -435,7 +456,7 @@ const App = () => {
                 console.error('Error fetching node details:', error);
                 setNodeDetailJSX(<div>Error loading node details.</div>);
             });
-    }, [selectedNode]);
+    }, [selectedNode, elements]);
 
 
 
@@ -608,6 +629,7 @@ const App = () => {
             <div className="panel-card">
               <h2 className="panel-title">Current Status</h2>
               <div className="status-content">
+                <p><strong>Timestep:</strong> {timestep}</p>
                 <p><strong>Current Phase:</strong> {displayPhase}</p>
                 {currentStep === PHASES.UPTREE && (
                   <p><strong>Uptree Step:</strong> {uptreeStep} of {calculateTotalUptreeLayers(k)}</p>

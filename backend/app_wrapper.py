@@ -29,49 +29,60 @@ class FlaskAppWrapper:
 
     def _get_input_params(self) -> Dict[str, Any]:
         """获取当前的输入参数，用于传递给CTM核心方法"""
-        image_filename = (
-            self.state.saved_files['images'][0]
-            if self.state.saved_files['images']
-            else None
-        )
-        image_path = (
-            os.path.join(self.app.config['UPLOAD_FOLDER'], 'images', image_filename)
-            if image_filename
-            else None
-        )
+        # Check for example paths first (from load-example endpoint)
+        example_image = getattr(self.state, 'example_image_path', None)
+        example_audio = getattr(self.state, 'example_audio_path', None)
+        
+        # Use example paths if available, otherwise use uploaded files
+        if example_image or example_audio:
+            image_path = example_image
+            audio_path = example_audio
+            video_path = None
+            video_frames_path = None
+        else:
+            image_filename = (
+                self.state.saved_files['images'][0]
+                if self.state.saved_files['images']
+                else None
+            )
+            image_path = (
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'images', image_filename)
+                if image_filename
+                else None
+            )
 
-        audio_filename = (
-            self.state.saved_files['audios'][0]
-            if self.state.saved_files['audios']
-            else None
-        )
-        audio_path = (
-            os.path.join(self.app.config['UPLOAD_FOLDER'], 'audios', audio_filename)
-            if audio_filename
-            else None
-        )
+            audio_filename = (
+                self.state.saved_files['audios'][0]
+                if self.state.saved_files['audios']
+                else None
+            )
+            audio_path = (
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'audios', audio_filename)
+                if audio_filename
+                else None
+            )
 
-        video_filename = (
-            self.state.saved_files['videos'][0]
-            if self.state.saved_files['videos']
-            else None
-        )
-        video_path = (
-            os.path.join(self.app.config['UPLOAD_FOLDER'], 'videos', video_filename)
-            if video_filename
-            else None
-        )
+            video_filename = (
+                self.state.saved_files['videos'][0]
+                if self.state.saved_files['videos']
+                else None
+            )
+            video_path = (
+                os.path.join(self.app.config['UPLOAD_FOLDER'], 'videos', video_filename)
+                if video_filename
+                else None
+            )
 
-        video_frames_path = (
-            [
-                os.path.join(
-                    self.app.config['UPLOAD_FOLDER'], 'video_frames', frame_filename
-                )
-                for frame_filename in self.state.saved_files['video_frames']
-            ]
-            if self.state.saved_files['video_frames']
-            else None
-        )
+            video_frames_path = (
+                [
+                    os.path.join(
+                        self.app.config['UPLOAD_FOLDER'], 'video_frames', frame_filename
+                    )
+                    for frame_filename in self.state.saved_files['video_frames']
+                ]
+                if self.state.saved_files['video_frames']
+                else None
+            )
 
         return {
             'text': self.state.text,
@@ -89,6 +100,9 @@ class FlaskAppWrapper:
         @self.app.route('/api/refresh', methods=['POST'])
         def handle_refresh() -> ResponseType:
             self.state.reset()
+            # Clear example paths
+            self.state.example_image_path = None
+            self.state.example_audio_path = None
             return jsonify({'message': 'Server data refreshed'})
 
         @self.app.route('/api/nodes/<node_id>')
@@ -241,42 +255,48 @@ class FlaskAppWrapper:
                     else:
                         self.state.node_parents[node_id].extend(parent_nodes)
 
-            # 使用 ChunkManager 进行两两竞争
+            # 使用 ChunkManager 进行两两竞争或单个继承
             for node_id, parents_ids in self.state.node_parents.items():
-                if node_id not in self.state.node_details and len(parents_ids) >= 2:
-                    parent_id1, parent_id2 = parents_ids[0], parents_ids[1]
-                    
-                    has_p1 = parent_id1 in self.state.node_details
-                    has_p2 = parent_id2 in self.state.node_details
+                if node_id not in self.state.node_details and parents_ids:
+                    if len(parents_ids) == 1:
+                        # 只有一个 parent，直接继承
+                        parent_id = parents_ids[0]
+                        if parent_id in self.state.node_details:
+                            self.state.node_details[node_id] = self.state.node_details[parent_id]
+                    elif len(parents_ids) >= 2:
+                        parent_id1, parent_id2 = parents_ids[0], parents_ids[1]
+                        
+                        has_p1 = parent_id1 in self.state.node_details
+                        has_p2 = parent_id2 in self.state.node_details
 
-                    if has_p1 and has_p2:
-                        parent_chunk1 = self.state.node_details[parent_id1]
-                        parent_chunk2 = self.state.node_details[parent_id2]
+                        if has_p1 and has_p2:
+                            parent_chunk1 = self.state.node_details[parent_id1]
+                            parent_chunk2 = self.state.node_details[parent_id2]
 
-                        # 只有当两个都是 Chunk 时才进行竞争
-                        if isinstance(parent_chunk1, Chunk) and isinstance(
-                            parent_chunk2, Chunk
-                        ):
-                            self.state.node_details[node_id] = (
-                                ChunkProcessor.compete_chunks(
-                                    self.chunk_manager,
-                                    parent_chunk1,
-                                    parent_chunk2,
+                            # 只有当两个都是 Chunk 时才进行竞争
+                            if isinstance(parent_chunk1, Chunk) and isinstance(
+                                parent_chunk2, Chunk
+                            ):
+                                self.state.node_details[node_id] = (
+                                    ChunkProcessor.compete_chunks(
+                                        self.chunk_manager,
+                                        parent_chunk1,
+                                        parent_chunk2,
+                                    )
                                 )
-                            )
-                        else:
-                            # 如果不是 Chunk，取第一个有效的
-                            self.state.node_details[node_id] = (
-                                parent_chunk1
-                                if isinstance(parent_chunk1, Chunk)
-                                else parent_chunk2
-                            )
-                    elif has_p1:
-                        # 只有一个父节点有值，直接晋级
-                        self.state.node_details[node_id] = self.state.node_details[parent_id1]
-                    elif has_p2:
-                        # 只有一个父节点有值，直接晋级
-                        self.state.node_details[node_id] = self.state.node_details[parent_id2]
+                            else:
+                                # 如果不是 Chunk，取第一个有效的
+                                self.state.node_details[node_id] = (
+                                    parent_chunk1
+                                    if isinstance(parent_chunk1, Chunk)
+                                    else parent_chunk2
+                                )
+                        elif has_p1:
+                            # 只有一个父节点有值，直接晋级
+                            self.state.node_details[node_id] = self.state.node_details[parent_id1]
+                        elif has_p2:
+                            # 只有一个父节点有值，直接晋级
+                            self.state.node_details[node_id] = self.state.node_details[parent_id2]
 
             return jsonify(
                 {
@@ -535,6 +555,54 @@ class FlaskAppWrapper:
                 return response, 200
             except FileNotFoundError:
                 return jsonify({'error': 'File not found'}), 404
+
+        @self.app.route('/assets/<path:filename>')
+        def serve_assets(filename: str) -> ResponseType:
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            assets_path = os.path.join(project_root, 'assets')
+            return send_from_directory(assets_path, filename)
+
+        @self.app.route('/api/load-example', methods=['POST'])
+        def load_example_files() -> Tuple[ResponseType, int]:
+            """
+            Load example files using relative paths directly from assets folder.
+            """
+            data = request.get_json() or {}
+            image_path: str = data.get('image_path', '') or ''
+            audio_path: str = data.get('audio_path', '') or ''
+            query: str = data.get('query', '')
+            text: str = data.get('text', '')
+            
+            # Set example query and text from request (or use defaults)
+            if query:
+                self.state.query = query
+            if text:
+                self.state.text = text
+            
+            # Get the project root directory (parent of backend)
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            
+            # Store the absolute paths directly in state for use by _get_input_params
+            self.state.example_image_path = os.path.join(project_root, image_path) if image_path else None
+            self.state.example_audio_path = os.path.join(project_root, audio_path) if audio_path else None
+            
+            # Check if files exist
+            files_found = {
+                'image': self.state.example_image_path and os.path.exists(self.state.example_image_path),
+                'audio': self.state.example_audio_path and os.path.exists(self.state.example_audio_path),
+            }
+            
+            return jsonify({
+                'success': True,
+                'message': 'Example loaded successfully',
+                'query': self.state.query,
+                'text': self.state.text,
+                'files_found': files_found,
+                'image_url': f'/assets/{os.path.basename(image_path)}' if image_path else None,
+                'audio_url': f'/assets/{os.path.basename(audio_path)}' if audio_path else None,
+                'image_path': self.state.example_image_path,
+                'audio_path': self.state.example_audio_path,
+            }), 200
 
     def run(self, **kwargs: Any) -> None:
         # Create upload directories
