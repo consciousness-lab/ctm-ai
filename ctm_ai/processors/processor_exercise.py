@@ -33,7 +33,7 @@ Additional Information: {history_info}
 class ExerciseMCPAgent:
     """ExerciseDB MCP Agent for finding exercises by body part, muscle, or equipment"""
 
-    def __init__(self, rapidapi_key: str, model: str = "gpt-4o-mini"):
+    def __init__(self, rapidapi_key: str, model: str = 'gpt-4o-mini'):
         self.model = model
         self.rapidapi_key = rapidapi_key
         self.session: Optional[ClientSession] = None
@@ -50,14 +50,14 @@ When listing multiple exercises, organize them clearly by category."""
 
     async def __aenter__(self):
         server_params = StdioServerParameters(
-            command="npx",
+            command='npx',
             args=[
-                "mcp-remote",
-                "https://mcp.rapidapi.com",
-                "--header",
-                "x-api-host: exercisedb.p.rapidapi.com",
-                "--header",
-                f"x-api-key: {self.rapidapi_key}",
+                'mcp-remote',
+                'https://mcp.rapidapi.com',
+                '--header',
+                'x-api-host: exercisedb.p.rapidapi.com',
+                '--header',
+                f'x-api-key: {self.rapidapi_key}',
             ],
         )
 
@@ -82,12 +82,12 @@ When listing multiple exercises, organize them clearly by category."""
     def _get_tools_for_llm(self) -> List[Dict]:
         return [
             {
-                "type": "function",
-                "function": {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": getattr(
-                        tool, "inputSchema", {"type": "object", "properties": {}}
+                'type': 'function',
+                'function': {
+                    'name': tool.name,
+                    'description': tool.description,
+                    'parameters': getattr(
+                        tool, 'inputSchema', {'type': 'object', 'properties': {}}
                     ),
                 },
             }
@@ -97,23 +97,23 @@ When listing multiple exercises, organize them clearly by category."""
     async def _call_tool(self, name: str, args: Dict) -> str:
         result = await self.session.call_tool(name, args)
         if result.content:
-            return "\n".join(
-                item.text if hasattr(item, "text") else str(item)
+            return '\n'.join(
+                item.text if hasattr(item, 'text') else str(item)
                 for item in result.content
             )
-        return ""
+        return ''
 
     async def run(self, prompt: str) -> str:
         from litellm import acompletion
 
         messages = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": prompt},
+            {'role': 'system', 'content': self.system_prompt},
+            {'role': 'user', 'content': prompt},
         ]
         tools = self._get_tools_for_llm()
 
         response = await acompletion(
-            model=self.model, messages=messages, tools=tools, tool_choice="auto"
+            model=self.model, messages=messages, tools=tools, tool_choice='auto'
         )
 
         assistant_message = response.choices[0].message
@@ -121,15 +121,15 @@ When listing multiple exercises, organize them clearly by category."""
         while assistant_message.tool_calls:
             messages.append(
                 {
-                    "role": "assistant",
-                    "content": assistant_message.content,
-                    "tool_calls": [
+                    'role': 'assistant',
+                    'content': assistant_message.content,
+                    'tool_calls': [
                         {
-                            "id": tc.id,
-                            "type": "function",
-                            "function": {
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments,
+                            'id': tc.id,
+                            'type': 'function',
+                            'function': {
+                                'name': tc.function.name,
+                                'arguments': tc.function.arguments,
                             },
                         }
                         for tc in assistant_message.tool_calls
@@ -142,41 +142,41 @@ When listing multiple exercises, organize them clearly by category."""
                     tc.function.name, json.loads(tc.function.arguments)
                 )
                 messages.append(
-                    {"role": "tool", "tool_call_id": tc.id, "content": result[:10000]}
+                    {'role': 'tool', 'tool_call_id': tc.id, 'content': result[:10000]}
                 )
 
             response = await acompletion(
-                model=self.model, messages=messages, tools=tools, tool_choice="auto"
+                model=self.model, messages=messages, tools=tools, tool_choice='auto'
             )
             assistant_message = response.choices[0].message
 
-        return assistant_message.content or ""
+        return assistant_message.content or ''
 
 
-@BaseProcessor.register_processor("exercise_processor")
+@BaseProcessor.register_processor('exercise_processor')
 class ExerciseProcessor(BaseProcessor):
-    REQUIRED_KEYS = ["RAPIDAPI_KEY"]
+    REQUIRED_KEYS = ['RAPIDAPI_KEY']
 
     def __init__(
         self, name: str, group_name: Optional[str] = None, *args: Any, **kwargs: Any
     ) -> None:
         super().__init__(name, group_name, *args, **kwargs)
-        self.rapidapi_key = os.environ.get("RAPIDAPI_KEY", "")
-        self.exercise_model = kwargs.get("exercise_model", "gpt-4o-mini")
+        self.rapidapi_key = os.environ.get('RAPIDAPI_KEY', '')
+        self.exercise_model = kwargs.get('exercise_model', 'gpt-4o-mini')
 
     def _build_history_info(self) -> str:
         """Build history information string from fuse_history and winner_answer."""
-        content = ""
+        content = ''
 
         if len(self.fuse_history) > 0:
-            content += "\nExtra information from other processors:\n"
+            content += '\nExtra information from other processors:\n'
             for i, item in enumerate(self.fuse_history, 1):
                 content += (
                     f'{i}. {item.get("processor_name", "unknown")}: {item["answer"]}\n'
                 )
 
         if len(self.winner_answer) > 0:
-            content += "\nPrevious answers to the query:\n"
+            content += '\nPrevious answers to the query:\n'
             for i, item in enumerate(self.winner_answer, 1):
                 content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
@@ -188,18 +188,18 @@ class ExerciseProcessor(BaseProcessor):
 
         prompt = EXERCISE_QUERY_PROMPT.format(
             query=query,
-            history_info=history_info if history_info else "None",
+            history_info=history_info if history_info else 'None',
         )
 
         response = completion(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{'role': 'user', 'content': prompt}],
             max_tokens=100,
             temperature=0.3,
         )
 
         exercise_query = response.choices[0].message.content.strip()
-        exercise_query = exercise_query.strip("\"'")
+        exercise_query = exercise_query.strip('"\'')
         return exercise_query[:50]
 
     async def _call_exercise_mcp_async(self, exercise_query: str) -> str:
@@ -210,7 +210,7 @@ class ExerciseProcessor(BaseProcessor):
             ) as agent:
                 return await agent.run(exercise_query)
         except Exception as e:
-            return f"Error calling Exercise MCP: {str(e)}"
+            return f'Error calling Exercise MCP: {str(e)}'
 
     def _call_exercise_mcp(self, exercise_query: str) -> str:
         """Sync wrapper for async MCP call."""
@@ -233,12 +233,12 @@ class ExerciseProcessor(BaseProcessor):
         prompt = EXERCISE_ADDITIONAL_PROMPT.format(
             query=query,
             response=response[:2000],
-            history_info=history_info if history_info else "None",
+            history_info=history_info if history_info else 'None',
         )
 
         llm_response = completion(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{'role': 'user', 'content': prompt}],
             max_tokens=200,
             temperature=0.3,
         )
@@ -263,13 +263,13 @@ class ExerciseProcessor(BaseProcessor):
 
         # Step 1: LLM Call - Generate exercise search query
         exercise_query = self._generate_exercise_query(query)
-        print(f"[ExerciseProcessor] Generated search query: {exercise_query}")
+        print(f'[ExerciseProcessor] Generated search query: {exercise_query}')
 
         # Step 2: MCP Call - Get exercise data
         exercise_response = self._call_exercise_mcp(exercise_query)
 
-        if exercise_response.startswith("Error calling Exercise MCP:"):
-            print(f"[ExerciseProcessor] {exercise_response}")
+        if exercise_response.startswith('Error calling Exercise MCP:'):
+            print(f'[ExerciseProcessor] {exercise_response}')
             return None
 
         # Step 3: LLM Call - Generate additional question
@@ -278,17 +278,17 @@ class ExerciseProcessor(BaseProcessor):
         )
 
         executor_output = {
-            "response": exercise_response,
-            "additional_question": additional_question,
+            'response': exercise_response,
+            'additional_question': additional_question,
         }
 
         if is_fuse:
-            self.add_fuse_history(clean_query, executor_output["response"])
+            self.add_fuse_history(clean_query, executor_output['response'])
 
         self.add_all_context_history(
             clean_query,
-            executor_output["response"],
-            executor_output["additional_question"],
+            executor_output['response'],
+            executor_output['additional_question'],
         )
 
         scorer = BaseScorer(*args, **kwargs)

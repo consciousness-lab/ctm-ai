@@ -33,7 +33,7 @@ Additional Information: {history_info}
 class NewsMCPAgent:
     """Real-Time News Data MCP Agent for news articles retrieval from Google News"""
 
-    def __init__(self, rapidapi_key: str, model: str = "gpt-4o-mini"):
+    def __init__(self, rapidapi_key: str, model: str = 'gpt-4o-mini'):
         self.model = model
         self.rapidapi_key = rapidapi_key
         self.session: Optional[ClientSession] = None
@@ -44,14 +44,14 @@ You can get top headlines, topic-specific news, local news, and search results f
 
     async def __aenter__(self):
         server_params = StdioServerParameters(
-            command="npx",
+            command='npx',
             args=[
-                "mcp-remote",
-                "https://mcp.rapidapi.com",
-                "--header",
-                "x-api-host: real-time-news-data.p.rapidapi.com",
-                "--header",
-                f"x-api-key: {self.rapidapi_key}",
+                'mcp-remote',
+                'https://mcp.rapidapi.com',
+                '--header',
+                'x-api-host: real-time-news-data.p.rapidapi.com',
+                '--header',
+                f'x-api-key: {self.rapidapi_key}',
             ],
         )
 
@@ -76,12 +76,12 @@ You can get top headlines, topic-specific news, local news, and search results f
     def _get_tools_for_llm(self) -> List[Dict]:
         return [
             {
-                "type": "function",
-                "function": {
-                    "name": tool.name,
-                    "description": tool.description,
-                    "parameters": getattr(
-                        tool, "inputSchema", {"type": "object", "properties": {}}
+                'type': 'function',
+                'function': {
+                    'name': tool.name,
+                    'description': tool.description,
+                    'parameters': getattr(
+                        tool, 'inputSchema', {'type': 'object', 'properties': {}}
                     ),
                 },
             }
@@ -91,23 +91,23 @@ You can get top headlines, topic-specific news, local news, and search results f
     async def _call_tool(self, name: str, args: Dict) -> str:
         result = await self.session.call_tool(name, args)
         if result.content:
-            return "\n".join(
-                item.text if hasattr(item, "text") else str(item)
+            return '\n'.join(
+                item.text if hasattr(item, 'text') else str(item)
                 for item in result.content
             )
-        return ""
+        return ''
 
     async def run(self, prompt: str) -> str:
         from litellm import acompletion
 
         messages = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": prompt},
+            {'role': 'system', 'content': self.system_prompt},
+            {'role': 'user', 'content': prompt},
         ]
         tools = self._get_tools_for_llm()
 
         response = await acompletion(
-            model=self.model, messages=messages, tools=tools, tool_choice="auto"
+            model=self.model, messages=messages, tools=tools, tool_choice='auto'
         )
 
         assistant_message = response.choices[0].message
@@ -115,15 +115,15 @@ You can get top headlines, topic-specific news, local news, and search results f
         while assistant_message.tool_calls:
             messages.append(
                 {
-                    "role": "assistant",
-                    "content": assistant_message.content,
-                    "tool_calls": [
+                    'role': 'assistant',
+                    'content': assistant_message.content,
+                    'tool_calls': [
                         {
-                            "id": tc.id,
-                            "type": "function",
-                            "function": {
-                                "name": tc.function.name,
-                                "arguments": tc.function.arguments,
+                            'id': tc.id,
+                            'type': 'function',
+                            'function': {
+                                'name': tc.function.name,
+                                'arguments': tc.function.arguments,
                             },
                         }
                         for tc in assistant_message.tool_calls
@@ -136,41 +136,41 @@ You can get top headlines, topic-specific news, local news, and search results f
                     tc.function.name, json.loads(tc.function.arguments)
                 )
                 messages.append(
-                    {"role": "tool", "tool_call_id": tc.id, "content": result[:10000]}
+                    {'role': 'tool', 'tool_call_id': tc.id, 'content': result[:10000]}
                 )
 
             response = await acompletion(
-                model=self.model, messages=messages, tools=tools, tool_choice="auto"
+                model=self.model, messages=messages, tools=tools, tool_choice='auto'
             )
             assistant_message = response.choices[0].message
 
-        return assistant_message.content or ""
+        return assistant_message.content or ''
 
 
-@BaseProcessor.register_processor("news_processor")
+@BaseProcessor.register_processor('news_processor')
 class NewsProcessor(BaseProcessor):
-    REQUIRED_KEYS = ["RAPIDAPI_KEY"]
+    REQUIRED_KEYS = ['RAPIDAPI_KEY']
 
     def __init__(
         self, name: str, group_name: Optional[str] = None, *args: Any, **kwargs: Any
     ) -> None:
         super().__init__(name, group_name, *args, **kwargs)
-        self.rapidapi_key = os.environ.get("RAPIDAPI_KEY", "")
-        self.news_model = kwargs.get("news_model", "gpt-4o-mini")
+        self.rapidapi_key = os.environ.get('RAPIDAPI_KEY', '')
+        self.news_model = kwargs.get('news_model', 'gpt-4o-mini')
 
     def _build_history_info(self) -> str:
         """Build history information string from fuse_history and winner_answer."""
-        content = ""
+        content = ''
 
         if len(self.fuse_history) > 0:
-            content += "\nExtra information from other processors:\n"
+            content += '\nExtra information from other processors:\n'
             for i, item in enumerate(self.fuse_history, 1):
                 content += (
                     f'{i}. {item.get("processor_name", "unknown")}: {item["answer"]}\n'
                 )
 
         if len(self.winner_answer) > 0:
-            content += "\nPrevious answers to the query:\n"
+            content += '\nPrevious answers to the query:\n'
             for i, item in enumerate(self.winner_answer, 1):
                 content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
@@ -182,18 +182,18 @@ class NewsProcessor(BaseProcessor):
 
         prompt = NEWS_QUERY_PROMPT.format(
             query=query,
-            history_info=history_info if history_info else "None",
+            history_info=history_info if history_info else 'None',
         )
 
         response = completion(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{'role': 'user', 'content': prompt}],
             max_tokens=100,
             temperature=0.3,
         )
 
         news_query = response.choices[0].message.content.strip()
-        news_query = news_query.strip("\"'")
+        news_query = news_query.strip('"\'')
         return news_query[:50]
 
     async def _call_news_mcp_async(self, news_query: str) -> str:
@@ -204,7 +204,7 @@ class NewsProcessor(BaseProcessor):
             ) as agent:
                 return await agent.run(news_query)
         except Exception as e:
-            return f"Error calling News MCP: {str(e)}"
+            return f'Error calling News MCP: {str(e)}'
 
     def _call_news_mcp(self, news_query: str) -> str:
         """Sync wrapper for async MCP call."""
@@ -225,12 +225,12 @@ class NewsProcessor(BaseProcessor):
         prompt = NEWS_ADDITIONAL_PROMPT.format(
             query=query,
             response=response[:2000],
-            history_info=history_info if history_info else "None",
+            history_info=history_info if history_info else 'None',
         )
 
         llm_response = completion(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{'role': 'user', 'content': prompt}],
             max_tokens=200,
             temperature=0.3,
         )
@@ -255,13 +255,13 @@ class NewsProcessor(BaseProcessor):
 
         # Step 1: LLM Call - Generate news search query
         news_query = self._generate_news_query(query)
-        print(f"[NewsProcessor] Generated search query: {news_query}")
+        print(f'[NewsProcessor] Generated search query: {news_query}')
 
         # Step 2: MCP Call - Get news data
         news_response = self._call_news_mcp(news_query)
 
-        if news_response.startswith("Error calling News MCP:"):
-            print(f"[NewsProcessor] {news_response}")
+        if news_response.startswith('Error calling News MCP:'):
+            print(f'[NewsProcessor] {news_response}')
             return None
 
         # Step 3: LLM Call - Generate additional question
@@ -270,17 +270,17 @@ class NewsProcessor(BaseProcessor):
         )
 
         executor_output = {
-            "response": news_response,
-            "additional_question": additional_question,
+            'response': news_response,
+            'additional_question': additional_question,
         }
 
         if is_fuse:
-            self.add_fuse_history(clean_query, executor_output["response"])
+            self.add_fuse_history(clean_query, executor_output['response'])
 
         self.add_all_context_history(
             clean_query,
-            executor_output["response"],
-            executor_output["additional_question"],
+            executor_output['response'],
+            executor_output['additional_question'],
         )
 
         scorer = BaseScorer(*args, **kwargs)

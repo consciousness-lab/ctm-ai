@@ -32,7 +32,7 @@ class TwitterMCPAgent:
                 'mcp-remote',
                 'https://mcp.rapidapi.com',
                 '--header',
-                'x-api-host: twitter241.p.rapidapi.com',
+                'x-api-host: spotify-downloader9.p.rapidapi.com',
                 '--header',
                 'x-api-key: e8164c5895msh0c84e9103a0cd26p19ff47jsn4b0706614d59',
             ],
@@ -172,7 +172,7 @@ def query_sync(prompt: str, model: str = 'gpt-4o-mini') -> str:
 
 if __name__ == '__main__':
     # 设置你的 prompt
-    PROMPT = '搜索 MrBeast 的最新推文，总结他最近在聊什么'
+    PROMPT = 'songs made by John Williams'
 
     # 设置模型 (可选)
     MODEL = os.environ.get('LLM_MODEL', 'gpt-4o-mini')
