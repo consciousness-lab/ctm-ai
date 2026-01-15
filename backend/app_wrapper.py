@@ -272,10 +272,12 @@ class FlaskAppWrapper:
                         # 只有一个 parent，直接继承
                         parent_id = parents_ids[0]
                         if parent_id in self.state.node_details:
-                            self.state.node_details[node_id] = self.state.node_details[parent_id]
+                            self.state.node_details[node_id] = self.state.node_details[
+                                parent_id
+                            ]
                     elif len(parents_ids) >= 2:
                         parent_id1, parent_id2 = parents_ids[0], parents_ids[1]
-                        
+
                         has_p1 = parent_id1 in self.state.node_details
                         has_p2 = parent_id2 in self.state.node_details
 
@@ -303,10 +305,14 @@ class FlaskAppWrapper:
                                 )
                         elif has_p1:
                             # 只有一个父节点有值，直接晋级
-                            self.state.node_details[node_id] = self.state.node_details[parent_id1]
+                            self.state.node_details[node_id] = self.state.node_details[
+                                parent_id1
+                            ]
                         elif has_p2:
                             # 只有一个父节点有值，直接晋级
-                            self.state.node_details[node_id] = self.state.node_details[parent_id2]
+                            self.state.node_details[node_id] = self.state.node_details[
+                                parent_id2
+                            ]
 
             return jsonify(
                 {
@@ -591,37 +597,49 @@ class FlaskAppWrapper:
             audio_path: str = data.get('audio_path', '') or ''
             query: str = data.get('query', '')
             text: str = data.get('text', '')
-            
+
             # Set example query and text from request (or use defaults)
             if query:
                 self.state.query = query
             if text:
                 self.state.text = text
-            
+
             # Get the project root directory (parent of backend)
             project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            
+
             # Store the absolute paths directly in state for use by _get_input_params
-            self.state.example_image_path = os.path.join(project_root, image_path) if image_path else None
-            self.state.example_audio_path = os.path.join(project_root, audio_path) if audio_path else None
-            
+            self.state.example_image_path = (
+                os.path.join(project_root, image_path) if image_path else None
+            )
+            self.state.example_audio_path = (
+                os.path.join(project_root, audio_path) if audio_path else None
+            )
+
             # Check if files exist
             files_found = {
-                'image': self.state.example_image_path and os.path.exists(self.state.example_image_path),
-                'audio': self.state.example_audio_path and os.path.exists(self.state.example_audio_path),
+                'image': self.state.example_image_path
+                and os.path.exists(self.state.example_image_path),
+                'audio': self.state.example_audio_path
+                and os.path.exists(self.state.example_audio_path),
             }
-            
-            return jsonify({
-                'success': True,
-                'message': 'Example loaded successfully',
-                'query': self.state.query,
-                'text': self.state.text,
-                'files_found': files_found,
-                'image_url': f'/assets/{os.path.basename(image_path)}' if image_path else None,
-                'audio_url': f'/assets/{os.path.basename(audio_path)}' if audio_path else None,
-                'image_path': self.state.example_image_path,
-                'audio_path': self.state.example_audio_path,
-            }), 200
+
+            return jsonify(
+                {
+                    'success': True,
+                    'message': 'Example loaded successfully',
+                    'query': self.state.query,
+                    'text': self.state.text,
+                    'files_found': files_found,
+                    'image_url': f'/assets/{os.path.basename(image_path)}'
+                    if image_path
+                    else None,
+                    'audio_url': f'/assets/{os.path.basename(audio_path)}'
+                    if audio_path
+                    else None,
+                    'image_path': self.state.example_image_path,
+                    'audio_path': self.state.example_audio_path,
+                }
+            ), 200
 
     def run(self, **kwargs: Any) -> None:
         # Create upload directories

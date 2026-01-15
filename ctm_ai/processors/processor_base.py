@@ -92,25 +92,16 @@ class BaseProcessor(object):
         **kwargs: Any,
     ) -> str:
         content = f'Query: {query}\n'
-
-        # if text:
-        #     content += f"Text: {text}\n"
-
-        # if video_frames_path:
-        #     content += f"Note: The input contains {len(video_frames_path)} video frames. Please integrate visual information across these frames for a comprehensive analysis.\n"
-
-        # Add additional context from fuse operations (passed explicitly)
         if additional_context:
             content += (
                 f'\nAdditional context from other processors:\n{additional_context}\n'
             )
 
-        # Add fuse history and winner answers (only when not in fuse mode to avoid duplication)
         if not is_fuse:
             if len(self.fuse_history) > 0:
                 content += '\nThere are extra information from other processors:\n'
                 for i, item in enumerate(self.fuse_history, 1):
-                    content += f'{i}. {item["answer"]}\n'
+                    content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
             if len(self.winner_answer) > 0:
                 content += '\nThere are some previous answers to the same query, think further based on this answer:\n'

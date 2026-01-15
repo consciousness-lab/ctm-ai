@@ -82,6 +82,8 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
             }
         ]
 
+        import re
+
         try:
             responses = completion(
                 messages=relevance_prompt,
@@ -93,8 +95,6 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
 
             score_text = responses.choices[0].message.content.strip()
 
-            import re
-
             number_match = re.search(r'(\d+\.?\d*)', score_text)
             if number_match:
                 score = float(number_match.group(1))
@@ -103,7 +103,13 @@ Respond with only a number between 0.0 and 1.0 (e.g., 0.85).""",
 
             return max(0.0, min(1.0, score))
 
-        except (ValueError, TypeError, IndexError):
+        except (ValueError, TypeError, IndexError) as e:
+            print(
+                f'[Relevance Score Parse Error] {e}, raw response: {score_text if "score_text" in dir() else "N/A"}'
+            )
+            raise ValueError('Error getting relevance score')
+        except Exception as e:
+            print(f'[Relevance Score API Error] {type(e).__name__}: {e}')
             raise ValueError('Error getting relevance score')
 
     def _ask_statistical_relevance(self, query: str, gist: str) -> float:

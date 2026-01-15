@@ -17,7 +17,7 @@ class LanguageProcessor(BaseProcessor):
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
         self._init_info(*args, **kwargs)
-        text = kwargs.get('text')
+        text = kwargs.get('text', ' ')
         language_message = {
             'role': 'user',
             'content': f'The relevant text of the query is is: {text}\n Query: {query}\n',
