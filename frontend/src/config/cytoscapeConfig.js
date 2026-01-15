@@ -99,25 +99,18 @@ export const stylesheet = [
     }
   },
   {
-    // Processor-to-processor edges - dashed and more curved downwards
+    // Processor-to-processor edges - dashed, curved downwards, undirected (no arrow)
     selector: 'edge.processor-edge',
     style: {
       'line-style': 'dashed',
       'line-dash-pattern': [6, 3],
       'line-color': 'rgba(118, 75, 162, 0.8)',
-      'target-arrow-color': 'rgba(118, 75, 162, 0.8)',
+      'target-arrow-shape': 'none',  // 无向边，不显示箭头
       width: 2.5,
       'curve-style': 'unbundled-bezier',
-      'source-endpoint': '90deg', // 强制从底部中心出发
-      'target-endpoint': '90deg', // 强制连入底部中心
-      'control-point-distances': (ele) => {
-        const sourcePos = ele.source().position();
-        const targetPos = ele.target().position();
-        const dx = targetPos.x - sourcePos.x;
-        // 增加弧度倍数，并加入基础偏移量
-        // dx > 0 表示目标在右边，垂下的弧度需要 dx * 0.8
-        return [dx * 0.8]; 
-      },
+      'source-endpoint': '180deg',   // 从节点底部中心出发 (180deg = 下方，6点钟方向)
+      'target-endpoint': '180deg',   // 连入节点底部中心
+      'control-point-distances': [80],  // 控制点向下偏移，形成向下的弧线
       'control-point-weights': [0.5],
     }
   },

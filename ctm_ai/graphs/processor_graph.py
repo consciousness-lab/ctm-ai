@@ -40,8 +40,11 @@ class ProcessorGraph:
             processor1_name in self.adjacency_list
             and processor2_name in self.adjacency_list
         ):
-            self.adjacency_list[processor1_name].append(processor2_name)
-            self.adjacency_list[processor2_name].append(processor1_name)
+            # Avoid duplicates
+            if processor2_name not in self.adjacency_list[processor1_name]:
+                self.adjacency_list[processor1_name].append(processor2_name)
+            if processor1_name not in self.adjacency_list[processor2_name]:
+                self.adjacency_list[processor2_name].append(processor1_name)
 
     def remove_link(self, processor1_name: str, processor2_name: str) -> None:
         if (
