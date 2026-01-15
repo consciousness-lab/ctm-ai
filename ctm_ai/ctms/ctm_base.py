@@ -224,10 +224,13 @@ class BaseConsciousTuringMachine(ABC):
     @logging_func_with_count
     def fuse_processor(
         self, chunks: List[Chunk], query: str, **input_kwargs
-    ) -> List[Chunk]:
+    ) -> None:
+        """
+        Fuse 过程：让相邻的 processor 互相交换信息。
+        A 用自己的 additional_question 问邻居 B，B 的回答存入 A 的 fuse_history。
+        下一轮 ask_processors 时会自动使用这些新信息。
+        """
         proc_map = {p.name: p for p in self.processor_graph.nodes}
-        dirty: set[str] = set()  # processors whose memory got new info
-        additional_context_parts = []  # collect additional context separately
 
         for chunk in chunks:
             q = chunk.additional_question
@@ -236,67 +239,17 @@ class BaseConsciousTuringMachine(ABC):
 
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
                 if nbr == chunk.processor_name:
-                    proc_map[nbr].update(chunk)
-                    dirty.add(nbr)
-                    continue
+                    continue  # 不问自己
 
+                # A 用自己的 additional_question 问邻居 B
                 answer_chunk = proc_map[nbr].ask(
                     query=q,
                     is_fuse=True,
                     **input_kwargs,
                 )
                 if answer_chunk is not None:
-                    additional_context_parts.append(f'[{nbr}]: {answer_chunk.gist}')
-                dirty.add(chunk.processor_name)
-
-        # Pass additional context as a separate parameter, not polluting text
-        if additional_context_parts:
-            input_kwargs['additional_context'] = '\n'.join(additional_context_parts)
-
-        for idx, chunk in enumerate(chunks):
-            if chunk.processor_name in dirty:
-                p = proc_map[chunk.processor_name]
-                chunks[idx] = p.ask(query=query, **input_kwargs)
-        return chunks
-
-    @logging_func_with_count
-    def fuse_with_prev_chunks(
-        self, prev_chunks: List[Chunk], query: str, **input_kwargs
-    ) -> List[Chunk]:
-        proc_map = {p.name: p for p in self.processor_graph.nodes}
-        dirty: set[str] = set()
-        additional_context_parts = []  # collect additional context separately
-
-        for chunk in prev_chunks:
-            q = chunk.additional_question
-            if not q:
-                continue
-
-            for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
-                if nbr == chunk.processor_name:
-                    proc_map[nbr].update(chunk)
-                    dirty.add(nbr)
-                    continue
-
-                answer_chunk = proc_map[nbr].ask(
-                    query=q,
-                    is_fuse=True,
-                    **input_kwargs,
-                )
-                if answer_chunk is not None:
-                    additional_context_parts.append(f'[{nbr}]: {answer_chunk.gist}')
-                dirty.add(chunk.processor_name)
-
-        # Pass additional context as a separate parameter, not polluting text
-        if additional_context_parts:
-            input_kwargs['additional_context'] = '\n'.join(additional_context_parts)
-
-        chunks = list(prev_chunks)
-        for idx, chunk in enumerate(chunks):
-            if chunk.processor_name in dirty:
-                p = proc_map[chunk.processor_name]
-                chunks[idx] = p.ask(query=query, **input_kwargs)
-        return chunks
+                    # A 把 B 的回答存入 A 的 fuse_history
+                    proc_map[chunk.processor_name].add_fuse_history(q, answer_chunk.gist)
 
     @abstractmethod
     def forward(

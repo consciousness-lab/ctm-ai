@@ -28,7 +28,7 @@ class VisionProcessor(BaseProcessor):
         image_path = kwargs.get('image_path')
         image = kwargs.get('image')
         if not image_path and not image:
-            return [{'role': 'assistant', 'content': ''}]
+            return None
         if image_path:
             base64_image = load_image(image_path)
         if image:

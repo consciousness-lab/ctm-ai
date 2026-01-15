@@ -204,8 +204,8 @@ class BaseProcessor(object):
             messages=executor_messages,
             default_additional_question='Would you like me to explain any specific aspects in more detail?',
         )
-        if is_fuse:
-            self.add_fuse_history(clean_query, executor_output['response'])
+        if executor_output.get('response') is None:
+            return None
         self.add_all_context_history(
             clean_query,
             executor_output['response'],
@@ -213,7 +213,7 @@ class BaseProcessor(object):
         )
 
         scorer = BaseScorer(*args, **kwargs)
-        scorer_output = scorer.ask(query=query, messages=executor_output)
+        scorer_output = scorer.ask(query=clean_query, messages=executor_output)
         additional_question = executor_output['additional_question'] or ''
 
         chunk = self.merge_outputs_into_chunk(

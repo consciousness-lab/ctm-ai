@@ -26,7 +26,7 @@ class VideoProcessor(BaseProcessor):
     ) -> List[Dict[str, Any]]:
         video_frames_path = kwargs.get('video_frames_path')
         if not video_frames_path:
-            return [{'role': 'assistant', 'content': ''}]
+            return None
         if not all(os.path.exists(path) for path in video_frames_path):
             missing_files = [
                 path for path in video_frames_path if not os.path.exists(path)

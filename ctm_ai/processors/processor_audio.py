@@ -35,9 +35,8 @@ class AudioProcessor(BaseProcessor):
     ) -> List[Dict[str, Any]]:
         self._init_info(*args, **kwargs)
         audio_path = kwargs.get('audio_path')
-        print(f"[DEBUG AudioProcessor] audio_path received: {audio_path}")
         if not audio_path:
-            return [{'role': 'assistant', 'content': ''}]
+            return None
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f'Audio file not found: {audio_path}')
         try:

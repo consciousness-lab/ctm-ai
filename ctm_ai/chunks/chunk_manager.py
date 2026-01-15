@@ -75,3 +75,11 @@ class ChunkManager:
         winning_chunk = np.random.choice(self.chunks, p=normalized_weights)
 
         return winning_chunk
+
+    def compete(self, chunk1: Chunk, chunk2: Chunk) -> Chunk:
+        if chunk1.weight > chunk2.weight:
+            return chunk1
+        elif chunk1.weight < chunk2.weight:
+            return chunk2
+        else:
+            return random.choice([chunk1, chunk2])

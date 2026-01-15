@@ -68,8 +68,6 @@ Search for answers about the query: {query}."""
         executor_output = {'response': '', 'additional_question': ''}
         executor_output['response'] = response.text
 
-        if is_fuse:
-            self.add_fuse_history(clean_query, executor_output['response'])
         additional_content = self._generate_additional_info(
             query=clean_query, response=executor_output['response']
         )
@@ -81,6 +79,7 @@ Search for answers about the query: {query}."""
             *args,
             **kwargs,
         )
+        print(additional_content)
         executor_output['additional_question'] = response.choices[0].message.content
 
         self.add_all_context_history(

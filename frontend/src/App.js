@@ -448,9 +448,6 @@ const App = () => {
                 const finalJSX = (
                     <div>
                         <h3>Node Details:</h3>
-                        {nodeTimestep !== undefined && (
-                            <p className="node-timestep"><strong>Timestep:</strong> {nodeTimestep}</p>
-                        )}
                         {nodeSelfLines}
 
                         {parentLines ? parentLines : <p>No parent details available.</p>}
