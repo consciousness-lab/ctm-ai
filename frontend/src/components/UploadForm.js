@@ -32,7 +32,7 @@ const UploadForm = () => {
         },
         paul: {
             name: 'Person Identification',
-            query: 'Who leads this research group mentioned in the image?',
+            query: 'Who leads this research group where its name is mentioned in the image?',
             text: 'The professor is an Assistant Professor at the MIT Media Lab and MIT EECS.',
             imagePath: 'assets/paul_group.png',
             audioPath: null

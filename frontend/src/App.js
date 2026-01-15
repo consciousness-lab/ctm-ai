@@ -59,7 +59,14 @@ const App = () => {
         'GeoDBProcessor',
         'TwitterProcessor',
         'WeatherProcessor',
-        'YouTubeProcessor'
+        'YouTubeProcessor',
+        'APIProcessor',
+        'MathProcessor',
+        'NewsProcessor',
+        'SocialProcessor',
+        'ToolProcessor',
+        'ExerciseProcessor',
+        'MusicProcessor'
     ]);
     const [nodeDetailJSX, setNodeDetailJSX] = useState(null);
     const [k, setK] = useState(0);

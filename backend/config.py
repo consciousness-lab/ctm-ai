@@ -23,4 +23,11 @@ class Config:
         'TwitterProcessor': 'twitter_processor',
         'WeatherProcessor': 'weather_processor',
         'YouTubeProcessor': 'youtube_processor',
+        'APIProcessor': 'api_processor',
+        'MathProcessor': 'math_processor',
+        'NewsProcessor': 'news_processor',
+        'SocialProcessor': 'social_processor',
+        'ToolProcessor': 'tool_processor',
+        'ExerciseProcessor': 'exercise_processor',
+        'MusicProcessor': 'music_processor',
     }

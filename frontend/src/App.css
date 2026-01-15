@@ -604,6 +604,98 @@
     box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
 }
 
+.processor-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(102, 126, 234, 0.5);
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+.processor-btn.selected:hover {
+    background: linear-gradient(135deg, #7b8eef 0%, #8a5bb8 100%);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.processor-icon {
+    margin-right: 4px;
+    font-size: 0.9rem;
+}
+
+/* Processor Tooltip */
+.processor-tooltip {
+    position: fixed;
+    transform: translate(-50%, -100%);
+    margin-top: -12px;
+    background: rgba(20, 20, 40, 0.98);
+    border: 1px solid rgba(102, 126, 234, 0.4);
+    border-radius: 12px;
+    padding: 14px 16px;
+    min-width: 280px;
+    max-width: 350px;
+    z-index: 1000;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(102, 126, 234, 0.2);
+    pointer-events: none;
+    animation: tooltipFadeIn 0.15s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -90%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -100%);
+    }
+}
+
+.processor-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px 8px 0 8px;
+    border-style: solid;
+    border-color: rgba(20, 20, 40, 0.98) transparent transparent transparent;
+}
+
+.tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.tooltip-icon {
+    font-size: 1.3rem;
+}
+
+.tooltip-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #fff;
+}
+
+.tooltip-category {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tooltip-description {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.75);
+}
+
 .selected-processors {
     margin-top: 12px;
     padding: 10px 14px;
