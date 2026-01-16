@@ -7,10 +7,9 @@ import {
     addProcessorEdges,
     addFusedNodes,
     addFusedEdges,
-    addUptreeNodes,
-    addUptreeEdges,
     addFinalNode,
     calculateTotalUptreeLayers,
+    processUptreeWithWinners,
 } from './utils/graphBuilder';
 
 import {
@@ -83,8 +82,17 @@ const App = () => {
     const [uploadKey, setUploadKey] = useState(Date.now());
     const [cyInstance, setCyInstance] = useState(null);
     const [timestep, setTimestep] = useState(0);
+    // Track active nodes for uptree competition (winner's semantic IDs for backend)
+    const [activeNodes, setActiveNodes] = useState([]);
+    // Track graph node IDs for edges (the actual node IDs in the graph)
+    const [graphActiveNodes, setGraphActiveNodes] = useState([]);
+    // Track the final winner node ID for connecting to output
+    const [topWinnerId, setTopWinnerId] = useState(null);
+    // Store competition results for graph updates
+    const [competitionResults, setCompetitionResults] = useState([]);
 
-    const modifyGraph = (currentTimestep) => {
+    // modifyGraph now accepts optional params to avoid React async state issues
+    const modifyGraph = (currentTimestep, params = {}) => {
         // Add timestep to node data (not label)
         const addTimestepToNodes = (nodes) => {
             return nodes.map(node => ({
@@ -118,17 +126,30 @@ const App = () => {
             }
 
             case PHASES.UPTREE: {
-                // uptreeStep starts at 1, corresponds to counts[1] (first uptree layer)
-                const newElements = {
-                    nodes: addUptreeNodes(k, uptreeStep).nodes,
-                    edges: addUptreeEdges(k, uptreeStep).edges,
-                };
-                updateElementsForPhase(newElements);
+                // Use passed competition results (to avoid async state issues)
+                const results = params.competitionResults || competitionResults;
+                if (results && results.length > 0) {
+                    const { nodes, edges } = processUptreeWithWinners(k, uptreeStep, results);
+                    
+                    console.log('UPTREE creating nodes:', nodes);
+                    console.log('UPTREE creating edges:', edges);
+                    
+                    // Add new nodes and edges
+                    const newElements = {
+                        nodes: nodes,
+                        edges: edges,
+                    };
+                    updateElementsForPhase(newElements);
+                } else {
+                    console.warn('No competition results for UPTREE phase');
+                }
                 break;
             }
 
             case PHASES.GENERATE: {
-                const newElements = addFinalNode(k);
+                // Use passed topWinnerId or state value
+                const winnerId = params.topWinnerId || topWinnerId;
+                const newElements = addFinalNode(k, winnerId);
                 updateElementsForPhase(newElements);
                 break;
             }
@@ -220,18 +241,66 @@ const App = () => {
         console.log('Current step:', currentStep, 'Timestep:', newTimestep);
         // New flow: output gist → up-tree → generate → down-tree → update → fuse → back to output gist
         switch (currentStep) {
-            case PHASES.OUTPUT_GIST:
+            case PHASES.OUTPUT_GIST: {
                 // Combined: Output gist + Fuse gist in one step
                 setDisplayPhase(PHASES.OUTPUT_GIST);
                 await handleOutputGistStep(stepProps);
                 modifyGraph(newTimestep);
+                
+                // Initialize active nodes with fused node IDs (n1, n2, ..., nk)
+                const initialActiveNodes = Array.from({ length: k }, (_, i) => `n${i + 1}`);
+                setActiveNodes(initialActiveNodes);
+                setGraphActiveNodes(initialActiveNodes); // Graph nodes start with same IDs
+                setTopWinnerId(null); // Reset top winner
+                setCompetitionResults([]);
+                
                 setCurrentStep(PHASES.UPTREE);
                 break;
+            }
 
-            case PHASES.UPTREE:
+            case PHASES.UPTREE: {
                 setDisplayPhase(PHASES.UPTREE);
-                await handleUptreeStep(stepProps);
-                modifyGraph(newTimestep);
+                
+                console.log('UPTREE step:', uptreeStep, 'activeNodes:', activeNodes, 'graphActiveNodes:', graphActiveNodes);
+                
+                // Pass current active nodes to uptree step (uses semantic IDs for backend)
+                const results = await handleUptreeStep({
+                    ...stepProps,
+                    activeNodes: activeNodes,
+                });
+                
+                console.log('UPTREE results from backend:', results);
+                
+                // Enrich results with graph node IDs for edge creation
+                const enrichedResults = results.map((result, idx) => ({
+                    ...result,
+                    // Use graph node IDs for edge sources
+                    graphParents: [
+                        graphActiveNodes[idx * 2],
+                        graphActiveNodes[idx * 2 + 1]
+                    ].filter(Boolean)
+                }));
+                
+                console.log('UPTREE enrichedResults:', enrichedResults);
+                
+                // Store enriched competition results for graph updates
+                setCompetitionResults(enrichedResults);
+                
+                // Pass enrichedResults directly to modifyGraph (avoid async state issue)
+                modifyGraph(newTimestep, { competitionResults: enrichedResults });
+                
+                // Update semantic active nodes (for next round's backend competition)
+                const newActiveNodes = results.map(r => r.winner);
+                setActiveNodes(newActiveNodes);
+                
+                // Update graph active nodes (for next round's edge creation)
+                const newGraphActiveNodes = results.map((_, idx) => `layer${uptreeStep}_${idx}`);
+                setGraphActiveNodes(newGraphActiveNodes);
+                
+                // If only one winner left, store the winner's original ID for final node
+                if (results.length === 1) {
+                    setTopWinnerId(results[0].winner);
+                }
 
                 // Check if we've completed all uptree layers
                 const totalUptreeLayers = calculateTotalUptreeLayers(k);
@@ -242,6 +311,7 @@ const App = () => {
                     setUptreeStep((prev) => prev + 1);
                 }
                 break;
+            }
 
             case PHASES.GENERATE:
                 setDisplayPhase(PHASES.GENERATE);
@@ -340,6 +410,10 @@ const App = () => {
         setNeighborhoods(null);
         setCyInstance(null);
         setTimestep(0);
+        setActiveNodes([]);
+        setGraphActiveNodes([]);
+        setTopWinnerId(null);
+        setCompetitionResults([]);
 
         setUploadKey(Date.now());
     };
