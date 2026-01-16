@@ -33,10 +33,10 @@ class FlaskAppWrapper:
         # Check for example paths first (from load-example endpoint)
         example_image = getattr(self.state, 'example_image_path', None)
         example_audio = getattr(self.state, 'example_audio_path', None)
-
-        print(f'[DEBUG] example_image: {example_image}')
-        print(f'[DEBUG] example_audio: {example_audio}')
-
+        
+        print(f"[DEBUG] example_image: {example_image}")
+        print(f"[DEBUG] example_audio: {example_audio}")
+        
         # Use example paths if available, otherwise use uploaded files
         if example_image or example_audio:
             image_path = example_image
@@ -251,73 +251,102 @@ class FlaskAppWrapper:
             """
             处理 uptree 步骤：进行上树竞争。
             对应 CTM 核心的 uptree_competition 方法（通过 ChunkManager）。
+            返回每对竞争的赢家节点 ID，用于前端显示继承编号。
             """
             data = request.get_json() or {}
             updates: List[Dict[str, Any]] = data.get('updates', [])
 
+            # Store competition results: maps pair index to winner parent id
+            competition_results: List[Dict[str, Any]] = []
+
+            # Process only the nodes in this request
             for update in updates:
                 node_id = update.get('node_id', '')
                 parent_nodes: List[str] = update.get('parents', [])
 
-                if node_id:
-                    if node_id not in self.state.node_parents:
-                        self.state.node_parents[node_id] = parent_nodes
-                    else:
-                        self.state.node_parents[node_id].extend(parent_nodes)
+                if not node_id:
+                    continue
 
-            # 使用 ChunkManager 进行两两竞争或单个继承
-            for node_id, parents_ids in self.state.node_parents.items():
-                if node_id not in self.state.node_details and parents_ids:
-                    if len(parents_ids) == 1:
-                        # 只有一个 parent，直接继承
-                        parent_id = parents_ids[0]
-                        if parent_id in self.state.node_details:
-                            self.state.node_details[node_id] = self.state.node_details[
-                                parent_id
-                            ]
-                    elif len(parents_ids) >= 2:
-                        parent_id1, parent_id2 = parents_ids[0], parents_ids[1]
+                # Store parents for this node
+                self.state.node_parents[node_id] = parent_nodes
 
-                        has_p1 = parent_id1 in self.state.node_details
-                        has_p2 = parent_id2 in self.state.node_details
+                winner_id = None
+                loser_id = None
 
-                        if has_p1 and has_p2:
-                            parent_chunk1 = self.state.node_details[parent_id1]
-                            parent_chunk2 = self.state.node_details[parent_id2]
+                if len(parent_nodes) == 1:
+                    # Only one parent, directly inherit
+                    parent_id = parent_nodes[0]
+                    if parent_id in self.state.node_details:
+                        self.state.node_details[node_id] = self.state.node_details[
+                            parent_id
+                        ]
+                        winner_id = parent_id
+                elif len(parent_nodes) >= 2:
+                    parent_id1, parent_id2 = parent_nodes[0], parent_nodes[1]
 
-                            # 只有当两个都是 Chunk 时才进行竞争
-                            if isinstance(parent_chunk1, Chunk) and isinstance(
-                                parent_chunk2, Chunk
-                            ):
-                                self.state.node_details[node_id] = (
-                                    ChunkProcessor.compete_chunks(
-                                        self.chunk_manager,
-                                        parent_chunk1,
-                                        parent_chunk2,
-                                    )
-                                )
+                    has_p1 = parent_id1 in self.state.node_details
+                    has_p2 = parent_id2 in self.state.node_details
+
+                    if has_p1 and has_p2:
+                        parent_chunk1 = self.state.node_details[parent_id1]
+                        parent_chunk2 = self.state.node_details[parent_id2]
+
+                        # Only compete if both are Chunks
+                        if isinstance(parent_chunk1, Chunk) and isinstance(
+                            parent_chunk2, Chunk
+                        ):
+                            winning_chunk = ChunkProcessor.compete_chunks(
+                                self.chunk_manager,
+                                parent_chunk1,
+                                parent_chunk2,
+                            )
+                            self.state.node_details[node_id] = winning_chunk
+                            # Determine winner based on which chunk won
+                            if winning_chunk == parent_chunk1:
+                                winner_id = parent_id1
+                                loser_id = parent_id2
                             else:
-                                # 如果不是 Chunk，取第一个有效的
-                                self.state.node_details[node_id] = (
-                                    parent_chunk1
-                                    if isinstance(parent_chunk1, Chunk)
-                                    else parent_chunk2
-                                )
-                        elif has_p1:
-                            # 只有一个父节点有值，直接晋级
-                            self.state.node_details[node_id] = self.state.node_details[
-                                parent_id1
-                            ]
-                        elif has_p2:
-                            # 只有一个父节点有值，直接晋级
-                            self.state.node_details[node_id] = self.state.node_details[
-                                parent_id2
-                            ]
+                                winner_id = parent_id2
+                                loser_id = parent_id1
+                        else:
+                            # If not Chunk, take the first valid one
+                            if isinstance(parent_chunk1, Chunk):
+                                self.state.node_details[node_id] = parent_chunk1
+                                winner_id = parent_id1
+                                loser_id = parent_id2
+                            else:
+                                self.state.node_details[node_id] = parent_chunk2
+                                winner_id = parent_id2
+                                loser_id = parent_id1
+                    elif has_p1:
+                        # Only one parent has value, auto-advance
+                        self.state.node_details[node_id] = self.state.node_details[
+                            parent_id1
+                        ]
+                        winner_id = parent_id1
+                        loser_id = parent_id2
+                    elif has_p2:
+                        # Only one parent has value, auto-advance
+                        self.state.node_details[node_id] = self.state.node_details[
+                            parent_id2
+                        ]
+                        winner_id = parent_id2
+                        loser_id = parent_id1
+
+                # Record competition result
+                if winner_id:
+                    competition_results.append({
+                        'original_node_id': node_id,
+                        'parents': parent_nodes,
+                        'winner': winner_id,
+                        'loser': loser_id,
+                    })
 
             return jsonify(
                 {
                     'message': 'Uptree updates processed',
                     'node_parents': self.state.node_parents,
+                    'competition_results': competition_results,
                 }
             )
 
@@ -422,20 +451,18 @@ class FlaskAppWrapper:
             input_params = self._get_input_params()
 
             # 调用 fuse_processor，传递正确的参数
-            print(
-                f'[DEBUG fuse-gist] chunks: {len(self.state.chunks) if self.state.chunks else 0}, query: {bool(self.state.query)}'
-            )
+            print(f"[DEBUG fuse-gist] chunks: {len(self.state.chunks) if self.state.chunks else 0}, query: {bool(self.state.query)}")
             if self.state.chunks and self.state.query:
-                print('[DEBUG fuse-gist] Calling fuse_processor...')
+                print("[DEBUG fuse-gist] Calling fuse_processor...")
                 self.state.chunks = ChunkProcessor.fuse_chunks(
                     ctm_instance=self.ctm,
                     chunks=self.state.chunks,
                     query=self.state.query,
                     **input_params,
                 )
-                print('[DEBUG fuse-gist] fuse_processor completed')
+                print("[DEBUG fuse-gist] fuse_processor completed")
             else:
-                print('[DEBUG fuse-gist] SKIPPED - chunks or query is empty!')
+                print("[DEBUG fuse-gist] SKIPPED - chunks or query is empty!")
 
             for update in updates:
                 fused_node_id = update.get('fused_node_id', '')

@@ -222,7 +222,9 @@ class BaseConsciousTuringMachine(ABC):
                 )
 
     @logging_func_with_count
-    def fuse_processor(self, chunks: List[Chunk], query: str, **input_kwargs) -> None:
+    def fuse_processor(
+        self, chunks: List[Chunk], query: str, **input_kwargs
+    ) -> None:
         """
         Fuse 过程：让相邻的 processor 互相交换信息。
         A 用自己的 additional_question 问邻居 B，B 的回答存入 A 的 fuse_history。

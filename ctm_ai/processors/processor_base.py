@@ -72,11 +72,7 @@ class BaseProcessor(object):
         self, question: str, answer: str, processor_name: str = ''
     ) -> None:
         self.fuse_history.append(
-            {
-                'additional_question': question,
-                'answer': answer,
-                'processor_name': processor_name,
-            }
+            {'additional_question': question, 'answer': answer, 'processor_name': processor_name}
         )
 
     def add_all_context_history(

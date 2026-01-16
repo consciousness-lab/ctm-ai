@@ -128,23 +128,16 @@ export function addFusedNodes(kVal) {
 export const addFusedEdges = (k, processorNames, neighborhoods) => {
     const edges = [];
 
-    // Create edges from processors to fused nodes based on neighborhoods
+    // Create edges from processors to their corresponding fused nodes only
+    // No extra edges based on processor neighborhoods
     for (let i = 0; i < k; i++) {
-        for (let j = 0; j < k; j++) {
-            const sameIndex = i === j;
-            const processorsConnected = neighborhoods &&
-                neighborhoods[processorNames[i]]?.includes(processorNames[j]);
-
-            if (sameIndex || processorsConnected) {
-                edges.push({
-                    data: {
-                        id: `${processorNames[i]}-n${j+1}`,
-                        source: processorNames[i],
-                        target: `n${j+1}`,
-                    },
-                });
-            }
-        }
+        edges.push({
+            data: {
+                id: `${processorNames[i]}-n${i+1}`,
+                source: processorNames[i],
+                target: `n${i+1}`,
+            },
+        });
     }
 
     return { edges };
@@ -172,10 +165,11 @@ function getLayerStartId(k, layerIndex) {
     return startId;
 }
 
+// Legacy function - creates new node IDs (deprecated)
 export function addUptreeNodes(kVal, layerIndex) {
     const nodes = [];
-    const horizontalSpacing = 110; // 与其他层保持一致
-    const verticalSpacing = 120; // Vertical gap between layers
+    const horizontalSpacing = 110;
+    const verticalSpacing = 120;
     
     const counts = getLayerNodeCounts(kVal);
     const nodesInThisLayer = counts[layerIndex] || 0;
@@ -183,7 +177,6 @@ export function addUptreeNodes(kVal, layerIndex) {
     if (nodesInThisLayer <= 0) return { nodes: [], edges: [] };
 
     const startX = 400 - ((nodesInThisLayer - 1) * horizontalSpacing) / 2;
-    // Fused layer is at y=350, uptree layers go up from y=230
     const yPosition = 230 - ((layerIndex - 1) * verticalSpacing);
 
     const startId = getLayerStartId(kVal, layerIndex);
@@ -199,10 +192,8 @@ export function addUptreeNodes(kVal, layerIndex) {
     return { nodes, edges: [] };
 }
 
-
+// Legacy function - creates edges to new nodes (deprecated)
 export function addUptreeEdges(kVal, layerIndex) {
-    // layerIndex=0 is fused layer (edges created by addFusedEdges)
-    // layerIndex=1+ are uptree layers that need edges from previous layer
     if (layerIndex === 0) return { nodes: [], edges: [] };
     const edges = [];
     
@@ -215,15 +206,10 @@ export function addUptreeEdges(kVal, layerIndex) {
     const currentLayerStartId = getLayerStartId(kVal, layerIndex);
     const prevLayerStartId = getLayerStartId(kVal, layerIndex - 1);
 
-    // Tournament-style pairing: adjacent pairs compete
-    // For 6 nodes: (n1,n2)->n7, (n3,n4)->n8, (n5,n6)->n9
-    // For 3 nodes: (n7,n8)->n10, n9 alone->n11
-    
     let prevIdx = 0;
     for (let i = 0; i < nodesInThisLayer; i++) {
         const currentNode = `n${currentLayerStartId + i}`;
         
-        // First node of the pair
         const node1 = `n${prevLayerStartId + prevIdx}`;
         edges.push({
             data: {
@@ -234,7 +220,6 @@ export function addUptreeEdges(kVal, layerIndex) {
         });
         prevIdx++;
         
-        // Second node of the pair (if exists)
         if (prevIdx < nodesInPrevLayer) {
             const node2 = `n${prevLayerStartId + prevIdx}`;
             edges.push({
@@ -251,37 +236,101 @@ export function addUptreeEdges(kVal, layerIndex) {
     return { nodes: [], edges };
 }
 
+// NEW: Process uptree with winner inheritance
+// competitionResults: array of { winner, loser, parents, graphParents }
+//   - winner/loser: semantic IDs (e.g., "n1", "n2") for backend
+//   - graphParents: actual node IDs in the graph for edge creation
+// Returns: { nodes: [], edges: [] } - creates new nodes at upper layer with winner's label
+export function processUptreeWithWinners(kVal, layerIndex, competitionResults) {
+    const horizontalSpacing = 110;
+    const verticalSpacing = 120;
+    
+    const counts = getLayerNodeCounts(kVal);
+    const nodesInThisLayer = counts[layerIndex] || 0;
+
+    if (nodesInThisLayer <= 0) return { nodes: [], edges: [] };
+
+    const startX = 400 - ((nodesInThisLayer - 1) * horizontalSpacing) / 2;
+    const yPosition = 230 - ((layerIndex - 1) * verticalSpacing);
+
+    const nodes = [];
+    const edges = [];
+
+    // Create new nodes at upper layer with winner's label
+    competitionResults.forEach((result, idx) => {
+        const winnerId = result.winner;  // e.g., "n1" - used for label
+        // Use graphParents if available, otherwise fall back to parents
+        const graphParents = result.graphParents || result.parents || [];
+        const xPos = startX + idx * horizontalSpacing;
+
+        // Create new node at upper layer position
+        // ID is unique (layer_index + position), but label shows winner's name
+        const newNodeId = `layer${layerIndex}_${idx}`;
+        const winnerLabel = winnerId; // Display winner's name as label
+
+        nodes.push({
+            data: { 
+                id: newNodeId, 
+                label: winnerLabel,
+                winnerId: winnerId,  // Store original winner ID for reference
+            },
+            position: { x: xPos, y: yPosition },
+            classes: 'uptree-node'
+        });
+
+        // Create edges from graph parent nodes to this new node
+        graphParents.forEach(parentId => {
+            edges.push({
+                data: {
+                    source: parentId,
+                    target: newNodeId,
+                    id: `e${parentId}-${newNodeId}`,
+                },
+                classes: 'uptree-edge'
+            });
+        });
+    });
+
+    return { nodes, edges };
+}
+
+// Get the node IDs for the next layer's competition
+// Returns array of new node IDs created in this layer
+export function getActiveNodesAfterLayer(layerIndex, competitionResults) {
+    return competitionResults.map((_, idx) => `layer${layerIndex}_${idx}`);
+}
+
 // Calculate total uptree layers needed
 export function calculateTotalUptreeLayers(k) {
     return getLayerNodeCounts(k).length - 1; // exclude fused layer
 }
 
-export function addFinalNode(kVal) {
-    // Calculate the ID of the top node (last node in the uptree)
-    const counts = getLayerNodeCounts(kVal);
-    let topNodeId = 0;
-    for (let i = 0; i < counts.length; i++) {
-        topNodeId += counts[i];
-    }
-    // topNodeId is now the total count, the last node ID is topNodeId
-
+// topWinnerId: the final winner's original ID (e.g., "n1") for label display
+// The edge connects from the last uptree layer node to the output node
+export function addFinalNode(kVal, topWinnerId = null) {
     const totalLayers = calculateTotalUptreeLayers(kVal);
-    // Match the vertical spacing in addUptreeNodes: y = 230 - (layerIndex-1)*120
     const verticalSpacing = 120;
     const topUptreeY = 230 - ((totalLayers - 1) * verticalSpacing);
-    const finalNodeY = topUptreeY - 150; // Gap between top uptree node and final node
+    const finalNodeY = topUptreeY - 150;
+
+    // The last uptree node is at layer (totalLayers), position 0
+    // Its ID is `layer{totalLayers}_0`
+    const lastUptreeNodeId = `layer${totalLayers}_0`;
+    
+    // Display winner's name as label if provided
+    const outputLabel = topWinnerId ? `o (${topWinnerId})` : 'o';
 
     return {
         nodes: [{
-            data: { id: 'o', label: 'o' },
+            data: { id: 'o', label: outputLabel },
             position: { x: 400, y: finalNodeY },
             classes: 'output-node'
         }],
         edges: [{
             data: {
-                source: `n${topNodeId}`,
+                source: lastUptreeNodeId,
                 target: 'o',
-                id: `en${topNodeId}-o`
+                id: `e${lastUptreeNodeId}-o`
             }
         }]
     };

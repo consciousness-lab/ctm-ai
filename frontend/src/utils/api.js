@@ -146,9 +146,9 @@ export const fetchProcessorNeighborhoods = async () => {
   }
 };
 
-// Downtree broadcast
+// Downtree broadcast (uses /reverse endpoint which calls downtree_broadcast)
 export const handleDowntree = async () => {
-  return fetchWithError(`${BASE_URL}/downtree`, {
+  return fetchWithError(`${BASE_URL}/reverse`, {
     method: 'POST',
   });
 };
