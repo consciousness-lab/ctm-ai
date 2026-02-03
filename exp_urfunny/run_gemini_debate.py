@@ -10,25 +10,25 @@ sys.path.append('..')
 
 ROUNDS = 3  # Number of debate rounds (initial + refinements)
 
-# Modality-specific agent prompts - using original balanced prompt style
+# Modality-specific agent prompts for humor detection - using original balanced prompt style
 VIDEO_AGENT_INIT = (
-    "You are a Video Analysis Expert. Analyze the video to determine if the punchline is sarcasm or not.\n"
-    "If you think the visual cues show exaggerated expression or the speaker's manner is not aligned with a sincere delivery, answer 'Yes'.\n"
-    "If you think the visual cues are neutral or show sincere expression, answer 'No'.\n"
+    "You are a Video Analysis Expert. Analyze the video to determine if the punchline is humorous or not.\n"
+    "If you think the visual cues show exaggerated expression or sarcastic manner, answer 'Yes'.\n"
+    "If you think the visual cues are neutral or show common expression, answer 'No'.\n"
     "End your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
 AUDIO_AGENT_INIT = (
-    "You are an Audio Analysis Expert. Analyze the audio to determine if the punchline is sarcasm or not.\n"
-    "If you think the vocal tone shows exaggerated delivery or the real meaning is not aligned with the words, answer 'Yes'.\n"
-    "If you think the vocal tone is neutral or sincere, answer 'No'.\n"
+    "You are an Audio Analysis Expert. Analyze the audio to determine if the punchline is humorous or not.\n"
+    "If you think the vocal tone shows exaggerated delivery or sarcastic meaning, answer 'Yes'.\n"
+    "If you think the vocal tone is neutral or common, answer 'No'.\n"
     "End your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
 TEXT_AGENT_INIT = (
-    "You are a Text Analysis Expert. Analyze the text to determine if the punchline is sarcasm or not.\n"
-    "If you think the text includes exaggerated description or its real meaning is not aligned with the original one, answer 'Yes'.\n"
-    "If you think the text is neutral or its true meaning is not different from its original one, answer 'No'.\n"
+    "You are a Text Analysis Expert. Analyze the text to determine if the punchline is humorous or not.\n"
+    "If you think the text includes exaggerated description or is expressing sarcastic meaning, answer 'Yes'.\n"
+    "If you think the text is neutral or just common meaning, answer 'No'.\n"
     "End your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
@@ -39,7 +39,7 @@ VIDEO_AGENT_REFINE = (
     "- Audio Expert: {audio_answer}\n"
     "- Text Expert: {text_answer}\n\n"
     "Consider their perspectives and re-examine the video evidence.\n"
-    "If the visual cues suggest exaggeration or insincerity, answer 'Yes'. If neutral or sincere, answer 'No'.\n"
+    "If the visual cues suggest exaggeration or sarcasm, answer 'Yes'. If neutral or common, answer 'No'.\n"
     "End your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
@@ -50,7 +50,7 @@ AUDIO_AGENT_REFINE = (
     "- Video Expert: {video_answer}\n"
     "- Text Expert: {text_answer}\n\n"
     "Consider their perspectives and re-examine the audio evidence.\n"
-    "If the vocal tone suggests exaggeration or insincerity, answer 'Yes'. If neutral or sincere, answer 'No'.\n"
+    "If the vocal tone suggests exaggeration or sarcasm, answer 'Yes'. If neutral or common, answer 'No'.\n"
     "End your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
@@ -61,16 +61,16 @@ TEXT_AGENT_REFINE = (
     "- Video Expert: {video_answer}\n"
     "- Audio Expert: {audio_answer}\n\n"
     "Consider their perspectives and re-examine the text evidence.\n"
-    "If the text suggests exaggeration or misaligned meaning, answer 'Yes'. If neutral or straightforward, answer 'No'.\n"
+    "If the text suggests exaggeration or sarcasm, answer 'Yes'. If neutral or common, answer 'No'.\n"
     "End your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
 JUDGE_PROMPT = (
-    "You are an impartial Judge. Three experts have debated whether the punchline is sarcasm.\n"
+    "You are an impartial Judge. Three experts have debated whether the punchline is humorous.\n"
     "Here is the discussion:\n\n{debate_history}\n\n"
-    "Based on all evidence, determine if this is sarcasm or not.\n"
-    "If the inputs include exaggerated description or the real meaning is not aligned with the original one, answer 'Yes'.\n"
-    "If the inputs are neutral or the true meaning is not different from the original one, answer 'No'.\n"
+    "Based on all evidence, determine if this is humorous or not.\n"
+    "If the inputs include exaggerated description or are expressing sarcastic meaning, answer 'Yes'.\n"
+    "If the inputs are neutral or just common meaning, answer 'No'.\n"
     "Your answer must start with 'Yes' or 'No', followed by your reasoning."
 )
 
@@ -169,20 +169,21 @@ def extract_answer(response):
     return 'Unknown'
 
 
-def run_instance(test_file, dataset, output_file='baseline_debate_0128.jsonl'):
+def run_instance(test_file, dataset, output_file='urfunny_debate_0128_v2.jsonl'):
     start_time = time.time()
     total_prompt_tokens = 0
     total_completion_tokens = 0
     num_api_calls = 0
     
-    target_sentence = dataset[test_file]['utterance']
+    sample = dataset[test_file]
+    punchline = sample['punchline_sentence']
     
-    text_list = dataset[test_file]['context'].copy()
-    text_list.append(target_sentence)
+    text_list = sample['context_sentences'].copy()
+    text_list.append(punchline)
     fullContext = '\n'.join(text_list)
     
-    audio_path = f'mustard_audios/{test_file}_audio.mp4'
-    video_frames_path = f'mustard_frames/{test_file}_frames'
+    audio_path = f'urfunny_audios/{test_file}_audio.mp4'
+    video_frames_path = f'urfunny_frames/{test_file}_frames'
     
     def create_llm(query):
         return GeminiMultimodalLLM(
@@ -215,13 +216,13 @@ def run_instance(test_file, dataset, output_file='baseline_debate_0128.jsonl'):
         
         # Prepare queries for all three agents
         if round_num == 1:
-            video_query = f"{VIDEO_AGENT_INIT}\n\npunchline: '{target_sentence}'"
-            audio_query = f"{AUDIO_AGENT_INIT}\n\npunchline: '{target_sentence}'"
-            text_query = f"{TEXT_AGENT_INIT}\n\npunchline: '{target_sentence}'"
+            video_query = f"{VIDEO_AGENT_INIT}\n\npunchline: '{punchline}'"
+            audio_query = f"{AUDIO_AGENT_INIT}\n\npunchline: '{punchline}'"
+            text_query = f"{TEXT_AGENT_INIT}\n\npunchline: '{punchline}'"
         else:
-            video_query = f"{VIDEO_AGENT_REFINE.format(own_answer=video_answer, audio_answer=audio_answer, text_answer=text_answer)}\n\npunchline: '{target_sentence}'"
-            audio_query = f"{AUDIO_AGENT_REFINE.format(own_answer=audio_answer, video_answer=video_answer, text_answer=text_answer)}\n\npunchline: '{target_sentence}'"
-            text_query = f"{TEXT_AGENT_REFINE.format(own_answer=text_answer, video_answer=video_answer, audio_answer=audio_answer)}\n\npunchline: '{target_sentence}'"
+            video_query = f"{VIDEO_AGENT_REFINE.format(own_answer=video_answer, audio_answer=audio_answer, text_answer=text_answer)}\n\npunchline: '{punchline}'"
+            audio_query = f"{AUDIO_AGENT_REFINE.format(own_answer=audio_answer, video_answer=video_answer, text_answer=text_answer)}\n\npunchline: '{punchline}'"
+            text_query = f"{TEXT_AGENT_REFINE.format(own_answer=text_answer, video_answer=video_answer, audio_answer=audio_answer)}\n\npunchline: '{punchline}'"
         
         # Run all three agents in parallel
         with ThreadPoolExecutor(max_workers=3) as executor:
@@ -264,7 +265,7 @@ def run_instance(test_file, dataset, output_file='baseline_debate_0128.jsonl'):
 
     # --- Judge ---
     print(f"--- Judge Verdict ---")
-    judge_query = f"{JUDGE_PROMPT.format(debate_history=debate_history)}\n\npunchline: '{target_sentence}'"
+    judge_query = f"{JUDGE_PROMPT.format(debate_history=debate_history)}\n\npunchline: '{punchline}'"
     judge_agent = create_llm(judge_query)
     final_verdict, usage = judge_agent.generate_response()
     num_api_calls += 1
@@ -290,7 +291,7 @@ def run_instance(test_file, dataset, output_file='baseline_debate_0128.jsonl'):
                 'audio': extract_answer(audio_answer),
                 'text': extract_answer(text_answer),
             },
-            'label': dataset[test_file]['sarcasm'],
+            'label': sample['label'],
             'method': 'multimodal_debate_3agents',
             'usage': {
                 'prompt_tokens': total_prompt_tokens,
@@ -306,8 +307,8 @@ def run_instance(test_file, dataset, output_file='baseline_debate_0128.jsonl'):
 
 
 if __name__ == '__main__':
-    output_file = 'baseline_debate_0128_v2.jsonl'
-    dataset_path = './mustard_dataset/mustard_dataset_test.json'
+    output_file = 'urfunny_debate_0128_v2.jsonl'
+    dataset_path = './urfunny_dataset_test.json'
     dataset = load_data(dataset_path)
 
     test_list = list(dataset.keys())

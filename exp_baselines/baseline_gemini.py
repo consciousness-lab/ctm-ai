@@ -5,7 +5,7 @@ import random
 from typing import Dict, List, Optional, Tuple, Union, cast
 
 import google.generativeai as genai
-from google.api_core.exceptions import ResourceExhausted
+from google.api_core.exceptions import ResourceExhausted, FailedPrecondition, DeadlineExceeded, ServiceUnavailable
 from PIL import Image
 
 
@@ -18,6 +18,7 @@ class GeminiMultimodalLLM:
         context: str,
         query: str,
         model_name: str = 'gemini-1.5-pro',
+        temperature: Optional[float] = None,  # None means use default (1.0)
     ) -> None:
         self.file_name = file_name
         self.image_frames_folder = image_frames_folder
@@ -26,6 +27,7 @@ class GeminiMultimodalLLM:
         self.query = query
         self.api_key = os.getenv('GEMINI_API_KEY')
         self.model_name = model_name
+        self.temperature = temperature
 
         genai.configure(api_key=self.api_key)
 
@@ -78,10 +80,15 @@ class GeminiMultimodalLLM:
 
         max_retries = 5
         base_delay = 2
+        
+        # Only set generation_config if temperature is specified
+        generation_config = None
+        if self.temperature is not None:
+            generation_config = genai.GenerationConfig(temperature=self.temperature)
 
         for attempt in range(max_retries + 1):
             try:
-                response = self.model.generate_content(inputs)
+                response = self.model.generate_content(inputs, generation_config=generation_config)
                 text = cast(Optional[str], getattr(response, 'text', None))
                 
                 # Extract usage metadata
@@ -95,14 +102,15 @@ class GeminiMultimodalLLM:
                 
                 return text, usage
 
-            except ResourceExhausted:
+            except (ResourceExhausted, DeadlineExceeded, ServiceUnavailable, FailedPrecondition) as e:
+                error_type = type(e).__name__
                 if attempt < max_retries:
                     # Exponential backoff with jitter: 2^attempt + random(0, 1)
                     sleep_time = base_delay * (2 ** attempt) + random.uniform(0, 1)
-                    print(f"Rate limit hit. Retrying in {sleep_time:.2f} seconds (Attempt {attempt + 1}/{max_retries})...")
+                    print(f"{error_type}: {e}. Retrying in {sleep_time:.2f} seconds (Attempt {attempt + 1}/{max_retries})...")
                     time.sleep(sleep_time)
                 else:
-                    raise RuntimeError(f'Failed to generate response after {max_retries} retries due to rate limiting.')
+                    raise RuntimeError(f'Failed to generate response after {max_retries} retries: {error_type}')
             except Exception as e:
                 raise RuntimeError(f'Failed to generate response: {e}')
         

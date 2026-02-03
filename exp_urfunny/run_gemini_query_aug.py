@@ -12,13 +12,13 @@ ROUNDS = 3  # Number of questioning rounds
 
 # Controller prompts
 CONTROLLER_INIT_PROMPT = (
-    "You are a Sarcasm Detection Controller. Your task is to coordinate three modality experts "
-    "(Video, Audio, Text) to determine if the punchline is sarcastic.\n\n"
+    "You are a Humor Detection Controller. Your task is to coordinate three modality experts "
+    "(Video, Audio, Text) to determine if the punchline is humorous.\n\n"
     "The punchline is: '{punchline}'\n\n"
     "For Round 1, generate THREE specific questions - one for each expert:\n"
-    "1. A question for the VIDEO expert about visual cues\n"
-    "2. A question for the AUDIO expert about vocal cues\n"
-    "3. A question for the TEXT expert about linguistic cues\n\n"
+    "1. A question for the VIDEO expert about visual cues related to humor\n"
+    "2. A question for the AUDIO expert about vocal cues related to humor\n"
+    "3. A question for the TEXT expert about linguistic cues related to humor\n\n"
     "Format your response exactly as:\n"
     "VIDEO_QUESTION: [your question]\n"
     "AUDIO_QUESTION: [your question]\n"
@@ -26,7 +26,7 @@ CONTROLLER_INIT_PROMPT = (
 )
 
 CONTROLLER_FOLLOWUP_PROMPT = (
-    "You are a Sarcasm Detection Controller coordinating three modality experts.\n\n"
+    "You are a Humor Detection Controller coordinating three modality experts.\n\n"
     "The punchline is: '{punchline}'\n\n"
     "Here are the responses from the previous round:\n"
     "- Video Expert: {video_response}\n"
@@ -41,34 +41,34 @@ CONTROLLER_FOLLOWUP_PROMPT = (
 )
 
 CONTROLLER_DECISION_PROMPT = (
-    "You are a Sarcasm Detection Controller. You have gathered evidence from three modality experts "
+    "You are a Humor Detection Controller. You have gathered evidence from three modality experts "
     "over {num_rounds} rounds of questioning.\n\n"
     "The punchline is: '{punchline}'\n\n"
     "Here is the complete conversation history:\n{conversation_history}\n\n"
     "Based on all the evidence gathered, make your final determination.\n"
-    "If you think these inputs include exaggerated description or the real meaning is not aligned with the original one, answer 'Yes'.\n"
-    "If you think these inputs are neutral or the true meaning is not different from the original one, answer 'No'.\n"
+    "If you think these inputs include exaggerated description or are expressing sarcastic meaning, answer 'Yes'.\n"
+    "If you think these inputs are neutral or just common meaning, answer 'No'.\n"
     "Your answer must start with 'Yes' or 'No', followed by your reasoning."
 )
 
 # Agent prompts
 VIDEO_AGENT_PROMPT = (
     "You are a Video Analysis Expert. Analyze the video frames to answer the following question.\n"
-    "Focus ONLY on visual cues: facial expressions, body language, gestures, eye movements.\n\n"
+    "Focus ONLY on visual cues: facial expressions, body language, gestures, comedic timing.\n\n"
     "Question: {question}\n\n"
     "Provide a concise but detailed answer based on what you observe in the video."
 )
 
 AUDIO_AGENT_PROMPT = (
     "You are an Audio Analysis Expert. Analyze the audio to answer the following question.\n"
-    "Focus ONLY on audio cues: tone of voice, pitch, speed, emphasis, pauses, vocal patterns.\n\n"
+    "Focus ONLY on audio cues: tone of voice, comedic delivery, timing, audience reactions.\n\n"
     "Question: {question}\n\n"
     "Provide a concise but detailed answer based on what you hear in the audio."
 )
 
 TEXT_AGENT_PROMPT = (
     "You are a Text Analysis Expert. Analyze the text context to answer the following question.\n"
-    "Focus ONLY on linguistic cues: word choice, context, literal vs implied meaning, irony.\n\n"
+    "Focus ONLY on linguistic cues: wordplay, puns, setup-punchline structure, unexpected twists.\n\n"
     "Question: {question}\n\n"
     "Provide a concise but detailed answer based on the text."
 )
@@ -169,29 +169,30 @@ def parse_controller_questions(response):
     
     # Fallback: if parsing failed, use generic questions
     if not questions['video']:
-        questions['video'] = "What visual cues do you observe that might indicate sarcasm?"
+        questions['video'] = "What visual cues do you observe that might indicate humor?"
     if not questions['audio']:
-        questions['audio'] = "What audio cues do you observe that might indicate sarcasm?"
+        questions['audio'] = "What audio cues do you observe that might indicate humor?"
     if not questions['text']:
-        questions['text'] = "What textual cues do you observe that might indicate sarcasm?"
+        questions['text'] = "What textual cues do you observe that might indicate humor?"
     
     return questions
 
 
-def run_instance(test_file, dataset, output_file='baseline_aug_parallel_0128.jsonl'):
+def run_instance(test_file, dataset, output_file='urfunny_aug_parallel_0128_v2.jsonl'):
     start_time = time.time()
     total_prompt_tokens = 0
     total_completion_tokens = 0
     num_api_calls = 0
     
-    target_sentence = dataset[test_file]['utterance']
+    sample = dataset[test_file]
+    punchline = sample['punchline_sentence']
     
-    text_list = dataset[test_file]['context'].copy()
-    text_list.append(target_sentence)
+    text_list = sample['context_sentences'].copy()
+    text_list.append(punchline)
     fullContext = '\n'.join(text_list)
     
-    audio_path = f'mustard_audios/{test_file}_audio.mp4'
-    video_frames_path = f'mustard_frames/{test_file}_frames'
+    audio_path = f'urfunny_audios/{test_file}_audio.mp4'
+    video_frames_path = f'urfunny_frames/{test_file}_frames'
     
     def create_llm(query):
         return GeminiMultimodalLLM(
@@ -216,10 +217,10 @@ def run_instance(test_file, dataset, output_file='baseline_aug_parallel_0128.jso
         
         # Controller generates questions
         if round_num == 1:
-            controller_query = CONTROLLER_INIT_PROMPT.format(punchline=target_sentence)
+            controller_query = CONTROLLER_INIT_PROMPT.format(punchline=punchline)
         else:
             controller_query = CONTROLLER_FOLLOWUP_PROMPT.format(
-                punchline=target_sentence,
+                punchline=punchline,
                 video_response=video_response[:500],
                 audio_response=audio_response[:500],
                 text_response=text_response[:500],
@@ -260,7 +261,7 @@ def run_instance(test_file, dataset, output_file='baseline_aug_parallel_0128.jso
                 num_api_calls += 1
                 total_prompt_tokens += usage.get('prompt_tokens', 0)
                 total_completion_tokens += usage.get('completion_tokens', 0)
-                
+        
         video_response, _ = results['video']
         audio_response, _ = results['audio']
         text_response, _ = results['text']
@@ -278,7 +279,7 @@ def run_instance(test_file, dataset, output_file='baseline_aug_parallel_0128.jso
     # Controller makes final decision
     print(f"--- Controller Final Decision ---")
     decision_query = CONTROLLER_DECISION_PROMPT.format(
-        punchline=target_sentence,
+        punchline=punchline,
         num_rounds=ROUNDS,
         conversation_history=conversation_history
     )
@@ -302,7 +303,7 @@ def run_instance(test_file, dataset, output_file='baseline_aug_parallel_0128.jso
         test_file: {
             'answer': [final_verdict],
             'conversation_history': conversation_history,
-            'label': dataset[test_file]['sarcasm'],
+            'label': sample['label'],
             'method': 'controller_agent_query_aug',
             'usage': {
                 'prompt_tokens': total_prompt_tokens,
@@ -318,8 +319,8 @@ def run_instance(test_file, dataset, output_file='baseline_aug_parallel_0128.jso
 
 
 if __name__ == '__main__':
-    output_file = 'baseline_aug_parallel_0128.jsonl'
-    dataset_path = './mustard_dataset/mustard_dataset_test.json'
+    output_file = 'urfunny_aug_parallel_0128_v2.jsonl'
+    dataset_path = './urfunny_dataset_test.json'
     dataset = load_data(dataset_path)
 
     test_list = list(dataset.keys())
