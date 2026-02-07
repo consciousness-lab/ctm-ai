@@ -166,7 +166,6 @@ class BaseConsciousTuringMachine(ABC):
             chunks = [
                 future.result() for future in concurrent.futures.as_completed(futures)
             ]
-        # 过滤掉返回 None 的处理器（没有必要输入的情况）
         chunks = [chunk for chunk in chunks if chunk is not None]
         return chunks
 
@@ -223,11 +222,6 @@ class BaseConsciousTuringMachine(ABC):
 
     @logging_func_with_count
     def fuse_processor(self, chunks: List[Chunk], query: str, **input_kwargs) -> None:
-        """
-        Fuse 过程：让相邻的 processor 互相交换信息。
-        A 用自己的 additional_question 问邻居 B，B 的回答存入 A 的 fuse_history。
-        下一轮 ask_processors 时会自动使用这些新信息。
-        """
         proc_map = {p.name: p for p in self.processor_graph.nodes}
 
         for chunk in chunks:
@@ -237,16 +231,14 @@ class BaseConsciousTuringMachine(ABC):
 
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
                 if nbr == chunk.processor_name:
-                    continue  # 不问自己
+                    continue 
 
-                # A 用自己的 additional_question 问邻居 B
                 answer_chunk = proc_map[nbr].ask(
                     query=q,
                     is_fuse=True,
                     **input_kwargs,
                 )
                 if answer_chunk is not None:
-                    # A 把 B 的回答存入 A 的 fuse_history
                     proc_map[chunk.processor_name].add_fuse_history(
                         q, answer_chunk.gist, nbr
                     )

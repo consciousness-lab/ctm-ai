@@ -1,16 +1,135 @@
 import json
+from typing import Dict
 
-JSON_FORMAT = """
-You should utilize the information in the context history and modality-specific information to answer the query. 
-There might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones.
+# ---------------------------------------------------------------------------
+# Shared instruction fragments (DRY)
+# ---------------------------------------------------------------------------
+
+_CONTEXT_PREAMBLE = """You should utilize the information in the context history and modality-specific information to answer the query.
+There might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones."""
+
+_ADDITIONAL_QUESTION_INSTRUCTION = """
+Your additional_question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about.
+Your additional_question should be just about what kind of information you need to get from other modality models or other tools like search engine, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what is the caption of the image, etc. The question needs to be short and clean."""
+
+_SCORE_RUBRIC = """
+## Self-Evaluation Instructions
+
+IMPORTANT: Evaluate ONLY the "response" field you wrote above. The "additional_question" must have NO influence on your scores.
+
+First commit to your best answer in "response", then step back and critically self-assess along three dimensions:
+
+### Relevance (0.0 - 1.0): How well does your response address the query?
+- 1.0 = Directly and precisely answers with specific details
+- 0.8 = Mostly answers with useful supporting details
+- 0.6 = Engages with the question but incomplete or limited
+- 0.4 = Loosely connected, not very helpful
+- 0.2 = Weak or indirect connection only
+- 0.0 = Off-topic, refuses to answer, or irrelevant
+(Note: Expressing uncertainty while still providing reasoning counts as relevant, ~0.6+)
+
+### Confidence (0.0 - 1.0): How certain are you about your response?
+- 1.0 = Very certain, definitive statements
+- 0.8 = Mostly certain, minor qualifications
+- 0.6 = Some uncertainty but reasonable conclusions
+- 0.4 = Significant uncertainty, many qualifications
+- 0.2 = Very uncertain, extensive hedging
+- 0.0 = Cannot determine, "I don't know", or refuses
+(Note: If your response says "cannot determine" or equivalent, this MUST be 0.0)
+
+### Surprise (0.0 - 1.0): How novel or insightful is your response?
+- 1.0 = Highly unexpected, novel insights
+- 0.6 = Mix of predictable and unexpected
+- 0.3 = Mostly predictable, common knowledge
+- 0.0 = Entirely expected, standard response
+
+Be honest and well-calibrated. Do NOT inflate scores. Most routine answers should score around relevance ~0.7, confidence ~0.7, surprise ~0.3."""
+
+# ---------------------------------------------------------------------------
+# JSON format templates for different scoring modes
+# ---------------------------------------------------------------------------
+
+# Original format: no self-evaluation scores
+JSON_FORMAT = (
+    _CONTEXT_PREAMBLE
+    + """
 Please respond in JSON format with the following structure:
 {
     "response": "Your detailed response to the query",
     "additional_question": "If you are not sure about the answer, you should generate a question that potentially can be answered by other modality models or other tools like search engine."
 }
+"""
+    + _ADDITIONAL_QUESTION_INSTRUCTION
+)
 
-Your additional_question should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about.
-Your additional_question should be just about what kind of information you need to get from other modality models or other tools like search engine, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what is the caption of the image, etc. The question needs to be short and clean."""
+# Combined mode: executor outputs a single aggregated score
+JSON_FORMAT_COMBINED_SCORE = (
+    _CONTEXT_PREAMBLE
+    + """
+Please respond in JSON format with the following structure:
+{
+    "response": "Your detailed response to the query",
+    "additional_question": "A question for other modality models or tools if you need more information.",
+    "score": <a number between 0.0 and 2.2>
+}
+"""
+    + _ADDITIONAL_QUESTION_INSTRUCTION
+    + _SCORE_RUBRIC
+    + """
+
+### Computing the "score" field:
+Mentally evaluate relevance, confidence, and surprise for your "response" (NOT "additional_question"), then compute:
+    score = relevance + confidence + (surprise × 0.2)
+Output ONLY the final computed number (between 0.0 and 2.2) in the "score" field."""
+)
+
+# Decomposed mode: executor outputs separate relevance / confidence / surprise
+JSON_FORMAT_DECOMPOSED_SCORE = (
+    _CONTEXT_PREAMBLE
+    + """
+Please respond in JSON format with the following structure:
+{
+    "response": "Your detailed response to the query",
+    "additional_question": "A question for other modality models or tools if you need more information.",
+    "relevance": <number between 0.0 and 1.0>,
+    "confidence": <number between 0.0 and 1.0>,
+    "surprise": <number between 0.0 and 1.0>
+}
+"""
+    + _ADDITIONAL_QUESTION_INSTRUCTION
+    + _SCORE_RUBRIC
+    + """
+
+### Filling the score fields:
+Assess your "response" (NOT "additional_question") and fill in each field independently:
+- "relevance": your relevance assessment (0.0 to 1.0)
+- "confidence": your confidence assessment (0.0 to 1.0)
+- "surprise": your surprise / novelty assessment (0.0 to 1.0)"""
+)
+
+# ---------------------------------------------------------------------------
+# Mapping helper
+# ---------------------------------------------------------------------------
+
+SCORING_MODE_FORMATS = {
+    'none': JSON_FORMAT,
+    'combined': JSON_FORMAT_COMBINED_SCORE,
+    'decomposed': JSON_FORMAT_DECOMPOSED_SCORE,
+}
+
+# ---------------------------------------------------------------------------
+# JSON parsing utilities
+# ---------------------------------------------------------------------------
+
+
+def _extract_json(content: str) -> dict:
+    """Extract a JSON object from raw LLM output (handles ```json fences)."""
+    if '```json' in content and '```' in content:
+        start_idx = content.find('```json') + 7
+        end_idx = content.rfind('```')
+        if start_idx > 6 and end_idx > start_idx:
+            return json.loads(content[start_idx:end_idx].strip())
+    return json.loads(content)
 
 
 def parse_json_response(
@@ -27,17 +146,7 @@ def parse_json_response(
         tuple: (parsed_content, additional_question)
     """
     try:
-        if '```json' in content and '```' in content:
-            start_idx = content.find('```json') + 7
-            end_idx = content.rfind('```')
-            if start_idx > 6 and end_idx > start_idx:
-                json_content = content[start_idx:end_idx].strip()
-                parsed_response = json.loads(json_content)
-            else:
-                parsed_response = json.loads(content)
-        else:
-            parsed_response = json.loads(content)
-
+        parsed_response = _extract_json(content)
         parsed_content = parsed_response.get('response', content)
         additional_question = parsed_response.get(
             'additional_question', default_additional_question
@@ -49,3 +158,67 @@ def parse_json_response(
 
     except (json.JSONDecodeError, TypeError):
         return content, default_additional_question
+
+
+def parse_json_response_with_scores(
+    content: str,
+    default_additional_question: str = '',
+    scoring_mode: str = 'none',
+) -> Dict[str, object]:
+    """Parse JSON response including optional self-evaluation scores.
+
+    Args:
+        content: Raw LLM output string.
+        default_additional_question: Fallback additional question.
+        scoring_mode: One of ``'none'``, ``'combined'``, ``'decomposed'``.
+
+    Returns:
+        A dict always containing ``'response'`` and ``'additional_question'``.
+        - If *combined*: also contains ``'score'`` (float, 0.0-2.2).
+        - If *decomposed*: also contains ``'relevance'``, ``'confidence'``,
+          ``'surprise'`` (each float, 0.0-1.0).
+    """
+    # -- defaults used when parsing fails --
+    _DEFAULT_COMBINED_SCORE = 1.0
+    _DEFAULT_COMPONENT_SCORE = 0.5
+
+    def _safe_float(val: object, lo: float, hi: float, default: float) -> float:
+        try:
+            return max(lo, min(hi, float(val)))
+        except (ValueError, TypeError):
+            return default
+
+    try:
+        parsed = _extract_json(content)
+    except (json.JSONDecodeError, TypeError):
+        parsed = {}
+        response_text = content
+    else:
+        response_text = parsed.get('response', content)
+
+    additional_question = parsed.get('additional_question', default_additional_question)
+    if not additional_question:
+        additional_question = default_additional_question
+
+    result: Dict[str, object] = {
+        'response': response_text,
+        'additional_question': additional_question,
+    }
+
+    if scoring_mode == 'combined':
+        result['score'] = _safe_float(
+            parsed.get('score', _DEFAULT_COMBINED_SCORE),
+            0.0,
+            2.2,
+            _DEFAULT_COMBINED_SCORE,
+        )
+    elif scoring_mode == 'decomposed':
+        for key in ('relevance', 'confidence', 'surprise'):
+            result[key] = _safe_float(
+                parsed.get(key, _DEFAULT_COMPONENT_SCORE),
+                0.0,
+                1.0,
+                _DEFAULT_COMPONENT_SCORE,
+            )
+
+    return result

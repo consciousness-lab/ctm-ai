@@ -8,10 +8,32 @@ from numpy.typing import NDArray
 from ..chunks import Chunk
 from ..scorers import BaseScorer
 from ..utils import configure_litellm, message_exponential_backoff
-from .utils import JSON_FORMAT, parse_json_response
+from .utils import (
+    JSON_FORMAT,
+    SCORING_MODE_FORMATS,
+    parse_json_response,
+    parse_json_response_with_scores,
+)
+
+# Valid scoring modes
+_VALID_SCORING_MODES = ('none', 'combined', 'decomposed')
 
 
 class BaseProcessor(object):
+    """Base class for all processors.
+
+    Args (via **kwargs):
+        scoring_mode: How self-evaluation scores are produced.
+            - ``'none'``  – (default) use a **separate** ``BaseScorer`` call
+              after the executor (original behaviour, two LLM round-trips).
+            - ``'combined'`` – the executor LLM outputs a **single** aggregated
+              score (``relevance + confidence + surprise × 0.2``) alongside
+              the answer.  One LLM call total.
+            - ``'decomposed'`` – the executor LLM outputs **separate**
+              ``relevance``, ``confidence``, ``surprise`` values; the weight
+              is computed in post-processing.  One LLM call total.
+    """
+
     _processor_registry: Dict[str, Type['BaseProcessor']] = {}
     REQUIRED_KEYS: List[str] = []
 
@@ -59,6 +81,16 @@ class BaseProcessor(object):
         self.fuse_history = []
         self.winner_answer = []
         self.all_context_history = []
+
+        # --- scoring mode -------------------------------------------------
+        scoring_mode = kwargs.get('scoring_mode', 'none')
+        if scoring_mode not in _VALID_SCORING_MODES:
+            raise ValueError(
+                f"Invalid scoring_mode '{scoring_mode}'. "
+                f"Must be one of {_VALID_SCORING_MODES}"
+            )
+        self.scoring_mode: str = scoring_mode
+
         configure_litellm(model_name=self.model_name)
 
     def check_required_env_vars(self) -> None:
@@ -116,7 +148,8 @@ class BaseProcessor(object):
                 for i, item in enumerate(self.winner_answer, 1):
                     content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
-        content += JSON_FORMAT
+        # Pick the JSON instruction template that matches the scoring mode
+        content += SCORING_MODE_FORMATS.get(self.scoring_mode, JSON_FORMAT)
         return content
 
     @message_exponential_backoff()
@@ -126,7 +159,7 @@ class BaseProcessor(object):
         default_additional_question: str = '',
         *args: Any,
         **kwargs: Any,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         response = completion(
             model=self.model,
             messages=messages,
@@ -138,6 +171,14 @@ class BaseProcessor(object):
         contents = [
             response.choices[i].message.content for i in range(len(response.choices))
         ]
+
+        # When scoring is integrated, use the extended parser
+        if self.scoring_mode != 'none':
+            return parse_json_response_with_scores(
+                contents[0], default_additional_question, self.scoring_mode
+            )
+
+        # Original path: parse answer + additional_question only
         gist, additional_question = parse_json_response(
             contents[0], default_additional_question
         )
@@ -153,6 +194,37 @@ class BaseProcessor(object):
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
         raise NotImplementedError('Subclasses must implement this method')
+
+    # ------------------------------------------------------------------
+    # Score extraction helpers (from integrated executor output)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _scorer_output_from_combined(executor_output: Dict[str, Any]) -> Dict[str, float]:
+        """Build scorer-compatible dict when scoring_mode == 'combined'."""
+        return {
+            'relevance': -1.0,
+            'confidence': -1.0,
+            'surprise': -1.0,
+            'weight': float(executor_output.get('score', 1.0)),
+        }
+
+    @staticmethod
+    def _scorer_output_from_decomposed(executor_output: Dict[str, Any]) -> Dict[str, float]:
+        """Build scorer-compatible dict when scoring_mode == 'decomposed'."""
+        relevance = float(executor_output.get('relevance', 0.5))
+        confidence = float(executor_output.get('confidence', 0.5))
+        surprise = float(executor_output.get('surprise', 0.5))
+        return {
+            'relevance': relevance,
+            'confidence': confidence,
+            'surprise': surprise,
+            'weight': relevance + confidence + (surprise * 0.2),
+        }
+
+    # ------------------------------------------------------------------
+    # Main ask entry point
+    # ------------------------------------------------------------------
 
     def ask(
         self,
@@ -211,8 +283,16 @@ class BaseProcessor(object):
             executor_output['additional_question'],
         )
 
-        scorer = BaseScorer(*args, **kwargs)
-        scorer_output = scorer.ask(query=clean_query, messages=executor_output)
+        # --- Obtain scores ------------------------------------------------
+        if self.scoring_mode == 'combined':
+            scorer_output = self._scorer_output_from_combined(executor_output)
+        elif self.scoring_mode == 'decomposed':
+            scorer_output = self._scorer_output_from_decomposed(executor_output)
+        else:
+            # Original behaviour: separate scorer LLM call
+            scorer = BaseScorer(*args, **kwargs)
+            scorer_output = scorer.ask(query=clean_query, messages=executor_output)
+
         additional_question = executor_output['additional_question'] or ''
 
         chunk = self.merge_outputs_into_chunk(
