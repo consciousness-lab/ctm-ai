@@ -1,21 +1,23 @@
-import json
 import sys
 import time
-import statistics
-import os
-import glob
-import base64
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Optional
 
 import litellm
+from gemini_utils import (
+    check_gemini_api_key,
+    load_data,
+    load_processed_keys,
+    load_images_as_base64,
+    prepare_audio_for_gemini,
+    call_gemini_with_content,
+    StatsTracker,
+    save_result_to_jsonl,
+)
 
 sys.path.append("..")
 
-# Set Gemini API key from environment variable
-if not os.getenv("GEMINI_API_KEY"):
-    raise ValueError("GEMINI_API_KEY environment variable not set")
-
+# Check API key
+check_gemini_api_key()
 litellm.set_verbose = False  # Set to True for debugging
 
 ROUNDS = 3  # Number of debate rounds (initial + refinements)
@@ -80,79 +82,10 @@ JUDGE_PROMPT = (
 COST_INPUT_PER_1M = 0.075
 COST_OUTPUT_PER_1M = 0.30
 
-
-class StatsTracker:
-    def __init__(self):
-        self.times = []
-        self.input_tokens = []
-        self.output_tokens = []
-        self.costs = []
-        self.api_calls = []
-
-    def add(self, duration, input_tok, output_tok, num_api_calls):
-        cost = (input_tok / 1_000_000 * COST_INPUT_PER_1M) + (
-            output_tok / 1_000_000 * COST_OUTPUT_PER_1M
-        )
-
-        self.times.append(duration)
-        self.input_tokens.append(input_tok)
-        self.output_tokens.append(output_tok)
-        self.costs.append(cost)
-        self.api_calls.append(num_api_calls)
-
-    def print_summary(self):
-        if not self.times:
-            print("No stats to report.")
-            return
-
-        avg_time = statistics.mean(self.times)
-        avg_input = statistics.mean(self.input_tokens)
-        avg_output = statistics.mean(self.output_tokens)
-        avg_cost = statistics.mean(self.costs)
-        total_cost = sum(self.costs)
-        total_api_calls = sum(self.api_calls)
-        avg_api_calls = statistics.mean(self.api_calls)
-
-        print("\n" + "=" * 50)
-        print("PERFORMANCE & COST SUMMARY (Multimodal Debate)")
-        print(f"  Rounds: {ROUNDS} | Agents: Video, Audio, Text + Judge")
-        print("=" * 50)
-        print(f"Total Samples Processed: {len(self.times)}")
-        print(f"Total API Calls:         {total_api_calls}")
-        print("-" * 40)
-        print(f"Average Time per Sample:  {avg_time:.2f} seconds")
-        print(f"Average API Calls/Sample: {avg_api_calls:.1f}")
-        print(f"Average Input Tokens:     {avg_input:.1f}")
-        print(f"Average Output Tokens:    {avg_output:.1f}")
-        print(f"Total Input Tokens:       {sum(self.input_tokens)}")
-        print(f"Total Output Tokens:      {sum(self.output_tokens)}")
-        print("-" * 40)
-        print(f"Average Cost per Sample:  ${avg_cost:.6f}")
-        print(f"Total Cost for Run:       ${total_cost:.6f}")
-        print("=" * 50 + "\n")
-
-
-tracker = StatsTracker()
-
-
-def load_data(file_path):
-    with open(file_path, "r", encoding="utf-8") as json_file:
-        data = json.load(json_file)
-    return data
-
-
-def load_processed_keys(output_file):
-    """Load already processed keys from output file for resume functionality."""
-    processed = set()
-    try:
-        with open(output_file, "r", encoding="utf-8") as f:
-            for line in f:
-                if line.strip():
-                    result = json.loads(line)
-                    processed.update(result.keys())
-    except FileNotFoundError:
-        pass
-    return processed
+# Initialize tracker
+tracker = StatsTracker(
+    cost_input_per_1m=COST_INPUT_PER_1M, cost_output_per_1m=COST_OUTPUT_PER_1M
+)
 
 
 def extract_answer(response):
@@ -170,114 +103,6 @@ def extract_answer(response):
     elif response_lower.strip().endswith("no"):
         return "No"
     return "Unknown"
-
-
-def load_images_as_base64(
-    image_folder: str, max_frames: int = 10
-) -> List[Dict[str, str]]:
-    """Load images from folder and convert to base64 format for litellm."""
-    if not image_folder or not os.path.exists(image_folder):
-        return []
-
-    image_pattern = os.path.join(image_folder, "*.jpg")
-    image_paths = sorted(glob.glob(image_pattern))
-
-    if not image_paths:
-        return []
-
-    # Sample frames evenly if too many
-    if len(image_paths) > max_frames:
-        step = len(image_paths) / max_frames
-        image_paths = [image_paths[int(i * step)] for i in range(max_frames)]
-
-    images = []
-    for img_path in image_paths:
-        try:
-            with open(img_path, "rb") as f:
-                img_data = base64.b64encode(f.read()).decode("utf-8")
-                images.append(
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{img_data}"},
-                    }
-                )
-        except Exception as e:
-            print(f"Warning: Failed to load image {img_path}: {e}")
-            continue
-
-    return images
-
-
-def prepare_audio_for_gemini(audio_path: str) -> Optional[Dict]:
-    """Load audio file and convert to base64 format for Gemini."""
-    if not audio_path or not os.path.exists(audio_path):
-        return None
-
-    try:
-        # Read audio file and encode to base64
-        with open(audio_path, "rb") as f:
-            audio_bytes = f.read()
-
-        encoded_data = base64.b64encode(audio_bytes).decode("utf-8")
-
-        # Return in the correct format for litellm + Gemini
-        return {
-            "type": "file",
-            "file": {
-                "file_data": f"data:audio/mp4;base64,{encoded_data}",
-            },
-        }
-    except Exception as e:
-        print(f"Warning: Failed to load audio {audio_path}: {e}")
-        return None
-
-
-def call_gemini_with_content(
-    query: str,
-    images: Optional[List[Dict]] = None,
-    audio: Optional[Dict] = None,
-    context: Optional[str] = None,
-    model: str = "gemini/gemini-2.0-flash-exp",
-) -> tuple[Optional[str], Dict[str, int]]:
-    """Call Gemini API using litellm with multimodal content."""
-
-    # Build the content list
-    content = []
-
-    # Add text query
-    if context:
-        text_content = f"### Context:\n{context}\n\n### Query:\n{query}"
-    else:
-        text_content = f"### Query:\n{query}"
-
-    content.append({"type": "text", "text": text_content})
-
-    # Add images if provided
-    if images:
-        content.extend(images)
-
-    # Add audio if provided (already in correct format from prepare_audio_for_gemini)
-    if audio:
-        content.append(audio)
-
-    try:
-        response = litellm.completion(
-            model=model,
-            messages=[{"role": "user", "content": content}],
-            temperature=1.0,
-        )
-
-        text = response.choices[0].message.content
-        usage = {
-            "prompt_tokens": response.usage.prompt_tokens,
-            "completion_tokens": response.usage.completion_tokens,
-        }
-
-        return text, usage
-
-    except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        return None, {"prompt_tokens": 0, "completion_tokens": 0}
 
 
 def run_instance(test_file, dataset, output_file="urfunny_debate_0205.jsonl"):
@@ -321,6 +146,7 @@ def run_instance(test_file, dataset, output_file="urfunny_debate_0205.jsonl"):
                 audio=None,
                 context=None,
                 model=model_name,
+                temperature=1.0,
             )
         elif agent_type == "audio":
             # Audio agent: only audio
@@ -330,6 +156,7 @@ def run_instance(test_file, dataset, output_file="urfunny_debate_0205.jsonl"):
                 audio=audio_file,
                 context=None,
                 model=model_name,
+                temperature=1.0,
             )
         elif agent_type == "text":
             # Text agent: only text context
@@ -339,6 +166,7 @@ def run_instance(test_file, dataset, output_file="urfunny_debate_0205.jsonl"):
                 audio=None,
                 context=fullContext,
                 model=model_name,
+                temperature=1.0,
             )
         else:
             raise ValueError(f"Unknown agent type: {agent_type}")
@@ -423,6 +251,7 @@ def run_instance(test_file, dataset, output_file="urfunny_debate_0205.jsonl"):
         audio=None,
         context=fullContext,
         model=model_name,
+        temperature=1.0,
     )
     num_api_calls += 1
     total_prompt_tokens += usage.get("prompt_tokens", 0)
@@ -460,8 +289,7 @@ def run_instance(test_file, dataset, output_file="urfunny_debate_0205.jsonl"):
         }
     }
 
-    with open(output_file, "a", encoding="utf-8") as f:
-        f.write(json.dumps(result, ensure_ascii=False) + "\n")
+    save_result_to_jsonl(result, output_file)
 
 
 if __name__ == "__main__":
@@ -489,4 +317,4 @@ if __name__ == "__main__":
                 continue
             time.sleep(2)
     finally:
-        tracker.print_summary()
+        tracker.print_summary(f"Multimodal Debate - Rounds: {ROUNDS}")
