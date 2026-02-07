@@ -231,7 +231,7 @@ class BaseConsciousTuringMachine(ABC):
 
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
                 if nbr == chunk.processor_name:
-                    continue 
+                    continue
 
                 answer_chunk = proc_map[nbr].ask(
                     query=q,

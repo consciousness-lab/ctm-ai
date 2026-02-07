@@ -3,15 +3,14 @@ Utility functions for Gemini multimodal experiments.
 Shared across debate, query augmentation, and voting experiments.
 """
 
+import base64
+import glob
 import json
 import os
-import glob
-import base64
 import statistics
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 
 import litellm
-
 
 # ============================================================================
 # Environment Setup
@@ -20,8 +19,8 @@ import litellm
 
 def check_gemini_api_key():
     """Check if GEMINI_API_KEY environment variable is set."""
-    if not os.getenv("GEMINI_API_KEY"):
-        raise ValueError("GEMINI_API_KEY environment variable not set")
+    if not os.getenv('GEMINI_API_KEY'):
+        raise ValueError('GEMINI_API_KEY environment variable not set')
 
 
 # ============================================================================
@@ -31,7 +30,7 @@ def check_gemini_api_key():
 
 def load_data(file_path: str) -> dict:
     """Load JSON data from file."""
-    with open(file_path, "r", encoding="utf-8") as json_file:
+    with open(file_path, 'r', encoding='utf-8') as json_file:
         data = json.load(json_file)
     return data
 
@@ -48,7 +47,7 @@ def load_processed_keys(output_file: str) -> set:
     """
     processed = set()
     try:
-        with open(output_file, "r", encoding="utf-8") as f:
+        with open(output_file, 'r', encoding='utf-8') as f:
             for line in f:
                 if line.strip():
                     result = json.loads(line)
@@ -79,7 +78,7 @@ def load_images_as_base64(
     if not image_folder or not os.path.exists(image_folder):
         return []
 
-    image_pattern = os.path.join(image_folder, "*.jpg")
+    image_pattern = os.path.join(image_folder, '*.jpg')
     image_paths = sorted(glob.glob(image_pattern))
 
     if not image_paths:
@@ -93,16 +92,16 @@ def load_images_as_base64(
     images = []
     for img_path in image_paths:
         try:
-            with open(img_path, "rb") as f:
-                img_data = base64.b64encode(f.read()).decode("utf-8")
+            with open(img_path, 'rb') as f:
+                img_data = base64.b64encode(f.read()).decode('utf-8')
                 images.append(
                     {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{img_data}"},
+                        'type': 'image_url',
+                        'image_url': {'url': f'data:image/jpeg;base64,{img_data}'},
                     }
                 )
         except Exception as e:
-            print(f"Warning: Failed to load image {img_path}: {e}")
+            print(f'Warning: Failed to load image {img_path}: {e}')
             continue
 
     return images
@@ -123,20 +122,20 @@ def prepare_audio_for_gemini(audio_path: str) -> Optional[Dict]:
 
     try:
         # Read audio file and encode to base64
-        with open(audio_path, "rb") as f:
+        with open(audio_path, 'rb') as f:
             audio_bytes = f.read()
 
-        encoded_data = base64.b64encode(audio_bytes).decode("utf-8")
+        encoded_data = base64.b64encode(audio_bytes).decode('utf-8')
 
         # Return in the correct format for litellm + Gemini
         return {
-            "type": "file",
-            "file": {
-                "file_data": f"data:audio/mp4;base64,{encoded_data}",
+            'type': 'file',
+            'file': {
+                'file_data': f'data:audio/mp4;base64,{encoded_data}',
             },
         }
     except Exception as e:
-        print(f"Warning: Failed to load audio {audio_path}: {e}")
+        print(f'Warning: Failed to load audio {audio_path}: {e}')
         return None
 
 
@@ -150,7 +149,7 @@ def call_gemini_with_content(
     images: Optional[List[Dict]] = None,
     audio: Optional[Dict] = None,
     context: Optional[str] = None,
-    model: str = "gemini/gemini-2.0-flash-exp",
+    model: str = 'gemini/gemini-2.0-flash-exp',
     temperature: float = 1.0,
 ) -> tuple[Optional[str], Dict[str, int]]:
     """
@@ -172,11 +171,11 @@ def call_gemini_with_content(
 
     # Add text query
     if context:
-        text_content = f"### Context:\n{context}\n\n### Query:\n{query}"
+        text_content = f'### Context:\n{context}\n\n### Query:\n{query}'
     else:
-        text_content = f"### Query:\n{query}" if query.strip() else query
+        text_content = f'### Query:\n{query}' if query.strip() else query
 
-    content.append({"type": "text", "text": text_content})
+    content.append({'type': 'text', 'text': text_content})
 
     # Add images if provided
     if images:
@@ -189,21 +188,21 @@ def call_gemini_with_content(
     try:
         response = litellm.completion(
             model=model,
-            messages=[{"role": "user", "content": content}],
+            messages=[{'role': 'user', 'content': content}],
             temperature=temperature,
         )
 
         text = response.choices[0].message.content
         usage = {
-            "prompt_tokens": response.usage.prompt_tokens,
-            "completion_tokens": response.usage.completion_tokens,
+            'prompt_tokens': response.usage.prompt_tokens,
+            'completion_tokens': response.usage.completion_tokens,
         }
 
         return text, usage
 
     except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        return None, {"prompt_tokens": 0, "completion_tokens": 0}
+        print(f'Error calling Gemini API: {e}')
+        return None, {'prompt_tokens': 0, 'completion_tokens': 0}
 
 
 # ============================================================================
@@ -223,7 +222,7 @@ def normalize_label(label) -> str:
     """
     if isinstance(label, (int, float)):
         # Numeric label: 1 -> "Yes", 0 -> "No"
-        return "Yes" if label == 1 else "No"
+        return 'Yes' if label == 1 else 'No'
     else:
         # String label: use as is
         return str(label)
@@ -270,10 +269,10 @@ class StatsTracker:
         self.costs.append(cost)
         self.api_calls.append(num_api_calls)
 
-    def print_summary(self, method_name: str = "Experiment"):
+    def print_summary(self, method_name: str = 'Experiment'):
         """Print summary statistics."""
         if not self.times:
-            print("No stats to report.")
+            print('No stats to report.')
             return
 
         avg_time = statistics.mean(self.times)
@@ -284,22 +283,22 @@ class StatsTracker:
         total_api_calls = sum(self.api_calls)
         avg_api_calls = statistics.mean(self.api_calls)
 
-        print("\n" + "=" * 50)
-        print(f"PERFORMANCE & COST SUMMARY ({method_name})")
-        print("=" * 50)
-        print(f"Total Samples Processed: {len(self.times)}")
-        print(f"Total API Calls:         {total_api_calls}")
-        print("-" * 40)
-        print(f"Average Time per Sample:  {avg_time:.2f} seconds")
-        print(f"Average API Calls/Sample: {avg_api_calls:.1f}")
-        print(f"Average Input Tokens:     {avg_input:.1f}")
-        print(f"Average Output Tokens:    {avg_output:.1f}")
-        print(f"Total Input Tokens:       {sum(self.input_tokens)}")
-        print(f"Total Output Tokens:      {sum(self.output_tokens)}")
-        print("-" * 40)
-        print(f"Average Cost per Sample:  ${avg_cost:.6f}")
-        print(f"Total Cost for Run:       ${total_cost:.6f}")
-        print("=" * 50 + "\n")
+        print('\n' + '=' * 50)
+        print(f'PERFORMANCE & COST SUMMARY ({method_name})')
+        print('=' * 50)
+        print(f'Total Samples Processed: {len(self.times)}')
+        print(f'Total API Calls:         {total_api_calls}')
+        print('-' * 40)
+        print(f'Average Time per Sample:  {avg_time:.2f} seconds')
+        print(f'Average API Calls/Sample: {avg_api_calls:.1f}')
+        print(f'Average Input Tokens:     {avg_input:.1f}')
+        print(f'Average Output Tokens:    {avg_output:.1f}')
+        print(f'Total Input Tokens:       {sum(self.input_tokens)}')
+        print(f'Total Output Tokens:      {sum(self.output_tokens)}')
+        print('-' * 40)
+        print(f'Average Cost per Sample:  ${avg_cost:.6f}')
+        print(f'Total Cost for Run:       ${total_cost:.6f}')
+        print('=' * 50 + '\n')
 
 
 # ============================================================================
@@ -315,5 +314,5 @@ def save_result_to_jsonl(result: dict, output_file: str):
         result: Result dictionary to save
         output_file: Path to output JSONL file
     """
-    with open(output_file, "a", encoding="utf-8") as f:
-        f.write(json.dumps(result, ensure_ascii=False) + "\n")
+    with open(output_file, 'a', encoding='utf-8') as f:
+        f.write(json.dumps(result, ensure_ascii=False) + '\n')
