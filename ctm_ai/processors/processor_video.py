@@ -12,9 +12,9 @@ def load_video_as_base64(video_path: str) -> str:
     return base64.b64encode(video_bytes).decode('utf-8')
 
 
-@BaseProcessor.register_processor("video_processor")
+@BaseProcessor.register_processor('video_processor')
 class VideoProcessor(BaseProcessor):
-    REQUIRED_KEYS = ["GEMINI_API_KEY"]
+    REQUIRED_KEYS = ['GEMINI_API_KEY']
 
     def build_executor_messages(
         self,
@@ -22,25 +22,25 @@ class VideoProcessor(BaseProcessor):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        self.system_prompt = "You are an expert in video understanding. Your task is to analyze the provided video and answer questions about it."
-        
-        video_path = kwargs.get("video_path")
+        self.system_prompt = 'You are an expert in video understanding. Your task is to analyze the provided video and answer questions about it.'
+
+        video_path = kwargs.get('video_path')
         if not video_path:
             return None
-        
+
         if not os.path.exists(video_path):
-            raise FileNotFoundError(f"Video file not found: {video_path}")
-        
+            raise FileNotFoundError(f'Video file not found: {video_path}')
+
         # Check file size (Gemini inline data limit is 20MB)
         file_size = os.path.getsize(video_path)
         max_size = 20 * 1024 * 1024  # 20MB in bytes
         if file_size > max_size:
             raise ValueError(
-                f"Video file size ({file_size / 1024 / 1024:.2f}MB) exceeds "
-                f"the 20MB limit for inline video data. "
-                f"Please use a smaller video file."
+                f'Video file size ({file_size / 1024 / 1024:.2f}MB) exceeds '
+                f'the 20MB limit for inline video data. '
+                f'Please use a smaller video file.'
             )
-        
+
         # Detect MIME type from file extension
         ext = os.path.splitext(video_path)[1].lower()
         mime_type_map = {
@@ -55,30 +55,28 @@ class VideoProcessor(BaseProcessor):
             '.3gp': 'video/3gpp',
         }
         mime_type = mime_type_map.get(ext, 'video/mp4')
-        
+
         # Load and encode video
         base64_video = load_video_as_base64(video_path)
-        
+
         # Build message with inline video data
         video_message = {
-            "role": "user",
-            "content": [
+            'role': 'user',
+            'content': [
                 {
-                    "type": "text",
-                    "text": f"{query}\n",
+                    'type': 'text',
+                    'text': f'{query}\n',
                 },
                 {
-                    "type": "image_url",  # litellm uses image_url type for video as well
-                    "image_url": {
-                        "url": f"data:{mime_type};base64,{base64_video}"
-                    }
-                }
+                    'type': 'image_url',  # litellm uses image_url type for video as well
+                    'image_url': {'url': f'data:{mime_type};base64,{base64_video}'},
+                },
             ],
         }
-        
+
         all_messages = [
-            {"role": "system", "content": self.system_prompt},
-            video_message
+            {'role': 'system', 'content': self.system_prompt},
+            video_message,
         ]
-        
+
         return all_messages

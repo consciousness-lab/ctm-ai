@@ -162,7 +162,7 @@ OUTPUT PROTOCOL (MUST follow strictly):
                 function_args = json.dumps(func_args, ensure_ascii=False)
             else:
                 function_args = str(func_args) if func_args is not None else '{}'
-            
+
             # Execute the tool with retries
             for i in range(retry_times):
                 try:
@@ -179,7 +179,7 @@ OUTPUT PROTOCOL (MUST follow strictly):
                             'error': f'tool execution failed: {type(e).__name__}: {e}',
                             'response': '',
                         }
-            
+
             structured_output = self._build_structured_output_from_tool(
                 query, tool_answer, *args, **kwargs
             )
@@ -200,7 +200,7 @@ OUTPUT PROTOCOL (MUST follow strictly):
     ) -> Dict[str, Any]:
         """Build structured output with scores when model provides direct text answer."""
         context_info = self._get_context_info()
-        
+
         prompt = f"""Regarding the task: {query}
 
 The model's direct answer:
@@ -213,7 +213,7 @@ Based on this answer, please:
 3. Self-evaluate your response with relevance, confidence, and surprise scores.
 
 {JSON_FORMAT_SCORE}"""
-        
+
         return self._ask_for_structured_output(prompt, *args, **kwargs)
 
     def _build_structured_output_from_tool(
@@ -221,7 +221,7 @@ Based on this answer, please:
     ) -> Dict[str, Any]:
         """Build structured output with scores after tool execution."""
         context_info = self._get_context_info()
-        
+
         prompt = f"""Regarding the task: {query}
 
 The tool execution result:
@@ -234,7 +234,7 @@ Based on the tool result, please:
 3. Self-evaluate your response with relevance, confidence, and surprise scores.
 
 {JSON_FORMAT_SCORE}"""
-        
+
         return self._ask_for_structured_output(prompt, *args, **kwargs)
 
     def _get_context_info(self) -> str:
@@ -249,7 +249,7 @@ Based on the tool result, please:
             context_info += '\nPrevious answers to consider:\n'
             for i, item in enumerate(self.winner_answer, 1):
                 context_info += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
-        
+
         return context_info
 
     def _ask_for_structured_output(
@@ -265,15 +265,14 @@ Based on the tool result, please:
             *args,
             **kwargs,
         )
-        
+
         content = response.choices[0].message.content
-        
+
         # Parse the JSON response with scores
         parsed = parse_json_response_with_scores(
-            content,
-            default_additional_question='Can you provide more information?'
+            content, default_additional_question='Can you provide more information?'
         )
-        
+
         return parsed
 
     def ask(
@@ -290,7 +289,7 @@ Based on the tool result, please:
             api_manager=api_manager,
             function_name=self.name,
         )
-        
+
         executor_output = self.ask_executor(
             query=content,
             api_manager=api_manager,
@@ -298,20 +297,20 @@ Based on the tool result, please:
             *args,
             **kwargs,
         )
-        
+
         if is_fuse:
             self.add_fuse_history(query, executor_output['response'])
-        
+
         self.add_all_context_history(
             query,
             executor_output['response'],
             executor_output.get('additional_question', ''),
         )
-        
+
         # Extract scores using the base processor method
         scorer_output = self._extract_scores_from_executor_output(executor_output)
         additional_question = executor_output.get('additional_question', '')
-        
+
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,

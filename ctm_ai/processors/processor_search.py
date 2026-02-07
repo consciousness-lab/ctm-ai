@@ -9,9 +9,9 @@ from .processor_base import BaseProcessor
 from .utils import parse_json_response_with_scores
 
 
-@BaseProcessor.register_processor("search_processor")
+@BaseProcessor.register_processor('search_processor')
 class SearchProcessor(BaseProcessor):
-    REQUIRED_KEYS = ["GEMINI_API_KEY"]
+    REQUIRED_KEYS = ['GEMINI_API_KEY']
 
     def _build_executor_content(
         self,
@@ -21,16 +21,16 @@ class SearchProcessor(BaseProcessor):
         is_fuse: bool = False,
         **kwargs: Any,
     ) -> str:
-        content = f"Query: {query}\n"
+        content = f'Query: {query}\n'
 
         if not is_fuse:
             if len(self.fuse_history) > 0:
-                content += "\nThere are extra information from other processors:\n"
+                content += '\nThere are extra information from other processors:\n'
                 for i, item in enumerate(self.fuse_history, 1):
                     content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
             if len(self.winner_answer) > 0:
-                content += "\nThere are some previous answers to the same query, think further based on this answer:\n"
+                content += '\nThere are some previous answers to the same query, think further based on this answer:\n'
                 for i, item in enumerate(self.winner_answer, 1):
                     content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
@@ -69,8 +69,8 @@ class SearchProcessor(BaseProcessor):
         grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
         system_instruction = (
-            f"You are an expert search agent. Based on all the information provided, "
-            f"search for and provide a comprehensive answer to the query: {query}"
+            f'You are an expert search agent. Based on all the information provided, '
+            f'search for and provide a comprehensive answer to the query: {query}'
         )
 
         config = types.GenerateContentConfig(
@@ -78,7 +78,7 @@ class SearchProcessor(BaseProcessor):
         )
 
         search_response = client.models.generate_content(
-            model="gemini-2.0-flash-lite",
+            model='gemini-2.0-flash-lite',
             contents=query_with_context,
             config=config,
         )
@@ -95,19 +95,19 @@ class SearchProcessor(BaseProcessor):
         )
 
         # Ensure we have the response from search result
-        if not executor_output.get("response"):
-            executor_output["response"] = search_result
+        if not executor_output.get('response'):
+            executor_output['response'] = search_result
 
         # Add to history
         self.add_all_context_history(
             clean_query,
-            executor_output["response"],
-            executor_output.get("additional_question", ""),
+            executor_output['response'],
+            executor_output.get('additional_question', ''),
         )
 
         # Extract scores using the base processor method
         scorer_output = self._extract_scores_from_executor_output(executor_output)
-        additional_question = executor_output.get("additional_question", "")
+        additional_question = executor_output.get('additional_question', '')
 
         # Create chunk
         chunk = self.merge_outputs_into_chunk(
@@ -120,15 +120,15 @@ class SearchProcessor(BaseProcessor):
 
     def _build_structured_prompt(self, query: str, search_result: str) -> str:
         """Build prompt that asks for structured output with self-evaluation scores."""
-        context_info = ""
+        context_info = ''
         if len(self.fuse_history) > 0:
-            context_info += "\nExtra information from other processors:\n"
+            context_info += '\nExtra information from other processors:\n'
             for i, item in enumerate(self.fuse_history, 1):
                 context_info += f'{i}. {item["answer"]}\n'
 
         if len(self.winner_answer) > 0:
             context_info += (
-                "\nPrevious answers to consider (may not be fully correct):\n"
+                '\nPrevious answers to consider (may not be fully correct):\n'
             )
             for i, item in enumerate(self.winner_answer, 1):
                 context_info += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
@@ -156,7 +156,7 @@ Based on the search result above, please:
         """Get structured output with self-evaluation scores using litellm."""
         response = completion(
             model=self.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{'role': 'user', 'content': prompt}],
             max_tokens=self.max_tokens,
             n=self.return_num,
             temperature=self.temperature,
@@ -168,7 +168,7 @@ Based on the search result above, please:
 
         # Parse the JSON response with scores
         parsed = parse_json_response_with_scores(
-            content, default_additional_question=""
+            content, default_additional_question=''
         )
 
         return parsed

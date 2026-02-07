@@ -9,8 +9,8 @@ class ConsciousTuringMachineConfig:
         max_iter_num: int = 3,
         output_threshold: float = 1.8,
         processors_config: Optional[Dict[str, Any]] = None,
-        parse_model: str = "gemini/gemini-2.0-flash-lite",
-        supervisors_model: str = "gemini/gemini-2.0-flash-lite",
+        parse_model: str = 'gemini/gemini-2.0-flash-lite',
+        supervisors_model: str = 'gemini/gemini-2.0-flash-lite',
         supervisors_prompt: str = None,
         **kwargs: Any,
     ) -> None:
@@ -28,17 +28,17 @@ class ConsciousTuringMachineConfig:
             setattr(self, key, value)
 
     def to_json_string(self) -> str:
-        return json.dumps(self.__dict__, indent=2) + "\n"
+        return json.dumps(self.__dict__, indent=2) + '\n'
 
     @classmethod
-    def from_json_file(cls, json_file: str) -> "ConsciousTuringMachineConfig":
-        with open(json_file, "r", encoding="utf-8") as reader:
+    def from_json_file(cls, json_file: str) -> 'ConsciousTuringMachineConfig':
+        with open(json_file, 'r', encoding='utf-8') as reader:
             text = reader.read()
         return cls(**json.loads(text))
 
     @classmethod
-    def from_ctm(cls, ctm_name: Optional[str]) -> "ConsciousTuringMachineConfig":
+    def from_ctm(cls, ctm_name: Optional[str]) -> 'ConsciousTuringMachineConfig':
         if ctm_name is None:
             return cls()
-        config_file = f"../ctm_conf/{ctm_name}_config.json"
+        config_file = f'../ctm_conf/{ctm_name}_config.json'
         return cls.from_json_file(config_file)

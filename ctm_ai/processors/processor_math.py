@@ -74,14 +74,12 @@ class MathProcessor(BaseProcessor):
             return None
 
         # Step 2: Generate structured output with answer, additional_question, and scores
-        structured_prompt = self._build_structured_prompt(
-            clean_query, wolfram_response
-        )
-        
+        structured_prompt = self._build_structured_prompt(clean_query, wolfram_response)
+
         executor_output = self._ask_for_structured_output(
             structured_prompt, *args, **kwargs
         )
-        
+
         # Ensure we have the response from Wolfram result
         if not executor_output.get('response'):
             executor_output['response'] = wolfram_response
@@ -122,7 +120,7 @@ class MathProcessor(BaseProcessor):
                 context_info += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
         from .utils import JSON_FORMAT_SCORE
-        
+
         prompt = f"""Query: {query}
 
 Wolfram|Alpha Result:
@@ -135,7 +133,7 @@ Based on the Wolfram|Alpha result above, please:
 3. Self-evaluate your response with relevance, confidence, and surprise scores.
 
 {JSON_FORMAT_SCORE}"""
-        
+
         return prompt
 
     def _ask_for_structured_output(
@@ -151,13 +149,12 @@ Based on the Wolfram|Alpha result above, please:
             *args,
             **kwargs,
         )
-        
+
         content = response.choices[0].message.content
-        
+
         # Parse the JSON response with scores
         parsed = parse_json_response_with_scores(
-            content,
-            default_additional_question=''
+            content, default_additional_question=''
         )
-        
+
         return parsed
