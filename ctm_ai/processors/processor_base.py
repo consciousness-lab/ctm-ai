@@ -87,7 +87,7 @@ class BaseProcessor(object):
         if scoring_mode not in _VALID_SCORING_MODES:
             raise ValueError(
                 f"Invalid scoring_mode '{scoring_mode}'. "
-                f"Must be one of {_VALID_SCORING_MODES}"
+                f'Must be one of {_VALID_SCORING_MODES}'
             )
         self.scoring_mode: str = scoring_mode
 
@@ -200,7 +200,9 @@ class BaseProcessor(object):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _scorer_output_from_combined(executor_output: Dict[str, Any]) -> Dict[str, float]:
+    def _scorer_output_from_combined(
+        executor_output: Dict[str, Any],
+    ) -> Dict[str, float]:
         """Build scorer-compatible dict when scoring_mode == 'combined'."""
         return {
             'relevance': -1.0,
@@ -210,7 +212,9 @@ class BaseProcessor(object):
         }
 
     @staticmethod
-    def _scorer_output_from_decomposed(executor_output: Dict[str, Any]) -> Dict[str, float]:
+    def _scorer_output_from_decomposed(
+        executor_output: Dict[str, Any],
+    ) -> Dict[str, float]:
         """Build scorer-compatible dict when scoring_mode == 'decomposed'."""
         relevance = float(executor_output.get('relevance', 0.5))
         confidence = float(executor_output.get('confidence', 0.5))
