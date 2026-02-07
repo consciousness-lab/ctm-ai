@@ -10,14 +10,14 @@ from .processor_base import BaseProcessor
 def pil_to_base64(image) -> str:
     """Convert PIL image to base64 string."""
     buffer = io.BytesIO()
-    image.save(buffer, format='JPEG')
-    img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    image.save(buffer, format="JPEG")
+    img_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
     return img_str
 
 
-@BaseProcessor.register_processor('vision_processor')
+@BaseProcessor.register_processor("vision_processor")
 class VisionProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['GEMINI_API_KEY']
+    REQUIRED_KEYS = ["GEMINI_API_KEY"]
 
     def build_executor_messages(
         self,
@@ -25,8 +25,8 @@ class VisionProcessor(BaseProcessor):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        image_path = kwargs.get('image_path')
-        image = kwargs.get('image')
+        image_path = kwargs.get("image_path")
+        image = kwargs.get("image")
         if not image_path and not image:
             return None
         if image_path:
@@ -34,18 +34,20 @@ class VisionProcessor(BaseProcessor):
         if image:
             base64_image = pil_to_base64(image)
 
-        all_messages = [{'role': 'system', 'content': self.system_prompt}]
+        self.system_prompt = "You are an expert in image understanding. Your task is to analyze the provided image and answer questions about it."
+
+        all_messages = [{"role": "system", "content": self.system_prompt}]
 
         image_message = {
-            'role': 'user',
-            'content': [
+            "role": "user",
+            "content": [
                 {
-                    'type': 'text',
-                    'text': f'{query}\n Based on the image, please provide your answer to the query.',
+                    "type": "text",
+                    "text": f"{query}\n",
                 },
                 {
-                    'type': 'image_url',
-                    'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
                 },
             ],
         }

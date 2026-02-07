@@ -46,45 +46,10 @@ First commit to your best answer in "response", then step back and critically se
 Be honest and well-calibrated. Do NOT inflate scores. Most routine answers should score around relevance ~0.7, confidence ~0.7, surprise ~0.3."""
 
 # ---------------------------------------------------------------------------
-# JSON format templates for different scoring modes
+# JSON format template
 # ---------------------------------------------------------------------------
 
-# Original format: no self-evaluation scores
-JSON_FORMAT = (
-    _CONTEXT_PREAMBLE
-    + """
-Please respond in JSON format with the following structure:
-{
-    "response": "Your detailed response to the query",
-    "additional_question": "If you are not sure about the answer, you should generate a question that potentially can be answered by other modality models or other tools like search engine."
-}
-"""
-    + _ADDITIONAL_QUESTION_INSTRUCTION
-)
-
-# Combined mode: executor outputs a single aggregated score
-JSON_FORMAT_COMBINED_SCORE = (
-    _CONTEXT_PREAMBLE
-    + """
-Please respond in JSON format with the following structure:
-{
-    "response": "Your detailed response to the query",
-    "additional_question": "A question for other modality models or tools if you need more information.",
-    "score": <a number between 0.0 and 2.2>
-}
-"""
-    + _ADDITIONAL_QUESTION_INSTRUCTION
-    + _SCORE_RUBRIC
-    + """
-
-### Computing the "score" field:
-Mentally evaluate relevance, confidence, and surprise for your "response" (NOT "additional_question"), then compute:
-    score = relevance + confidence + (surprise × 0.2)
-Output ONLY the final computed number (between 0.0 and 2.2) in the "score" field."""
-)
-
-# Decomposed mode: executor outputs separate relevance / confidence / surprise
-JSON_FORMAT_DECOMPOSED_SCORE = (
+JSON_FORMAT_SCORE = (
     _CONTEXT_PREAMBLE
     + """
 Please respond in JSON format with the following structure:
@@ -106,16 +71,6 @@ Assess your "response" (NOT "additional_question") and fill in each field indepe
 - "confidence": your confidence assessment (0.0 to 1.0)
 - "surprise": your surprise / novelty assessment (0.0 to 1.0)"""
 )
-
-# ---------------------------------------------------------------------------
-# Mapping helper
-# ---------------------------------------------------------------------------
-
-SCORING_MODE_FORMATS = {
-    'none': JSON_FORMAT,
-    'combined': JSON_FORMAT_COMBINED_SCORE,
-    'decomposed': JSON_FORMAT_DECOMPOSED_SCORE,
-}
 
 # ---------------------------------------------------------------------------
 # JSON parsing utilities
@@ -163,23 +118,21 @@ def parse_json_response(
 def parse_json_response_with_scores(
     content: str,
     default_additional_question: str = '',
-    scoring_mode: str = 'none',
 ) -> Dict[str, object]:
-    """Parse JSON response including optional self-evaluation scores.
+    """Parse JSON response including self-evaluation scores.
 
     Args:
         content: Raw LLM output string.
         default_additional_question: Fallback additional question.
-        scoring_mode: One of ``'none'``, ``'combined'``, ``'decomposed'``.
 
     Returns:
-        A dict always containing ``'response'`` and ``'additional_question'``.
-        - If *combined*: also contains ``'score'`` (float, 0.0-2.2).
-        - If *decomposed*: also contains ``'relevance'``, ``'confidence'``,
-          ``'surprise'`` (each float, 0.0-1.0).
+        A dict containing:
+        - 'response': the main answer
+        - 'additional_question': follow-up question
+        - 'relevance': float (0.0-1.0)
+        - 'confidence': float (0.0-1.0)
+        - 'surprise': float (0.0-1.0)
     """
-    # -- defaults used when parsing fails --
-    _DEFAULT_COMBINED_SCORE = 1.0
     _DEFAULT_COMPONENT_SCORE = 0.5
 
     def _safe_float(val: object, lo: float, hi: float, default: float) -> float:
@@ -205,20 +158,12 @@ def parse_json_response_with_scores(
         'additional_question': additional_question,
     }
 
-    if scoring_mode == 'combined':
-        result['score'] = _safe_float(
-            parsed.get('score', _DEFAULT_COMBINED_SCORE),
+    for key in ('relevance', 'confidence', 'surprise'):
+        result[key] = _safe_float(
+            parsed.get(key, _DEFAULT_COMPONENT_SCORE),
             0.0,
-            2.2,
-            _DEFAULT_COMBINED_SCORE,
+            1.0,
+            _DEFAULT_COMPONENT_SCORE,
         )
-    elif scoring_mode == 'decomposed':
-        for key in ('relevance', 'confidence', 'surprise'):
-            result[key] = _safe_float(
-                parsed.get(key, _DEFAULT_COMPONENT_SCORE),
-                0.0,
-                1.0,
-                _DEFAULT_COMPONENT_SCORE,
-            )
 
     return result

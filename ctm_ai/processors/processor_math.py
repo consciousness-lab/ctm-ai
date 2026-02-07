@@ -1,18 +1,12 @@
 import os
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 from litellm import completion
 
 from ..chunks import Chunk
-from ..scorers import BaseScorer
 from .processor_base import BaseProcessor
-
-MATH_PROMPT = """You should utilize the information in the context history and the current response from the Wolfram|Alpha tool to generate an additional question about the query. Your additional question should be potentially answerable by other modality models and about specific information that you are not sure about. Your additional question should be just about what kind of information you need to get from other modality models or other tools, nothing else about the task or original query should be included. For example, what additional context is needed, what related concepts should be explored, etc. The question needs to be short and clean.
-There is the query: {query}
-There is the response from Wolfram|Alpha: {response}
-There is some additional information: {additional_information}
-"""
+from .utils import parse_json_response_with_scores
 
 WOLFRAM_API_BASE_URL = 'https://www.wolframalpha.com/api/v1/llm-api'
 
@@ -51,28 +45,15 @@ class MathProcessor(BaseProcessor):
         except requests.exceptions.RequestException as e:
             return f'Error calling Wolfram|Alpha API: {str(e)}'
 
-    def _generate_additional_info(
+    def build_executor_messages(
         self,
         query: str,
-        response: str,
+        *args: Any,
         **kwargs: Any,
-    ) -> str:
-        """Generate additional context for creating follow-up questions."""
-        content = ''
-        if len(self.fuse_history) > 0:
-            content += '\nThere are extra information from other processors:\n'
-            for i, item in enumerate(self.fuse_history, 1):
-                content += f'{i}. {item["answer"]}\n'
-
-        if len(self.winner_answer) > 0:
-            content += '\nThere are some previous answers to the same query, think further based on this answer. These answers may not be correct, but it can provide some information.\n'
-            for i, item in enumerate(self.winner_answer, 1):
-                content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
-
-        additional_question = MATH_PROMPT.format(
-            query=query, response=response, additional_information=content
-        )
-        return additional_question
+    ) -> List[Dict[str, Any]]:
+        """MathProcessor doesn't use this method as it has custom Wolfram API flow."""
+        # This method is required by BaseProcessor but not used in custom ask()
+        return None
 
     def ask(
         self,
@@ -85,38 +66,38 @@ class MathProcessor(BaseProcessor):
         """Process mathematical/computational queries using Wolfram|Alpha LLM API."""
         clean_query = query
 
+        # Step 1: Call Wolfram|Alpha API to get computational result
         wolfram_response = self._call_wolfram_api(query)
 
         # If Wolfram API failed, skip this processor
         if wolfram_response.startswith('Error calling Wolfram|Alpha API:'):
             return None
 
-        executor_output = {'response': '', 'additional_question': ''}
-        executor_output['response'] = wolfram_response
-
-        additional_content = self._generate_additional_info(
-            query=clean_query, response=executor_output['response']
+        # Step 2: Generate structured output with answer, additional_question, and scores
+        structured_prompt = self._build_structured_prompt(
+            clean_query, wolfram_response
         )
-        response = completion(
-            model=self.model,
-            messages=[{'role': 'user', 'content': additional_content}],
-            max_tokens=self.max_tokens,
-            n=self.return_num,
-            *args,
-            **kwargs,
+        
+        executor_output = self._ask_for_structured_output(
+            structured_prompt, *args, **kwargs
         )
-        executor_output['additional_question'] = response.choices[0].message.content
+        
+        # Ensure we have the response from Wolfram result
+        if not executor_output.get('response'):
+            executor_output['response'] = wolfram_response
 
+        # Add to history
         self.add_all_context_history(
             clean_query,
             executor_output['response'],
-            executor_output['additional_question'],
+            executor_output.get('additional_question', ''),
         )
 
-        scorer = BaseScorer(*args, **kwargs)
-        scorer_output = scorer.ask(query=clean_query, messages=executor_output)
-        additional_question = executor_output['additional_question'] or ''
+        # Extract scores using the base processor method
+        scorer_output = self._extract_scores_from_executor_output(executor_output)
+        additional_question = executor_output.get('additional_question', '')
 
+        # Create chunk
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,
@@ -124,3 +105,59 @@ class MathProcessor(BaseProcessor):
             additional_question=additional_question,
         )
         return chunk
+
+    def _build_structured_prompt(self, query: str, wolfram_result: str) -> str:
+        """Build prompt that asks for structured output with self-evaluation scores."""
+        context_info = ''
+        if len(self.fuse_history) > 0:
+            context_info += '\nExtra information from other processors:\n'
+            for i, item in enumerate(self.fuse_history, 1):
+                context_info += f'{i}. {item["answer"]}\n'
+
+        if len(self.winner_answer) > 0:
+            context_info += (
+                '\nPrevious answers to consider (may not be fully correct):\n'
+            )
+            for i, item in enumerate(self.winner_answer, 1):
+                context_info += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
+
+        from .utils import JSON_FORMAT_SCORE
+        
+        prompt = f"""Query: {query}
+
+Wolfram|Alpha Result:
+{wolfram_result}
+{context_info}
+
+Based on the Wolfram|Alpha result above, please:
+1. Provide a comprehensive response to the query, explaining the mathematical/computational result clearly
+2. Generate an additional question if you need more information from other modality models (e.g., "what is shown in the diagram?", "what additional context is needed?"). If no additional information is needed, leave it empty.
+3. Self-evaluate your response with relevance, confidence, and surprise scores.
+
+{JSON_FORMAT_SCORE}"""
+        
+        return prompt
+
+    def _ask_for_structured_output(
+        self, prompt: str, *args: Any, **kwargs: Any
+    ) -> Dict[str, Any]:
+        """Get structured output with self-evaluation scores using litellm."""
+        response = completion(
+            model=self.model,
+            messages=[{'role': 'user', 'content': prompt}],
+            max_tokens=self.max_tokens,
+            n=self.return_num,
+            temperature=self.temperature,
+            *args,
+            **kwargs,
+        )
+        
+        content = response.choices[0].message.content
+        
+        # Parse the JSON response with scores
+        parsed = parse_json_response_with_scores(
+            content,
+            default_additional_question=''
+        )
+        
+        return parsed

@@ -6,44 +6,28 @@ from litellm import completion
 from numpy.typing import NDArray
 
 from ..chunks import Chunk
-from ..scorers import BaseScorer
 from ..utils import configure_litellm, message_exponential_backoff
-from .utils import (
-    JSON_FORMAT,
-    SCORING_MODE_FORMATS,
-    parse_json_response,
-    parse_json_response_with_scores,
-)
-
-# Valid scoring modes
-_VALID_SCORING_MODES = ('none', 'combined', 'decomposed')
+from .utils import JSON_FORMAT_SCORE, parse_json_response_with_scores
 
 
 class BaseProcessor(object):
     """Base class for all processors.
 
-    Args (via **kwargs):
-        scoring_mode: How self-evaluation scores are produced.
-            - ``'none'``  – (default) use a **separate** ``BaseScorer`` call
-              after the executor (original behaviour, two LLM round-trips).
-            - ``'combined'`` – the executor LLM outputs a **single** aggregated
-              score (``relevance + confidence + surprise × 0.2``) alongside
-              the answer.  One LLM call total.
-            - ``'decomposed'`` – the executor LLM outputs **separate**
-              ``relevance``, ``confidence``, ``surprise`` values; the weight
-              is computed in post-processing.  One LLM call total.
+    The executor LLM outputs answer, additional_question, and separate
+    relevance, confidence, surprise scores in a single call. The final
+    weight is computed as: relevance + confidence + (surprise × 0.2).
     """
 
-    _processor_registry: Dict[str, Type['BaseProcessor']] = {}
+    _processor_registry: Dict[str, Type["BaseProcessor"]] = {}
     REQUIRED_KEYS: List[str] = []
 
     @classmethod
     def register_processor(
         cls, name: str
-    ) -> Callable[[Type['BaseProcessor']], Type['BaseProcessor']]:
+    ) -> Callable[[Type["BaseProcessor"]], Type["BaseProcessor"]]:
         def decorator(
-            subclass: Type['BaseProcessor'],
-        ) -> Type['BaseProcessor']:
+            subclass: Type["BaseProcessor"],
+        ) -> Type["BaseProcessor"]:
             cls._processor_registry[name] = subclass
             return subclass
 
@@ -55,7 +39,7 @@ class BaseProcessor(object):
         group_name: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
-    ) -> 'BaseProcessor':
+    ) -> "BaseProcessor":
         if name not in cls._processor_registry:
             raise ValueError(f"No processor registered with name '{name}'")
         subclass = cls._processor_registry[name]
@@ -70,26 +54,17 @@ class BaseProcessor(object):
         self.check_required_env_vars()
         self.name = name
         self.group_name = group_name
-        self.system_prompt = kwargs.get('system_prompt')
-        self.model = kwargs.get('model') or 'gemini/gemini-2.0-flash-lite'
+        self.system_prompt = kwargs.get("system_prompt")
+        self.model = kwargs.get("model") or "gemini/gemini-2.0-flash-lite"
 
-        self.model_name = kwargs.get('model') or 'gemini/gemini-2.0-flash-lite'
-        self.try_times = kwargs.get('try_times', 3)
-        self.max_tokens = kwargs.get('max_tokens', 4096)
-        self.return_num = kwargs.get('return_num', 1)
-        self.temperature = kwargs.get('temperature', 0.2)
+        self.model_name = kwargs.get("model") or "gemini/gemini-2.0-flash-lite"
+        self.try_times = kwargs.get("try_times", 3)
+        self.max_tokens = kwargs.get("max_tokens", 4096)
+        self.return_num = kwargs.get("return_num", 1)
+        self.temperature = kwargs.get("temperature", 0.2)
         self.fuse_history = []
         self.winner_answer = []
         self.all_context_history = []
-
-        # --- scoring mode -------------------------------------------------
-        scoring_mode = kwargs.get('scoring_mode', 'none')
-        if scoring_mode not in _VALID_SCORING_MODES:
-            raise ValueError(
-                f"Invalid scoring_mode '{scoring_mode}'. "
-                f'Must be one of {_VALID_SCORING_MODES}'
-            )
-        self.scoring_mode: str = scoring_mode
 
         configure_litellm(model_name=self.model_name)
 
@@ -97,17 +72,17 @@ class BaseProcessor(object):
         missing_vars = [var for var in self.REQUIRED_KEYS if var not in os.environ]
         if missing_vars:
             raise EnvironmentError(
-                f'[{self.name}] Missing required environment variables: {missing_vars}'
+                f"[{self.name}] Missing required environment variables: {missing_vars}"
             )
 
     def add_fuse_history(
-        self, question: str, answer: str, processor_name: str = ''
+        self, question: str, answer: str, processor_name: str = ""
     ) -> None:
         self.fuse_history.append(
             {
-                'additional_question': question,
-                'answer': answer,
-                'processor_name': processor_name,
+                "additional_question": question,
+                "answer": answer,
+                "processor_name": processor_name,
             }
         )
 
@@ -116,47 +91,39 @@ class BaseProcessor(object):
     ) -> None:
         self.all_context_history.append(
             {
-                'query': query,
-                'answer': answer,
-                'additional_question': additional_question,
+                "query": query,
+                "answer": answer,
+                "additional_question": additional_question,
             }
         )
 
     def _build_executor_content(
         self,
         query: str,
-        text: Optional[str] = None,
-        video_frames_path: Optional[List[str]] = None,
         is_fuse: bool = False,
-        additional_context: Optional[str] = None,
         **kwargs: Any,
     ) -> str:
-        content = f'Query: {query}\n'
-        if additional_context:
-            content += (
-                f'\nAdditional context from other processors:\n{additional_context}\n'
-            )
+        content = f"Query: {query}\n"
 
         if not is_fuse:
             if len(self.fuse_history) > 0:
-                content += '\nThere are extra information from other processors:\n'
+                content += "\nThere are extra information from other processors:\n"
                 for i, item in enumerate(self.fuse_history, 1):
                     content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
             if len(self.winner_answer) > 0:
-                content += '\nThere are some previous answers to the same query, think further based on this answer:\n'
+                content += "\nThere are some previous answers to the same query, think further based on this answer:\n"
                 for i, item in enumerate(self.winner_answer, 1):
                     content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
-        # Pick the JSON instruction template that matches the scoring mode
-        content += SCORING_MODE_FORMATS.get(self.scoring_mode, JSON_FORMAT)
+        content += JSON_FORMAT_SCORE
         return content
 
     @message_exponential_backoff()
     def ask_executor(
         self,
         messages: List[Dict[str, Any]],
-        default_additional_question: str = '',
+        default_additional_question: str = "",
         *args: Any,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -171,21 +138,9 @@ class BaseProcessor(object):
         contents = [
             response.choices[i].message.content for i in range(len(response.choices))
         ]
-
-        # When scoring is integrated, use the extended parser
-        if self.scoring_mode != 'none':
-            return parse_json_response_with_scores(
-                contents[0], default_additional_question, self.scoring_mode
-            )
-
-        # Original path: parse answer + additional_question only
-        gist, additional_question = parse_json_response(
+        return parse_json_response_with_scores(
             contents[0], default_additional_question
         )
-        return {
-            'response': gist,
-            'additional_question': additional_question,
-        }
 
     def build_executor_messages(
         self,
@@ -193,42 +148,22 @@ class BaseProcessor(object):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        raise NotImplementedError('Subclasses must implement this method')
-
-    # ------------------------------------------------------------------
-    # Score extraction helpers (from integrated executor output)
-    # ------------------------------------------------------------------
+        raise NotImplementedError("Subclasses must implement this method")
 
     @staticmethod
-    def _scorer_output_from_combined(
+    def _extract_scores_from_executor_output(
         executor_output: Dict[str, Any],
     ) -> Dict[str, float]:
-        """Build scorer-compatible dict when scoring_mode == 'combined'."""
+        """Extract relevance/confidence/surprise from executor output and compute weight."""
+        relevance = float(executor_output.get("relevance", 0.5))
+        confidence = float(executor_output.get("confidence", 0.5))
+        surprise = float(executor_output.get("surprise", 0.5))
         return {
-            'relevance': -1.0,
-            'confidence': -1.0,
-            'surprise': -1.0,
-            'weight': float(executor_output.get('score', 1.0)),
+            "relevance": relevance,
+            "confidence": confidence,
+            "surprise": surprise,
+            "weight": relevance + confidence + (surprise * 0.2),
         }
-
-    @staticmethod
-    def _scorer_output_from_decomposed(
-        executor_output: Dict[str, Any],
-    ) -> Dict[str, float]:
-        """Build scorer-compatible dict when scoring_mode == 'decomposed'."""
-        relevance = float(executor_output.get('relevance', 0.5))
-        confidence = float(executor_output.get('confidence', 0.5))
-        surprise = float(executor_output.get('surprise', 0.5))
-        return {
-            'relevance': relevance,
-            'confidence': confidence,
-            'surprise': surprise,
-            'weight': relevance + confidence + (surprise * 0.2),
-        }
-
-    # ------------------------------------------------------------------
-    # Main ask entry point
-    # ------------------------------------------------------------------
 
     def ask(
         self,
@@ -243,12 +178,10 @@ class BaseProcessor(object):
         video_path: Optional[str] = None,
         api_manager: Any = None,
         is_fuse: bool = False,
-        additional_context: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
-        clean_query = query
-        query = self._build_executor_content(
+        executor_content = self._build_executor_content(
             query=query,
             text=text,
             image=image,
@@ -259,10 +192,9 @@ class BaseProcessor(object):
             video_frames_path=video_frames_path,
             video_path=video_path,
             is_fuse=is_fuse,
-            additional_context=additional_context,
         )
         executor_messages = self.build_executor_messages(
-            query=query,
+            query=executor_content,
             text=text,
             image=image,
             image_path=image_path,
@@ -277,27 +209,19 @@ class BaseProcessor(object):
             return None
         executor_output = self.ask_executor(
             messages=executor_messages,
-            default_additional_question='Would you like me to explain any specific aspects in more detail?',
+            default_additional_question="Would you like me to explain any specific aspects in more detail?",
         )
-        if executor_output.get('response') is None:
+        if executor_output.get("response") is None:
             return None
         self.add_all_context_history(
-            clean_query,
-            executor_output['response'],
-            executor_output['additional_question'],
+            query,
+            executor_output["response"],
+            executor_output["additional_question"],
         )
 
-        # --- Obtain scores ------------------------------------------------
-        if self.scoring_mode == 'combined':
-            scorer_output = self._scorer_output_from_combined(executor_output)
-        elif self.scoring_mode == 'decomposed':
-            scorer_output = self._scorer_output_from_decomposed(executor_output)
-        else:
-            # Original behaviour: separate scorer LLM call
-            scorer = BaseScorer(*args, **kwargs)
-            scorer_output = scorer.ask(query=clean_query, messages=executor_output)
-
-        additional_question = executor_output['additional_question'] or ''
+        # Extract scores from executor output
+        scorer_output = self._extract_scores_from_executor_output(executor_output)
+        additional_question = executor_output["additional_question"] or ""
 
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
@@ -309,15 +233,15 @@ class BaseProcessor(object):
 
     def get_memory_info(self) -> Tuple[int, int]:
         return {
-            'all_history': self.all_context_history,
-            'fuse_history': self.fuse_history,
-            'winner_answer': self.winner_answer,
+            "all_history": self.all_context_history,
+            "fuse_history": self.fuse_history,
+            "winner_answer": self.winner_answer,
         }
 
     def update(self, chunk: Chunk) -> None:
         if chunk.processor_name != self.name:
             self.winner_answer.append(
-                {'processor_name': chunk.processor_name, 'answer': chunk.gist}
+                {"processor_name": chunk.processor_name, "answer": chunk.gist}
             )
 
     def merge_outputs_into_chunk(
@@ -325,16 +249,16 @@ class BaseProcessor(object):
         name: str,
         executor_output: Dict[str, Any],
         scorer_output: Dict[str, float],
-        additional_question: str = '',
+        additional_question: str = "",
     ) -> Chunk:
         return Chunk(
             time_step=0,
             processor_name=name,
-            gist=executor_output['response'],
-            relevance=scorer_output['relevance'],
-            confidence=scorer_output['confidence'],
-            surprise=scorer_output['surprise'],
-            weight=scorer_output['weight'],
+            gist=executor_output["response"],
+            relevance=scorer_output["relevance"],
+            confidence=scorer_output["confidence"],
+            surprise=scorer_output["surprise"],
+            weight=scorer_output["weight"],
             additional_question=additional_question,
         )
 
