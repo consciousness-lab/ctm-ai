@@ -1,13 +1,14 @@
-import os
 import json
+import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+
 import numpy as np
 from litellm import completion
 from numpy.typing import NDArray
-from .processor_base import BaseProcessor
-from litellm import completion
-from ..scorers import ToolScorer
+
 from ..chunks import Chunk
+from ..scorers import ToolScorer
+from .processor_base import BaseProcessor
 from .utils import parse_json_response
 
 TOOL_SYSTEM_PROMPT = """
