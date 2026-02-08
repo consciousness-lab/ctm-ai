@@ -1,8 +1,3 @@
-"""
-LiteLLM + MCP 直接调用版本
-给一个 prompt，返回结果，完事
-"""
-
 import asyncio
 import json
 import os
@@ -14,18 +9,18 @@ from mcp.client.stdio import stdio_client
 
 
 class TwitterMCPAgent:
-    """简单的 Twitter MCP Agent"""
+    """Simple Twitter MCP Agent"""
 
     def __init__(self, model: str = 'gpt-4o-mini'):
         self.model = model
         self.session: Optional[ClientSession] = None
         self.tools: List[Dict] = []
 
-        self.system_prompt = """你是一个 Twitter/X 数据分析助手。
-使用工具获取数据，然后用中文简洁地总结关键信息。"""
+        self.system_prompt = """You are a Twitter/X data analysis assistant.
+Use tools to retrieve data, then provide concise summaries of key information."""
 
     async def __aenter__(self):
-        """连接 MCP"""
+        """Connect to MCP"""
         server_params = StdioServerParameters(
             command='npx',
             args=[
@@ -52,13 +47,13 @@ class TwitterMCPAgent:
         return self
 
     async def __aexit__(self, *args):
-        """断开连接"""
+        """Disconnect from MCP"""
         if self.session:
             await self._session_context.__aexit__(*args)
             await self._streams_context.__aexit__(*args)
 
     def _get_tools_for_llm(self) -> List[Dict]:
-        """转换工具格式"""
+        """Convert tool format for LLM"""
         return [
             {
                 'type': 'function',
@@ -74,7 +69,7 @@ class TwitterMCPAgent:
         ]
 
     async def _call_tool(self, name: str, args: Dict) -> str:
-        """调用 MCP 工具"""
+        """Call MCP tool"""
         result = await self.session.call_tool(name, args)
         if result.content:
             return '\n'.join(
@@ -85,13 +80,13 @@ class TwitterMCPAgent:
 
     async def run(self, prompt: str) -> str:
         """
-        执行 prompt，返回结果
+        Execute prompt and return result
 
         Args:
-            prompt: 用户的问题/指令
+            prompt: User's question/instruction
 
         Returns:
-            LLM 的回复
+            LLM's response
         """
         messages = [
             {'role': 'system', 'content': self.system_prompt},
@@ -99,14 +94,14 @@ class TwitterMCPAgent:
         ]
         tools = self._get_tools_for_llm()
 
-        # 调用 LLM
+        # Call LLM
         response = await litellm.acompletion(
             model=self.model, messages=messages, tools=tools, tool_choice='auto'
         )
 
         assistant_message = response.choices[0].message
 
-        # 处理工具调用
+        # Handle tool calls
         while assistant_message.tool_calls:
             messages.append(
                 {
@@ -126,7 +121,7 @@ class TwitterMCPAgent:
                 }
             )
 
-            # 执行工具
+            # Execute tools
             for tc in assistant_message.tool_calls:
                 result = await self._call_tool(
                     tc.function.name, json.loads(tc.function.arguments)
@@ -135,7 +130,7 @@ class TwitterMCPAgent:
                     {'role': 'tool', 'tool_call_id': tc.id, 'content': result[:10000]}
                 )
 
-            # 再次调用 LLM
+            # Call LLM again
             response = await litellm.acompletion(
                 model=self.model, messages=messages, tools=tools, tool_choice='auto'
             )
@@ -144,15 +139,15 @@ class TwitterMCPAgent:
         return assistant_message.content or ''
 
 
-# ==================== 直接调用函数 ====================
+# ==================== Direct Function Call ====================
 
 
 async def query(prompt: str, model: str = 'gpt-4o-mini') -> str:
     """
-    一行代码调用
+    One-line call
 
     Example:
-        result = await query("搜索 MrBeast 的最新推文")
+        result = await query("Search for MrBeast's latest tweets")
     """
     async with TwitterMCPAgent(model=model) as agent:
         return await agent.run(prompt)
@@ -160,21 +155,21 @@ async def query(prompt: str, model: str = 'gpt-4o-mini') -> str:
 
 def query_sync(prompt: str, model: str = 'gpt-4o-mini') -> str:
     """
-    同步版本
+    Synchronous version
 
     Example:
-        result = query_sync("搜索 MrBeast 的最新推文")
+        result = query_sync("Search for MrBeast's latest tweets")
     """
     return asyncio.run(query(prompt, model))
 
 
-# ==================== 直接运行 ====================
+# ==================== Direct Execution ====================
 
 if __name__ == '__main__':
-    # 设置你的 prompt
+    # Set your prompt
     PROMPT = 'songs made by John Williams'
 
-    # 设置模型 (可选)
+    # Set model (optional)
     MODEL = os.environ.get('LLM_MODEL', 'gpt-4o-mini')
 
     print(f'Prompt: {PROMPT}')
