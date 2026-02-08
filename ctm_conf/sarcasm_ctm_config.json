@@ -5,15 +5,15 @@
     "processors_config": {
         "video_processor": {
             "system_prompt": "You are an expert at analyzing visual cues in video frames. Analyze the visual cues, body language, facial expressions, and context. Note that the videos do not include audio, you should only analyze the visual cues. Always ground your answer in specific visual observations. Be concise but thorough.", 
-            "model": "gemini/gemini-2.0-flash-lite"
+            "model": "gemini/gemini-2.5-flash-lite"
         },
         "language_processor": {
             "system_prompt": "You are an expert at analyzing text and language. You will receive a text transcript and a query. Analyze word choice and phrasing, rhetorical devices, context and literal vs. intended meaning, and sentiment mismatch. When the query is about specific textual details, provide precise analysis grounded in the text. Always cite specific words or phrases as evidence. Be concise but thorough. ",
-            "model": "gemini/gemini-2.0-flash-lite"
+            "model": "gemini/gemini-2.5-flash-lite"
         },
         "audio_processor": {
             "system_prompt": "You are an expert at analyzing audio. You will receive an audio file and a query. Listen carefully to the audio and analyze the tone, emotion, pitch, speed, and vocal patterns. Pay special attention to the tone of voice (flat, exaggerated, or ironic), pitch variations, speaking speed, emphasis on certain words, and pauses and timing. Answer the query based on your analysis of the audio. Explain your reasoning based on what you hear in the audio.",
-            "model": "gemini/gemini-2.0-flash-lite"
+            "model": "gemini/gemini-2.5-flash-lite"
         }
     }
 }
