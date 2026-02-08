@@ -16,13 +16,9 @@ def run_instance(test_file, output_file="ctm_urfunny.jsonl"):
     dataset = load_data("data_raw/urfunny_dataset_test.json")
     ctm = ConsciousTuringMachine("urfunny_test")
     target_sentence = dataset[test_file]["punchline_sentence"]
-    query = "Is the persion being hurmous or not?"
-    context_sentences = "context setences: "
-    for i in range(len(dataset[test_file]["context_sentences"])):
-        context_sentences += dataset[test_file]["context_sentences"][i]
-    context_sentences += "\npunchline sentence: " + target_sentence
+    query = "Is the persion being humorous or not?"
     audio_path = f"urfunny_audios/{test_file}_audio.mp4"
-    video_path = f"urfunny_frames/{test_file}.mp4"
+    video_path = f"urfunny_muted_videos/{test_file}.mp4"
     answer = ctm(
         query=query,
         text=target_sentence,

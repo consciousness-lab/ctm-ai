@@ -1,7 +1,7 @@
 {
   "ctm_name": "urfunny_test",
   "max_iter_num": 3,
-  "output_threshold": 2.0,
+  "output_threshold": 2.1,
   "processors_config": {
     "video_processor": {
       "system_prompt": "You are an expert at analyzing visual cues in video frames. Analyze the visual cues, body language, facial expressions, and context. Note that the videos do not include audio, you should only analyze the visual cues. Always ground your answer in specific visual observations. Be concise but thorough.",
