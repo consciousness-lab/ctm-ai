@@ -49,7 +49,10 @@ class AudioProcessor(BaseProcessor):
             audio_message = {
                 'role': 'user',
                 'content': [
-                    {'type': 'text', 'text': f'[AUDIO PROVIDED BELOW]\n\n{query}\n\nBased on the audio you received, provide your analysis.'},
+                    {
+                        'type': 'text',
+                        'text': f'[AUDIO PROVIDED BELOW]\n\n{query}\n\nBased on the audio you received, provide your analysis.',
+                    },
                     {
                         'type': 'file',
                         'file': {
