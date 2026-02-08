@@ -8,7 +8,9 @@ class CodeProcessor(BaseProcessor):
     REQUIRED_KEYS = ['GEMINI_API_KEY']
 
     def _init_info(self, *args: Any, **kwargs: Any) -> None:
-        self.system_prompt = 'You are an expert in code writing.'
+        # Use system_prompt from config if provided, otherwise use default
+        if not self.system_prompt:
+            self.system_prompt = 'You are an expert in code writing.'
 
     def build_executor_messages(
         self,

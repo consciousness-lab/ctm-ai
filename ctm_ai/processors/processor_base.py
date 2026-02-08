@@ -191,6 +191,11 @@ class BaseProcessor(object):
             video_path=video_path,
             is_fuse=is_fuse,
         )
+        
+        # Log the query content sent to this processor
+        from ..utils import logger
+        logger.info(f'\n{self.name} received query:\n{executor_content[:500]}...' if len(executor_content) > 500 else f'\n{self.name} received query:\n{executor_content}')
+        
         executor_messages = self.build_executor_messages(
             query=executor_content,
             text=text,

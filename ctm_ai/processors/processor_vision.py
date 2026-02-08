@@ -34,7 +34,9 @@ class VisionProcessor(BaseProcessor):
         if image:
             base64_image = pil_to_base64(image)
 
-        self.system_prompt = 'You are an expert in image understanding. Your task is to analyze the provided image and answer questions about it.'
+        # Use system_prompt from config if provided, otherwise use default
+        if not self.system_prompt:
+            self.system_prompt = 'You are an expert in image understanding. Your task is to analyze the provided image and answer questions about it.'
 
         all_messages = [{'role': 'system', 'content': self.system_prompt}]
 

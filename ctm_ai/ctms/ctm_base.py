@@ -143,11 +143,11 @@ class BaseConsciousTuringMachine(ABC):
         from litellm import completion
 
         parse_prompt = f"""Based on the query and the answer, please refine and format the answer to make it clear, concise, and well-structured. Your answer should start with either "Yes" or "No" and then provide your reasoning.
-Query:
-{query}
-Answer:
-{answer}
-"""
+        Query:
+        {query}
+        Answer:
+        {answer}
+        """
 
         try:
             response = completion(

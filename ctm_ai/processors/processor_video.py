@@ -22,7 +22,9 @@ class VideoProcessor(BaseProcessor):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        self.system_prompt = 'You are an expert in video understanding. Your task is to analyze the provided video and answer questions about it.'
+        # Use system_prompt from config if provided, otherwise use default
+        if not self.system_prompt:
+            self.system_prompt = 'You are an expert in video understanding. Your task is to analyze the provided video and answer questions about it.'
 
         video_path = kwargs.get('video_path')
         if not video_path:
