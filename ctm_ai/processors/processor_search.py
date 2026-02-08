@@ -1,17 +1,18 @@
 from typing import Any, Dict, List, Optional
 
-from google import genai
-from google.genai import types
 from litellm import completion
 
 from ..chunks import Chunk
+from ..utils import logger
 from .processor_base import BaseProcessor
 from .utils import parse_json_response_with_scores
 
 
 @BaseProcessor.register_processor('search_processor')
 class SearchProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['GEMINI_API_KEY']
+    # Google Search grounding requires GEMINI_API_KEY but is only used for Gemini.
+    # The provider-specific key check in BaseProcessor handles the rest.
+    REQUIRED_KEYS = []
 
     def _build_executor_content(
         self,
@@ -46,25 +47,11 @@ class SearchProcessor(BaseProcessor):
         # This method is required by BaseProcessor but not used in custom ask()
         return None
 
-    def ask(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        is_fuse: bool = False,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Chunk:
-        """Custom ask method that integrates Google Search with self-evaluation scoring."""
-        clean_query = query
+    def _google_search(self, query: str, query_with_context: str) -> str:
+        """Use Google Search grounding via Gemini GenAI SDK (Gemini only)."""
+        from google import genai
+        from google.genai import types
 
-        # Build context-aware query for search
-        query_with_context = self._build_executor_content(
-            query=query,
-            text=text,
-            is_fuse=is_fuse,
-        )
-
-        # Step 1: Use Google Search to get initial response
         client = genai.Client()
         grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
@@ -83,7 +70,55 @@ class SearchProcessor(BaseProcessor):
             config=config,
         )
 
-        search_result = search_response.text
+        return search_response.text
+
+    def _llm_search_fallback(self, query: str, query_with_context: str) -> str:
+        """Fallback for non-Gemini providers: use LLM directly without search grounding."""
+        system_instruction = (
+            f'You are an expert search agent. Based on all the information provided, '
+            f'provide a comprehensive answer to the query: {query}. '
+            f'Use your knowledge to answer as accurately as possible.'
+        )
+
+        response = completion(
+            **self._completion_kwargs,
+            messages=[
+                {'role': 'system', 'content': system_instruction},
+                {'role': 'user', 'content': query_with_context},
+            ],
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+        )
+
+        return response.choices[0].message.content
+
+    def ask(
+        self,
+        query: str,
+        text: Optional[str] = None,
+        is_fuse: bool = False,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Chunk:
+        """Custom ask method that integrates search with self-evaluation scoring."""
+        clean_query = query
+
+        # Build context-aware query for search
+        query_with_context = self._build_executor_content(
+            query=query,
+            text=text,
+            is_fuse=is_fuse,
+        )
+
+        # Step 1: Get search result (Google Search for Gemini, LLM fallback for others)
+        if self.provider == 'gemini':
+            try:
+                search_result = self._google_search(clean_query, query_with_context)
+            except Exception as e:
+                logger.warning(f'Google Search grounding failed: {e}, using LLM fallback')
+                search_result = self._llm_search_fallback(clean_query, query_with_context)
+        else:
+            search_result = self._llm_search_fallback(clean_query, query_with_context)
 
         # Step 2: Generate structured output with answer, additional_question, and scores
         # Build the prompt that includes search result and asks for structured JSON output
@@ -154,15 +189,15 @@ Based on the search result above, please:
         self, prompt: str, *args: Any, **kwargs: Any
     ) -> Dict[str, Any]:
         """Get structured output with self-evaluation scores using litellm."""
-        response = completion(
-            model=self.model,
-            messages=[{'role': 'user', 'content': prompt}],
-            max_tokens=self.max_tokens,
-            n=self.return_num,
-            temperature=self.temperature,
-            *args,
+        call_kwargs = {
+            **self._completion_kwargs,
+            'messages': [{'role': 'user', 'content': prompt}],
+            'max_tokens': self.max_tokens,
+            'n': self.return_num,
+            'temperature': self.temperature,
             **kwargs,
-        )
+        }
+        response = completion(**call_kwargs)
 
         content = response.choices[0].message.content
 

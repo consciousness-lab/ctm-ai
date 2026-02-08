@@ -5,7 +5,7 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor('language_processor')
 class LanguageProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['GEMINI_API_KEY']
+    REQUIRED_KEYS = []
 
     def _init_info(self, *args: Any, **kwargs: Any) -> None:
         # Use system_prompt from config if provided, otherwise use default

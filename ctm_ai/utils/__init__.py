@@ -5,7 +5,12 @@ from .error_handler import (
     multi_info_exponential_backoff,
     score_exponential_backoff,
 )
-from .litellm_utils import configure_litellm
+from .litellm_utils import (
+    configure_litellm,
+    get_completion_kwargs,
+    get_model_provider,
+    get_required_api_key_name,
+)
 from .loader import (
     extract_audio_from_video,
     extract_video_frames,
@@ -37,6 +42,9 @@ __all__ = [
     'configure_litellm',
     'convert_message_to_litellm_format',
     'convert_messages_to_litellm_format',
+    'get_completion_kwargs',
+    'get_model_provider',
+    'get_required_api_key_name',
     'litellm_completion_request',
     # Loaders
     'load_audio',

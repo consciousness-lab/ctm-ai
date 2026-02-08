@@ -135,7 +135,7 @@ OUTPUT PROTOCOL (MUST follow strictly):
         cleaned_tools = clean_tools_for_vertex_ai(raw_tools)
 
         response = completion(
-            model=self.model,
+            **self._completion_kwargs,
             messages=messages,
             tools=cleaned_tools,
             tool_choice='auto',
@@ -256,15 +256,15 @@ Based on the tool result, please:
         self, prompt: str, *args: Any, **kwargs: Any
     ) -> Dict[str, Any]:
         """Get structured output with self-evaluation scores using litellm."""
-        response = completion(
-            model=self.model,
-            messages=[{'role': 'user', 'content': prompt}],
-            max_tokens=self.max_tokens,
-            n=self.return_num,
-            temperature=self.temperature,
-            *args,
+        call_kwargs = {
+            **self._completion_kwargs,
+            'messages': [{'role': 'user', 'content': prompt}],
+            'max_tokens': self.max_tokens,
+            'n': self.return_num,
+            'temperature': self.temperature,
             **kwargs,
-        )
+        }
+        response = completion(**call_kwargs)
 
         content = response.choices[0].message.content
 
