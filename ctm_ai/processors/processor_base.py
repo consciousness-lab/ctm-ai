@@ -6,7 +6,13 @@ from litellm import completion
 from numpy.typing import NDArray
 
 from ..chunks import Chunk
-from ..utils import configure_litellm, message_exponential_backoff
+from ..utils import (
+    configure_litellm,
+    get_completion_kwargs,
+    get_model_provider,
+    get_required_api_key_name,
+    message_exponential_backoff,
+)
 from .utils import JSON_FORMAT_SCORE, parse_json_response_with_scores
 
 
@@ -51,13 +57,19 @@ class BaseProcessor(object):
     def __init__(
         self, name: str, group_name: Optional[str] = None, *args: Any, **kwargs: Any
     ) -> None:
-        self.check_required_env_vars()
         self.name = name
         self.group_name = group_name
         self.system_prompt = kwargs.get('system_prompt')
         self.model = kwargs.get('model') or 'gemini/gemini-2.0-flash-lite'
-
         self.model_name = kwargs.get('model') or 'gemini/gemini-2.0-flash-lite'
+
+        # Provider-specific setup
+        self.provider = get_model_provider(self.model)
+        self._completion_kwargs = get_completion_kwargs(self.model)
+
+        # Check env vars after model/provider is known
+        self.check_required_env_vars()
+
         self.try_times = kwargs.get('try_times', 3)
         self.max_tokens = kwargs.get('max_tokens', 4096)
         self.return_num = kwargs.get('return_num', 1)
@@ -69,7 +81,18 @@ class BaseProcessor(object):
         configure_litellm(model_name=self.model_name)
 
     def check_required_env_vars(self) -> None:
-        missing_vars = [var for var in self.REQUIRED_KEYS if var not in os.environ]
+        # Separate provider API keys from other required keys
+        provider_api_keys = {'GEMINI_API_KEY', 'DASHSCOPE_API_KEY', 'OPENAI_API_KEY'}
+        non_provider_keys = [
+            var for var in self.REQUIRED_KEYS if var not in provider_api_keys
+        ]
+        missing_vars = [var for var in non_provider_keys if var not in os.environ]
+
+        # Check the provider-specific API key based on the configured model
+        required_key = get_required_api_key_name(self.model)
+        if required_key and required_key not in os.environ:
+            missing_vars.append(required_key)
+
         if missing_vars:
             raise EnvironmentError(
                 f'[{self.name}] Missing required environment variables: {missing_vars}'
@@ -127,14 +150,14 @@ class BaseProcessor(object):
         *args: Any,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        response = completion(
-            model=self.model,
-            messages=messages,
-            max_tokens=self.max_tokens,
-            n=self.return_num,
-            *args,
+        call_kwargs = {
+            **self._completion_kwargs,
+            'messages': messages,
+            'max_tokens': self.max_tokens,
+            'n': self.return_num,
             **kwargs,
-        )
+        }
+        response = completion(**call_kwargs)
         contents = [
             response.choices[i].message.content for i in range(len(response.choices))
         ]

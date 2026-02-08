@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from ..chunks import Chunk, ChunkManager
 from ..configs import ConsciousTuringMachineConfig
 from ..graphs import ProcessorGraph
-from ..utils import logger, logging_func_with_count
+from ..utils import get_completion_kwargs, logger, logging_func_with_count
 
 
 class BaseConsciousTuringMachine(ABC):
@@ -149,9 +149,12 @@ class BaseConsciousTuringMachine(ABC):
         {answer}
         """
 
+        parse_model = self.config.parse_model or 'gemini/gemini-2.0-flash-lite'
+        completion_kwargs = get_completion_kwargs(parse_model)
+
         try:
             response = completion(
-                model=self.config.parse_model or 'gemini/gemini-2.0-flash-lite',
+                **completion_kwargs,
                 messages=[{'role': 'user', 'content': parse_prompt}],
                 max_tokens=4096,
                 temperature=0.3,

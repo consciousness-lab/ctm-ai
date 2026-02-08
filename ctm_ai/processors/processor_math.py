@@ -140,15 +140,15 @@ Based on the Wolfram|Alpha result above, please:
         self, prompt: str, *args: Any, **kwargs: Any
     ) -> Dict[str, Any]:
         """Get structured output with self-evaluation scores using litellm."""
-        response = completion(
-            model=self.model,
-            messages=[{'role': 'user', 'content': prompt}],
-            max_tokens=self.max_tokens,
-            n=self.return_num,
-            temperature=self.temperature,
-            *args,
+        call_kwargs = {
+            **self._completion_kwargs,
+            'messages': [{'role': 'user', 'content': prompt}],
+            'max_tokens': self.max_tokens,
+            'n': self.return_num,
+            'temperature': self.temperature,
             **kwargs,
-        )
+        }
+        response = completion(**call_kwargs)
 
         content = response.choices[0].message.content
 

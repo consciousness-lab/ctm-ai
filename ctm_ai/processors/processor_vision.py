@@ -1,6 +1,5 @@
 import base64
 import io
-import os
 from typing import Any, Dict, List
 
 from ..utils import load_image
@@ -17,7 +16,7 @@ def pil_to_base64(image) -> str:
 
 @BaseProcessor.register_processor('vision_processor')
 class VisionProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['GEMINI_API_KEY']
+    REQUIRED_KEYS = []
 
     def build_executor_messages(
         self,
