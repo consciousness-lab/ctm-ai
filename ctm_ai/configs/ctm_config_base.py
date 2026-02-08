@@ -7,12 +7,9 @@ class ConsciousTuringMachineConfig:
         self,
         ctm_name: Optional[str] = None,
         max_iter_num: int = 3,
-        output_threshold: float = 0.5,
-        scorer: str = 'language_scorer',
-        scorer_use_llm: bool = True,
-        supervisor: str = 'language_supervisor',
+        output_threshold: float = 1.8,
         processors_config: Optional[Dict[str, Any]] = None,
-        scorer_model: str = 'gemini/gemini-2.0-flash-lite',
+        parse_model: str = 'gemini/gemini-2.0-flash-lite',
         supervisors_model: str = 'gemini/gemini-2.0-flash-lite',
         supervisors_prompt: str = None,
         **kwargs: Any,
@@ -20,15 +17,13 @@ class ConsciousTuringMachineConfig:
         self.ctm_name: Optional[str] = ctm_name
         self.max_iter_num: int = max_iter_num
         self.output_threshold: float = output_threshold
-        self.scorer: str = scorer
-        self.scorer_use_llm: bool = scorer_use_llm
-        self.supervisor: str = supervisor
         self.processors_config: Dict[str, Any] = (
             processors_config if processors_config is not None else {}
         )
-        self.scorer_model = scorer_model
+        self.parse_model = parse_model
         self.supervisors_model = supervisors_model
         self.supervisors_prompt = supervisors_prompt
+        self.output_threshold = output_threshold
         for key, value in kwargs.items():
             setattr(self, key, value)
 

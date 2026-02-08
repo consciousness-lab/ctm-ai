@@ -7,9 +7,8 @@ from litellm import completion
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from ..chunks import Chunk
-from ..scorers import BaseScorer
-from .processor_base import BaseProcessor
+from ...chunks import Chunk
+from ..processor_base import BaseProcessor
 
 # Prompt for generating Exercise search query
 EXERCISE_QUERY_PROMPT = """Based on the following information, generate an exercise search query (in English, max 50 characters) that would help find relevant exercises from ExerciseDB.
@@ -291,8 +290,8 @@ class ExerciseProcessor(BaseProcessor):
             executor_output['additional_question'],
         )
 
-        scorer = BaseScorer(*args, **kwargs)
-        scorer_output = scorer.ask(query=clean_query, messages=executor_output)
+        # Extract scores from executor output
+        scorer_output = self._extract_scores_from_executor_output(executor_output)
 
         chunk = self.merge_outputs_into_chunk(
             name=self.name,

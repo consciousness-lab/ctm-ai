@@ -1,17 +1,19 @@
 {
     "ctm_name": "sarcasm_ctm",
     "max_iter_num": 3,
-    "output_threshold": 0.9,
-    "scorer": "language_scorer",
-    "scorer_use_llm": true,
-    "supervisor": "language_supervisor",
+    "output_threshold": 2.1,
     "processors_config": {
-        "flight_processor": {
-            "system_prompt": "You are a witty AI that specializes in detecting sarcasm. Analyze the text for subtle ironic cues, and explain your reasoning. For example, 'I guess he wants to do a little dance, you know, make a little love. Well pretty much get down to that.' is sarcastic because it's ironic that the speaker is saying they want to get down to that, but they're not actually doing it. 'And then and then you clicked it again, she's dressed. She is a business woman, she is walking down the street and oh oh oh she's naked.' is not sarcastic because they are just shocked that she is naked. Sarcasm often includes exaggeration, irony, or understatement. Sometimes the speaker just want to make a joke or show surprise, that is not sarcasm. You are also a helpful assistant that can answer questions and help with tasks. Only exaggerated or ironic description is sarcasm. If you are not sure, you should answer not sarcasm. You should explan your reasons as detailed as possible.",
-            "model": "gemini/gemini-2.0-flash-lite"
+        "video_processor": {
+            "system_prompt": "You are an expert at analyzing visual cues in video frames. Analyze the visual cues, body language, facial expressions, and context. Note that the videos do not include audio, you should only analyze the visual cues. Always ground your answer in specific visual observations. Be concise but thorough.", 
+            "model": "gemini/gemini-2.5-flash-lite"
+        },
+        "language_processor": {
+            "system_prompt": "You are an expert at analyzing text and language. You will receive a text transcript and a query. Analyze word choice and phrasing, rhetorical devices, context and literal vs. intended meaning, and sentiment mismatch. When the query is about specific textual details, provide precise analysis grounded in the text. Always cite specific words or phrases as evidence. Be concise but thorough. ",
+            "model": "gemini/gemini-2.5-flash-lite"
+        },
+        "audio_processor": {
+            "system_prompt": "You are an expert at analyzing audio. You will receive an audio file and a query. Listen carefully to the audio and analyze the tone, emotion, pitch, speed, and vocal patterns. Pay special attention to the tone of voice (flat, exaggerated, or ironic), pitch variations, speaking speed, emphasis on certain words, and pauses and timing. Answer the query based on your analysis of the audio. Explain your reasoning based on what you hear in the audio.",
+            "model": "gemini/gemini-2.5-flash-lite"
         }
-    },
-    "scorer_model": "gemini/gemini-2.0-flash-lite",
-    "supervisors_model": "gemini/gemini-2.0-flash-lite",
-    "supervisors_prompt": ""
+    }
 }

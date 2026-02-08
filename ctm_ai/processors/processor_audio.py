@@ -10,7 +10,9 @@ class AudioProcessor(BaseProcessor):
     REQUIRED_KEYS = ['GEMINI_API_KEY']
 
     def _init_info(self, *args: Any, **kwargs: Any) -> None:
-        self.system_prompt = 'You are an expert in audio analysis. Your task is to listen to the provided audio and answer questions about its content, such as tone, emotion, or spoken words.'
+        # Use system_prompt from config if provided, otherwise use default
+        if not self.system_prompt:
+            self.system_prompt = 'You are an expert in audio analysis. You have been provided with an audio file. Listen to the audio carefully and analyze its tone, emotion, pitch, speed, vocal patterns, and any sarcastic cues. Answer the query based on what you hear in the audio. Do NOT say you need audio analysis - you already have the audio.'
         self.supported_formats = {'mp3', 'wav', 'aac', 'flac', 'mp4'}
         self.mime_types = {
             'mp3': 'audio/mp3',
@@ -47,7 +49,10 @@ class AudioProcessor(BaseProcessor):
             audio_message = {
                 'role': 'user',
                 'content': [
-                    {'type': 'text', 'text': query},
+                    {
+                        'type': 'text',
+                        'text': f'[AUDIO PROVIDED BELOW]\n\n{query}\n\nBased on the audio you received, provide your analysis.',
+                    },
                     {
                         'type': 'file',
                         'file': {

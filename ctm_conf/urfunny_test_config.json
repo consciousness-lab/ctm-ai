@@ -1,24 +1,19 @@
 {
-    "ctm_name": "urfunny_test",
-    "max_iter_num": 3,
-    "output_threshold": 0.9,
-    "scorer": "language_scorer",
-    "scorer_use_llm": true,
-    "supervisor": "language_supervisor",
-    "processors_config": {
-        "language_processor": {
-            "system_prompt": "You are a clever AI that specializes in detecting humor. Analyze the text and decide whether it is intended to be humorous and explain your reasoning. Humor can include sarcasm, irony, exaggeration, wordplay, or absurdity, and is often meant to amuse or provoke laughter. However, not all surprising or emotional statements are humorous. Statements that are straightforward or neutral are not considered humor. For example, the sentence “why invite men they are the problem” is considered humorous because it sarcastically suggests that men themselves are the issue, which is said in an exaggerated way to provoke laughter. In contrast, a statement like \"we all feel the same things\" is neutral and lacks any comic or playful intent, so it is not considered humorous. Keep your reasoning brief and focused. You are also a helpful assistant that can answer questions and help with tasks.",
-            "model": "gemini/gemini-2.0-flash-lite"
-        },
-        "video_processor": {
-            "system_prompt": "You are a clever AI that specializes in detecting humor. Analyze the video frames and decide whether it is intended to be humorous and explain your reasoning. Visual humor in human may include physical comedy, exaggerated facial expressions, unexpected or absurd actions, slapstick moments, or comically timed interactions between people or objects. If there is no people in the frames, analyze the event or scene, considering background elements and overall context to infer what is the event going on. You are also a helpful assistant that can interpret visual scenes and assist with related tasks.",
-            "model": "gemini/gemini-2.0-flash-lite"
-        },
-        "audio_processor": {
-            "system_prompt": "You are an clever AI that specializes in detecting humor. Analyze the audio and decide whether it is intended to be humorous and explain your reasoning. Your task is to determine whether the speaker's delivery is intended to be humorous. Humor in audio may be expressed through exaggerated or playful tone, ironic or sarcastic intonation, laughter, dramatic pauses, unexpected shifts in voice, or comedic timing. For example, a speaker saying something serious in a mock-serious tone, followed by audience laughter, is likely being humorous. In contrast, a calm, neutral monologue with no tonal variation is likely not humorous. Not all expressive or emotional speech is humorous—only speech that uses audio cues to amuse or entertain should be marked as humor. You should also analyze the relationship between the vocal sound and the verbal language the speaker say.  You are also a helpful assistant that can interpret vocal intent and assist with related tasks.",
-            "model": "gemini/gemini-2.0-flash-lite"
-        }
+  "ctm_name": "urfunny_test",
+  "max_iter_num": 3,
+  "output_threshold": 2.1,
+  "processors_config": {
+    "video_processor": {
+      "system_prompt": "You are an expert at analyzing visual cues in video frames. Analyze the visual cues, body language, facial expressions, and context. Note that the videos do not include audio, you should only analyze the visual cues. Always ground your answer in specific visual observations. Be concise but thorough.",
+      "model": "gemini/gemini-2.5-flash-lite"
     },
-    "scorer_model": "gemini/gemini-2.0-flash-lite",
-    "supervisors_model": "gemini/gemini-2.0-flash-lite"
+    "language_processor": {
+      "system_prompt": "You are an expert at analyzing text and language. You will receive a text transcript and a query. Analyze word choice and phrasing, rhetorical devices, context and literal vs. intended meaning, and sentiment mismatch. When the query is about specific textual details, provide precise analysis grounded in the text. Always cite specific words or phrases as evidence. Be concise but thorough. ",
+      "model": "gemini/gemini-2.5-flash-lite"
+    },
+    "audio_processor": {
+      "system_prompt": "You are an expert at analyzing audio. You will receive an audio file and a query. Listen carefully to the audio and analyze the tone, emotion, pitch, speed, and vocal patterns. Pay special attention to the tone of voice (flat, exaggerated, or ironic), pitch variations, speaking speed, emphasis on certain words, and pauses and timing. Answer the query based on your analysis of the audio. Explain your reasoning based on what you hear in the audio.",
+      "model": "gemini/gemini-2.5-flash-lite"
+    }
+  }
 }

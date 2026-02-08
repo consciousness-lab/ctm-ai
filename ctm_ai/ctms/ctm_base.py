@@ -1,6 +1,6 @@
 import concurrent.futures
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -8,20 +8,7 @@ from numpy.typing import NDArray
 from ..chunks import Chunk, ChunkManager
 from ..configs import ConsciousTuringMachineConfig
 from ..graphs import ProcessorGraph
-from ..scorers import BaseScorer
-from ..supervisors import BaseSupervisor
 from ..utils import logger, logging_func_with_count
-
-if TYPE_CHECKING:
-    pass
-
-try:
-    from ..apis import BaseEnv
-
-    TOOLBENCH_AVAILABLE = True
-except ImportError:
-    TOOLBENCH_AVAILABLE = False
-    BaseEnv = None
 
 
 class BaseConsciousTuringMachine(ABC):
@@ -63,8 +50,6 @@ class BaseConsciousTuringMachine(ABC):
 
     def load_ctm(self) -> None:
         self.processor_graph = ProcessorGraph()
-        self.supervisors: List[BaseSupervisor] = []
-        self.scorers: List[BaseScorer] = []
 
         for processor_name, processor_config in self.config.processors_config.items():
             self.processor_graph.add_node(
@@ -74,8 +59,7 @@ class BaseConsciousTuringMachine(ABC):
                 model=processor_config.get('model'),
             )
 
-        self.add_supervisor(self.config.supervisor)
-        self.add_scorer(self.config.scorer)
+        self.output_threshold = self.config.output_threshold
 
     def add_processor(
         self, processor_name: str, group_name: Optional[str] = None
@@ -91,20 +75,6 @@ class BaseConsciousTuringMachine(ABC):
 
     def remove_processor(self, processor_name: str) -> None:
         self.processor_graph.remove_node(processor_name)
-
-    def add_supervisor(self, name: str) -> None:
-        self.supervisors.append(BaseSupervisor(name))
-
-    def remove_supervisor(self, name: str) -> None:
-        self.supervisors = [
-            supervisor for supervisor in self.supervisors if supervisor.name != name
-        ]
-
-    def add_scorer(self, name: str) -> None:
-        self.scorers.append(BaseScorer(name))
-
-    def remove_scorer(self, name: str) -> None:
-        self.scorers = [scorer for scorer in self.scorers if scorer.name != name]
 
     @staticmethod
     def ask_processor(
@@ -169,12 +139,30 @@ class BaseConsciousTuringMachine(ABC):
         chunks = [chunk for chunk in chunks if chunk is not None]
         return chunks
 
-    @logging_func_with_count
-    def ask_supervisor(
-        self, query: str, chunk: Chunk
-    ) -> Tuple[Union[str, None], float]:
-        final_answer, score = self.supervisors[0].ask(query, chunk.gist)
-        return final_answer, score
+    def parse_answer(self, answer: str, query: str) -> str:
+        from litellm import completion
+
+        parse_prompt = f"""Based on the query and the answer, please refine and format the answer to make it clear, concise, and well-structured. Your answer should start with either "Yes" or "No" and then provide your reasoning.
+        Query:
+        {query}
+        Answer:
+        {answer}
+        """
+
+        try:
+            response = completion(
+                model=self.config.parse_model or 'gemini/gemini-2.0-flash-lite',
+                messages=[{'role': 'user', 'content': parse_prompt}],
+                max_tokens=4096,
+                temperature=0.3,
+            )
+
+            parsed_answer = response.choices[0].message.content.strip()
+            return parsed_answer
+
+        except Exception as e:
+            logger.warning(f'Failed to parse answer with litellm: {e}')
+            return answer
 
     @logging_func_with_count
     def uptree_competition(self, chunks: List[Chunk]) -> Chunk:

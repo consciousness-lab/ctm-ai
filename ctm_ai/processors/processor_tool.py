@@ -1,43 +1,14 @@
 import json
-import os
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List
 
-import numpy as np
 from litellm import completion
-from numpy.typing import NDArray
 
 from ..chunks import Chunk
-from ..scorers import ToolScorer
 from .processor_base import BaseProcessor
-from .utils import parse_json_response
+from .utils import JSON_FORMAT_SCORE, parse_json_response_with_scores
 
 TOOL_SYSTEM_PROMPT = """
 You are a tool agent designed to help users by utilizing available tools to answer their queries or complete tasks.
-"""
-TOOL_ANSWER_PROMPT = """
-Regarding to the task: {query}, the answer of the function call is: {new_message}. You should utilize the information in the history and the answer of the function call to answer the query. Provide specific information if you can, do not just say you successfully called it.
-There might have some answers to other queries and extra information, if you think it is useful, you should utilize them to provide more comprehensive answer to the query. If you think you should use the information of another apis or tools, you should ask like "what is the results of calling the api of `API_NAME` for more answers instead of asking for the response format of another api endpoint.
-Please respond in JSON format with the following structure:
-{{
-    "response": "Your detailed response to the query",
-    "additional_question": "If you are not sure about the answer, you should generate a question that potentially can be answered by other tools."
-}}
-
-Your additional_question should be potentially answerable by other tools like search engine and about specific information that you are not sure about.
-Your additional_question should be just about what kind of information you need to get from other tools like search engine, nothing else about the task or original query should be included. For example, what is the weather in the city, what is the stock price of the company, etc. The question needs to be short and clean.
-"""
-
-TEXT_ANSWER_PROMPT = """
-Regarding to the task: {query}, the answer of the model is: {new_message}. Based on the answer, do you have other questions? If you have other questions, you should generate a question that potentially can be answered by other tools. 
-You should generate your response based on the extra information and previous answers, and the answer of the current model. answer as speccific as you can.
-Please respond in JSON format with the following structure:
-{{
-    "response": "Your detailed response to the query",
-    "additional_question": "If you are not sure about the answer, you should generate a question that potentially can be answered by other tools."
-}}
-
-Your additional_question should be potentially answerable by other tools like search engine and about specific information that you are not sure about.
-Your additional_question should be just about what kind of information you need to get from other tools like search engine, nothing else about the task or original query should be included. For example, what is the weather in the city, what is the stock price of the company, etc. The question needs to be short and clean.
 """
 
 
@@ -129,6 +100,16 @@ OUTPUT PROTOCOL (MUST follow strictly):
                 content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
         return content
 
+    def build_executor_messages(
+        self,
+        query: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> List[Dict[str, Any]]:
+        """ToolProcessor doesn't use this method as it has custom tool execution flow."""
+        # This method is required by BaseProcessor but not used in custom ask()
+        return None
+
     def ask_executor(
         self,
         query: str,
@@ -136,7 +117,8 @@ OUTPUT PROTOCOL (MUST follow strictly):
         function_name: str = None,
         *args: Any,
         **kwargs: Any,
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
+        """Execute tool and get structured response with self-evaluation scores."""
         messages = [
             {'role': 'system', 'content': TOOL_SYSTEM_PROMPT},
             {'role': 'user', 'content': query},
@@ -161,36 +143,17 @@ OUTPUT PROTOCOL (MUST follow strictly):
         response_message = response.choices[0].message
         retry_times = 3
 
-        # Initialize default values
-        gist = ''
-        additional_question = ''
-
+        # Process response based on whether tool was called or not
         if response_message.content is not None and response_message.tool_calls is None:
-            execuotr_answer = response_message.content
-            text_prompt = TEXT_ANSWER_PROMPT.format(
-                query=query, new_message=execuotr_answer
-            )
-            if len(self.fuse_history) > 0:
-                text_prompt += '\nThere are extra information from other tools:\n'
-                for i, item in enumerate(self.fuse_history, 1):
-                    text_prompt += f'{i}. {item["answer"]}\n'
-
-            if len(self.winner_answer) > 0:
-                text_prompt += '\nThere are some previous answers to the same query, think further based on this answer:\n'
-                for i, item in enumerate(self.winner_answer, 1):
-                    text_prompt += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
-            response = completion(
-                model=self.model,
-                messages=[{'role': 'user', 'content': text_prompt}],
-                *args,
-                **kwargs,
-            )
-            gist, additional_question = parse_json_response(
-                response.choices[0].message.content, 'Can you provide more information?'
+            # Case 1: Model provided direct answer without calling tool
+            executor_answer = response_message.content
+            structured_output = self._build_structured_output_from_text(
+                query, executor_answer, *args, **kwargs
             )
         elif (
             response_message.tool_calls is not None and response_message.content is None
         ):
+            # Case 2: Model called the tool
             tool_call = response_message.tool_calls[0]
             func_name = getattr(tool_call.function, 'name', None) or function_name
             func_args = getattr(tool_call.function, 'arguments', '{}')
@@ -199,6 +162,8 @@ OUTPUT PROTOCOL (MUST follow strictly):
                 function_args = json.dumps(func_args, ensure_ascii=False)
             else:
                 function_args = str(func_args) if func_args is not None else '{}'
+
+            # Execute the tool with retries
             for i in range(retry_times):
                 try:
                     tool_answer, status_code = api_manager.step(
@@ -214,37 +179,101 @@ OUTPUT PROTOCOL (MUST follow strictly):
                             'error': f'tool execution failed: {type(e).__name__}: {e}',
                             'response': '',
                         }
-            tool_prompt = TOOL_ANSWER_PROMPT.format(
-                query=query, new_message=tool_answer
-            )
-            if len(self.fuse_history) > 0:
-                tool_prompt += '\nThere are extra information from other tools:\n'
-                for i, item in enumerate(self.fuse_history, 1):
-                    tool_prompt += f'{i}. {item["answer"]}\n'
 
-            if len(self.winner_answer) > 0:
-                tool_prompt += '\nThere are some previous answers to the same query, think further based on this answer:\n'
-                for i, item in enumerate(self.winner_answer, 1):
-                    tool_prompt += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
-            response = completion(
-                model=self.model,
-                messages=[{'role': 'user', 'content': tool_prompt}],
-                *args,
-                **kwargs,
-            )
-            gist, additional_question = parse_json_response(
-                response.choices[0].message.content, 'Can you provide more information?'
+            structured_output = self._build_structured_output_from_tool(
+                query, tool_answer, *args, **kwargs
             )
         else:
-            # Handle case where both content and tool_calls are None, or both have values
-            # This is an unexpected case, provide a default response
-            gist = 'No valid response received from the model'
-            additional_question = 'Can you provide more information?'
+            # Handle unexpected case
+            structured_output = {
+                'response': 'No valid response received from the model',
+                'additional_question': 'Can you provide more information?',
+                'relevance': 0.5,
+                'confidence': 0.5,
+                'surprise': 0.5,
+            }
 
-        return {
-            'response': gist,
-            'additional_question': additional_question,
-        }
+        return structured_output
+
+    def _build_structured_output_from_text(
+        self, query: str, text_answer: str, *args: Any, **kwargs: Any
+    ) -> Dict[str, Any]:
+        """Build structured output with scores when model provides direct text answer."""
+        context_info = self._get_context_info()
+
+        prompt = f"""Regarding the task: {query}
+
+The model's direct answer:
+{text_answer}
+{context_info}
+
+Based on this answer, please:
+1. Provide your final response to the task
+2. Generate an additional question if you need information from other tools (e.g., "what is the weather in the city?", "what is the stock price?"). If no additional information is needed, leave it empty.
+3. Self-evaluate your response with relevance, confidence, and surprise scores.
+
+{JSON_FORMAT_SCORE}"""
+
+        return self._ask_for_structured_output(prompt, *args, **kwargs)
+
+    def _build_structured_output_from_tool(
+        self, query: str, tool_answer: Any, *args: Any, **kwargs: Any
+    ) -> Dict[str, Any]:
+        """Build structured output with scores after tool execution."""
+        context_info = self._get_context_info()
+
+        prompt = f"""Regarding the task: {query}
+
+The tool execution result:
+{tool_answer}
+{context_info}
+
+Based on the tool result, please:
+1. Provide a comprehensive response to the task (be specific, don't just say you called the tool successfully)
+2. Generate an additional question if you need information from other tools. If no additional information is needed, leave it empty.
+3. Self-evaluate your response with relevance, confidence, and surprise scores.
+
+{JSON_FORMAT_SCORE}"""
+
+        return self._ask_for_structured_output(prompt, *args, **kwargs)
+
+    def _get_context_info(self) -> str:
+        """Get formatted context information from history."""
+        context_info = ''
+        if len(self.fuse_history) > 0:
+            context_info += '\nExtra information from other tools:\n'
+            for i, item in enumerate(self.fuse_history, 1):
+                context_info += f'{i}. {item["answer"]}\n'
+
+        if len(self.winner_answer) > 0:
+            context_info += '\nPrevious answers to consider:\n'
+            for i, item in enumerate(self.winner_answer, 1):
+                context_info += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
+
+        return context_info
+
+    def _ask_for_structured_output(
+        self, prompt: str, *args: Any, **kwargs: Any
+    ) -> Dict[str, Any]:
+        """Get structured output with self-evaluation scores using litellm."""
+        response = completion(
+            model=self.model,
+            messages=[{'role': 'user', 'content': prompt}],
+            max_tokens=self.max_tokens,
+            n=self.return_num,
+            temperature=self.temperature,
+            *args,
+            **kwargs,
+        )
+
+        content = response.choices[0].message.content
+
+        # Parse the JSON response with scores
+        parsed = parse_json_response_with_scores(
+            content, default_additional_question='Can you provide more information?'
+        )
+
+        return parsed
 
     def ask(
         self,
@@ -254,26 +283,34 @@ OUTPUT PROTOCOL (MUST follow strictly):
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
+        """Process tool-based queries with self-evaluation scoring."""
         content = self._build_executor_content(
             query=query,
             api_manager=api_manager,
             function_name=self.name,
         )
+
         executor_output = self.ask_executor(
             query=content,
             api_manager=api_manager,
             function_name=self.name,
+            *args,
+            **kwargs,
         )
+
         if is_fuse:
             self.add_fuse_history(query, executor_output['response'])
+
         self.add_all_context_history(
             query,
             executor_output['response'],
-            executor_output['additional_question'],
+            executor_output.get('additional_question', ''),
         )
-        scorer = ToolScorer(*args, **kwargs)
-        scorer_output = scorer.ask(query=query, messages=executor_output)
-        additional_question = executor_output['additional_question'] or ''
+
+        # Extract scores using the base processor method
+        scorer_output = self._extract_scores_from_executor_output(executor_output)
+        additional_question = executor_output.get('additional_question', '')
+
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,

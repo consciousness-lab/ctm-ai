@@ -78,10 +78,14 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
 
             winning_chunk = self.uptree_competition(chunks)
 
-            answer, confidence_score = self.ask_supervisor(query, winning_chunk)
+            answer, weight_score = winning_chunk.gist, winning_chunk.weight
 
-            if i == self.config.max_iter_num - 1:
-                return answer, confidence_score
+            if (
+                i == self.config.max_iter_num - 1
+                or weight_score >= self.config.output_threshold
+            ):
+                parsed_answer = self.parse_answer(answer=answer, query=query)
+                return answer, weight_score, parsed_answer
 
             self.downtree_broadcast(winning_chunk)
 
@@ -89,4 +93,4 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
 
             self.fuse_processor(chunks, query, **input_params)
 
-        return answer, confidence_score
+        return answer, weight_score, parsed_answer
