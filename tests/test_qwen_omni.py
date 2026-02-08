@@ -14,7 +14,6 @@ client = OpenAI(
 # Punchline: "i don't know if you've heard about it newspapers it's a sort of paper based reader"
 # Label: 1 (humorous)
 SAMPLE_KEY = "408"
-# 直接使用已有的文件
 AUDIO_PATH = f"../exp_urfunny/urfunny_audios/{SAMPLE_KEY}_audio.mp4"
 VIDEO_NO_AUDIO_PATH = f"../exp_urfunny/urfunny_muted_videos/{SAMPLE_KEY}.mp4"
 VIDEO_WITH_AUDIO_PATH = f"../exp_urfunny/urfunny_videos/{SAMPLE_KEY}.mp4"
@@ -128,7 +127,7 @@ def test_text_only():
 
 
 # =============================================================================
-# TEST 2: Video Only (no audio) — 使用已有的静音视频文件
+# TEST 2: Video Only (no audio)
 # =============================================================================
 def test_video_only():
     print("=" * 60)
@@ -152,7 +151,7 @@ def test_video_only():
 
 
 # =============================================================================
-# TEST 3: Audio Only — 使用已有的音频文件 + 黑屏视频
+# TEST 3: Audio Only
 # =============================================================================
 def test_audio_only():
     print("=" * 60)
