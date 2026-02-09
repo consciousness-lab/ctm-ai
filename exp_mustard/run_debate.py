@@ -25,63 +25,63 @@ from llm_utils import (
     save_result_to_jsonl,
 )
 
-sys.path.append("..")
+sys.path.append('..')
 
 ROUNDS = 3  # Number of debate rounds
 
 # Modality-specific agent prompts for sarcasm detection
 VIDEO_AGENT_INIT = (
-    "You are a Video Analysis Expert. You will analyze whether the person in the video is being sarcastic or not.\n"
+    'You are a Video Analysis Expert. You will analyze whether the person in the video is being sarcastic or not.\n'
     "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
 AUDIO_AGENT_INIT = (
-    "You are an Audio Analysis Expert. You will analyze whether the person in the audio is being sarcastic or not.\n"
+    'You are an Audio Analysis Expert. You will analyze whether the person in the audio is being sarcastic or not.\n'
     "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
 TEXT_AGENT_INIT = (
-    "You are a Text Analysis Expert. You will be given a punchline that was said by a person, and analysis whether the person is being sarcastic or not.\n"
+    'You are a Text Analysis Expert. You will be given a punchline that was said by a person, and analysis whether the person is being sarcastic or not.\n'
     "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
 VIDEO_AGENT_REFINE = (
-    "You are a Video Analysis Expert. You previously analyzed the video of this punchline.\n"
-    "Your previous answer: {own_answer}\n\n"
-    "Here are the analyses from other experts:\n"
-    "- Audio Expert: {audio_answer}\n"
-    "- Text Expert: {text_answer}\n\n"
-    "First, consider their perspectives and re-examine the video evidence carefully.\n"
-    "Then, determine if this punchline is sarcastic or not.\n"
+    'You are a Video Analysis Expert. You previously analyzed the video of this punchline.\n'
+    'Your previous answer: {own_answer}\n\n'
+    'Here are the analyses from other experts:\n'
+    '- Audio Expert: {audio_answer}\n'
+    '- Text Expert: {text_answer}\n\n'
+    'First, consider their perspectives and re-examine the video evidence carefully.\n'
+    'Then, determine if this punchline is sarcastic or not.\n'
     "End your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
 AUDIO_AGENT_REFINE = (
-    "You are an Audio Analysis Expert. You previously analyzed the audio of this punchline.\n"
-    "Your previous answer: {own_answer}\n\n"
-    "Here are the analyses from other experts:\n"
-    "- Video Expert: {video_answer}\n"
-    "- Text Expert: {text_answer}\n\n"
-    "First, consider their perspectives and re-examine the audio evidence carefully.\n"
-    "Then, determine if this punchline is sarcastic or not.\n"
+    'You are an Audio Analysis Expert. You previously analyzed the audio of this punchline.\n'
+    'Your previous answer: {own_answer}\n\n'
+    'Here are the analyses from other experts:\n'
+    '- Video Expert: {video_answer}\n'
+    '- Text Expert: {text_answer}\n\n'
+    'First, consider their perspectives and re-examine the audio evidence carefully.\n'
+    'Then, determine if this punchline is sarcastic or not.\n'
     "End your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
 TEXT_AGENT_REFINE = (
-    "You are a Text Analysis Expert. You previously analyzed this punchline.\n"
-    "Your previous answer: {own_answer}\n\n"
-    "Here are the analyses from other experts:\n"
-    "- Video Expert: {video_answer}\n"
-    "- Audio Expert: {audio_answer}\n\n"
-    "First, consider their perspectives and re-examine the text evidence of the punchline carefully.\n"
-    "Then, determine if this punchline is sarcastic or not.\n"
+    'You are a Text Analysis Expert. You previously analyzed this punchline.\n'
+    'Your previous answer: {own_answer}\n\n'
+    'Here are the analyses from other experts:\n'
+    '- Video Expert: {video_answer}\n'
+    '- Audio Expert: {audio_answer}\n\n'
+    'First, consider their perspectives and re-examine the text evidence of the punchline carefully.\n'
+    'Then, determine if this punchline is sarcastic or not.\n'
     "End your response with 'My Answer: Yes' or 'My Answer: No'."
 )
 
 JUDGE_PROMPT = (
-    "You are an impartial Judge. Three experts have debated whether this punchline is sarcastic or not.\n"
-    "Here is the discussion:\n\n{debate_history}\n\n"
-    "Based on all evidence from the video, audio, and text analyses, determine if this punchline is sarcastic or not.\n"
+    'You are an impartial Judge. Three experts have debated whether this punchline is sarcastic or not.\n'
+    'Here is the discussion:\n\n{debate_history}\n\n'
+    'Based on all evidence from the video, audio, and text analyses, determine if this punchline is sarcastic or not.\n'
     "Your answer must start with 'Yes' or 'No', followed by your reasoning."
 )
 
@@ -93,18 +93,18 @@ COST_OUTPUT_PER_1M = 0.30
 def extract_answer(response):
     """Extract Yes/No from agent response."""
     if response is None:
-        return "Unknown"
+        return 'Unknown'
     response_lower = response.lower()
-    if "my answer: yes" in response_lower:
-        return "Yes"
-    elif "my answer: no" in response_lower:
-        return "No"
+    if 'my answer: yes' in response_lower:
+        return 'Yes'
+    elif 'my answer: no' in response_lower:
+        return 'No'
     # Fallback
-    if response_lower.strip().endswith("yes"):
-        return "Yes"
-    elif response_lower.strip().endswith("no"):
-        return "No"
-    return "Unknown"
+    if response_lower.strip().endswith('yes'):
+        return 'Yes'
+    elif response_lower.strip().endswith('no'):
+        return 'No'
+    return 'Unknown'
 
 
 def run_instance(
@@ -114,46 +114,46 @@ def run_instance(
     audio_agent,
     text_agent,
     tracker,
-    output_file="mustard_debate.jsonl",
+    output_file='mustard_debate.jsonl',
 ):
     start_time = time.time()
     total_prompt_tokens = 0
     total_completion_tokens = 0
     num_api_calls = 0
 
-    target_sentence = dataset[test_file]["utterance"]
+    target_sentence = dataset[test_file]['utterance']
 
     audio_path = get_audio_path(test_file)
     video_path = get_muted_video_path(test_file)
 
-    debate_history = ""
+    debate_history = ''
 
     # Store answers from each agent
-    video_answer = ""
-    audio_answer = ""
-    text_answer = ""
+    video_answer = ''
+    audio_answer = ''
+    text_answer = ''
 
-    print(f"--- Multimodal Debate for {test_file} ({ROUNDS} Rounds) ---")
+    print(f'--- Multimodal Debate for {test_file} ({ROUNDS} Rounds) ---')
 
     def run_agent(agent_type, query):
         """Helper function to run a single agent and return results."""
-        if agent_type == "video":
+        if agent_type == 'video':
             # Video agent: only muted video
             response, usage = video_agent.call(query, video_path=video_path)
-        elif agent_type == "audio":
+        elif agent_type == 'audio':
             # Audio agent: only audio
             response, usage = audio_agent.call(query, audio_path=audio_path)
-        elif agent_type == "text":
+        elif agent_type == 'text':
             # Text agent: only text context
             response, usage = text_agent.call(query)
         else:
-            raise ValueError(f"Unknown agent type: {agent_type}")
+            raise ValueError(f'Unknown agent type: {agent_type}')
 
         return agent_type, response, usage
 
     for round_num in range(1, ROUNDS + 1):
-        print(f"--- Round {round_num} ---")
-        round_history = f"=== Round {round_num} ===\n\n"
+        print(f'--- Round {round_num} ---')
+        round_history = f'=== Round {round_num} ===\n\n'
 
         # Prepare queries for all three agents
         if round_num == 1:
@@ -176,9 +176,9 @@ def run_instance(
         # Run all three agents in parallel
         with ThreadPoolExecutor(max_workers=3) as executor:
             futures = {
-                executor.submit(run_agent, "video", video_query): "video",
-                executor.submit(run_agent, "audio", audio_query): "audio",
-                executor.submit(run_agent, "text", text_query): "text",
+                executor.submit(run_agent, 'video', video_query): 'video',
+                executor.submit(run_agent, 'audio', audio_query): 'audio',
+                executor.submit(run_agent, 'text', text_query): 'text',
             }
 
             results = {}
@@ -186,13 +186,13 @@ def run_instance(
                 agent_type, response, usage = future.result()
                 results[agent_type] = (response, usage)
                 num_api_calls += 1
-                total_prompt_tokens += usage.get("prompt_tokens", 0)
-                total_completion_tokens += usage.get("completion_tokens", 0)
+                total_prompt_tokens += usage.get('prompt_tokens', 0)
+                total_completion_tokens += usage.get('completion_tokens', 0)
 
         # Extract results
-        video_response, _ = results["video"]
-        audio_response, _ = results["audio"]
-        text_response, _ = results["text"]
+        video_response, _ = results['video']
+        audio_response, _ = results['audio']
+        text_response, _ = results['text']
 
         video_answer = video_response
         audio_answer = audio_response
@@ -202,9 +202,9 @@ def run_instance(
         audio_vote = extract_answer(audio_response)
         text_vote = extract_answer(text_response)
 
-        round_history += f"[Video Expert]: {video_response}\n\n"
-        round_history += f"[Audio Expert]: {audio_response}\n\n"
-        round_history += f"[Text Expert]: {text_response}\n\n"
+        round_history += f'[Video Expert]: {video_response}\n\n'
+        round_history += f'[Audio Expert]: {audio_response}\n\n'
+        round_history += f'[Text Expert]: {text_response}\n\n'
 
         print(
             f'  [Video]: {video_vote} - {video_response[:80] if video_response else "None"}...'
@@ -219,64 +219,64 @@ def run_instance(
         debate_history += round_history
 
     # --- Judge ---
-    print("--- Judge Verdict ---")
+    print('--- Judge Verdict ---')
     judge_query = f"{JUDGE_PROMPT.format(debate_history=debate_history)}\n\npunchline: '{target_sentence}'"
     # Judge uses text modality with context (same as original)
     final_verdict, usage = text_agent.call(judge_query)
     num_api_calls += 1
-    total_prompt_tokens += usage.get("prompt_tokens", 0)
-    total_completion_tokens += usage.get("completion_tokens", 0)
+    total_prompt_tokens += usage.get('prompt_tokens', 0)
+    total_completion_tokens += usage.get('completion_tokens', 0)
 
     end_time = time.time()
     duration = end_time - start_time
 
     tracker.add(duration, total_prompt_tokens, total_completion_tokens, num_api_calls)
 
-    print("------------------------------------------")
-    print(f"Verdict: {final_verdict}")
+    print('------------------------------------------')
+    print(f'Verdict: {final_verdict}')
     print(
-        f"Time: {duration:.2f}s | API Calls: {num_api_calls} | Tokens: {total_prompt_tokens} in, {total_completion_tokens} out"
+        f'Time: {duration:.2f}s | API Calls: {num_api_calls} | Tokens: {total_prompt_tokens} in, {total_completion_tokens} out'
     )
-    print("------------------------------------------")
+    print('------------------------------------------')
 
     result = {
         test_file: {
-            "answer": [final_verdict],
-            "debate_history": debate_history,
-            "final_votes": {
-                "video": extract_answer(video_answer),
-                "audio": extract_answer(audio_answer),
-                "text": extract_answer(text_answer),
+            'answer': [final_verdict],
+            'debate_history': debate_history,
+            'final_votes': {
+                'video': extract_answer(video_answer),
+                'audio': extract_answer(audio_answer),
+                'text': extract_answer(text_answer),
             },
-            "label": dataset[test_file]["sarcasm"],
-            "method": "multimodal_debate_3agents",
-            "usage": {
-                "prompt_tokens": total_prompt_tokens,
-                "completion_tokens": total_completion_tokens,
-                "api_calls": num_api_calls,
+            'label': dataset[test_file]['sarcasm'],
+            'method': 'multimodal_debate_3agents',
+            'usage': {
+                'prompt_tokens': total_prompt_tokens,
+                'completion_tokens': total_completion_tokens,
+                'api_calls': num_api_calls,
             },
-            "latency": duration,
+            'latency': duration,
         }
     }
 
     save_result_to_jsonl(result, output_file)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="3-Agent Multimodal Debate for Sarcasm Detection"
+        description='3-Agent Multimodal Debate for Sarcasm Detection'
     )
     add_common_args(parser)
     parser.add_argument(
-        "--rounds",
+        '--rounds',
         type=int,
         default=3,
-        help="Number of debate rounds (default: 3)",
+        help='Number of debate rounds (default: 3)',
     )
     args = parser.parse_args()
 
     ROUNDS = args.rounds
-    output_file = args.output or f"mustard_debate_{args.provider}.jsonl"
+    output_file = args.output or f'mustard_debate_{args.provider}.jsonl'
 
     check_api_key(args.provider)
     litellm.set_verbose = False
@@ -288,24 +288,24 @@ if __name__ == "__main__":
 
     # Create 3 agents (video, audio, text)
     video_agent = create_agent(
-        "video", provider=args.provider, model=args.model, temperature=args.temperature
+        'video', provider=args.provider, model=args.model, temperature=args.temperature
     )
     audio_agent = create_agent(
-        "audio", provider=args.provider, model=args.model, temperature=args.temperature
+        'audio', provider=args.provider, model=args.model, temperature=args.temperature
     )
     text_agent = create_agent(
-        "text", provider=args.provider, model=args.model, temperature=args.temperature
+        'text', provider=args.provider, model=args.model, temperature=args.temperature
     )
-    print(f"Provider: {args.provider} | Model: {text_agent.model}")
+    print(f'Provider: {args.provider} | Model: {text_agent.model}')
 
     dataset = load_data(args.dataset)
     test_list = list(dataset.keys())
-    print(f"Total Test Cases: {len(test_list)}")
+    print(f'Total Test Cases: {len(test_list)}')
 
     # Load already processed keys for resume
     processed_keys = load_processed_keys(output_file)
     if processed_keys:
-        print(f"Resuming: {len(processed_keys)} already processed, skipping...")
+        print(f'Resuming: {len(processed_keys)} already processed, skipping...')
 
     try:
         for test_file in test_list:
@@ -322,9 +322,9 @@ if __name__ == "__main__":
                     output_file,
                 )
             except Exception as e:
-                print(f"[ERROR] Failed to process {test_file}: {e}")
-                print("[INFO] Skipping and continuing with next sample...")
+                print(f'[ERROR] Failed to process {test_file}: {e}')
+                print('[INFO] Skipping and continuing with next sample...')
                 continue
             time.sleep(2)
     finally:
-        tracker.print_summary(f"Multimodal Debate - Rounds: {ROUNDS}")
+        tracker.print_summary(f'Multimodal Debate - Rounds: {ROUNDS}')

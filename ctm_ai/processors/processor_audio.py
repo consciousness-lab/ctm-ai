@@ -38,12 +38,23 @@ class AudioProcessor(BaseProcessor):
         Qwen-Omni requires audio to be embedded in a video for processing.
         """
         cmd = [
-            'ffmpeg', '-y',
-            '-f', 'lavfi', '-i', 'color=c=black:s=320x240:r=1',
-            '-i', audio_path,
+            'ffmpeg',
+            '-y',
+            '-f',
+            'lavfi',
+            '-i',
+            'color=c=black:s=320x240:r=1',
+            '-i',
+            audio_path,
             '-shortest',
-            '-c:v', 'libx264', '-tune', 'stillimage',
-            '-c:a', 'aac', '-pix_fmt', 'yuv420p',
+            '-c:v',
+            'libx264',
+            '-tune',
+            'stillimage',
+            '-c:a',
+            'aac',
+            '-pix_fmt',
+            'yuv420p',
             output_path,
         ]
         result = subprocess.run(cmd, capture_output=True, text=True)
@@ -68,16 +79,12 @@ class AudioProcessor(BaseProcessor):
                 },
                 {
                     'type': 'file',
-                    'file': {
-                        'file_data': f'data:{mime_type};base64,{encoded_data}'
-                    },
+                    'file': {'file_data': f'data:{mime_type};base64,{encoded_data}'},
                 },
             ],
         }
 
-    def _build_qwen_audio_content(
-        self, audio_path: str, query: str
-    ) -> Dict[str, Any]:
+    def _build_qwen_audio_content(self, audio_path: str, query: str) -> Dict[str, Any]:
         """Build audio message in Qwen format (audio embedded in black-screen video)."""
         tmp_video = tempfile.mktemp(suffix='.mp4')
         try:
@@ -106,9 +113,7 @@ class AudioProcessor(BaseProcessor):
                 },
                 {
                     'type': 'video_url',
-                    'video_url': {
-                        'url': f'data:video/mp4;base64,{encoded_data}'
-                    },
+                    'video_url': {'url': f'data:video/mp4;base64,{encoded_data}'},
                 },
             ],
         }

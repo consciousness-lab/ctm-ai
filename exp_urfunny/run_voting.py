@@ -26,7 +26,7 @@ from llm_utils import (
     save_result_to_jsonl,
 )
 
-sys.path.append("..")
+sys.path.append('..')
 
 # Number of votes
 N_VOTES = 3
@@ -53,59 +53,59 @@ def extract_vote(answer):
     Expects the answer to start with 'Yes' or 'No' (case-insensitive).
     """
     if answer is None or not answer.strip():
-        return "Unknown"
+        return 'Unknown'
 
     answer_stripped = answer.strip()
     answer_lower = answer_stripped.lower()
 
     # Strategy 1: Check if the first line starts with Yes/No
-    first_line = answer_stripped.split("\n")[0].strip().lower()
-    first_word = first_line.split()[0] if first_line.split() else ""
+    first_line = answer_stripped.split('\n')[0].strip().lower()
+    first_word = first_line.split()[0] if first_line.split() else ''
 
-    if first_word == "yes":
-        return "Yes"
-    elif first_word == "no":
-        return "No"
+    if first_word == 'yes':
+        return 'Yes'
+    elif first_word == 'no':
+        return 'No'
 
     # Strategy 2: Check if answer starts with Yes/No
-    if answer_lower.startswith("yes"):
-        return "Yes"
-    elif answer_lower.startswith("no"):
-        return "No"
+    if answer_lower.startswith('yes'):
+        return 'Yes'
+    elif answer_lower.startswith('no'):
+        return 'No'
 
     # Strategy 3: Fallback - check first 20 characters
     first_chars = answer_lower[:20]
-    if first_chars.startswith("yes"):
-        return "Yes"
-    elif first_chars.startswith("no"):
-        return "No"
+    if first_chars.startswith('yes'):
+        return 'Yes'
+    elif first_chars.startswith('no'):
+        return 'No'
 
     print(
-        f"  [WARNING] Could not extract clear Yes/No from answer: {answer_stripped[:100]}..."
+        f'  [WARNING] Could not extract clear Yes/No from answer: {answer_stripped[:100]}...'
     )
-    return "Unknown"
+    return 'Unknown'
 
 
 def validate_answer_format(answer):
     """Validate if the answer follows the expected format."""
     if answer is None or not answer.strip():
-        return False, "Empty answer"
+        return False, 'Empty answer'
 
-    lines = answer.strip().split("\n")
+    lines = answer.strip().split('\n')
     first_line = lines[0].strip().lower()
-    first_word = first_line.split()[0] if first_line.split() else ""
+    first_word = first_line.split()[0] if first_line.split() else ''
 
-    if first_word not in ["yes", "no"]:
+    if first_word not in ['yes', 'no']:
         return False, f"First word is '{first_word}', expected 'Yes' or 'No'"
 
     if len(lines) < 2:
-        return False, "Missing reasoning (expected multiple lines)"
+        return False, 'Missing reasoning (expected multiple lines)'
 
-    reasoning = "\n".join(lines[1:]).strip()
+    reasoning = '\n'.join(lines[1:]).strip()
     if len(reasoning) < 10:
-        return False, "Reasoning too short"
+        return False, 'Reasoning too short'
 
-    return True, "Valid format"
+    return True, 'Valid format'
 
 
 def majority_vote(votes):
@@ -114,18 +114,18 @@ def majority_vote(votes):
     most_common = vote_counts.most_common(1)
     if most_common:
         return most_common[0][0]
-    return "Unknown"
+    return 'Unknown'
 
 
 def run_instance(
-    test_file, dataset, multimodal_agent, tracker, output_file="urfunny_voting.jsonl"
+    test_file, dataset, multimodal_agent, tracker, output_file='urfunny_voting.jsonl'
 ):
     start_time = time.time()
     total_prompt_tokens = 0
     total_completion_tokens = 0
     num_api_calls = 0
 
-    target_sentence = dataset[test_file]["punchline_sentence"]
+    target_sentence = dataset[test_file]['punchline_sentence']
 
     # Prepare query with punchline (no context, same as original)
     query = f"{SYS_PROMPT}\n\npunchline: '{target_sentence}'"
@@ -138,7 +138,7 @@ def run_instance(
         answer, usage = multimodal_agent.call(query, video_path=full_video_path)
         return vote_idx, answer, usage
 
-    print(f"--- Voting ({N_VOTES} votes) for {test_file} ---")
+    print(f'--- Voting ({N_VOTES} votes) for {test_file} ---')
 
     all_answers = []
     all_votes = []
@@ -158,35 +158,35 @@ def run_instance(
                 is_valid, validation_msg = validate_answer_format(answer)
                 if not is_valid:
                     format_violations += 1
-                    print(f"  Vote {idx + 1}: [FORMAT ERROR] {validation_msg}")
+                    print(f'  Vote {idx + 1}: [FORMAT ERROR] {validation_msg}')
 
                 vote = extract_vote(answer)
                 all_votes.append(vote)
 
-                total_prompt_tokens += usage.get("prompt_tokens", 0)
-                total_completion_tokens += usage.get("completion_tokens", 0)
+                total_prompt_tokens += usage.get('prompt_tokens', 0)
+                total_completion_tokens += usage.get('completion_tokens', 0)
                 num_api_calls += 1
 
                 # Show first 100 chars of reasoning
                 answer_preview = (
-                    answer.strip().replace("\n", " ")[:100] if answer else "None"
+                    answer.strip().replace('\n', ' ')[:100] if answer else 'None'
                 )
-                format_indicator = "✓" if is_valid else "✗"
+                format_indicator = '✓' if is_valid else '✗'
                 print(
-                    f"  Vote {idx + 1}: {vote:<7} {format_indicator} | {answer_preview}..."
+                    f'  Vote {idx + 1}: {vote:<7} {format_indicator} | {answer_preview}...'
                 )
 
             except Exception as exc:
-                print(f"  Vote {vote_idx + 1}: ERROR   | Exception: {exc}")
-                all_answers.append("Error")
-                all_votes.append("Unknown")
+                print(f'  Vote {vote_idx + 1}: ERROR   | Exception: {exc}')
+                all_answers.append('Error')
+                all_votes.append('Unknown')
                 format_violations += 1
 
     # Majority voting
     final_vote = majority_vote(all_votes)
     vote_counts = Counter(all_votes)
-    vote_distribution = ", ".join([f"{v}: {c}" for v, c in vote_counts.most_common()])
-    final_verdict = f"{final_vote} (Distribution: {vote_distribution})"
+    vote_distribution = ', '.join([f'{v}: {c}' for v, c in vote_counts.most_common()])
+    final_verdict = f'{final_vote} (Distribution: {vote_distribution})'
 
     end_time = time.time()
     duration = end_time - start_time
@@ -194,64 +194,64 @@ def run_instance(
     tracker.add(duration, total_prompt_tokens, total_completion_tokens, num_api_calls)
 
     # Normalize label for comparison
-    ground_truth = dataset[test_file]["label"]
+    ground_truth = dataset[test_file]['label']
     ground_truth_normalized = normalize_label(ground_truth)
     is_correct = final_vote == ground_truth_normalized
-    match_symbol = "✓" if is_correct else "✗"
+    match_symbol = '✓' if is_correct else '✗'
 
-    print("------------------------------------------")
-    print(f"Final Verdict: {final_verdict}")
-    print(f"Ground Truth:  {ground_truth} (normalized: {ground_truth_normalized})")
-    print(f"Match:         {match_symbol} ({final_vote} vs {ground_truth_normalized})")
+    print('------------------------------------------')
+    print(f'Final Verdict: {final_verdict}')
+    print(f'Ground Truth:  {ground_truth} (normalized: {ground_truth_normalized})')
+    print(f'Match:         {match_symbol} ({final_vote} vs {ground_truth_normalized})')
     if format_violations > 0:
         print(
-            f"Format Issues: {format_violations}/{N_VOTES} votes had format violations"
+            f'Format Issues: {format_violations}/{N_VOTES} votes had format violations'
         )
     print(
-        f"Time: {duration:.2f}s | API Calls: {num_api_calls} | Tokens: {total_prompt_tokens} in, {total_completion_tokens} out"
+        f'Time: {duration:.2f}s | API Calls: {num_api_calls} | Tokens: {total_prompt_tokens} in, {total_completion_tokens} out'
     )
-    print("------------------------------------------")
+    print('------------------------------------------')
 
     result = {
         test_file: {
-            "answer": [final_verdict],
-            "individual_answers": all_answers,
-            "votes": all_votes,
-            "final_vote": final_vote,
-            "vote_distribution": dict(vote_counts),
-            "format_violations": format_violations,
-            "label": ground_truth,
-            "label_normalized": ground_truth_normalized,
-            "correct": is_correct,
-            "method": f"voting_n{N_VOTES}",
-            "usage": {
-                "prompt_tokens": total_prompt_tokens,
-                "completion_tokens": total_completion_tokens,
-                "api_calls": num_api_calls,
+            'answer': [final_verdict],
+            'individual_answers': all_answers,
+            'votes': all_votes,
+            'final_vote': final_vote,
+            'vote_distribution': dict(vote_counts),
+            'format_violations': format_violations,
+            'label': ground_truth,
+            'label_normalized': ground_truth_normalized,
+            'correct': is_correct,
+            'method': f'voting_n{N_VOTES}',
+            'usage': {
+                'prompt_tokens': total_prompt_tokens,
+                'completion_tokens': total_completion_tokens,
+                'api_calls': num_api_calls,
             },
-            "latency": duration,
+            'latency': duration,
         }
     }
 
     save_result_to_jsonl(result, output_file)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="Multimodal Voting for Humor Detection"
+        description='Multimodal Voting for Humor Detection'
     )
     add_common_args(parser)
     parser.add_argument(
-        "--n_votes",
+        '--n_votes',
         type=int,
         default=3,
-        help="Number of votes (default: 3)",
+        help='Number of votes (default: 3)',
     )
     args = parser.parse_args()
 
     N_VOTES = args.n_votes
     TEMPERATURE = args.temperature
-    output_file = args.output or f"urfunny_voting_{args.provider}.jsonl"
+    output_file = args.output or f'urfunny_voting_{args.provider}.jsonl'
 
     check_api_key(args.provider)
     litellm.set_verbose = False
@@ -264,18 +264,18 @@ if __name__ == "__main__":
     # Create multimodal agent (sends full video with audio, same as original
     # which sent video frames + audio separately)
     multimodal_agent = create_agent(
-        "multimodal", provider=args.provider, model=args.model, temperature=TEMPERATURE
+        'multimodal', provider=args.provider, model=args.model, temperature=TEMPERATURE
     )
-    print(f"Provider: {args.provider} | Model: {multimodal_agent.model}")
+    print(f'Provider: {args.provider} | Model: {multimodal_agent.model}')
 
     dataset = load_data(args.dataset)
     test_list = list(dataset.keys())
-    print(f"Total Test Cases: {len(test_list)}")
+    print(f'Total Test Cases: {len(test_list)}')
 
     # Load already processed keys for resume
     processed_keys = load_processed_keys(output_file)
     if processed_keys:
-        print(f"Resuming: {len(processed_keys)} already processed, skipping...")
+        print(f'Resuming: {len(processed_keys)} already processed, skipping...')
 
     try:
         for test_file in test_list:
@@ -290,9 +290,9 @@ if __name__ == "__main__":
                     output_file,
                 )
             except Exception as e:
-                print(f"[ERROR] Failed to process {test_file}: {e}")
-                print("[INFO] Skipping and continuing with next sample...")
+                print(f'[ERROR] Failed to process {test_file}: {e}')
+                print('[INFO] Skipping and continuing with next sample...')
                 continue
             time.sleep(2)
     finally:
-        tracker.print_summary(f"Voting N={N_VOTES}")
+        tracker.print_summary(f'Voting N={N_VOTES}')

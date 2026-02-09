@@ -115,9 +115,9 @@ def _extract_json_fallback(raw: str) -> dict:
         # Find end: ", "additional_question" or ",\n    "additional_question"
         end_m = re.search(r'",\s*"additional_question"\s*:', raw[start:])
         if end_m:
-            parsed['response'] = raw[start : start + end_m.start()].replace(
-                '\\"', '"'
-            ).strip()
+            parsed['response'] = (
+                raw[start : start + end_m.start()].replace('\\"', '"').strip()
+            )
         else:
             parsed['response'] = raw[start:].replace('\\"', '"').rstrip().rstrip('"')
     return parsed
