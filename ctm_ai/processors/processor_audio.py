@@ -65,7 +65,7 @@ class AudioProcessor(BaseProcessor):
     def _build_gemini_audio_content(
         self, audio_path: str, query: str
     ) -> Dict[str, Any]:
-        """Build audio message in Gemini format (file type)."""
+        """Build audio message in Gemini format (file type - litellm convention)."""
         mime_type = self.get_mime_type(audio_path)
         with open(audio_path, 'rb') as f:
             audio_bytes = f.read()
@@ -79,7 +79,9 @@ class AudioProcessor(BaseProcessor):
                 },
                 {
                     'type': 'file',
-                    'file': {'file_data': f'data:{mime_type};base64,{encoded_data}'},
+                    'file': {
+                        'file_data': f'data:{mime_type};base64,{encoded_data}',
+                    },
                 },
             ],
         }

@@ -65,7 +65,7 @@ class SearchProcessor(BaseProcessor):
         )
 
         search_response = client.models.generate_content(
-            model='gemini-2.0-flash-lite',
+            model='gemini-2.5-flash-lite',
             contents=query_with_context,
             config=config,
         )

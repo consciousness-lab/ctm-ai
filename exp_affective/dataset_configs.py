@@ -114,16 +114,16 @@ class URFunnyConfig(DatasetConfig):
     def get_system_prompt(self) -> str:
         return (
             'Please analyze the inputs provided to determine if the person is being humorous or not.\n'
-            "If you think the inputs includes exaggerated description or it is expressing sarcastic meaning, please answer 'Yes'."
-            "If you think the inputs is neutral or just common meaning, please answer 'No'."
-            "Your answer should begin with either 'Yes' or 'No', followed by your reasoning."
+            "If you think the input includes exaggerated description or it is expressing sarcastic meaning, please answer 'Yes'. "
+            "If you think the input is neutral or just common meaning, please answer 'No'. "
+            "Your answer should begin with either 'Yes' or 'No', followed by your reasoning. "
             'If you are not sure, please provide your best guess and do not say that you are not sure.'
         )
 
     def get_debate_prompts(self) -> Dict[str, str]:
         return {
             'video_init': (
-                'You are a Video Analysis Expert. You will analyze whether the person in the video is being humorous or not.\n'
+                'You are a Video Analysis Expert. You will analyze whether the person in the video is being humorous or not. Note that the video does not contain audio, you should just focus on the visual cues.\n'
                 "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'audio_init': (
@@ -135,12 +135,12 @@ class URFunnyConfig(DatasetConfig):
                 "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'video_refine': (
-                'You are a Video Analysis Expert. You previously analyzed the video of this punchline.\n'
+                'You are a Video Analysis Expert. You previously analyzed the visual cues of a person in the video.\n'
                 'Your previous answer: {own_answer}\n\n'
                 'Here are the analyses from other experts:\n'
                 '- Audio Expert: {audio_answer}\n'
                 '- Text Expert: {text_answer}\n\n'
-                'First, consider their perspectives and re-examine the video evidence carefully.\n'
+                'First, consider their perspectives and re-examine the video evidence carefully. Note that the video does not contain audio, you should just focus on the visual cues.\n'
                 'Then, determine if this punchline is humorous or not.\n'
                 "End your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
@@ -209,7 +209,7 @@ class URFunnyConfig(DatasetConfig):
                 "Your answer must start with 'Yes' or 'No', followed by your reasoning."
             ),
             'video_agent': (
-                'You are a Video Analysis Expert. You will analyze video frames showing a person.\n'
+                'You are a Video Analysis Expert. You will analyze video frames showing a person. Note that the video does not contain audio, you should just focus on the visual cues.\n'
                 'Question: {question}\n\n'
                 "First, carefully observe and describe the person's visual expressions, gestures, and body language.\n"
                 'Then, based on your analysis, provide your answer to the question.'
@@ -271,22 +271,22 @@ class MustardConfig(DatasetConfig):
         return 'data/mustard/mustard_dataset/mustard_dataset_test.json'
 
     def get_task_query(self) -> str:
-        return 'Is the person sarcasm or not?'
+        return 'Is the person being sarcastic or not?'
 
     def get_system_prompt(self) -> str:
         return (
-            'Please analyze the inputs provided to determine whether the person being sarcastic or not.\n'
-            "If you think the inputs includes exaggerated description or includes strong emotion or its real meaning is not aligned with the original one, please answer 'Yes'."
-            "If you think the inputs is neutral or its true meaning is not different from its original one, please answer 'No'."
-            "Your answer should begin with either 'Yes' or 'No', followed by your reasoning."
-            'If you are not sure, please provide your best guess and do not say that you are not sure.'
+            'Please analyze the inputs provided to determine whether the person is being sarcastic or not.\n'
+            "If you think the input includes exaggerated description or includes strong emotion or its real meaning is not aligned with the original one, please answer 'Yes'. "
+            "If you think the input is neutral or its true meaning is not different from its original one, please answer 'No'. "
+            "Your answer should begin with either 'Yes' or 'No', followed by your reasoning. "
+            'If you are not sure, please provide your best guess and do not say that you are not sure. '
             'You should only make Yes judgement when you are very sure that the person is sarcastic.'
         )
 
     def get_debate_prompts(self) -> Dict[str, str]:
         return {
             'video_init': (
-                'You are a Video Analysis Expert. You will analyze whether the person in the video is being sarcastic or not.\n'
+                'You are a Video Analysis Expert. You will analyze whether the person in the video is being sarcastic or not. Note that the video does not contain audio, you should just focus on the visual cues.\n'
                 "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'audio_init': (
@@ -298,12 +298,12 @@ class MustardConfig(DatasetConfig):
                 "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'video_refine': (
-                'You are a Video Analysis Expert. You previously analyzed the video of this utterance.\n'
+                'You are a Video Analysis Expert. You previously analyzed the visual cues of a person in the video.\n'
                 'Your previous answer: {own_answer}\n\n'
                 'Here are the analyses from other experts:\n'
                 '- Audio Expert: {audio_answer}\n'
                 '- Text Expert: {text_answer}\n\n'
-                'First, consider their perspectives and re-examine the video evidence carefully.\n'
+                'First, consider their perspectives and re-examine the video evidence carefully. Note that the video does not contain audio, you should just focus on the visual cues.\n'
                 'Then, determine if this utterance is sarcastic or not.\n'
                 "End your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
@@ -372,7 +372,7 @@ class MustardConfig(DatasetConfig):
                 "Your answer must start with 'Yes' or 'No', followed by your reasoning."
             ),
             'video_agent': (
-                'You are a Video Analysis Expert. You will analyze video frames showing a person.\n'
+                'You are a Video Analysis Expert. You will analyze video frames showing a person. Note that the video does not contain audio, you should just focus on the visual cues.\n'
                 'Question: {question}\n\n'
                 "First, carefully observe and describe the person's visual expressions, gestures, and body language.\n"
                 'Then, based on your analysis, provide your answer to the question.'

@@ -149,7 +149,7 @@ class BaseConsciousTuringMachine(ABC):
         {answer}
         """
 
-        parse_model = self.config.parse_model or 'gemini/gemini-2.0-flash-lite'
+        parse_model = self.config.parse_model or 'gemini/gemini-2.5-flash-lite'
         completion_kwargs = get_completion_kwargs(parse_model)
 
         try:
