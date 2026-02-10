@@ -19,7 +19,6 @@ from threading import Lock
 import litellm
 from dataset_configs import get_dataset_config
 from llm_utils import (
-    add_common_args,
     check_api_key,
     create_agent,
     get_full_video_path,
@@ -149,11 +148,48 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Baseline Multimodal Affective Detection'
     )
-    add_common_args(parser)
+    parser.add_argument(
+        '--dataset_name',
+        type=str,
+        default='urfunny',
+        choices=['urfunny', 'mustard'],
+        help='Dataset name (default: urfunny)',
+    )
+    parser.add_argument(
+        '--provider',
+        type=str,
+        default='gemini',
+        choices=['gemini', 'qwen'],
+        help='LLM provider (default: gemini)',
+    )
+    parser.add_argument(
+        '--model',
+        type=str,
+        default=None,
+        help='Model name for litellm (default: auto based on provider)',
+    )
+    parser.add_argument(
+        '--dataset',
+        type=str,
+        default=None,
+        help='Path to dataset JSON file (default: auto based on dataset_name)',
+    )
+    parser.add_argument(
+        '--output',
+        type=str,
+        default=None,
+        help='Output JSONL file path',
+    )
+    parser.add_argument(
+        '--temperature',
+        type=float,
+        default=1.0,
+        help='Sampling temperature (default: 1.0)',
+    )
     parser.add_argument(
         '--max_workers',
         type=int,
-        default=8,
+        default=1,
         help='Number of parallel workers (default: 8)',
     )
     args = parser.parse_args()
