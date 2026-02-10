@@ -60,8 +60,8 @@ class BaseProcessor(object):
         self.name = name
         self.group_name = group_name
         self.system_prompt = kwargs.get('system_prompt')
-        self.model = kwargs.get('model') or 'gemini/gemini-2.0-flash-lite'
-        self.model_name = kwargs.get('model') or 'gemini/gemini-2.0-flash-lite'
+        self.model = kwargs.get('model') or 'gemini/gemini-2.5-flash-lite'
+        self.model_name = kwargs.get('model') or 'gemini/gemini-2.5-flash-lite'
 
         # Provider-specific setup
         self.provider = get_model_provider(self.model)
