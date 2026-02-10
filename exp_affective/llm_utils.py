@@ -382,14 +382,6 @@ AGENT_CLASSES = {
     "multimodal": MultimodalAgent,
 }
 
-AGENT_ROLES = {
-    "text": "Text Analysis",
-    "audio": "Audio Analysis",
-    "video": "Video Analysis",
-    "multimodal": "Multimodal Analysis",
-}
-
-
 def create_agent(
     agent_type: str,
     provider: str = "gemini",
@@ -407,37 +399,31 @@ def create_agent(
     )
 
 
-def create_all_agents(
-    provider: str = "gemini",
-    model: Optional[str] = None,
-    temperature: float = 1.0,
-) -> Dict[str, BaseAgent]:
-    """Create all 4 agents with the same provider/model/temperature"""
-    return {
-        name: create_agent(name, provider, model, temperature) for name in AGENT_CLASSES
-    }
-
-
-def get_agent_kwargs(
+def load_sample_inputs(
     test_file: str, dataset: dict, dataset_name: str
-) -> Dict[str, Dict[str, Any]]:
-    """Build kwargs for each agent type given a test sample
+) -> Dict[str, Any]:
+    """Load all inputs for a sample: text, audio, video paths and metadata.
 
-    Returns dict mapping agent_type -> kwargs for agent.call()
+    Returns a dict with:
+        - target_sentence: the target text from sample
+        - system_prompt: task-specific system prompt
+        - label: ground truth label
+        - full_video_path: path to full video (with audio)
+        - muted_video_path: path to muted video (no audio)
+        - audio_path: path to audio file
+        - config: dataset config object
     """
     config = get_dataset_config(dataset_name)
     sample = dataset[test_file]
 
-    full_context = config.get_context_field(sample)
-
     return {
-        "text": {"context": full_context},
-        "audio": {"audio_path": get_audio_path(test_file, dataset_name)},
-        "video": {"video_path": get_muted_video_path(test_file, dataset_name)},
-        "multimodal": {
-            "context": full_context,
-            "video_path": get_full_video_path(test_file, dataset_name),
-        },
+        "target_sentence": config.get_text_field(sample),
+        "system_prompt": config.get_system_prompt(),
+        "label": config.get_label_field(sample),
+        "full_video_path": get_full_video_path(test_file, dataset_name),
+        "muted_video_path": get_muted_video_path(test_file, dataset_name),
+        "audio_path": get_audio_path(test_file, dataset_name),
+        "config": config,
     }
 
 
@@ -532,10 +518,4 @@ def save_result_to_jsonl(result: dict, output_file: str):
     """Append result dictionary to JSONL file"""
     with open(output_file, "a", encoding="utf-8") as f:
         f.write(json.dumps(result, ensure_ascii=False) + "\n")
-
-
-# ============================================================================
-# Common CLI Arguments
-# ============================================================================
-
 

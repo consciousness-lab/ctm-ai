@@ -1,12 +1,12 @@
 """
-Unified ensemble: N votes from the same MultimodalAgent, then majority vote.
+Modality ensemble: TextAgent + AudioAgent + VideoAgent, then majority vote.
 
-Each vote sends full video (with audio) + text. N votes run in parallel,
-then majority vote determines the final answer.
+Each agent independently analyzes its own modality, then majority vote
+across the 3 results determines the final answer.
 
 Examples:
-python run_unified_ensemble.py --dataset_name urfunny --provider qwen --n_votes 3
-python run_unified_ensemble.py --dataset_name mustard --provider gemini --n_votes 3
+python run_ensemble.py --dataset_name urfunny --provider qwen
+python run_ensemble.py --dataset_name mustard --provider gemini
 """
 
 import argparse
@@ -30,7 +30,6 @@ from llm_utils import (
 
 sys.path.append('..')
 
-N_VOTES = 3
 COST_INPUT_PER_1M = 0.075
 COST_OUTPUT_PER_1M = 0.30
 
@@ -55,8 +54,12 @@ def majority_vote(votes):
     return most_common[0][0] if most_common else 'Unknown'
 
 
-def run_instance(test_file, dataset, dataset_name, agent, tracker, output_file):
-    """Process one sample: load inputs -> N parallel votes -> majority vote -> save."""
+def run_instance(
+    test_file, dataset, dataset_name,
+    text_agent, audio_agent, video_agent,
+    tracker, output_file,
+):
+    """Process one sample: load inputs -> 3 parallel agent calls -> majority vote -> save."""
     start_time = time.time()
 
     # Step 1: Load inputs
@@ -64,44 +67,54 @@ def run_instance(test_file, dataset, dataset_name, agent, tracker, output_file):
     target_sentence = inputs['target_sentence']
     system_prompt = inputs['system_prompt']
     label = inputs['label']
-    full_video_path = inputs['full_video_path']
+    muted_video_path = inputs['muted_video_path']
+    audio_path = inputs['audio_path']
 
     query = f"{system_prompt}\n\ntarget text: '{target_sentence}'"
 
-    print(f'--- Unified Ensemble ({N_VOTES} votes) for {test_file} ---')
+    print(f'--- Modality Ensemble for {test_file} ---')
 
-    # Step 2: Run logic — N parallel multimodal votes
+    # Step 2: Run logic — 3 modality agents in parallel
     total_prompt_tokens = 0
     total_completion_tokens = 0
-    all_answers = []
-    all_votes = []
 
-    def single_vote(vote_idx):
-        return vote_idx, *agent.call(query, video_path=full_video_path)
+    def run_agent(agent_type):
+        if agent_type == 'text':
+            return agent_type, *text_agent.call(query)
+        elif agent_type == 'audio':
+            return agent_type, *audio_agent.call(query, audio_path=audio_path)
+        elif agent_type == 'video':
+            return agent_type, *video_agent.call(query, video_path=muted_video_path)
 
-    with ThreadPoolExecutor(max_workers=N_VOTES) as executor:
-        futures = {executor.submit(single_vote, i): i for i in range(N_VOTES)}
+    agent_types = ['text', 'audio', 'video']
+    all_answers = {}
+    all_votes = {}
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {executor.submit(run_agent, t): t for t in agent_types}
         for future in as_completed(futures):
+            atype = futures[future]
             try:
-                idx, answer, usage = future.result()
-                all_answers.append(answer)
+                agent_type, answer, usage = future.result()
+                all_answers[agent_type] = answer
                 vote = extract_vote(answer)
-                all_votes.append(vote)
+                all_votes[agent_type] = vote
                 total_prompt_tokens += usage.get('prompt_tokens', 0)
                 total_completion_tokens += usage.get('completion_tokens', 0)
                 preview = answer.strip().replace('\n', ' ')[:80] if answer else 'None'
-                print(f'  Vote {idx + 1}: {vote:<7} | {preview}...')
+                print(f'  [{agent_type:>5}]: {vote:<7} | {preview}...')
             except Exception as exc:
-                print(f'  Vote: ERROR | {exc}')
-                all_answers.append('Error')
-                all_votes.append('Unknown')
+                print(f'  [{atype:>5}]: ERROR | {exc}')
+                all_answers[atype] = 'Error'
+                all_votes[atype] = 'Unknown'
 
-    final_vote = majority_vote(all_votes)
-    vote_counts = Counter(all_votes)
+    votes_list = [all_votes.get(t, 'Unknown') for t in agent_types]
+    final_vote = majority_vote(votes_list)
+    vote_counts = Counter(votes_list)
 
     end_time = time.time()
     duration = end_time - start_time
-    tracker.add(duration, total_prompt_tokens, total_completion_tokens, N_VOTES)
+    tracker.add(duration, total_prompt_tokens, total_completion_tokens, 3)
 
     label_normalized = normalize_label(label)
     is_correct = final_vote == label_normalized
@@ -111,18 +124,18 @@ def run_instance(test_file, dataset, dataset_name, agent, tracker, output_file):
     result = {
         test_file: {
             'answer': [final_vote],
-            'individual_answers': all_answers,
-            'votes': all_votes,
+            'individual_answers': {t: all_answers.get(t) for t in agent_types},
+            'votes': {t: all_votes.get(t) for t in agent_types},
             'final_vote': final_vote,
             'vote_distribution': dict(vote_counts),
             'label': label,
             'label_normalized': label_normalized,
             'correct': is_correct,
-            'method': f'unified_ensemble_n{N_VOTES}',
+            'method': 'modality_ensemble',
             'usage': {
                 'prompt_tokens': total_prompt_tokens,
                 'completion_tokens': total_completion_tokens,
-                'api_calls': N_VOTES,
+                'api_calls': 3,
             },
             'latency': duration,
         }
@@ -131,7 +144,9 @@ def run_instance(test_file, dataset, dataset_name, agent, tracker, output_file):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Unified Ensemble (N multimodal votes)')
+    parser = argparse.ArgumentParser(
+        description='Modality Ensemble (Text+Audio+Video majority voting)'
+    )
     parser.add_argument(
         '--dataset_name', type=str, default='urfunny',
         choices=['urfunny', 'mustard'], help='Dataset name (default: urfunny)',
@@ -155,17 +170,12 @@ if __name__ == '__main__':
         '--temperature', type=float, default=1.0,
         help='Sampling temperature (default: 1.0)',
     )
-    parser.add_argument(
-        '--n_votes', type=int, default=3, help='Number of votes (default: 3)',
-    )
     args = parser.parse_args()
-
-    N_VOTES = args.n_votes
 
     config = get_dataset_config(args.dataset_name)
     if args.dataset is None:
         args.dataset = config.get_default_dataset_path()
-    output_file = args.output or f'unified_ensemble_{args.dataset_name}_{args.provider}.jsonl'
+    output_file = args.output or f'ensemble_{args.dataset_name}_{args.provider}.jsonl'
 
     check_api_key(args.provider)
     litellm.set_verbose = False
@@ -174,13 +184,17 @@ if __name__ == '__main__':
         cost_input_per_1m=COST_INPUT_PER_1M, cost_output_per_1m=COST_OUTPUT_PER_1M
     )
 
-    agent = create_agent(
-        'multimodal',
-        provider=args.provider,
-        model=args.model,
-        temperature=args.temperature,
+    text_agent = create_agent(
+        'text', provider=args.provider, model=args.model, temperature=args.temperature
     )
-    print(f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {agent.model}')
+    audio_agent = create_agent(
+        'audio', provider=args.provider, model=args.model, temperature=args.temperature
+    )
+    video_agent = create_agent(
+        'video', provider=args.provider, model=args.model, temperature=args.temperature
+    )
+    print(f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {text_agent.model}')
+    print(f'Agents: TextAgent + AudioAgent + VideoAgent -> Majority Vote')
 
     dataset = load_data(args.dataset)
     test_list = list(dataset.keys())
@@ -193,10 +207,14 @@ if __name__ == '__main__':
             if test_file in processed_keys:
                 continue
             try:
-                run_instance(test_file, dataset, args.dataset_name, agent, tracker, output_file)
+                run_instance(
+                    test_file, dataset, args.dataset_name,
+                    text_agent, audio_agent, video_agent,
+                    tracker, output_file,
+                )
             except Exception as e:
                 print(f'[ERROR] {test_file}: {e}')
                 continue
             time.sleep(2)
     finally:
-        tracker.print_summary(f'Unified Ensemble N={N_VOTES}')
+        tracker.print_summary('Modality Ensemble (Text+Audio+Video)')
