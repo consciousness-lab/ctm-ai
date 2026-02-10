@@ -9,8 +9,8 @@ class ConsciousTuringMachineConfig:
         max_iter_num: int = 3,
         output_threshold: float = 1.8,
         processors_config: Optional[Dict[str, Any]] = None,
-        parse_model: str = 'gemini/gemini-2.0-flash-lite',
-        supervisors_model: str = 'gemini/gemini-2.0-flash-lite',
+        parse_model: str = 'gemini/gemini-2.5-flash-lite',
+        supervisors_model: str = 'gemini/gemini-2.5-flash-lite',
         supervisors_prompt: str = None,
         **kwargs: Any,
     ) -> None:
