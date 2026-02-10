@@ -19,7 +19,6 @@ import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 
 import litellm
-from openai import OpenAI
 
 from dataset_configs import get_dataset_config
 
@@ -267,71 +266,43 @@ class BaseAgent:
         """Build content list. Override in subclasses"""
         raise NotImplementedError
 
-    def call(self, query: str, **kwargs: Any) -> Tuple[Optional[str], Dict[str, int]]:
-        """Make an LLM API call with the agent's modality"""
+    def call(self, query: str, max_retries: int = 3, **kwargs: Any) -> Tuple[Optional[str], Dict[str, int]]:
+        """Make an LLM API call with the agent's modality, retry up to max_retries on failure"""
         content = self._build_content(query, **kwargs)
 
-        try:
-            if self.provider == "qwen":
-                # Use OpenAI client directly for Qwen
-                # (litellm drops audio from video_url, breaking AudioAgent)
-                return self._call_qwen(content)
-            else:
-                # Use litellm for other providers (Gemini, etc.)
-                return self._call_litellm(content)
+        for attempt in range(1, max_retries + 1):
+            try:
+                call_kwargs = {
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": content}],
+                    "temperature": self.temperature,
+                }
 
-        except Exception as e:
-            print(f"Error calling {self.provider} API ({self.AGENT_TYPE}): {e}")
-            return None, {"prompt_tokens": 0, "completion_tokens": 0}
+                if self.provider == "qwen":
+                    call_kwargs["api_key"] = os.getenv("DASHSCOPE_API_KEY")
+                    call_kwargs["api_base"] = QWEN_API_BASE
+                    call_kwargs["modalities"] = ["text"]
 
-    def _call_qwen(self, content: List[Dict]) -> Tuple[Optional[str], Dict[str, int]]:
-        """Call Qwen API directly via OpenAI client (matches test_qwen_omni.py)"""
-        client = OpenAI(
-            api_key=os.getenv("DASHSCOPE_API_KEY"),
-            base_url=QWEN_API_BASE,
-        )
-        # Strip 'openai/' prefix that litellm uses
-        model_name = self.model.replace("openai/", "")
+                response = litellm.completion(**call_kwargs)
+                text = response.choices[0].message.content
+                usage = {
+                    "prompt_tokens": response.usage.prompt_tokens,
+                    "completion_tokens": response.usage.completion_tokens,
+                }
 
-        completion = client.chat.completions.create(
-            model=model_name,
-            messages=[{"role": "user", "content": content}],
-            temperature=self.temperature,
-            modalities=["text"],
-            stream=True,
-            stream_options={"include_usage": True},
-        )
+                if text:
+                    return text, usage
 
-        # Collect streamed response (same as test_qwen_omni.py)
-        text = ""
-        usage_info = None
-        for chunk in completion:
-            if chunk.choices and chunk.choices[0].delta.content:
-                text += chunk.choices[0].delta.content
-            if hasattr(chunk, "usage") and chunk.usage is not None:
-                usage_info = chunk.usage
+                # Response is None or empty, retry
+                print(f"Warning: empty response from {self.provider} ({self.AGENT_TYPE}), "
+                      f"attempt {attempt}/{max_retries}")
 
-        usage = {
-            "prompt_tokens": usage_info.prompt_tokens if usage_info else 0,
-            "completion_tokens": usage_info.completion_tokens if usage_info else 0,
-        }
-        return text, usage
+            except Exception as e:
+                print(f"Error calling {self.provider} API ({self.AGENT_TYPE}), "
+                      f"attempt {attempt}/{max_retries}: {e}")
 
-    def _call_litellm(self, content: List[Dict]) -> Tuple[Optional[str], Dict[str, int]]:
-        """Call LLM via litellm (for Gemini and other providers)"""
-        call_kwargs = {
-            "model": self.model,
-            "messages": [{"role": "user", "content": content}],
-            "temperature": self.temperature,
-        }
-
-        response = litellm.completion(**call_kwargs)
-        text = response.choices[0].message.content
-        usage = {
-            "prompt_tokens": response.usage.prompt_tokens,
-            "completion_tokens": response.usage.completion_tokens,
-        }
-        return text, usage
+        # All retries exhausted
+        return None, {"prompt_tokens": 0, "completion_tokens": 0}
 
     def __repr__(self):
         return (
