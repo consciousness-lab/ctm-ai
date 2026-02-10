@@ -19,6 +19,7 @@ import tempfile
 from typing import Any, Dict, List, Optional, Tuple
 
 import litellm
+from openai import OpenAI
 
 from dataset_configs import get_dataset_config
 
@@ -271,29 +272,66 @@ class BaseAgent:
         content = self._build_content(query, **kwargs)
 
         try:
-            # Build litellm call kwargs
-            call_kwargs = {
-                "model": self.model,
-                "messages": [{"role": "user", "content": content}],
-                "temperature": self.temperature,
-            }
-
-            # For Qwen provider, use DashScope API configuration
             if self.provider == "qwen":
-                call_kwargs["api_key"] = os.getenv("DASHSCOPE_API_KEY")
-                call_kwargs["api_base"] = QWEN_API_BASE
-
-            response = litellm.completion(**call_kwargs)
-            text = response.choices[0].message.content
-            usage = {
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-            }
-            return text, usage
+                # Use OpenAI client directly for Qwen
+                # (litellm drops audio from video_url, breaking AudioAgent)
+                return self._call_qwen(content)
+            else:
+                # Use litellm for other providers (Gemini, etc.)
+                return self._call_litellm(content)
 
         except Exception as e:
             print(f"Error calling {self.provider} API ({self.AGENT_TYPE}): {e}")
             return None, {"prompt_tokens": 0, "completion_tokens": 0}
+
+    def _call_qwen(self, content: List[Dict]) -> Tuple[Optional[str], Dict[str, int]]:
+        """Call Qwen API directly via OpenAI client (matches test_qwen_omni.py)"""
+        client = OpenAI(
+            api_key=os.getenv("DASHSCOPE_API_KEY"),
+            base_url=QWEN_API_BASE,
+        )
+        # Strip 'openai/' prefix that litellm uses
+        model_name = self.model.replace("openai/", "")
+
+        completion = client.chat.completions.create(
+            model=model_name,
+            messages=[{"role": "user", "content": content}],
+            temperature=self.temperature,
+            modalities=["text"],
+            stream=True,
+            stream_options={"include_usage": True},
+        )
+
+        # Collect streamed response (same as test_qwen_omni.py)
+        text = ""
+        usage_info = None
+        for chunk in completion:
+            if chunk.choices and chunk.choices[0].delta.content:
+                text += chunk.choices[0].delta.content
+            if hasattr(chunk, "usage") and chunk.usage is not None:
+                usage_info = chunk.usage
+
+        usage = {
+            "prompt_tokens": usage_info.prompt_tokens if usage_info else 0,
+            "completion_tokens": usage_info.completion_tokens if usage_info else 0,
+        }
+        return text, usage
+
+    def _call_litellm(self, content: List[Dict]) -> Tuple[Optional[str], Dict[str, int]]:
+        """Call LLM via litellm (for Gemini and other providers)"""
+        call_kwargs = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": content}],
+            "temperature": self.temperature,
+        }
+
+        response = litellm.completion(**call_kwargs)
+        text = response.choices[0].message.content
+        usage = {
+            "prompt_tokens": response.usage.prompt_tokens,
+            "completion_tokens": response.usage.completion_tokens,
+        }
+        return text, usage
 
     def __repr__(self):
         return (
