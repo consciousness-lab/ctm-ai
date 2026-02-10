@@ -115,8 +115,12 @@ class SearchProcessor(BaseProcessor):
             try:
                 search_result = self._google_search(clean_query, query_with_context)
             except Exception as e:
-                logger.warning(f'Google Search grounding failed: {e}, using LLM fallback')
-                search_result = self._llm_search_fallback(clean_query, query_with_context)
+                logger.warning(
+                    f'Google Search grounding failed: {e}, using LLM fallback'
+                )
+                search_result = self._llm_search_fallback(
+                    clean_query, query_with_context
+                )
         else:
             search_result = self._llm_search_fallback(clean_query, query_with_context)
 

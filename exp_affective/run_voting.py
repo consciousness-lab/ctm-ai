@@ -1,26 +1,35 @@
+"""
+Multimodal Voting experiment with N votes using multimodal input.
+
+Each vote sends the full video (with audio) + target text.
+N votes run in parallel, then majority vote determines the final answer.
+
+Examples:
+python run_voting.py --dataset_name urfunny --provider gemini --n_votes 3 --output voting_urfunny_gemini.jsonl
+python run_voting.py --dataset_name mustard --provider gemini --n_votes 3 --output voting_mustard_gemini.jsonl
+"""
+
+import argparse
 import sys
 import time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import litellm
-from gemini_utils import (
+from dataset_configs import get_dataset_config
+from llm_utils import (
     StatsTracker,
-    call_gemini_with_content,
-    check_gemini_api_key,
+    add_common_args,
+    check_api_key,
+    create_agent,
+    get_full_video_path,
     load_data,
-    load_images_as_base64,
     load_processed_keys,
     normalize_label,
-    prepare_audio_for_gemini,
     save_result_to_jsonl,
 )
 
 sys.path.append('..')
-
-# Check API key
-check_gemini_api_key()
-litellm.set_verbose = False
 
 # Number of votes
 N_VOTES = 3
@@ -28,21 +37,9 @@ N_VOTES = 3
 # Higher temperature for diversity in voting
 TEMPERATURE = 1.0
 
-SYS_PROMPT = """Please analyze the inputs provided to determine if the person is being sarcastic or not.
-
-IMPORTANT: Your response MUST start with "yes" or "no".
-
-After your answer, provide your reasoning.
-"""
-
 # Pricing for Gemini 2.0 Flash Lite
 COST_INPUT_PER_1M = 0.075
 COST_OUTPUT_PER_1M = 0.30
-
-# Initialize tracker
-tracker = StatsTracker(
-    cost_input_per_1m=COST_INPUT_PER_1M, cost_output_per_1m=COST_OUTPUT_PER_1M
-)
 
 
 def extract_vote(answer):
@@ -86,7 +83,7 @@ def extract_vote(answer):
 
 
 def validate_answer_format(answer):
-    """Validate if the answer follows the expected format."""
+    """Validate if the answer follows the expected format"""
     if answer is None or not answer.strip():
         return False, 'Empty answer'
 
@@ -108,7 +105,7 @@ def validate_answer_format(answer):
 
 
 def majority_vote(votes):
-    """Return the majority vote result."""
+    """Return the majority vote result"""
     vote_counts = Counter(votes)
     most_common = vote_counts.most_common(1)
     if most_common:
@@ -116,35 +113,34 @@ def majority_vote(votes):
     return 'Unknown'
 
 
-def run_instance(test_file, dataset, output_file='mustard_voting_0207.jsonl'):
+def run_instance(
+    test_file,
+    dataset,
+    dataset_name,
+    multimodal_agent,
+    tracker,
+    output_file='voting.jsonl',
+):
     start_time = time.time()
     total_prompt_tokens = 0
     total_completion_tokens = 0
     num_api_calls = 0
 
-    target_sentence = dataset[test_file]['utterance']
+    config = get_dataset_config(dataset_name)
+    sample = dataset[test_file]
 
-    # Prepare query with punchline (no context)
-    query = f"{SYS_PROMPT}\n\npunchline: '{target_sentence}'"
+    target_sentence = config.get_text_field(sample)
+    system_prompt = config.get_system_prompt()
 
-    # Load multimodal data
-    audio_path = f'mustard_audios/{test_file}_audio.mp4'
-    video_frames_path = f'mustard_frames/{test_file}_frames'
+    # Prepare query with target sentence
+    query = f"{system_prompt}\n\ntarget text: '{target_sentence}'"
 
-    video_frames = load_images_as_base64(video_frames_path, max_frames=10)
-    audio_file = prepare_audio_for_gemini(audio_path)
-
-    model_name = 'gemini/gemini-2.0-flash-lite'
+    # Full video path (contains both video and audio)
+    full_video_path = get_full_video_path(test_file, dataset_name)
 
     def single_vote(vote_idx):
-        """Execute a single vote with multimodal input."""
-        answer, usage = call_gemini_with_content(
-            query=query,
-            images=video_frames,
-            audio=audio_file,
-            model=model_name,
-            temperature=TEMPERATURE,
-        )
+        """Execute a single vote with multimodal input"""
+        answer, usage = multimodal_agent.call(query, video_path=full_video_path)
         return vote_idx, answer, usage
 
     print(f'--- Voting ({N_VOTES} votes) for {test_file} ---')
@@ -203,7 +199,7 @@ def run_instance(test_file, dataset, output_file='mustard_voting_0207.jsonl'):
     tracker.add(duration, total_prompt_tokens, total_completion_tokens, num_api_calls)
 
     # Normalize label for comparison
-    ground_truth = dataset[test_file]['sarcasm']
+    ground_truth = config.get_label_field(sample)
     ground_truth_normalized = normalize_label(ground_truth)
     is_correct = final_vote == ground_truth_normalized
     match_symbol = '✓' if is_correct else '✗'
@@ -246,10 +242,46 @@ def run_instance(test_file, dataset, output_file='mustard_voting_0207.jsonl'):
 
 
 if __name__ == '__main__':
-    output_file = 'mustard_voting_0207.jsonl'
-    dataset_path = './mustard_dataset/mustard_dataset_test.json'
-    dataset = load_data(dataset_path)
+    parser = argparse.ArgumentParser(
+        description='Multimodal Voting for Affective Detection'
+    )
+    add_common_args(parser)
+    parser.add_argument(
+        '--n_votes',
+        type=int,
+        default=3,
+        help='Number of votes (default: 3)',
+    )
+    args = parser.parse_args()
 
+    N_VOTES = args.n_votes
+    TEMPERATURE = args.temperature
+
+    # Get dataset configuration
+    config = get_dataset_config(args.dataset_name)
+
+    # Set default dataset path if not specified
+    if args.dataset is None:
+        args.dataset = config.get_default_dataset_path()
+
+    output_file = args.output or f'voting_{args.dataset_name}_{args.provider}.jsonl'
+
+    check_api_key(args.provider)
+    litellm.set_verbose = False
+
+    # Initialize tracker
+    tracker = StatsTracker(
+        cost_input_per_1m=COST_INPUT_PER_1M, cost_output_per_1m=COST_OUTPUT_PER_1M
+    )
+
+    # Create multimodal agent
+    multimodal_agent = create_agent(
+        'multimodal', provider=args.provider, model=args.model, temperature=TEMPERATURE
+    )
+    print(f'Dataset: {args.dataset_name} ({config.task_type})')
+    print(f'Provider: {args.provider} | Model: {multimodal_agent.model}')
+
+    dataset = load_data(args.dataset)
     test_list = list(dataset.keys())
     print(f'Total Test Cases: {len(test_list)}')
 
@@ -263,7 +295,14 @@ if __name__ == '__main__':
             if test_file in processed_keys:
                 continue
             try:
-                run_instance(test_file, dataset, output_file)
+                run_instance(
+                    test_file,
+                    dataset,
+                    args.dataset_name,
+                    multimodal_agent,
+                    tracker,
+                    output_file,
+                )
             except Exception as e:
                 print(f'[ERROR] Failed to process {test_file}: {e}')
                 print('[INFO] Skipping and continuing with next sample...')

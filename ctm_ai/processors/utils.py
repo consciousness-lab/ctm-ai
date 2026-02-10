@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Dict
 
 # ---------------------------------------------------------------------------
@@ -87,6 +88,41 @@ def _extract_json(content: str) -> dict:
     return json.loads(content)
 
 
+def _extract_json_fallback(raw: str) -> dict:
+    """
+    Fallback: extract fields via regex when json.loads fails (e.g. unescaped
+    quotes inside "response"). Fills in relevance, confidence, surprise,
+    additional_question, and response when possible.
+    """
+    parsed = {}
+    # Numeric scores: "relevance": 1.0 or "relevance": 1
+    for key in ('relevance', 'confidence', 'surprise'):
+        m = re.search(rf'"{key}"\s*:\s*([0-9.]+)', raw, re.IGNORECASE)
+        if m:
+            try:
+                parsed[key] = float(m.group(1))
+            except ValueError:
+                pass
+    # additional_question: short string, often no internal quotes
+    m = re.search(r'"additional_question"\s*:\s*"([^"]*)"', raw)
+    if m:
+        parsed['additional_question'] = m.group(1).strip()
+    # response: take everything between "response": " and ", "additional_question"
+    # (handles unescaped quotes inside response by using next key as delimiter)
+    resp_start_m = re.search(r'"response"\s*:\s*"', raw)
+    if resp_start_m:
+        start = resp_start_m.end()
+        # Find end: ", "additional_question" or ",\n    "additional_question"
+        end_m = re.search(r'",\s*"additional_question"\s*:', raw[start:])
+        if end_m:
+            parsed['response'] = (
+                raw[start : start + end_m.start()].replace('\\"', '"').strip()
+            )
+        else:
+            parsed['response'] = raw[start:].replace('\\"', '"').rstrip().rstrip('"')
+    return parsed
+
+
 def parse_json_response(
     content: str, default_additional_question: str = ''
 ) -> tuple[str, str]:
@@ -102,17 +138,23 @@ def parse_json_response(
     """
     try:
         parsed_response = _extract_json(content)
-        parsed_content = parsed_response.get('response', content)
-        additional_question = parsed_response.get(
-            'additional_question', default_additional_question
-        )
-        if additional_question == '':
-            additional_question = default_additional_question
-
-        return parsed_content, additional_question
-
     except (json.JSONDecodeError, TypeError):
-        return content, default_additional_question
+        raw = content
+        if '```json' in content and '```' in content:
+            start_idx = content.find('```json') + 7
+            end_idx = content.rfind('```')
+            if start_idx > 6 and end_idx > start_idx:
+                raw = content[start_idx:end_idx].strip()
+        parsed_response = _extract_json_fallback(raw)
+
+    parsed_content = parsed_response.get('response', content)
+    additional_question = parsed_response.get(
+        'additional_question', default_additional_question
+    )
+    if additional_question == '':
+        additional_question = default_additional_question
+
+    return parsed_content, additional_question
 
 
 def parse_json_response_with_scores(
@@ -144,10 +186,17 @@ def parse_json_response_with_scores(
     try:
         parsed = _extract_json(content)
     except (json.JSONDecodeError, TypeError):
-        parsed = {}
-        response_text = content
-    else:
-        response_text = parsed.get('response', content)
+        # Fallback when JSON is invalid (e.g. unescaped quotes in "response")
+        raw = content
+        if '```json' in content and '```' in content:
+            start_idx = content.find('```json') + 7
+            end_idx = content.rfind('```')
+            if start_idx > 6 and end_idx > start_idx:
+                raw = content[start_idx:end_idx].strip()
+        parsed = _extract_json_fallback(raw)
+        if not parsed:
+            parsed = {}
+    response_text = parsed.get('response', content)
 
     additional_question = parsed.get('additional_question', default_additional_question)
     if not additional_question:
