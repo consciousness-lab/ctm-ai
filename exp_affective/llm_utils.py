@@ -31,6 +31,8 @@ DEFAULT_MODELS = {
     "qwen": "openai/qwen3-omni-flash",
 }
 
+QWEN_API_BASE = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+
 
 # ============================================================================
 # Environment Setup
@@ -43,8 +45,8 @@ def check_api_key(provider: str = "gemini"):
         if not os.getenv("GEMINI_API_KEY"):
             raise ValueError("GEMINI_API_KEY environment variable not set")
     elif provider == "qwen":
-        # Qwen may use DASHSCOPE_API_KEY or OPENAI_API_KEY depending on setup
-        pass
+        if not os.getenv("DASHSCOPE_API_KEY"):
+            raise ValueError("DASHSCOPE_API_KEY environment variable not set")
 
 
 # ============================================================================
@@ -269,11 +271,19 @@ class BaseAgent:
         content = self._build_content(query, **kwargs)
 
         try:
-            response = litellm.completion(
-                model=self.model,
-                messages=[{"role": "user", "content": content}],
-                temperature=self.temperature,
-            )
+            # Build litellm call kwargs
+            call_kwargs = {
+                "model": self.model,
+                "messages": [{"role": "user", "content": content}],
+                "temperature": self.temperature,
+            }
+
+            # For Qwen provider, use DashScope API configuration
+            if self.provider == "qwen":
+                call_kwargs["api_key"] = os.getenv("DASHSCOPE_API_KEY")
+                call_kwargs["api_base"] = QWEN_API_BASE
+
+            response = litellm.completion(**call_kwargs)
             text = response.choices[0].message.content
             usage = {
                 "prompt_tokens": response.usage.prompt_tokens,

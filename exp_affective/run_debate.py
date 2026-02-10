@@ -7,6 +7,7 @@ After all rounds, a judge (text-only) makes the final decision.
 Examples:
 python run_debate.py --dataset_name urfunny --provider gemini --rounds 3 --output debate_urfunny_gemini.jsonl
 python run_debate.py --dataset_name mustard --provider gemini --rounds 3 --output debate_mustard_gemini.jsonl
+python run_debate.py --dataset_name mustard --provider qwen --rounds 3 --output debate_mustard_qwen.jsonl
 """
 
 import argparse
