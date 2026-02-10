@@ -1,10 +1,12 @@
 """
-python run_voting.py --provider gemini --model gemini/gemini-2.5-flash-lite --output gemini_debate.jsonl
-
 Multimodal Debate experiment with 3 agents (Video, Audio, Text).
 
 Each round, 3 agents analyze in parallel, then refine based on others' answers.
 After all rounds, a judge (text-only) makes the final decision.
+
+Examples:
+python run_debate.py --dataset_name urfunny --provider gemini --rounds 3 --output debate_urfunny_gemini.jsonl
+python run_debate.py --dataset_name mustard --provider gemini --rounds 3 --output debate_mustard_gemini.jsonl
 """
 
 import argparse
@@ -13,6 +15,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import litellm
+from dataset_configs import get_dataset_config
 from llm_utils import (
     StatsTracker,
     add_common_args,
@@ -29,69 +32,13 @@ sys.path.append('..')
 
 ROUNDS = 3  # Number of debate rounds
 
-# Modality-specific agent prompts for sarcasm detection
-VIDEO_AGENT_INIT = (
-    'You are a Video Analysis Expert. You will analyze whether the person in the video is being sarcastic or not.\n'
-    "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
-)
-
-AUDIO_AGENT_INIT = (
-    'You are an Audio Analysis Expert. You will analyze whether the person in the audio is being sarcastic or not.\n'
-    "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
-)
-
-TEXT_AGENT_INIT = (
-    'You are a Text Analysis Expert. You will be given a punchline that was said by a person, and analysis whether the person is being sarcastic or not.\n'
-    "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
-)
-
-VIDEO_AGENT_REFINE = (
-    'You are a Video Analysis Expert. You previously analyzed the video of this punchline.\n'
-    'Your previous answer: {own_answer}\n\n'
-    'Here are the analyses from other experts:\n'
-    '- Audio Expert: {audio_answer}\n'
-    '- Text Expert: {text_answer}\n\n'
-    'First, consider their perspectives and re-examine the video evidence carefully.\n'
-    'Then, determine if this punchline is sarcastic or not.\n'
-    "End your response with 'My Answer: Yes' or 'My Answer: No'."
-)
-
-AUDIO_AGENT_REFINE = (
-    'You are an Audio Analysis Expert. You previously analyzed the audio of this punchline.\n'
-    'Your previous answer: {own_answer}\n\n'
-    'Here are the analyses from other experts:\n'
-    '- Video Expert: {video_answer}\n'
-    '- Text Expert: {text_answer}\n\n'
-    'First, consider their perspectives and re-examine the audio evidence carefully.\n'
-    'Then, determine if this punchline is sarcastic or not.\n'
-    "End your response with 'My Answer: Yes' or 'My Answer: No'."
-)
-
-TEXT_AGENT_REFINE = (
-    'You are a Text Analysis Expert. You previously analyzed this punchline.\n'
-    'Your previous answer: {own_answer}\n\n'
-    'Here are the analyses from other experts:\n'
-    '- Video Expert: {video_answer}\n'
-    '- Audio Expert: {audio_answer}\n\n'
-    'First, consider their perspectives and re-examine the text evidence of the punchline carefully.\n'
-    'Then, determine if this punchline is sarcastic or not.\n'
-    "End your response with 'My Answer: Yes' or 'My Answer: No'."
-)
-
-JUDGE_PROMPT = (
-    'You are an impartial Judge. Three experts have debated whether this punchline is sarcastic or not.\n'
-    'Here is the discussion:\n\n{debate_history}\n\n'
-    'Based on all evidence from the video, audio, and text analyses, determine if this punchline is sarcastic or not.\n'
-    "Your answer must start with 'Yes' or 'No', followed by your reasoning."
-)
-
 # Pricing for Gemini 2.0 Flash Lite
 COST_INPUT_PER_1M = 0.075
 COST_OUTPUT_PER_1M = 0.30
 
 
 def extract_answer(response):
-    """Extract Yes/No from agent response."""
+    """Extract Yes/No from agent response"""
     if response is None:
         return 'Unknown'
     response_lower = response.lower()
@@ -110,21 +57,24 @@ def extract_answer(response):
 def run_instance(
     test_file,
     dataset,
+    dataset_name,
     video_agent,
     audio_agent,
     text_agent,
     tracker,
-    output_file='mustard_debate.jsonl',
+    output_file='debate.jsonl',
 ):
     start_time = time.time()
     total_prompt_tokens = 0
     total_completion_tokens = 0
     num_api_calls = 0
 
-    target_sentence = dataset[test_file]['utterance']
+    config = get_dataset_config(dataset_name)
+    sample = dataset[test_file]
+    target_sentence = config.get_text_field(sample)
 
-    audio_path = get_audio_path(test_file)
-    video_path = get_muted_video_path(test_file)
+    audio_path = get_audio_path(test_file, dataset_name)
+    video_path = get_muted_video_path(test_file, dataset_name)
 
     debate_history = ''
 
@@ -133,10 +83,12 @@ def run_instance(
     audio_answer = ''
     text_answer = ''
 
+    prompts = config.get_debate_prompts()
+
     print(f'--- Multimodal Debate for {test_file} ({ROUNDS} Rounds) ---')
 
     def run_agent(agent_type, query):
-        """Helper function to run a single agent and return results."""
+        """Helper function to run a single agent and return results"""
         if agent_type == 'video':
             # Video agent: only muted video
             response, usage = video_agent.call(query, video_path=video_path)
@@ -157,21 +109,21 @@ def run_instance(
 
         # Prepare queries for all three agents
         if round_num == 1:
-            video_query = VIDEO_AGENT_INIT
-            audio_query = AUDIO_AGENT_INIT
-            text_query = f"{TEXT_AGENT_INIT}\n\npunchline: '{target_sentence}'"
+            video_query = prompts['video_init']
+            audio_query = prompts['audio_init']
+            text_query = f"{prompts['text_init']}\n\ntarget text: '{target_sentence}'"
         else:
-            video_query = VIDEO_AGENT_REFINE.format(
+            video_query = prompts['video_refine'].format(
                 own_answer=video_answer,
                 audio_answer=audio_answer,
                 text_answer=text_answer,
             )
-            audio_query = AUDIO_AGENT_REFINE.format(
+            audio_query = prompts['audio_refine'].format(
                 own_answer=audio_answer,
                 video_answer=video_answer,
                 text_answer=text_answer,
             )
-            text_query = f"{TEXT_AGENT_REFINE.format(own_answer=text_answer, video_answer=video_answer, audio_answer=audio_answer)}\n\npunchline: '{target_sentence}'"
+            text_query = f"{prompts['text_refine'].format(own_answer=text_answer, video_answer=video_answer, audio_answer=audio_answer)}\n\ntarget text: '{target_sentence}'"
 
         # Run all three agents in parallel
         with ThreadPoolExecutor(max_workers=3) as executor:
@@ -220,8 +172,8 @@ def run_instance(
 
     # --- Judge ---
     print('--- Judge Verdict ---')
-    judge_query = f"{JUDGE_PROMPT.format(debate_history=debate_history)}\n\npunchline: '{target_sentence}'"
-    # Judge uses text modality with context (same as original)
+    judge_query = f"{prompts['judge'].format(debate_history=debate_history)}\n\ntarget text: '{target_sentence}'"
+    # Judge uses text modality with context
     final_verdict, usage = text_agent.call(judge_query)
     num_api_calls += 1
     total_prompt_tokens += usage.get('prompt_tokens', 0)
@@ -239,6 +191,7 @@ def run_instance(
     )
     print('------------------------------------------')
 
+    label = config.get_label_field(sample)
     result = {
         test_file: {
             'answer': [final_verdict],
@@ -248,7 +201,7 @@ def run_instance(
                 'audio': extract_answer(audio_answer),
                 'text': extract_answer(text_answer),
             },
-            'label': dataset[test_file]['sarcasm'],
+            'label': label,
             'method': 'multimodal_debate_3agents',
             'usage': {
                 'prompt_tokens': total_prompt_tokens,
@@ -264,7 +217,7 @@ def run_instance(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='3-Agent Multimodal Debate for Sarcasm Detection'
+        description='3-Agent Multimodal Debate for Affective Detection'
     )
     add_common_args(parser)
     parser.add_argument(
@@ -276,7 +229,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     ROUNDS = args.rounds
-    output_file = args.output or f'mustard_debate_{args.provider}.jsonl'
+
+    # Get dataset configuration
+    config = get_dataset_config(args.dataset_name)
+
+    # Set default dataset path if not specified
+    if args.dataset is None:
+        args.dataset = config.get_default_dataset_path()
+
+    output_file = args.output or f'debate_{args.dataset_name}_{args.provider}.jsonl'
 
     check_api_key(args.provider)
     litellm.set_verbose = False
@@ -296,6 +257,7 @@ if __name__ == '__main__':
     text_agent = create_agent(
         'text', provider=args.provider, model=args.model, temperature=args.temperature
     )
+    print(f'Dataset: {args.dataset_name} ({config.task_type})')
     print(f'Provider: {args.provider} | Model: {text_agent.model}')
 
     dataset = load_data(args.dataset)
@@ -315,6 +277,7 @@ if __name__ == '__main__':
                 run_instance(
                     test_file,
                     dataset,
+                    args.dataset_name,
                     video_agent,
                     audio_agent,
                     text_agent,

@@ -1,8 +1,12 @@
 """
 Baseline experiment using multimodal input.
 
-Sends full video (with audio) + text (punchline sentence) in a single call per sample.
+Sends full video (with audio) + text (target sentence) in a single call per sample.
 This is the simplest baseline: no debate, no augmentation, no voting.
+
+Examples:
+python run_pure_llm.py --dataset_name urfunny --provider gemini --output pure_llm_urfunny_gemini.jsonl
+python run_pure_llm.py --dataset_name mustard --provider gemini --output pure_llm_mustard_gemini.jsonl
 """
 
 import argparse
@@ -13,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 
 import litellm
+from dataset_configs import get_dataset_config
 from llm_utils import (
     add_common_args,
     check_api_key,
@@ -25,25 +30,24 @@ from llm_utils import (
 
 sys.path.append('..')
 
-SYS_PROMPT = (
-    'Please analyze the inputs provided to determine if the punchline provided is humorous or not.'
-    "If you think these inputs include exaggerated description or it is expressing humorous meaning, please answer 'Yes'."
-    "If you think these inputs are neutral or just common meaning, please answer 'No'. If you are not sure, you should answer 'No'."
-    "Your answer should begin with either 'Yes' or 'No', followed by your reasoning."
-)
-
 file_lock = Lock()
 
 
-def run_instance(test_file, dataset, agent, output_file='baseline.jsonl'):
+def run_instance(test_file, dataset, dataset_name, agent, output_file='baseline.jsonl'):
     try:
         print(f'[{test_file}] Starting processing...')
 
-        target_sentence = dataset[test_file]['punchline_sentence']
-        query = 'Is the person being humorous or not?'
+        config = get_dataset_config(dataset_name)
+        sample = dataset[test_file]
 
-        # Full video (with audio) from urfunny_videos
-        video_path = get_full_video_path(test_file)
+        target_sentence = config.get_text_field(sample)
+        system_prompt = config.get_system_prompt()
+
+        # Prepare query with system prompt and target sentence
+        query = f"{system_prompt}\n\ntarget text: '{target_sentence}'"
+
+        # Full video (with audio)
+        video_path = get_full_video_path(test_file, dataset_name)
 
         if not os.path.exists(video_path):
             print(f'[{test_file}] Video not exist: {video_path}')
@@ -55,10 +59,9 @@ def run_instance(test_file, dataset, agent, output_file='baseline.jsonl'):
         print(f'[{test_file}] Calling LLM...')
         start_time = time.time()
 
-        # Use MultimodalAgent: full video (with audio) + context (target_sentence)
+        # Use MultimodalAgent: full video (with audio) + query
         answer, usage = agent.call(
             query,
-            context=target_sentence,
             video_path=video_path,
         )
 
@@ -67,10 +70,11 @@ def run_instance(test_file, dataset, agent, output_file='baseline.jsonl'):
         print(f'[{test_file}] LLM call completed in {end_time - start_time:.2f}s')
         print(f'[{test_file}] Answer: {answer}')
 
+        label = config.get_label_field(sample)
         result = {
             test_file: {
                 'answer': [answer],
-                'label': dataset[test_file]['label'],
+                'label': label,
                 'usage': {
                     'prompt_tokens': usage.get('prompt_tokens', 0),
                     'completion_tokens': usage.get('completion_tokens', 0),
@@ -94,7 +98,7 @@ def run_instance(test_file, dataset, agent, output_file='baseline.jsonl'):
         return error_msg
 
 
-def run_parallel(agent, dataset, output_file, max_workers=4):
+def run_parallel(agent, dataset, dataset_name, output_file, max_workers=4):
     test_list = list(dataset.keys())
     print(f'Total test samples: {len(test_list)}')
     print(f'Using {max_workers} workers')
@@ -118,7 +122,7 @@ def run_parallel(agent, dataset, output_file, max_workers=4):
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_test = {
             executor.submit(
-                run_instance, test_file, dataset, agent, output_file
+                run_instance, test_file, dataset, dataset_name, agent, output_file
             ): test_file
             for test_file in test_list
         }
@@ -142,7 +146,9 @@ def run_parallel(agent, dataset, output_file, max_workers=4):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Baseline Multimodal Humor Detection')
+    parser = argparse.ArgumentParser(
+        description='Baseline Multimodal Affective Detection'
+    )
     add_common_args(parser)
     parser.add_argument(
         '--max_workers',
@@ -152,7 +158,14 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    output_file = args.output or f'baseline_{args.provider}.jsonl'
+    # Get dataset configuration
+    config = get_dataset_config(args.dataset_name)
+
+    # Set default dataset path if not specified
+    if args.dataset is None:
+        args.dataset = config.get_default_dataset_path()
+
+    output_file = args.output or f'baseline_{args.dataset_name}_{args.provider}.jsonl'
 
     check_api_key(args.provider)
     litellm.set_verbose = False
@@ -164,8 +177,11 @@ if __name__ == '__main__':
         model=args.model,
         temperature=args.temperature,
     )
+    print(f'Dataset: {args.dataset_name} ({config.task_type})')
     print(f'Provider: {args.provider} | Model: {agent.model}')
 
     dataset = load_data(args.dataset)
 
-    run_parallel(agent, dataset, output_file, max_workers=args.max_workers)
+    run_parallel(
+        agent, dataset, args.dataset_name, output_file, max_workers=args.max_workers
+    )

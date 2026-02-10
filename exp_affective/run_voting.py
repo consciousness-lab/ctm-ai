@@ -1,10 +1,12 @@
 """
-python run_voting.py --provider gemini --model gemini/gemini-2.5-flash-lite --n_votes 3
-
 Multimodal Voting experiment with N votes using multimodal input.
 
-Each vote sends the full video (with audio) + punchline text.
+Each vote sends the full video (with audio) + target text.
 N votes run in parallel, then majority vote determines the final answer.
+
+Examples:
+python run_voting.py --dataset_name urfunny --provider gemini --n_votes 3 --output voting_urfunny_gemini.jsonl
+python run_voting.py --dataset_name mustard --provider gemini --n_votes 3 --output voting_mustard_gemini.jsonl
 """
 
 import argparse
@@ -14,6 +16,7 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import litellm
+from dataset_configs import get_dataset_config
 from llm_utils import (
     StatsTracker,
     add_common_args,
@@ -33,13 +36,6 @@ N_VOTES = 3
 
 # Higher temperature for diversity in voting
 TEMPERATURE = 1.0
-
-SYS_PROMPT = """Please analyze the inputs provided to determine if the person is being humorous or not.
-
-"If you think these inputs include exaggerated description or it is expressing humorous meaning, please answer 'Yes'."
-"If you think these inputs are neutral or just common meaning, please answer 'No'. If you are not sure, you should answer 'No'."
- "Your answer should begin with either 'Yes' or 'No', followed by your reasoning.
-"""
 
 # Pricing for Gemini 2.0 Flash Lite
 COST_INPUT_PER_1M = 0.075
@@ -87,7 +83,7 @@ def extract_vote(answer):
 
 
 def validate_answer_format(answer):
-    """Validate if the answer follows the expected format."""
+    """Validate if the answer follows the expected format"""
     if answer is None or not answer.strip():
         return False, 'Empty answer'
 
@@ -109,7 +105,7 @@ def validate_answer_format(answer):
 
 
 def majority_vote(votes):
-    """Return the majority vote result."""
+    """Return the majority vote result"""
     vote_counts = Counter(votes)
     most_common = vote_counts.most_common(1)
     if most_common:
@@ -118,23 +114,32 @@ def majority_vote(votes):
 
 
 def run_instance(
-    test_file, dataset, multimodal_agent, tracker, output_file='urfunny_voting.jsonl'
+    test_file,
+    dataset,
+    dataset_name,
+    multimodal_agent,
+    tracker,
+    output_file='voting.jsonl',
 ):
     start_time = time.time()
     total_prompt_tokens = 0
     total_completion_tokens = 0
     num_api_calls = 0
 
-    target_sentence = dataset[test_file]['punchline_sentence']
+    config = get_dataset_config(dataset_name)
+    sample = dataset[test_file]
 
-    # Prepare query with punchline (no context, same as original)
-    query = f"{SYS_PROMPT}\n\npunchline: '{target_sentence}'"
+    target_sentence = config.get_text_field(sample)
+    system_prompt = config.get_system_prompt()
+
+    # Prepare query with target sentence
+    query = f"{system_prompt}\n\ntarget text: '{target_sentence}'"
 
     # Full video path (contains both video and audio)
-    full_video_path = get_full_video_path(test_file)
+    full_video_path = get_full_video_path(test_file, dataset_name)
 
     def single_vote(vote_idx):
-        """Execute a single vote with multimodal input."""
+        """Execute a single vote with multimodal input"""
         answer, usage = multimodal_agent.call(query, video_path=full_video_path)
         return vote_idx, answer, usage
 
@@ -194,7 +199,7 @@ def run_instance(
     tracker.add(duration, total_prompt_tokens, total_completion_tokens, num_api_calls)
 
     # Normalize label for comparison
-    ground_truth = dataset[test_file]['label']
+    ground_truth = config.get_label_field(sample)
     ground_truth_normalized = normalize_label(ground_truth)
     is_correct = final_vote == ground_truth_normalized
     match_symbol = '✓' if is_correct else '✗'
@@ -238,7 +243,7 @@ def run_instance(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description='Multimodal Voting for Humor Detection'
+        description='Multimodal Voting for Affective Detection'
     )
     add_common_args(parser)
     parser.add_argument(
@@ -251,7 +256,15 @@ if __name__ == '__main__':
 
     N_VOTES = args.n_votes
     TEMPERATURE = args.temperature
-    output_file = args.output or f'urfunny_voting_{args.provider}.jsonl'
+
+    # Get dataset configuration
+    config = get_dataset_config(args.dataset_name)
+
+    # Set default dataset path if not specified
+    if args.dataset is None:
+        args.dataset = config.get_default_dataset_path()
+
+    output_file = args.output or f'voting_{args.dataset_name}_{args.provider}.jsonl'
 
     check_api_key(args.provider)
     litellm.set_verbose = False
@@ -261,11 +274,11 @@ if __name__ == '__main__':
         cost_input_per_1m=COST_INPUT_PER_1M, cost_output_per_1m=COST_OUTPUT_PER_1M
     )
 
-    # Create multimodal agent (sends full video with audio, same as original
-    # which sent video frames + audio separately)
+    # Create multimodal agent
     multimodal_agent = create_agent(
         'multimodal', provider=args.provider, model=args.model, temperature=TEMPERATURE
     )
+    print(f'Dataset: {args.dataset_name} ({config.task_type})')
     print(f'Provider: {args.provider} | Model: {multimodal_agent.model}')
 
     dataset = load_data(args.dataset)
@@ -285,6 +298,7 @@ if __name__ == '__main__':
                 run_instance(
                     test_file,
                     dataset,
+                    args.dataset_name,
                     multimodal_agent,
                     tracker,
                     output_file,

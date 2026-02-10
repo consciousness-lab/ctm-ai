@@ -1,5 +1,5 @@
 """
-Utility module for multimodal LLM experiments.
+Unified LLM utility module - supports multi-dataset affective computing experiments
 
 Supports both Gemini and Qwen providers with 4 agent types:
   - TextAgent: text-only input
@@ -20,20 +20,15 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import litellm
 
+from dataset_configs import get_dataset_config
+
 # ============================================================================
 # Constants
 # ============================================================================
 
 DEFAULT_MODELS = {
-    'gemini': 'gemini/gemini-2.0-flash-lite',
-    'qwen': 'openai/qwen2.5-omni-7b',
-}
-
-# Default data paths (relative to exp_mustard/)
-DATA_PATHS = {
-    'full_video': 'mmsd_raw_data/utterances_final',  # video + audio
-    'audio_only': 'mustard_audios',  # audio only
-    'video_only': 'mustard_muted_videos',  # muted video only
+    'gemini': 'gemini/gemini-2.5-flash-lite',
+    'qwen': 'openai/qwen3-omni',
 }
 
 
@@ -43,7 +38,7 @@ DATA_PATHS = {
 
 
 def check_api_key(provider: str = 'gemini'):
-    """Check if required API key environment variable is set."""
+    """Check if required API key environment variable is set"""
     if provider == 'gemini':
         if not os.getenv('GEMINI_API_KEY'):
             raise ValueError('GEMINI_API_KEY environment variable not set')
@@ -58,13 +53,13 @@ def check_api_key(provider: str = 'gemini'):
 
 
 def load_data(file_path: str) -> dict:
-    """Load JSON data from file."""
+    """Load JSON data from file"""
     with open(file_path, 'r', encoding='utf-8') as json_file:
         return json.load(json_file)
 
 
 def load_processed_keys(output_file: str) -> set:
-    """Load already processed keys from JSONL output file for resume."""
+    """Load already processed keys from JSONL output file for resume"""
     processed = set()
     try:
         with open(output_file, 'r', encoding='utf-8') as f:
@@ -82,23 +77,31 @@ def load_processed_keys(output_file: str) -> set:
 # ============================================================================
 
 
-def get_audio_path(test_file: str, base_dir: str = DATA_PATHS['audio_only']) -> str:
-    """Get audio file path for a test sample."""
-    return os.path.join(base_dir, f'{test_file}_audio.mp4')
+def get_audio_path(test_file: str, dataset_name: str) -> str:
+    """Get audio file path for a test sample"""
+    config = get_dataset_config(dataset_name)
+    data_paths = config.get_data_paths()
+    base_dir = data_paths['audio_only']
+    filename = config.get_video_filename(test_file, 'audio')
+    return os.path.join(base_dir, filename)
 
 
-def get_muted_video_path(
-    test_file: str, base_dir: str = DATA_PATHS['video_only']
-) -> str:
-    """Get muted video file path for a test sample."""
-    return os.path.join(base_dir, f'{test_file}.mp4')
+def get_muted_video_path(test_file: str, dataset_name: str) -> str:
+    """Get muted video file path for a test sample"""
+    config = get_dataset_config(dataset_name)
+    data_paths = config.get_data_paths()
+    base_dir = data_paths['video_only']
+    filename = config.get_video_filename(test_file, 'muted')
+    return os.path.join(base_dir, filename)
 
 
-def get_full_video_path(
-    test_file: str, base_dir: str = DATA_PATHS['full_video']
-) -> str:
-    """Get full video (with audio) file path for a test sample."""
-    return os.path.join(base_dir, f'{test_file}.mp4')
+def get_full_video_path(test_file: str, dataset_name: str) -> str:
+    """Get full video (with audio) file path for a test sample"""
+    config = get_dataset_config(dataset_name)
+    data_paths = config.get_data_paths()
+    base_dir = data_paths['full_video']
+    filename = config.get_video_filename(test_file, 'full')
+    return os.path.join(base_dir, filename)
 
 
 # ============================================================================
@@ -107,13 +110,13 @@ def get_full_video_path(
 
 
 def encode_file_base64(file_path: str) -> str:
-    """Read file and return base64-encoded string."""
+    """Read file and return base64-encoded string"""
     with open(file_path, 'rb') as f:
         return base64.b64encode(f.read()).decode('utf-8')
 
 
 def make_black_video_with_audio(audio_path: str, output_path: str) -> bool:
-    """Convert audio to black-screen video (required for Qwen audio processing)."""
+    """Convert audio to black-screen video (required for Qwen audio processing)"""
     cmd = [
         'ffmpeg',
         '-y',
@@ -139,7 +142,7 @@ def make_black_video_with_audio(audio_path: str, output_path: str) -> bool:
 
 
 def get_video_mime_type(video_path: str) -> str:
-    """Get MIME type from video file extension."""
+    """Get MIME type from video file extension"""
     ext = os.path.splitext(video_path)[1].lower()
     mime_map = {
         '.mp4': 'video/mp4',
@@ -154,7 +157,7 @@ def get_video_mime_type(video_path: str) -> str:
 
 
 def get_audio_mime_type(audio_path: str) -> str:
-    """Get MIME type from audio file extension."""
+    """Get MIME type from audio file extension"""
     ext = os.path.splitext(audio_path)[1].lower().lstrip('.')
     mime_map = {
         'mp3': 'audio/mp3',
@@ -172,7 +175,7 @@ def get_audio_mime_type(audio_path: str) -> str:
 
 
 def build_text_content(query: str, context: Optional[str] = None) -> List[Dict]:
-    """Build text-only content."""
+    """Build text-only content"""
     if context:
         text = f'### Context:\n{context}\n\n### Query:\n{query}'
     else:
@@ -181,7 +184,7 @@ def build_text_content(query: str, context: Optional[str] = None) -> List[Dict]:
 
 
 def build_audio_content(audio_path: str, provider: str = 'gemini') -> List[Dict]:
-    """Build audio content block (provider-aware).
+    """Build audio content block (provider-aware)
 
     - Gemini: uses 'image_url' type with audio MIME (litellm uses this for all media)
     - Qwen: embeds audio in a black-screen video via ffmpeg
@@ -206,7 +209,7 @@ def build_audio_content(audio_path: str, provider: str = 'gemini') -> List[Dict]
             }
         ]
     else:
-        # Gemini via litellm: use image_url type for audio (litellm convention)
+        # Gemini 通过 litellm: 对音频使用 image_url 类型（litellm 约定）
         mime_type = get_audio_mime_type(audio_path)
         encoded = encode_file_base64(audio_path)
         return [
@@ -218,7 +221,7 @@ def build_audio_content(audio_path: str, provider: str = 'gemini') -> List[Dict]
 
 
 def build_video_content(video_path: str, provider: str = 'gemini') -> List[Dict]:
-    """Build video content block (provider-aware).
+    """Build video content block (provider-aware)
 
     - Gemini: uses 'image_url' type with video MIME
     - Qwen: uses 'video_url' type
@@ -243,7 +246,7 @@ def build_video_content(video_path: str, provider: str = 'gemini') -> List[Dict]
 
 
 class BaseAgent:
-    """Base agent for LLM API calls with provider support."""
+    """Base agent for LLM API calls with provider support"""
 
     AGENT_TYPE = 'base'
 
@@ -258,11 +261,11 @@ class BaseAgent:
         self.temperature = temperature
 
     def _build_content(self, query: str, **kwargs: Any) -> List[Dict]:
-        """Build content list. Override in subclasses."""
+        """Build content list. Override in subclasses"""
         raise NotImplementedError
 
     def call(self, query: str, **kwargs: Any) -> Tuple[Optional[str], Dict[str, int]]:
-        """Make an LLM API call with the agent's modality."""
+        """Make an LLM API call with the agent's modality"""
         content = self._build_content(query, **kwargs)
 
         try:
@@ -289,10 +292,10 @@ class BaseAgent:
 
 
 class TextAgent(BaseAgent):
-    """Text-only input agent.
+    """Text-only input agent
 
     kwargs:
-        context (str): Text context to include with the query.
+        context (str): Text context to include with the query
     """
 
     AGENT_TYPE = 'text'
@@ -303,10 +306,10 @@ class TextAgent(BaseAgent):
 
 
 class AudioAgent(BaseAgent):
-    """Audio-only input agent (no video).
+    """Audio-only input agent (no video)
 
     kwargs:
-        audio_path (str): Path to the audio file (.mp4).
+        audio_path (str): Path to the audio file (.mp4)
     """
 
     AGENT_TYPE = 'audio'
@@ -320,10 +323,10 @@ class AudioAgent(BaseAgent):
 
 
 class VideoAgent(BaseAgent):
-    """Video-only input agent (muted video, no audio).
+    """Video-only input agent (muted video, no audio)
 
     kwargs:
-        video_path (str): Path to the muted video file (.mp4).
+        video_path (str): Path to the muted video file (.mp4)
     """
 
     AGENT_TYPE = 'video'
@@ -337,13 +340,13 @@ class VideoAgent(BaseAgent):
 
 
 class MultimodalAgent(BaseAgent):
-    """Full multimodal agent (text + video with audio).
+    """Full multimodal agent (text + video with audio)
 
-    Uses the full video file (which contains both video and audio streams).
+    Uses the full video file (which contains both video and audio streams)
 
     kwargs:
-        context (str): Text context to include with the query.
-        video_path (str): Path to the full video file with audio (.mp4).
+        context (str): Text context to include with the query
+        video_path (str): Path to the full video file with audio (.mp4)
     """
 
     AGENT_TYPE = 'multimodal'
@@ -383,7 +386,7 @@ def create_agent(
     model: Optional[str] = None,
     temperature: float = 1.0,
 ) -> BaseAgent:
-    """Factory function to create an agent by type."""
+    """Factory function to create an agent by type"""
     if agent_type not in AGENT_CLASSES:
         raise ValueError(
             f'Unknown agent type: {agent_type}. '
@@ -399,29 +402,31 @@ def create_all_agents(
     model: Optional[str] = None,
     temperature: float = 1.0,
 ) -> Dict[str, BaseAgent]:
-    """Create all 4 agents with the same provider/model/temperature."""
+    """Create all 4 agents with the same provider/model/temperature"""
     return {
         name: create_agent(name, provider, model, temperature) for name in AGENT_CLASSES
     }
 
 
-def get_agent_kwargs(test_file: str, dataset: dict) -> Dict[str, Dict[str, Any]]:
-    """Build kwargs for each agent type given a test sample.
+def get_agent_kwargs(
+    test_file: str, dataset: dict, dataset_name: str
+) -> Dict[str, Dict[str, Any]]:
+    """Build kwargs for each agent type given a test sample
 
-    Returns dict mapping agent_type -> kwargs for agent.call().
+    Returns dict mapping agent_type -> kwargs for agent.call()
     """
-    target_sentence = dataset[test_file]['utterance']
-    text_list = dataset[test_file]['context'].copy()
-    text_list.append(target_sentence)
-    full_context = '\n'.join(text_list)
+    config = get_dataset_config(dataset_name)
+    sample = dataset[test_file]
+
+    full_context = config.get_context_field(sample)
 
     return {
         'text': {'context': full_context},
-        'audio': {'audio_path': get_audio_path(test_file)},
-        'video': {'video_path': get_muted_video_path(test_file)},
+        'audio': {'audio_path': get_audio_path(test_file, dataset_name)},
+        'video': {'video_path': get_muted_video_path(test_file, dataset_name)},
         'multimodal': {
             'context': full_context,
-            'video_path': get_full_video_path(test_file),
+            'video_path': get_full_video_path(test_file, dataset_name),
         },
     }
 
@@ -432,7 +437,7 @@ def get_agent_kwargs(test_file: str, dataset: dict) -> Dict[str, Dict[str, Any]]
 
 
 def normalize_label(label) -> str:
-    """Normalize label to 'Yes'/'No' format."""
+    """Normalize label to 'Yes'/'No' format"""
     if isinstance(label, (int, float)):
         return 'Yes' if label == 1 else 'No'
     return str(label)
@@ -444,7 +449,7 @@ def normalize_label(label) -> str:
 
 
 class StatsTracker:
-    """Track performance statistics across multiple samples."""
+    """Track performance statistics across multiple samples"""
 
     def __init__(
         self,
@@ -466,7 +471,7 @@ class StatsTracker:
         output_tok: int,
         num_api_calls: int,
     ):
-        """Add statistics for one sample."""
+        """Add statistics for one sample"""
         cost = (input_tok / 1_000_000 * self.cost_input_per_1m) + (
             output_tok / 1_000_000 * self.cost_output_per_1m
         )
@@ -477,7 +482,7 @@ class StatsTracker:
         self.api_calls.append(num_api_calls)
 
     def print_summary(self, method_name: str = 'Experiment'):
-        """Print summary statistics."""
+        """Print summary statistics"""
         if not self.times:
             print('No stats to report.')
             return
@@ -514,7 +519,7 @@ class StatsTracker:
 
 
 def save_result_to_jsonl(result: dict, output_file: str):
-    """Append result dictionary to JSONL file."""
+    """Append result dictionary to JSONL file"""
     with open(output_file, 'a', encoding='utf-8') as f:
         f.write(json.dumps(result, ensure_ascii=False) + '\n')
 
@@ -525,7 +530,14 @@ def save_result_to_jsonl(result: dict, output_file: str):
 
 
 def add_common_args(parser):
-    """Add common CLI arguments to an argparse parser."""
+    """Add common CLI arguments to an argparse parser"""
+    parser.add_argument(
+        '--dataset_name',
+        type=str,
+        default='urfunny',
+        choices=['urfunny', 'mustard'],
+        help='Dataset name (default: urfunny)',
+    )
     parser.add_argument(
         '--provider',
         type=str,
@@ -542,8 +554,8 @@ def add_common_args(parser):
     parser.add_argument(
         '--dataset',
         type=str,
-        default='mustard_dataset/mustard_dataset_test.json',
-        help='Path to dataset JSON file',
+        default=None,
+        help='Path to dataset JSON file (default: auto based on dataset_name)',
     )
     parser.add_argument(
         '--output',
