@@ -74,6 +74,7 @@ def run_instance(
             text=target_sentence,
             video_path=video_path,
             audio_path=audio_path,
+            instance_id=test_file,
         )
         end_time = time.time()
 

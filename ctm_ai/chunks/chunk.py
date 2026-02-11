@@ -17,6 +17,7 @@ class Chunk:
         intensity: float = -1.0,
         mood: float = -1.0,
         additional_questions: List[str] = None,
+        executor_content: str = '',
     ) -> None:
         self.time_step: int = time_step
         self.processor_name: str = processor_name
@@ -28,6 +29,7 @@ class Chunk:
         self.intensity: float = intensity
         self.mood: float = mood
         self.additional_questions: List[str] = additional_questions or []
+        self.executor_content: str = executor_content
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Chunk):

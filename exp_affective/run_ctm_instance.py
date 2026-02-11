@@ -101,6 +101,7 @@ def run_single_instance(
         text=target_sentence,
         video_path=video_path,
         audio_path=audio_path,
+        instance_id=instance_id,
     )
     end_time = time.time()
 

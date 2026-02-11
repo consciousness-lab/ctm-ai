@@ -1,4 +1,6 @@
 import concurrent.futures
+import json
+import os
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 
@@ -20,6 +22,7 @@ class BaseConsciousTuringMachine(ABC):
             else ConsciousTuringMachineConfig()
         )
         self.load_ctm()
+        self.detailed_log = None  # Will store detailed execution log
 
     def __call__(
         self,
@@ -141,6 +144,23 @@ class BaseConsciousTuringMachine(ABC):
                 future.result() for future in concurrent.futures.as_completed(futures)
             ]
         chunks = [chunk for chunk in chunks if chunk is not None]
+
+        # Log detailed information for each chunk
+        if self.detailed_log is not None and phase == 'initial':
+            current_iteration = self.detailed_log['current_iteration']
+            for chunk in chunks:
+                chunk_info = {
+                    'processor_name': chunk.processor_name,
+                    'query': chunk.executor_content or query,
+                    'answer': chunk.gist,
+                    'relevance': chunk.relevance,
+                    'confidence': chunk.confidence,
+                    'surprise': chunk.surprise,
+                    'weight': chunk.weight,
+                    'additional_questions': chunk.additional_questions,
+                }
+                current_iteration['initial_phase'].append(chunk_info)
+
         return chunks
 
     def parse_answer(self, answer: str, query: str) -> str:
@@ -206,6 +226,18 @@ class BaseConsciousTuringMachine(ABC):
             **input_kwargs,
         )
 
+        # Log link_form phase details
+        if self.detailed_log is not None:
+            current_iteration = self.detailed_log['current_iteration']
+            for chunk in question_chunks:
+                link_info = {
+                    'processor_name': chunk.processor_name,
+                    'query': chunk.executor_content or combined_query,
+                    'answer': chunk.gist,
+                    'relevance': chunk.relevance,
+                }
+                current_iteration['link_form_phase'].append(link_info)
+
         for chunk in question_chunks:
             if chunk.relevance >= 0.8:
                 logger.info(
@@ -251,6 +283,17 @@ class BaseConsciousTuringMachine(ABC):
                     proc_map[chunk.processor_name].add_fuse_history(
                         combined_query, answer_chunk.gist, nbr
                     )
+
+                    # Log fuse phase details
+                    if self.detailed_log is not None:
+                        current_iteration = self.detailed_log['current_iteration']
+                        fuse_info = {
+                            'from_processor': chunk.processor_name,
+                            'to_processor': nbr,
+                            'query': answer_chunk.executor_content or combined_query,
+                            'answer': answer_chunk.gist,
+                        }
+                        current_iteration['fuse_phase'].append(fuse_info)
 
     @abstractmethod
     def forward(

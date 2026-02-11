@@ -279,6 +279,7 @@ class BaseProcessor(object):
                 surprise=0.0,
                 weight=relevance,
                 additional_questions=[],
+                executor_content=executor_content,
             )
         elif phase == 'fuse':
             # Only need response for fuse
@@ -294,6 +295,7 @@ class BaseProcessor(object):
                 surprise=0.0,
                 weight=0.0,
                 additional_questions=[],
+                executor_content=executor_content,
             )
 
         # Initial phase - full processing
@@ -314,6 +316,7 @@ class BaseProcessor(object):
             scorer_output=scorer_output,
             executor_output=executor_output,
             additional_questions=additional_questions,
+            executor_content=executor_content,
         )
         return chunk
 
@@ -336,6 +339,7 @@ class BaseProcessor(object):
         executor_output: Dict[str, Any],
         scorer_output: Dict[str, float],
         additional_questions: List[str] = None,
+        executor_content: str = '',
     ) -> Chunk:
         return Chunk(
             time_step=0,
@@ -346,6 +350,7 @@ class BaseProcessor(object):
             surprise=scorer_output['surprise'],
             weight=scorer_output['weight'],
             additional_questions=additional_questions or [],
+            executor_content=executor_content,
         )
 
     def __hash__(self):
