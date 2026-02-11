@@ -30,7 +30,7 @@ def run_single_instance(
     verbose=True,
 ):
     """Run a single instance for debugging."""
-    
+
     if instance_id not in dataset:
         print(f'Error: instance_id "{instance_id}" not found in dataset')
         print(f'Available instance_id examples (first 10):')
@@ -69,7 +69,7 @@ def run_single_instance(
 
     if verbose:
         print('[Media Files]')
-        
+
     if not os.path.exists(audio_path):
         if verbose:
             print(f'  Audio: not found ({audio_path})')
@@ -140,7 +140,7 @@ def list_instances(dataset, limit=20):
     print(f'Dataset has {len(dataset)} samples')
     print(f'Instance IDs (first {limit}):')
     for i, key in enumerate(list(dataset.keys())[:limit]):
-        print(f'  {i+1}. {key}')
+        print(f'  {i + 1}. {key}')
     if len(dataset) > limit:
         print(f'  ... {len(dataset) - limit} more')
 
@@ -154,7 +154,7 @@ Examples:
   python run_ctm_instance.py --instance_id 2_380 --dataset_name mustard
   python run_ctm_instance.py --instance_id 1_1 --dataset_name urfunny
   python run_ctm_instance.py --list --dataset_name mustard
-        """
+        """,
     )
     parser.add_argument(
         '--instance_id',

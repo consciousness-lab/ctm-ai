@@ -81,6 +81,13 @@ def run_instance(
         print(f'[{test_file}] Answer: {answer}')
         print(f'[{test_file}] Parsed answer: {parsed_answer}')
 
+        iteration_history = ctm.iteration_history
+        num_iterations = len(iteration_history)
+        winning_processors = [it['winning_processor'] for it in iteration_history]
+        print(
+            f'[{test_file}] Iterations: {num_iterations}, Winners: {winning_processors}'
+        )
+
         label = config.get_label_field(sample)
         result = {
             test_file: {
@@ -88,6 +95,8 @@ def run_instance(
                 'parsed_answer': [parsed_answer],
                 'weight_score': weight_score,
                 'label': label,
+                'num_iterations': num_iterations,
+                'winning_processors': winning_processors,
             }
         }
 

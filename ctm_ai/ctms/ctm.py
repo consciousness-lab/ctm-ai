@@ -12,7 +12,7 @@ from .ctm_base import BaseConsciousTuringMachine
 class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def __init__(self, ctm_name: Optional[str] = None) -> None:
         self.config = ConsciousTuringMachineConfig.from_ctm(ctm_name)
-
+        self.iteration_history = []
         self.load_ctm()
 
     def __call__(
@@ -73,12 +73,29 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
             'video_path': video_path,
         }
 
+        self.iteration_history = []
+
         for i in range(self.config.max_iter_num):
             chunks = self.ask_processors(query, **input_params)
 
             winning_chunk = self.uptree_competition(chunks)
 
             answer, weight_score = winning_chunk.gist, winning_chunk.weight
+
+            iteration_info = {
+                'iteration': i + 1,
+                'winning_processor': winning_chunk.processor_name,
+                'winning_weight': winning_chunk.weight,
+                'all_chunks': [
+                    {
+                        'processor_name': c.processor_name,
+                        'weight': c.weight,
+                        'relevance': c.relevance,
+                    }
+                    for c in chunks
+                ],
+            }
+            self.iteration_history.append(iteration_info)
 
             if (
                 i == self.config.max_iter_num - 1
