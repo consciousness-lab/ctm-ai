@@ -187,7 +187,7 @@ OUTPUT PROTOCOL (MUST follow strictly):
             # Handle unexpected case
             structured_output = {
                 'response': 'No valid response received from the model',
-                'additional_question': 'Can you provide more information?',
+                'additional_questions': ['Can you provide more information?'],
                 'relevance': 0.5,
                 'confidence': 0.5,
                 'surprise': 0.5,
@@ -270,7 +270,7 @@ Based on the tool result, please:
 
         # Parse the JSON response with scores
         parsed = parse_json_response_with_scores(
-            content, default_additional_question='Can you provide more information?'
+            content, default_additional_questions=['Can you provide more information?']
         )
 
         return parsed
@@ -279,7 +279,7 @@ Based on the tool result, please:
         self,
         query: str,
         api_manager: Any = None,
-        is_fuse: bool = False,
+        phase: str = 'initial',
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
@@ -298,23 +298,23 @@ Based on the tool result, please:
             **kwargs,
         )
 
-        if is_fuse:
+        if phase == 'fuse':
             self.add_fuse_history(query, executor_output['response'])
 
         self.add_all_context_history(
             query,
             executor_output['response'],
-            executor_output.get('additional_question', ''),
+            executor_output.get('additional_questions', []),
         )
 
         # Extract scores using the base processor method
         scorer_output = self._extract_scores_from_executor_output(executor_output)
-        additional_question = executor_output.get('additional_question', '')
+        additional_questions = executor_output.get('additional_questions', [])
 
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,
             executor_output=executor_output,
-            additional_question=additional_question,
+            additional_questions=additional_questions,
         )
         return chunk

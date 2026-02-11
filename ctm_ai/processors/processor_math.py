@@ -73,7 +73,7 @@ class MathProcessor(BaseProcessor):
         if wolfram_response.startswith('Error calling Wolfram|Alpha API:'):
             return None
 
-        # Step 2: Generate structured output with answer, additional_question, and scores
+        # Step 2: Generate structured output with answer, additional_questions, and scores
         structured_prompt = self._build_structured_prompt(clean_query, wolfram_response)
 
         executor_output = self._ask_for_structured_output(
@@ -88,19 +88,19 @@ class MathProcessor(BaseProcessor):
         self.add_all_context_history(
             clean_query,
             executor_output['response'],
-            executor_output.get('additional_question', ''),
+            executor_output.get('additional_questions', []),
         )
 
         # Extract scores using the base processor method
         scorer_output = self._extract_scores_from_executor_output(executor_output)
-        additional_question = executor_output.get('additional_question', '')
+        additional_questions = executor_output.get('additional_questions', [])
 
         # Create chunk
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,
             executor_output=executor_output,
-            additional_question=additional_question,
+            additional_questions=additional_questions,
         )
         return chunk
 
@@ -154,7 +154,7 @@ Based on the Wolfram|Alpha result above, please:
 
         # Parse the JSON response with scores
         parsed = parse_json_response_with_scores(
-            content, default_additional_question=''
+            content, default_additional_questions=[]
         )
 
         return parsed

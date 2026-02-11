@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from ..utils import logging_chunk
 
@@ -16,7 +16,7 @@ class Chunk:
         weight: float = -1.0,
         intensity: float = -1.0,
         mood: float = -1.0,
-        additional_question: str = '',
+        additional_questions: List[str] = None,
     ) -> None:
         self.time_step: int = time_step
         self.processor_name: str = processor_name
@@ -27,7 +27,7 @@ class Chunk:
         self.weight: float = weight
         self.intensity: float = intensity
         self.mood: float = mood
-        self.additional_question: str = additional_question
+        self.additional_questions: List[str] = additional_questions or []
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Chunk):
@@ -70,10 +70,15 @@ class Chunk:
             'weight': self.weight,
             'intensity': self.intensity,
             'mood': self.mood,
-            'additional_question': self.additional_question,
+            'additional_questions': self.additional_questions,
         }
 
     def format_readable(self) -> str:
+        questions_str = (
+            '\n  '.join(self.additional_questions)
+            if self.additional_questions
+            else 'None'
+        )
         return (
             # f'Time Step: {self.time_step}\n'
             f'Processor Name: {self.processor_name}\n'
@@ -84,11 +89,16 @@ class Chunk:
             f'Weight: {self.weight:.2f}\n'
             # f'Intensity: {self.intensity:.2f}\n'
             # f'Mood: {self.mood:.2f}\n'
-            f'Additional Question: {self.additional_question}'
+            f'Additional Questions:\n  {questions_str}'
         )
 
     @staticmethod
     def deserialize(data: Dict[str, Any]) -> 'Chunk':
+        # Handle backward compatibility with old 'additional_question' field
+        additional_questions = data.get('additional_questions', [])
+        if not additional_questions and 'additional_question' in data:
+            old_q = data.get('additional_question', '')
+            additional_questions = [old_q] if old_q else []
         return Chunk(
             time_step=data['time_step'],
             processor_name=data['processor_name'],
@@ -99,5 +109,5 @@ class Chunk:
             weight=data['weight'],
             intensity=data['intensity'],
             mood=data['mood'],
-            additional_question=data.get('additional_question', ''),
+            additional_questions=additional_questions,
         )

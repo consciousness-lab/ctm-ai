@@ -2,6 +2,7 @@
   "ctm_name": "urfunny_test",
   "max_iter_num": 3,
   "output_threshold": 2.1,
+  "parse_prompt_template": "You are a humor detection expert. Based solely on the analysis provided below, determine if the punchline is humorous.\n\nYour answer MUST start with either \"Yes\" (if humorous) or \"No\" (if not humorous), followed by a brief explanation.\n\nIMPORTANT: If the analysis expresses uncertainty, is inconclusive, or lacks sufficient evidence, you should answer \"No\".\n\nAnalysis:\n{answer}\n",
   "processors_config": {
     "video_processor": {
       "system_prompt": "You are an expert at analyzing visual cues in video frames. Analyze the visual cues, body language, facial expressions, and context. Note that the videos do not include audio, you should only analyze the visual cues. Always ground your answer in specific visual observations. Be concise but thorough.",

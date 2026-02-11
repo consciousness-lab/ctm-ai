@@ -135,8 +135,13 @@ def logging_chunk(func: Callable[..., Any]) -> Callable[..., None]:
     @wraps(func)
     def wrapper(self: Any, *args: List[Any], **kwargs: Dict[str, Any]) -> None:
         func(self, *args, **kwargs)
+        questions_str = (
+            ', '.join(self.additional_questions)
+            if self.additional_questions
+            else 'None'
+        )
         logger.info(
-            f'{self.processor_name} creates \ngist:\n{self.gist}\nadditional_question:\n{self.additional_question}\nweight:\n{self.weight}\nrelevance:\n{self.relevance}\nconfidence:\n{self.confidence}\nsurprise:\n{self.surprise}'
+            f'{self.processor_name} creates \ngist:\n{self.gist}\nadditional_questions:\n{questions_str}\nweight:\n{self.weight}\nrelevance:\n{self.relevance}\nconfidence:\n{self.confidence}\nsurprise:\n{self.surprise}'
         )
 
     return wrapper

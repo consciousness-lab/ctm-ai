@@ -124,7 +124,7 @@ class SearchProcessor(BaseProcessor):
         else:
             search_result = self._llm_search_fallback(clean_query, query_with_context)
 
-        # Step 2: Generate structured output with answer, additional_question, and scores
+        # Step 2: Generate structured output with answer, additional_questions, and scores
         # Build the prompt that includes search result and asks for structured JSON output
         structured_prompt = self._build_structured_prompt(clean_query, search_result)
 
@@ -141,19 +141,19 @@ class SearchProcessor(BaseProcessor):
         self.add_all_context_history(
             clean_query,
             executor_output['response'],
-            executor_output.get('additional_question', ''),
+            executor_output.get('additional_questions', []),
         )
 
         # Extract scores using the base processor method
         scorer_output = self._extract_scores_from_executor_output(executor_output)
-        additional_question = executor_output.get('additional_question', '')
+        additional_questions = executor_output.get('additional_questions', [])
 
         # Create chunk
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,
             executor_output=executor_output,
-            additional_question=additional_question,
+            additional_questions=additional_questions,
         )
         return chunk
 
@@ -207,7 +207,7 @@ Based on the search result above, please:
 
         # Parse the JSON response with scores
         parsed = parse_json_response_with_scores(
-            content, default_additional_question=''
+            content, default_additional_questions=[]
         )
 
         return parsed

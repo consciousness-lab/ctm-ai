@@ -88,6 +88,7 @@ class BaseConsciousTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        phase: str = 'initial',
     ) -> Chunk:
         """Ask processor with support for both standard and tool processors"""
         return processor.ask(
@@ -100,6 +101,7 @@ class BaseConsciousTuringMachine(ABC):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
+            phase=phase,
         )
 
     @logging_func_with_count
@@ -114,6 +116,7 @@ class BaseConsciousTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        phase: str = 'initial',
     ) -> List[Chunk]:
         """Ask all processors with support for both standard and tool processors"""
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -130,6 +133,7 @@ class BaseConsciousTuringMachine(ABC):
                     video_frames,
                     video_frames_path,
                     video_path,
+                    phase,
                 )
                 for processor in self.processor_graph.nodes
             ]
@@ -142,12 +146,7 @@ class BaseConsciousTuringMachine(ABC):
     def parse_answer(self, answer: str, query: str) -> str:
         from litellm import completion
 
-        parse_prompt = f"""Based on the query and the answer, please refine and format the answer to make it clear, concise, and well-structured. Your answer should start with either "Yes" or "No" and then provide your reasoning.
-        Query:
-        {query}
-        Answer:
-        {answer}
-        """
+        parse_prompt = self.config.parse_prompt_template.format(answer=answer)
 
         parse_model = self.config.parse_model or 'gemini/gemini-2.5-flash-lite'
         completion_kwargs = get_completion_kwargs(parse_model)
@@ -182,21 +181,32 @@ class BaseConsciousTuringMachine(ABC):
         self, chunks: List[Chunk], winning_chunk: Chunk, **input_kwargs
     ) -> None:
         """
-        Form links between processors based on additional question processing.
+        Form links between processors based on additional questions processing.
 
         Args:
             chunks: List of chunks from previous processing
-            winning_chunk: The winning chunk that contains additional_question
+            winning_chunk: The winning chunk that contains additional_questions
             **input_kwargs: All input parameters (text, image, audio, etc.)
         """
-        additional_question = winning_chunk.additional_question
-        # Use the same input parameters for processing additional question
-        chunks = self.ask_processors(
-            query=additional_question,
+        additional_questions = winning_chunk.additional_questions or []
+        valid_questions = [q for q in additional_questions if q]
+
+        if not valid_questions:
+            return
+
+        # Combine all questions into one query
+        combined_query = 'Please answer the following questions:\n'
+        for i, q in enumerate(valid_questions, 1):
+            combined_query += f'{i}. {q}\n'
+
+        # Use link_form phase - ask all questions at once
+        question_chunks = self.ask_processors(
+            query=combined_query,
+            phase='link_form',
             **input_kwargs,
         )
 
-        for chunk in chunks:
+        for chunk in question_chunks:
             if chunk.relevance >= 0.8:
                 logger.info(
                     f'Adding link between {winning_chunk.processor_name} and {chunk.processor_name}'
@@ -216,22 +226,30 @@ class BaseConsciousTuringMachine(ABC):
         proc_map = {p.name: p for p in self.processor_graph.nodes}
 
         for chunk in chunks:
-            q = chunk.additional_question
-            if not q:
+            additional_questions = chunk.additional_questions or []
+            valid_questions = [q for q in additional_questions if q]
+
+            if not valid_questions:
                 continue
+
+            # Combine all questions into one query
+            combined_query = 'Please answer the following questions:\n'
+            for i, q in enumerate(valid_questions, 1):
+                combined_query += f'{i}. {q}\n'
 
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
                 if nbr == chunk.processor_name:
                     continue
 
+                # Use fuse phase - ask all questions at once, only need response
                 answer_chunk = proc_map[nbr].ask(
-                    query=q,
-                    is_fuse=True,
+                    query=combined_query,
+                    phase='fuse',
                     **input_kwargs,
                 )
                 if answer_chunk is not None:
                     proc_map[chunk.processor_name].add_fuse_history(
-                        q, answer_chunk.gist, nbr
+                        combined_query, answer_chunk.gist, nbr
                     )
 
     @abstractmethod
