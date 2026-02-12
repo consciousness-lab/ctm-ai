@@ -59,7 +59,9 @@ def run_instance(test_file, dataset, dataset_name, agent, tracker, output_file):
         1,
     )
 
-    print(f'[{test_file}] answer: {answer[:80] if answer else "None"}... ({duration:.1f}s)')
+    print(
+        f'[{test_file}] answer: {answer[:80] if answer else "None"}... ({duration:.1f}s)'
+    )
 
     # Step 3: Save result
     result = {
@@ -82,26 +84,41 @@ def run_instance(test_file, dataset, dataset_name, agent, tracker, output_file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Unified Baseline')
     parser.add_argument(
-        '--dataset_name', type=str, default='urfunny',
-        choices=['urfunny', 'mustard'], help='Dataset name (default: urfunny)',
+        '--dataset_name',
+        type=str,
+        default='urfunny',
+        choices=['urfunny', 'mustard'],
+        help='Dataset name (default: urfunny)',
     )
     parser.add_argument(
-        '--provider', type=str, default='gemini',
-        choices=['gemini', 'qwen'], help='LLM provider (default: gemini)',
+        '--provider',
+        type=str,
+        default='gemini',
+        choices=['gemini', 'qwen'],
+        help='LLM provider (default: gemini)',
     )
     parser.add_argument(
-        '--model', type=str, default=None,
+        '--model',
+        type=str,
+        default=None,
         help='Model name for litellm (default: auto based on provider)',
     )
     parser.add_argument(
-        '--dataset', type=str, default=None,
+        '--dataset',
+        type=str,
+        default=None,
         help='Path to dataset JSON file (default: auto based on dataset_name)',
     )
     parser.add_argument(
-        '--output', type=str, default=None, help='Output JSONL file path',
+        '--output',
+        type=str,
+        default=None,
+        help='Output JSONL file path',
     )
     parser.add_argument(
-        '--temperature', type=float, default=1.0,
+        '--temperature',
+        type=float,
+        default=1.0,
         help='Sampling temperature (default: 1.0)',
     )
     args = parser.parse_args()
@@ -124,20 +141,26 @@ if __name__ == '__main__':
         model=args.model,
         temperature=args.temperature,
     )
-    print(f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {agent.model}')
+    print(
+        f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {agent.model}'
+    )
 
     dataset = load_data(args.dataset)
     test_list = list(dataset.keys())
     processed_keys = load_processed_keys(output_file)
     if processed_keys:
-        print(f'Resuming: {len(processed_keys)} done, {len(test_list) - len(processed_keys)} remaining')
+        print(
+            f'Resuming: {len(processed_keys)} done, {len(test_list) - len(processed_keys)} remaining'
+        )
 
     try:
         for test_file in test_list:
             if test_file in processed_keys:
                 continue
             try:
-                run_instance(test_file, dataset, args.dataset_name, agent, tracker, output_file)
+                run_instance(
+                    test_file, dataset, args.dataset_name, agent, tracker, output_file
+                )
             except Exception as e:
                 print(f'[ERROR] {test_file}: {e}')
                 continue

@@ -3,6 +3,16 @@ from typing import Any, Dict, Optional
 
 
 class ConsciousTuringMachineConfig:
+    DEFAULT_PARSE_PROMPT_TEMPLATE = """Based solely on the analysis provided below, give your final answer.
+
+Your answer MUST start with either "Yes" or "No", followed by a brief explanation.
+
+IMPORTANT: If the analysis expresses uncertainty, is inconclusive, or lacks sufficient evidence, you MUST answer "No".
+
+Analysis:
+{answer}
+"""
+
     def __init__(
         self,
         ctm_name: Optional[str] = None,
@@ -12,6 +22,7 @@ class ConsciousTuringMachineConfig:
         parse_model: str = 'gemini/gemini-2.5-flash-lite',
         supervisors_model: str = 'gemini/gemini-2.5-flash-lite',
         supervisors_prompt: str = None,
+        parse_prompt_template: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         self.ctm_name: Optional[str] = ctm_name
@@ -23,6 +34,9 @@ class ConsciousTuringMachineConfig:
         self.parse_model = parse_model
         self.supervisors_model = supervisors_model
         self.supervisors_prompt = supervisors_prompt
+        self.parse_prompt_template = (
+            parse_prompt_template or self.DEFAULT_PARSE_PROMPT_TEMPLATE
+        )
         self.output_threshold = output_threshold
         for key, value in kwargs.items():
             setattr(self, key, value)

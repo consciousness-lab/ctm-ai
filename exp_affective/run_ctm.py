@@ -74,12 +74,20 @@ def run_instance(
             text=target_sentence,
             video_path=video_path,
             audio_path=audio_path,
+            instance_id=test_file,
         )
         end_time = time.time()
 
         print(f'[{test_file}] CTM call completed in {end_time - start_time:.2f}s')
         print(f'[{test_file}] Answer: {answer}')
         print(f'[{test_file}] Parsed answer: {parsed_answer}')
+
+        iteration_history = ctm.iteration_history
+        num_iterations = len(iteration_history)
+        winning_processors = [it['winning_processor'] for it in iteration_history]
+        print(
+            f'[{test_file}] Iterations: {num_iterations}, Winners: {winning_processors}'
+        )
 
         label = config.get_label_field(sample)
         result = {
@@ -88,6 +96,8 @@ def run_instance(
                 'parsed_answer': [parsed_answer],
                 'weight_score': weight_score,
                 'label': label,
+                'num_iterations': num_iterations,
+                'winning_processors': winning_processors,
             }
         }
 
@@ -177,7 +187,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--max_workers',
         type=int,
-        default=16,
+        default=8,
         help='Number of parallel workers (default: 16)',
     )
     args = parser.parse_args()

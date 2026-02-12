@@ -266,43 +266,49 @@ class BaseAgent:
         """Build content list. Override in subclasses"""
         raise NotImplementedError
 
-    def call(self, query: str, max_retries: int = 3, **kwargs: Any) -> Tuple[Optional[str], Dict[str, int]]:
+    def call(
+        self, query: str, max_retries: int = 3, **kwargs: Any
+    ) -> Tuple[Optional[str], Dict[str, int]]:
         """Make an LLM API call with the agent's modality, retry up to max_retries on failure"""
         content = self._build_content(query, **kwargs)
 
         for attempt in range(1, max_retries + 1):
             try:
                 call_kwargs = {
-                    "model": self.model,
-                    "messages": [{"role": "user", "content": content}],
-                    "temperature": self.temperature,
+                    'model': self.model,
+                    'messages': [{'role': 'user', 'content': content}],
+                    'temperature': self.temperature,
                 }
 
-                if self.provider == "qwen":
-                    call_kwargs["api_key"] = os.getenv("DASHSCOPE_API_KEY")
-                    call_kwargs["api_base"] = QWEN_API_BASE
-                    call_kwargs["modalities"] = ["text"]
+                if self.provider == 'qwen':
+                    call_kwargs['api_key'] = os.getenv('DASHSCOPE_API_KEY')
+                    call_kwargs['api_base'] = QWEN_API_BASE
+                    call_kwargs['modalities'] = ['text']
 
                 response = litellm.completion(**call_kwargs)
                 text = response.choices[0].message.content
                 usage = {
-                    "prompt_tokens": response.usage.prompt_tokens,
-                    "completion_tokens": response.usage.completion_tokens,
+                    'prompt_tokens': response.usage.prompt_tokens,
+                    'completion_tokens': response.usage.completion_tokens,
                 }
 
                 if text:
                     return text, usage
 
                 # Response is None or empty, retry
-                print(f"Warning: empty response from {self.provider} ({self.AGENT_TYPE}), "
-                      f"attempt {attempt}/{max_retries}")
+                print(
+                    f'Warning: empty response from {self.provider} ({self.AGENT_TYPE}), '
+                    f'attempt {attempt}/{max_retries}'
+                )
 
             except Exception as e:
-                print(f"Error calling {self.provider} API ({self.AGENT_TYPE}), "
-                      f"attempt {attempt}/{max_retries}: {e}")
+                print(
+                    f'Error calling {self.provider} API ({self.AGENT_TYPE}), '
+                    f'attempt {attempt}/{max_retries}: {e}'
+                )
 
         # All retries exhausted
-        return None, {"prompt_tokens": 0, "completion_tokens": 0}
+        return None, {'prompt_tokens': 0, 'completion_tokens': 0}
 
     def __repr__(self):
         return (
@@ -391,6 +397,7 @@ AGENT_CLASSES = {
     'multimodal': MultimodalAgent,
 }
 
+
 def create_agent(
     agent_type: str,
     provider: str = 'gemini',
@@ -426,13 +433,13 @@ def load_sample_inputs(
     sample = dataset[test_file]
 
     return {
-        "target_sentence": config.get_text_field(sample),
-        "system_prompt": config.get_system_prompt(),
-        "label": config.get_label_field(sample),
-        "full_video_path": get_full_video_path(test_file, dataset_name),
-        "muted_video_path": get_muted_video_path(test_file, dataset_name),
-        "audio_path": get_audio_path(test_file, dataset_name),
-        "config": config,
+        'target_sentence': config.get_text_field(sample),
+        'system_prompt': config.get_system_prompt(),
+        'label': config.get_label_field(sample),
+        'full_video_path': get_full_video_path(test_file, dataset_name),
+        'muted_video_path': get_muted_video_path(test_file, dataset_name),
+        'audio_path': get_audio_path(test_file, dataset_name),
+        'config': config,
     }
 
 
