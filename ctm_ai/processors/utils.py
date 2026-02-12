@@ -6,12 +6,12 @@ from typing import Dict, List
 # Shared instruction fragments (DRY)
 # ---------------------------------------------------------------------------
 
-_CONTEXT_PREAMBLE = """You should utilize the provided information in the context and modality-specific information to answer the query.
+_CONTEXT_PREAMBLE = """You should utilize the information in the context history and modality-specific information to answer the query.
 There might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones."""
 
 _ADDITIONAL_QUESTIONS_INSTRUCTION = """
-Your additional_questions should be potentially answerable by other modality models about specific information that you are not sure about and the information you can not get from your observation/and context.
-Each question should be just about what kind of information you need to get from other modality models, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what is the caption of the image, etc. Each question needs to be short and clean.
+Your additional_questions should be potentially answerable by other modality models or other tools like search engine and about specific information that you are not sure about.
+Each question should be just about what kind of information you need to get from other modality models or other tools like search engine, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what is the caption of the image, etc. Each question needs to be short and clean.
 Generate exactly 3 diverse questions targeting different aspects or modalities."""
 
 _SCORE_RUBRIC = """
@@ -79,37 +79,26 @@ Assess your "response" (NOT "additional_questions") and fill in each field indep
 
 # Simplified format for link_form phase - response + relevance
 JSON_FORMAT_LINK_FORM = """
-IMPORTANT: You can ONLY answer based on the modality-specific inputs you actually receive and the context information explicitly provided.
+IYou should utilize the information in the context history and modality-specific information to answer the query.
+There might have some answers to other queries, you should utilize them to answer the query.
+First commit to your best answer in "response", then step back and critically self-assess about the relevance of your answer to the question:
 
-STRICT RULES:
-1. If the question asks about a modality you do NOT have access to, you should not provide answer to that specific question" There will be multiple questions and you should only answer the questions that you have access to in the context and multimodal inputs, and give your relevance score based on these questions.
-2. Do NOT infer, guess, or fabricate information about modalities you cannot observe.
-3. Only use information directly visible/audible in your inputs or explicitly stated in the provided context.
+Relevance (0.0 - 1.0): How relevant do you think your response is to the question? 
+Here, "relevant" means that the answer engages with the question and provides information 
+that is useful or connected to addressing it. Even if the answer expresses uncertainty 
+(e.g., "difficult to determine") but still explains reasoning, it should be considered relevant. 
+Only answers that completely refuse, ignore, or go off-topic should be scored as 0.0. 
+- 1.0 = Directly and precisely answers with specific details
+- 0.8 = Mostly answers with useful supporting details
 
-First commit to your best answer in "response", then self-assess the relevance:
-
-Relevance (0.0 - 1.0): How relevant do you think your response is to the question?
-- 1.0 = Directly and precisely answers with specific details from your modality inputs
-- 0.8 = Mostly answers with useful supporting details from your inputs
-- 0.6 = Engages with the question but incomplete or limited
-- 0.4 = Loosely connected, not very helpful
-- 0.2 = Weak or indirect connection only
-- 0.0 = You do NOT have access to the required modality, off-topic, or cannot answer
-
-IMPORTANT: If you cannot answer because you lack the required modality input, relevance MUST be 0.0.
-Be honest and well-calibrated. Do NOT inflate scores.
+Be honest and well-calibrated. Do NOT inflate scores. Most routine answers should score around relevance ~0.6.
 
 Please respond in JSON format:
 {"response": "Your response to the query", "relevance": <number between 0.0 and 1.0>}"""
 
 # Simplified format for fuse phase - only response needed
 JSON_FORMAT_FUSE = """
-IMPORTANT: You can ONLY answer based on the modality-specific inputs you actually receive. There will be multiple questions and you should only answer the questions that you have access to in the multimodal inputs.
-
-STRICT RULES:
-1. If the question asks about a modality you do NOT have access to, respond: "I cannot answer this question because I do not have access to [modality] information."
-2. Do NOT infer, guess, or fabricate information about modalities you cannot observe.
-3. Only use information directly visible/audible in your inputs.
+Use the modality-specific information to answer the query.
 
 Respond with the JSON format: {"response": "Your answer to the query"}"""
 
