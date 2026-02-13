@@ -122,4 +122,3 @@ kwargs = {
 }
 api_response = client.chat.completions.create(**kwargs)
 print(api_response)
-breakpoint()

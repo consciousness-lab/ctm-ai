@@ -13,7 +13,13 @@ from ..utils import (
     get_required_api_key_name,
     message_exponential_backoff,
 )
-from .utils import JSON_FORMAT_SCORE, parse_json_response_with_scores
+from .utils import (
+    JSON_FORMAT_FUSE,
+    JSON_FORMAT_LINK_FORM,
+    JSON_FORMAT_SCORE,
+    build_json_format_score,
+    parse_json_response_with_scores,
+)
 
 
 class BaseProcessor(object):
@@ -110,43 +116,80 @@ class BaseProcessor(object):
         )
 
     def add_all_context_history(
-        self, query: str, answer: str, additional_question: str
+        self, query: str, answer: str, additional_questions: List[str]
     ) -> None:
         self.all_context_history.append(
             {
                 'query': query,
                 'answer': answer,
-                'additional_question': additional_question,
+                'additional_questions': additional_questions,
             }
         )
 
     def _build_executor_content(
         self,
         query: str,
-        is_fuse: bool = False,
+        phase: str = 'initial',
         **kwargs: Any,
     ) -> str:
         content = f'Query: {query}\n'
 
-        if not is_fuse:
-            if len(self.fuse_history) > 0:
-                content += '\nThere are extra information from other processors:\n'
-                for i, item in enumerate(self.fuse_history, 1):
-                    content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
+        # Check if we have context history
+        has_context = False
 
-            if len(self.winner_answer) > 0:
-                content += '\nThere are some previous answers to the same query, think further based on this answer:\n'
-                for i, item in enumerate(self.winner_answer, 1):
-                    content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
+        # Add fuse_history for initial and link_form phases
+        if phase in ('initial', 'link_form'):
+            # Filter out empty answers from fuse_history
+            valid_fuse_history = [
+                item
+                for item in self.fuse_history
+                if item.get('answer') and str(item['answer']).strip()
+            ]
+            if len(valid_fuse_history) > 0:
+                has_context = True
+                content += '\n' + '=' * 60 + '\n'
+                content += 'CONTEXT: Information from other modalities\n'
+                content += '=' * 60 + '\n'
+                for item in valid_fuse_history:
+                    content += f'\n[{item["processor_name"]}]:\n{item["answer"]}\n'
 
-        content += JSON_FORMAT_SCORE
+        # Add winner_answer only for initial phase
+        if phase == 'initial':
+            # Filter out empty answers from winner_answer
+            valid_winner_answer = [
+                item
+                for item in self.winner_answer
+                if item.get('answer') and str(item['answer']).strip()
+            ]
+            if len(valid_winner_answer) > 0:
+                has_context = True
+                content += '\n' + '=' * 60 + '\n'
+                content += 'CONTEXT: Previous answers to the same query\n'
+                content += '=' * 60 + '\n'
+                for item in valid_winner_answer:
+                    content += f'\n[{item["processor_name"]}]:\n{item["answer"]}\n'
+
+        # Add phase-specific format instructions
+        if phase == 'initial':
+            content += '\n' + '-' * 60 + '\n'
+            content += 'INSTRUCTIONS\n'
+            content += '-' * 60 + '\n'
+            content += build_json_format_score(has_context=has_context)
+        elif phase == 'link_form':
+            content += '\n' + '-' * 60 + '\n'
+            content += 'INSTRUCTIONS\n'
+            content += '-' * 60 + '\n'
+            content += JSON_FORMAT_LINK_FORM
+        elif phase == 'fuse':
+            content += JSON_FORMAT_FUSE
+
         return content
 
     @message_exponential_backoff()
     def ask_executor(
         self,
         messages: List[Dict[str, Any]],
-        default_additional_question: str = '',
+        default_additional_questions: List[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -161,7 +204,9 @@ class BaseProcessor(object):
         contents = [
             response.choices[i].message.content for i in range(len(response.choices))
         ]
-        return parse_json_response_with_scores(contents[0], default_additional_question)
+        return parse_json_response_with_scores(
+            contents[0], default_additional_questions
+        )
 
     def build_executor_messages(
         self,
@@ -198,7 +243,7 @@ class BaseProcessor(object):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
         api_manager: Any = None,
-        is_fuse: bool = False,
+        phase: str = 'initial',
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
@@ -212,16 +257,16 @@ class BaseProcessor(object):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
-            is_fuse=is_fuse,
+            phase=phase,
         )
 
         # Log the query content sent to this processor
         from ..utils import logger
 
         logger.info(
-            f'\n{self.name} received query:\n{executor_content[:500]}...'
+            f'\n{self.name} received query (phase={phase}):\n{executor_content[:500]}...'
             if len(executor_content) > 500
-            else f'\n{self.name} received query:\n{executor_content}'
+            else f'\n{self.name} received query (phase={phase}):\n{executor_content}'
         )
 
         executor_messages = self.build_executor_messages(
@@ -238,27 +283,70 @@ class BaseProcessor(object):
         )
         if executor_messages is None:
             return None
+
         executor_output = self.ask_executor(
             messages=executor_messages,
-            default_additional_question='Would you like me to explain any specific aspects in more detail?',
+            default_additional_questions=(
+                []
+                if phase != 'initial'
+                else [
+                    'Would you like me to explain any specific aspects in more detail?'
+                ]
+            ),
         )
+
+        # Handle different phases
+        if phase == 'link_form':
+            # Need response + relevance for link_form
+            response = executor_output.get('response', '')
+            relevance = float(executor_output.get('relevance', 0.5))
+            return Chunk(
+                time_step=0,
+                processor_name=self.name,
+                gist=response,
+                relevance=relevance,
+                confidence=0.0,
+                surprise=0.0,
+                weight=relevance,
+                additional_questions=[],
+                executor_content=executor_content,
+            )
+        elif phase == 'fuse':
+            # Only need response for fuse
+            response = executor_output.get('response')
+            if response is None:
+                return None
+            return Chunk(
+                time_step=0,
+                processor_name=self.name,
+                gist=response,
+                relevance=0.0,
+                confidence=0.0,
+                surprise=0.0,
+                weight=0.0,
+                additional_questions=[],
+                executor_content=executor_content,
+            )
+
+        # Initial phase - full processing
         if executor_output.get('response') is None:
             return None
         self.add_all_context_history(
             query,
             executor_output['response'],
-            executor_output['additional_question'],
+            executor_output['additional_questions'],
         )
 
         # Extract scores from executor output
         scorer_output = self._extract_scores_from_executor_output(executor_output)
-        additional_question = executor_output['additional_question'] or ''
+        additional_questions = executor_output['additional_questions'] or []
 
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,
             executor_output=executor_output,
-            additional_question=additional_question,
+            additional_questions=additional_questions,
+            executor_content=executor_content,
         )
         return chunk
 
@@ -280,7 +368,8 @@ class BaseProcessor(object):
         name: str,
         executor_output: Dict[str, Any],
         scorer_output: Dict[str, float],
-        additional_question: str = '',
+        additional_questions: List[str] = None,
+        executor_content: str = '',
     ) -> Chunk:
         return Chunk(
             time_step=0,
@@ -290,7 +379,8 @@ class BaseProcessor(object):
             confidence=scorer_output['confidence'],
             surprise=scorer_output['surprise'],
             weight=scorer_output['weight'],
-            additional_question=additional_question,
+            additional_questions=additional_questions or [],
+            executor_content=executor_content,
         )
 
     def __hash__(self):

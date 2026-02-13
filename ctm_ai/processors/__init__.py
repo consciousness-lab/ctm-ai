@@ -6,7 +6,7 @@ from .processor_language import LanguageProcessor
 from .processor_math import MathProcessor
 from .processor_search import SearchProcessor
 from .processor_tool import ToolProcessor
-from .processor_video import VideoProcessor
+from .processor_video import FramesProcessor, VideoProcessor
 from .processor_vision import VisionProcessor
 from .rapidapi_processors.processor_exercise import ExerciseProcessor
 from .rapidapi_processors.processor_finance import FinanceProcessor
@@ -24,6 +24,7 @@ __all__ = [
     'BaseProcessor',
     'CodeProcessor',
     'FinanceProcessor',
+    'FramesProcessor',
     'GeoDBProcessor',
     'LanguageProcessor',
     'MathProcessor',

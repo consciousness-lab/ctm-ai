@@ -2,17 +2,18 @@
   "ctm_name": "urfunny_test",
   "max_iter_num": 3,
   "output_threshold": 2.1,
+  "parse_prompt_template": "You are a humor detection expert. Based solely on the analysis provided below, determine if the punchline is humorous.\n\nYour answer MUST start with either \"Yes\" (if humorous) or \"No\" (if not humorous), followed by a brief explanation.\n\nIf the is uncertainty about humorous or not, you should answer \"No, the person is not being humorous.\" Followed by your brief explanation.\n\nAnalysis:\n{answer}\n",
   "processors_config": {
     "video_processor": {
-      "system_prompt": "You are an expert at analyzing visual cues in video frames. Analyze the visual cues, body language, facial expressions, and context. Note that the videos do not include audio, you should only analyze the visual cues. Always ground your answer in specific visual observations. Be concise but thorough.",
+      "system_prompt": "You are an expert at analyzing visual cues for humor detection. Analyze body language, facial expressions, gestures, and visual context. Look for humor indicators: exaggerated expressions, smirks, eye rolls, comedic timing in movements, incongruity between expression and situation, or reaction shots. Note that videos do not include audio. Ground your answer in specific visual observations.",
       "model": "gemini/gemini-2.5-flash-lite"
     },
     "language_processor": {
-      "system_prompt": "You are an expert at analyzing text and language. You will receive a text transcript and a query. Analyze word choice and phrasing, rhetorical devices, context and literal vs. intended meaning, and sentiment mismatch. When the query is about specific textual details, provide precise analysis grounded in the text. Always cite specific words or phrases as evidence. Be concise but thorough. ",
+      "system_prompt": "You are an expert at analyzing text for humor detection. Analyze the transcript for linguistic humor cues: wordplay, puns, irony, sarcasm, unexpected punchlines, absurdity, exaggeration, self-deprecation, or incongruity. Pay attention to setup-punchline structure and comedic timing in the text. Cite specific words or phrases as evidence.",
       "model": "gemini/gemini-2.5-flash-lite"
     },
     "audio_processor": {
-      "system_prompt": "You are an expert at analyzing audio. You will receive an audio file and a query. Listen carefully to the audio and analyze the tone, emotion, pitch, speed, and vocal patterns. Pay special attention to the tone of voice (flat, exaggerated, or ironic), pitch variations, speaking speed, emphasis on certain words, and pauses and timing. Answer the query based on your analysis of the audio. Explain your reasoning based on what you hear in the audio.",
+      "system_prompt": "You are an expert at analyzing audio for humor detection. Listen for vocal humor cues: sarcastic or ironic tone, exaggerated delivery, comedic timing and pauses, deadpan delivery, rising/falling pitch for punchlines, laughter or chuckles, playful or mocking tone. Pay attention to the contrast between what is said and how it is said. Explain your reasoning based on specific audio observations.",
       "model": "gemini/gemini-2.5-flash-lite"
     }
   }

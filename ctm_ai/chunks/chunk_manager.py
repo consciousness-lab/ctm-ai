@@ -57,20 +57,42 @@ class ChunkManager:
         self.chunks.clear()
         self.tfidf_matrix = None
 
-    def uptree_competition(self) -> Chunk:
+    def uptree_competition(self, temperature: float = 0.1) -> Chunk:
+        """
+        Weighted random selection using softmax with temperature.
+
+        Args:
+            temperature: Temperature parameter for softmax (default=0.1).
+                   - temperature→0: deterministic, always select max weight (argmax)
+                   - temperature=0.1: strongly favor high weights (recommended)
+                   - temperature=1.0: standard softmax
+                   - temperature→∞: uniform distribution
+        """
         if not self.chunks:
             raise ValueError('No chunks available for competition')
 
         if len(self.chunks) == 1:
             return self.chunks[0]
 
-        weights = [self._sanitize_weight(chunk.weight) for chunk in self.chunks]
+        weights = np.array(
+            [self._sanitize_weight(chunk.weight) for chunk in self.chunks]
+        )
 
-        total_weight = sum(weights)
-        if total_weight == 0:
-            normalized_weights = [1.0 / len(weights)] * len(weights)
+        # 防止除以零
+        if temperature <= 0:
+            temperature = 1e-10
+
+        # Softmax with temperature: exp(w/T) / sum(exp(w/T))
+        # 为了数值稳定性，减去最大值
+        weights_scaled = weights / temperature
+        weights_shifted = weights_scaled - np.max(weights_scaled)
+        exp_weights = np.exp(weights_shifted)
+
+        total_exp = np.sum(exp_weights)
+        if total_exp == 0 or not np.isfinite(total_exp):
+            normalized_weights = np.ones(len(weights)) / len(weights)
         else:
-            normalized_weights = [w / total_weight for w in weights]
+            normalized_weights = exp_weights / total_exp
 
         winning_chunk = np.random.choice(self.chunks, p=normalized_weights)
 
