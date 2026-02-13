@@ -17,6 +17,7 @@ from .utils import (
     JSON_FORMAT_FUSE,
     JSON_FORMAT_LINK_FORM,
     JSON_FORMAT_SCORE,
+    build_json_format_score,
     parse_json_response_with_scores,
 )
 
@@ -133,22 +134,51 @@ class BaseProcessor(object):
     ) -> str:
         content = f'Query: {query}\n'
 
-        # Add context history for initial and link_form phases
+        # Check if we have context history
+        has_context = False
+
+        # Add fuse_history for initial and link_form phases
         if phase in ('initial', 'link_form'):
-            if len(self.fuse_history) > 0:
-                content += '\nThere are extra information from other processors:\n'
-                for i, item in enumerate(self.fuse_history, 1):
-                    content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
+            # Filter out empty answers from fuse_history
+            valid_fuse_history = [
+                item
+                for item in self.fuse_history
+                if item.get('answer') and str(item['answer']).strip()
+            ]
+            if len(valid_fuse_history) > 0:
+                has_context = True
+                content += '\n' + '=' * 60 + '\n'
+                content += 'CONTEXT: Information from other modalities\n'
+                content += '=' * 60 + '\n'
+                for item in valid_fuse_history:
+                    content += f'\n[{item["processor_name"]}]:\n{item["answer"]}\n'
 
-            if len(self.winner_answer) > 0:
-                content += '\nThere are some previous answers to the same query, think further based on this answer:\n'
-                for i, item in enumerate(self.winner_answer, 1):
-                    content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
-
-        # Add phase-specific format
+        # Add winner_answer only for initial phase
         if phase == 'initial':
-            content += JSON_FORMAT_SCORE
+            # Filter out empty answers from winner_answer
+            valid_winner_answer = [
+                item
+                for item in self.winner_answer
+                if item.get('answer') and str(item['answer']).strip()
+            ]
+            if len(valid_winner_answer) > 0:
+                has_context = True
+                content += '\n' + '=' * 60 + '\n'
+                content += 'CONTEXT: Previous answers to the same query\n'
+                content += '=' * 60 + '\n'
+                for item in valid_winner_answer:
+                    content += f'\n[{item["processor_name"]}]:\n{item["answer"]}\n'
+
+        # Add phase-specific format instructions
+        if phase == 'initial':
+            content += '\n' + '-' * 60 + '\n'
+            content += 'INSTRUCTIONS\n'
+            content += '-' * 60 + '\n'
+            content += build_json_format_score(has_context=has_context)
         elif phase == 'link_form':
+            content += '\n' + '-' * 60 + '\n'
+            content += 'INSTRUCTIONS\n'
+            content += '-' * 60 + '\n'
             content += JSON_FORMAT_LINK_FORM
         elif phase == 'fuse':
             content += JSON_FORMAT_FUSE

@@ -32,12 +32,46 @@ def load_data_local(file_path):
 file_lock = Lock()
 
 
+def load_processed_ids(output_file):
+    """Load already processed instance IDs from output file.
+
+    Args:
+        output_file: Path to the output JSONL file
+
+    Returns:
+        Set of processed instance IDs
+    """
+    processed_ids = set()
+    if not os.path.exists(output_file):
+        return processed_ids
+
+    try:
+        with open(output_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    # Get the first key (instance ID) from the JSON object
+                    if obj:
+                        instance_id = list(obj.keys())[0]
+                        processed_ids.add(instance_id)
+                except json.JSONDecodeError:
+                    continue
+    except Exception as e:
+        print(f'Warning: Error reading existing output file: {e}')
+
+    return processed_ids
+
+
 def run_instance(
     test_file,
     dataset,
     dataset_name,
     ctm_name,
     output_file='ctm_results.jsonl',
+    detailed_log_dir='detailed_info',
 ):
     try:
         print(f'[{test_file}] Starting processing...')
@@ -45,7 +79,7 @@ def run_instance(
         config = get_dataset_config(dataset_name)
         sample = dataset[test_file]
 
-        ctm = ConsciousTuringMachine(ctm_name)
+        ctm = ConsciousTuringMachine(ctm_name, detailed_log_dir=detailed_log_dir)
         target_sentence = config.get_text_field(sample)
         query = config.get_task_query()
 
@@ -118,16 +152,37 @@ def run_instance(
 
 
 def run_parallel(
-    dataset, dataset_name, ctm_name, max_workers=4, output_file='ctm_results.jsonl'
+    dataset,
+    dataset_name,
+    ctm_name,
+    max_workers=4,
+    output_file='ctm_results.jsonl',
+    detailed_log_dir='detailed_info',
 ):
     test_list = list(dataset.keys())
+
+    # Load already processed IDs
+    processed_ids = load_processed_ids(output_file)
+
+    # Filter out already processed instances
+    remaining_test_list = [tid for tid in test_list if tid not in processed_ids]
+
     print(f'Total test samples: {len(test_list)}')
+    print(f'Already processed: {len(processed_ids)}')
+    print(f'Remaining to process: {len(remaining_test_list)}')
     print(f'Using {max_workers} workers')
     print(f'Output file: {output_file}')
+    print(f'Detailed log directory: {detailed_log_dir}')
     print('=' * 50)
 
-    with open(output_file, 'w', encoding='utf-8'):
-        pass
+    # Don't clear the file if it exists - we're appending
+    if not os.path.exists(output_file):
+        with open(output_file, 'w', encoding='utf-8'):
+            pass
+
+    if len(remaining_test_list) == 0:
+        print('All instances already processed!')
+        return
 
     start_time = time.time()
     completed_count = 0
@@ -135,9 +190,15 @@ def run_parallel(
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_test = {
             executor.submit(
-                run_instance, test_file, dataset, dataset_name, ctm_name, output_file
+                run_instance,
+                test_file,
+                dataset,
+                dataset_name,
+                ctm_name,
+                output_file,
+                detailed_log_dir,
             ): test_file
-            for test_file in test_list
+            for test_file in remaining_test_list
         }
 
         for future in as_completed(future_to_test):
@@ -146,7 +207,10 @@ def run_parallel(
 
             try:
                 result = future.result()
-                print(f'Progress: {completed_count}/{len(test_list)} - {result}')
+                total_completed = len(processed_ids) + completed_count
+                print(
+                    f'Progress: {total_completed}/{len(test_list)} ({completed_count}/{len(remaining_test_list)} new) - {result}'
+                )
             except Exception as exc:
                 print(f'Error processing {test_file}: {exc}')
 
@@ -154,7 +218,10 @@ def run_parallel(
     total_time = end_time - start_time
     print('=' * 50)
     print(f'Total processing time: {total_time:.2f} seconds')
-    print(f'Average time per sample: {total_time / len(test_list):.2f} seconds')
+    if len(remaining_test_list) > 0:
+        print(
+            f'Average time per sample: {total_time / len(remaining_test_list):.2f} seconds'
+        )
 
 
 if __name__ == '__main__':
@@ -187,8 +254,14 @@ if __name__ == '__main__':
     parser.add_argument(
         '--max_workers',
         type=int,
-        default=8,
+        default=12,
         help='Number of parallel workers (default: 16)',
+    )
+    parser.add_argument(
+        '--detailed_log_dir',
+        type=str,
+        default='detailed_info',
+        help='Directory for detailed log files (default: detailed_info)',
     )
     args = parser.parse_args()
 
@@ -220,4 +293,5 @@ if __name__ == '__main__':
         args.ctm_name,
         max_workers=args.max_workers,
         output_file=output_file,
+        detailed_log_dir=args.detailed_log_dir,
     )

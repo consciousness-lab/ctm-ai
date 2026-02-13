@@ -270,10 +270,6 @@ class BaseConsciousTuringMachine(ABC):
                 combined_query += f'{i}. {q}\n'
 
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
-                if nbr == chunk.processor_name:
-                    continue
-
-                # Use fuse phase - ask all questions at once, only need response
                 answer_chunk = proc_map[nbr].ask(
                     query=combined_query,
                     phase='fuse',

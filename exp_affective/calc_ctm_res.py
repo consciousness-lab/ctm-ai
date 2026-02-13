@@ -57,11 +57,14 @@ def label_to_binary(label, dataset: str) -> int | None:
     return None
 
 
-def load_pairs(filepath: str, dataset: str) -> tuple[list[int], list[int], int]:
-    """返回 (y_true, y_pred), 以及跳过的条数。"""
+def load_pairs(
+    filepath: str, dataset: str, verbose: bool = False
+) -> tuple[list[int], list[int], int, list[dict]]:
+    """返回 (y_true, y_pred, skipped_count, skipped_items)。"""
     y_true = []
     y_pred = []
     skipped = 0
+    skipped_items = []
 
     with open(filepath, 'r', encoding='utf-8') as f:
         for line in f:
@@ -70,19 +73,30 @@ def load_pairs(filepath: str, dataset: str) -> tuple[list[int], list[int], int]:
                 continue
             try:
                 data = json.loads(line)
-                for _key, item in data.items():
+                for key, item in data.items():
                     label = item.get('label')
                     parsed = item.get('parsed_answer')
                     true_val = label_to_binary(label, dataset)
                     pred_val = extract_prediction(parsed)
                     if true_val is None or pred_val is None:
                         skipped += 1
+                        skipped_items.append(
+                            {
+                                'id': key,
+                                'label': label,
+                                'parsed_answer': parsed,
+                                'reason': 'invalid_label'
+                                if true_val is None
+                                else 'invalid_prediction',
+                            }
+                        )
                         continue
                     y_true.append(true_val)
                     y_pred.append(pred_val)
-            except (json.JSONDecodeError, TypeError):
+            except (json.JSONDecodeError, TypeError) as e:
                 skipped += 1
-    return y_true, y_pred, skipped
+                skipped_items.append({'error': str(e), 'line': line[:100]})
+    return y_true, y_pred, skipped, skipped_items
 
 
 def calc_metrics_sklearn(y_true, y_pred) -> dict:
@@ -207,6 +221,12 @@ def main():
         default=None,
         help='数据集类型：mustard (label true/false) 或 urfunny (label 0/1)。不指定则根据文件名推断',
     )
+    parser.add_argument(
+        '--show-skipped',
+        '-s',
+        action='store_true',
+        help='显示被跳过的样本详情',
+    )
     args = parser.parse_args()
 
     path = Path(args.file)
@@ -225,7 +245,7 @@ def main():
                 '无法从文件名推断数据集类型，请用 -d mustard 或 -d urfunny 指定'
             )
 
-    y_true, y_pred, skipped = load_pairs(str(path), dataset)
+    y_true, y_pred, skipped, skipped_items = load_pairs(str(path), dataset)
     if not y_true:
         print(f'没有有效样本（有效=0, 跳过={skipped}）')
         return
@@ -238,6 +258,13 @@ def main():
     print(
         f'File: {path.name}  |  dataset: {dataset}  |  n={len(y_true)}, skipped={skipped}'
     )
+
+    # 显示跳过的 instance_id
+    if skipped > 0 and skipped_items:
+        skipped_ids = [item['id'] for item in skipped_items if 'id' in item]
+        if skipped_ids:
+            print(f'  Skipped IDs: {", ".join(skipped_ids)}')
+
     print('-' * 56)
     print(f'  Accuracy:              {m["acc"]:.4f}')
     print(f'  Precision (micro):     {m["precision_micro"]:.4f}')
@@ -249,6 +276,21 @@ def main():
     print(f'  F1 (micro):           {m["f1_micro"]:.4f}')
     print(f'  F1 (macro):           {m["f1_macro"]:.4f}')
     print(f'  F1 (weighted):         {m["f1_weighted"]:.4f}')
+
+    # 显示被跳过的样本
+    if args.show_skipped and skipped_items:
+        print('\n' + '=' * 56)
+        print(f'Skipped samples ({len(skipped_items)}):')
+        print('=' * 56)
+        for item in skipped_items:
+            if 'id' in item:
+                print(f'  ID: {item["id"]}')
+                print(f'    label: {item["label"]}')
+                print(f'    parsed_answer: {item["parsed_answer"]}')
+                print(f'    reason: {item["reason"]}')
+            else:
+                print(f'  Error: {item.get("error")}')
+            print()
 
 
 if __name__ == '__main__':

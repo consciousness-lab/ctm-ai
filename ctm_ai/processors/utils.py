@@ -6,13 +6,30 @@ from typing import Dict, List
 # Shared instruction fragments (DRY)
 # ---------------------------------------------------------------------------
 
-_CONTEXT_PREAMBLE = """You should utilize the provided information in the context and modality-specific information to answer the query.
-There might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones."""
+# ---------------------------------------------------------------------------
+# Initial Phase Preambles
+# ---------------------------------------------------------------------------
+
+_CONTEXT_PREAMBLE_WITH_CONTEXT = """## Your Task
+Provide a comprehensive answer by combining:
+1. **Your own modality observations** - What you can directly get from your inputs.
+2. **Context information provided below** - Analyses from other processors that might be helpful, you should think further based on these context to answer the query.
+
+IMPORTANT: The context below contains information from other modalities. You should actively use this context to enrich your answers.
+Generate additional questions about information from other modalities you still need to answer the query(different from any previous questions)."""
+
+_CONTEXT_PREAMBLE_NO_CONTEXT = """## Your Task
+Answer the query using your modality-specific inputs (what you can directly observe from your video/audio/text/image inputs).
+
+Generate additional questions to gather information from other modalities that could help answer the query more completely."""
 
 _ADDITIONAL_QUESTIONS_INSTRUCTION = """
-Your additional_questions should be potentially answerable by other modality models about specific information that you are not sure about and the information you can not get from your observation/and context.
-Each question should be just about what kind of information you need to get from other modality models, nothing else about the task or original query should be included. For example, what is the tone of the audio, what is the facial expression of the person, what is the caption of the image, etc. Each question needs to be short and clean.
-Generate exactly 3 diverse questions targeting different aspects or modalities."""
+## Additional Questions Guidelines
+Generate exactly 3 questions to gather information from OTHER modalities that would help answer the query:
+Your additional_question should be potentially answerable by other modality about specific information that you are not sure about.
+- Ask about specific, observable details (e.g., "What is the speaker's tone of voice?", "What facial expressions are shown?")
+- Keep questions short and clean.
+- Nothing else about the task or original query should be included."""
 
 _SCORE_RUBRIC = """
 ## Self-Evaluation Instructions
@@ -54,9 +71,21 @@ Be honest and well-calibrated. Do NOT inflate scores. Most routine answers shoul
 # JSON format template
 # ---------------------------------------------------------------------------
 
-JSON_FORMAT_SCORE = (
-    _CONTEXT_PREAMBLE
-    + """
+
+def build_json_format_score(has_context: bool = False) -> str:
+    """Build JSON format instruction with appropriate context preamble.
+
+    Args:
+        has_context: Whether there is context history available (fuse_history or winner_answer)
+    """
+    preamble = (
+        _CONTEXT_PREAMBLE_WITH_CONTEXT if has_context else _CONTEXT_PREAMBLE_NO_CONTEXT
+    )
+
+    return (
+        preamble
+        + """
+
 Please respond in JSON format with the following structure:
 {
     "response": "Your detailed response to the query",
@@ -66,52 +95,80 @@ Please respond in JSON format with the following structure:
     "surprise": <number between 0.0 and 1.0>
 }
 """
-    + _ADDITIONAL_QUESTIONS_INSTRUCTION
-    + _SCORE_RUBRIC
-    + """
+        + _ADDITIONAL_QUESTIONS_INSTRUCTION
+        + _SCORE_RUBRIC
+        + """
 
 ### Filling the score fields:
 Assess your "response" (NOT "additional_questions") and fill in each field independently:
 - "relevance": your relevance assessment (0.0 to 1.0)
 - "confidence": your confidence assessment (0.0 to 1.0)
 - "surprise": your surprise / novelty assessment (0.0 to 1.0)"""
-)
+    )
 
-# Simplified format for link_form phase - response + relevance
+
+# Keep backward compatibility - default to no context
+JSON_FORMAT_SCORE = build_json_format_score(has_context=False)
+
+# ---------------------------------------------------------------------------
+# Link Form Phase - Evaluate if THIS processor can contribute NEW information
+# Purpose: Determine if this processor should be linked to the winning processor
+# ---------------------------------------------------------------------------
 JSON_FORMAT_LINK_FORM = """
-IMPORTANT: You can ONLY answer based on the modality-specific inputs you actually receive and the context information explicitly provided.
+## Your Task
+Answer the questions using your direct modality inputs and any context provided above.
 
-STRICT RULES:
-1. If the question asks about a modality you do NOT have access to, you should not provide answer to that specific question" There will be multiple questions and you should only answer the questions that you have access to in the context and multimodal inputs, and give your relevance score based on these questions.
-2. Do NOT infer, guess, or fabricate information about modalities you cannot observe.
-3. Only use information directly visible/audible in your inputs or explicitly stated in the provided context.
+## Output Format Rules
+- Use numbered format: "1. [answer] 2. [answer] ..."
+- SKIP questions you cannot answer (do NOT say "I cannot answer")
+- Only include answers you CAN provide from your modality
+- Keep the original question numbers even if you skip some
+- If you cannot answer ANY question, response should be empty string ""
 
-First commit to your best answer in "response", then self-assess the relevance:
+Example 1 - Can answer some questions:
+{"response": "1. The tone is enthusiastic and upbeat. 3. The context appears to be a casual conversation.", "relevance": 0.7}
 
-Relevance (0.0 - 1.0): How relevant do you think your response is to the question?
-- 1.0 = Directly and precisely answers with specific details from your modality inputs
-- 0.8 = Mostly answers with useful supporting details from your inputs
+Example 2 - Cannot answer any question (all outside your modality and context):
+{"response": "", "relevance": 0.0}
+
+## Relevance Score (0.0 - 1.0)
+Based on questions you COULD answer: How relevant do you think your response is to the question? 
+Here, "relevant" means that the answer engages with the question and provides information 
+that is useful or connected to addressing it. Even if the answer expresses uncertainty 
+(e.g., "difficult to determine") but still explains reasoning, it should be considered relevant. 
+Only answers that completely refuse, ignore, or go off-topic should be scored as 0.0. 
+- 1.0 = Directly and precisely answers with specific details
+- 0.8 = Mostly answers with useful supporting details
 - 0.6 = Engages with the question but incomplete or limited
 - 0.4 = Loosely connected, not very helpful
 - 0.2 = Weak or indirect connection only
-- 0.0 = You do NOT have access to the required modality, off-topic, or cannot answer
-
-IMPORTANT: If you cannot answer because you lack the required modality input, relevance MUST be 0.0.
-Be honest and well-calibrated. Do NOT inflate scores.
+- 0.0 = Off-topic, refuses to answer, or irrelevant
 
 Please respond in JSON format:
-{"response": "Your response to the query", "relevance": <number between 0.0 and 1.0>}"""
+{"response": "Your numbered answers (or empty string if none)", "relevance": <number between 0.0 and 1.0>}"""
 
-# Simplified format for fuse phase - only response needed
+# ---------------------------------------------------------------------------
+# Fuse Phase - Provide raw modality-specific information to other processors
+# Purpose: Share your direct observations so other processors can use them as context
+# ---------------------------------------------------------------------------
 JSON_FORMAT_FUSE = """
-IMPORTANT: You can ONLY answer based on the modality-specific inputs you actually receive. There will be multiple questions and you should only answer the questions that you have access to in the multimodal inputs.
+## Your Task
+Answer the questions using ONLY your direct modality inputs (what you can actually see/hear).
 
-STRICT RULES:
-1. If the question asks about a modality you do NOT have access to, respond: "I cannot answer this question because I do not have access to [modality] information."
-2. Do NOT infer, guess, or fabricate information about modalities you cannot observe.
-3. Only use information directly visible/audible in your inputs.
+## Output Format Rules
+- Use numbered format: "1. [answer] 2. [answer] ..."
+- SKIP questions you cannot answer (do NOT include them at all)
+- Only include answers you CAN provide from your modality
+- Be specific and descriptive - your answers will help other processors
+- If you cannot answer ANY question, response should be empty string ""
 
-Respond with the JSON format: {"response": "Your answer to the query"}"""
+Example 1 - Can answer some questions:
+{"response": "1. The tone is playful and amused with light chuckles. 2. The speaker seems to be responding to a fun challenge."}
+
+Example 2 - Cannot answer any question:
+{"response": ""}
+
+Respond in JSON format: {"response": "Your numbered answers (or empty string if none)"}"""
 
 # ---------------------------------------------------------------------------
 # JSON parsing utilities

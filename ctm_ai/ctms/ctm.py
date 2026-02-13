@@ -12,9 +12,12 @@ from .ctm_base import BaseConsciousTuringMachine
 
 
 class ConsciousTuringMachine(BaseConsciousTuringMachine):
-    def __init__(self, ctm_name: Optional[str] = None) -> None:
+    def __init__(
+        self, ctm_name: Optional[str] = None, detailed_log_dir: str = 'detailed_info'
+    ) -> None:
         self.config = ConsciousTuringMachineConfig.from_ctm(ctm_name)
         self.iteration_history = []
+        self.detailed_log_dir = detailed_log_dir
         self.load_ctm()
 
     def __call__(
@@ -174,8 +177,8 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         if self.detailed_log is None or self.detailed_log['instance_id'] is None:
             return
 
-        # Create detailed_info folder if not exists
-        output_dir = 'detailed_info'
+        # Create detailed log folder if not exists
+        output_dir = self.detailed_log_dir
         os.makedirs(output_dir, exist_ok=True)
 
         # Remove current_iteration from the log before saving
