@@ -5,7 +5,7 @@ from .processor_code import CodeProcessor
 from .processor_language import LanguageProcessor
 from .processor_math import MathProcessor
 from .processor_search import SearchProcessor
-from .processor_tool import ToolProcessor
+from .processor_tool import ToolProcessor, register_tool_processors
 from .processor_video import VideoProcessor
 from .processor_vision import VisionProcessor
 from .rapidapi_processors.processor_exercise import ExerciseProcessor
@@ -38,4 +38,5 @@ __all__ = [
     'YouTubeProcessor',
     'ExerciseProcessor',
     'MusicProcessor',
+    'register_tool_processors',
 ]

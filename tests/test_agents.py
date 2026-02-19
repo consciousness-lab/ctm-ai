@@ -17,7 +17,7 @@ import sys
 # Add parent directory to path to import llm_utils
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'exp_affective'))
 
-from llm_utils import create_all_agents, check_api_key
+from llm_utils import check_api_key, create_all_agents
 
 # URFunny sample 408
 # Context: "so yeah i'm a newspaper cartoonist political cartoonist"

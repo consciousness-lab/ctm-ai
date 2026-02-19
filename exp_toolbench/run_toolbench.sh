@@ -9,4 +9,5 @@ python run_ctm.py \
 --input_query_file data/instruction/G1_query.json \
 --output_answer_file ./ctm_toolbench \
 --toolbench_key $TOOLBENCH_KEY \
+--ctm_name tooluse_ctm \
 --test True

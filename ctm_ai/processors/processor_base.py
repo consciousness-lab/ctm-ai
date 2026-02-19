@@ -6,6 +6,7 @@ from litellm import completion
 from numpy.typing import NDArray
 
 from ..chunks import Chunk
+from ..configs.ctm_config_base import DEFAULT_SCORE_WEIGHTS
 from ..utils import (
     configure_litellm,
     get_completion_kwargs,
@@ -13,7 +14,12 @@ from ..utils import (
     get_required_api_key_name,
     message_exponential_backoff,
 )
-from .utils import JSON_FORMAT_SCORE, parse_json_response_with_scores
+from .prompts.base_prompts import (
+    BASE_JSON_FORMAT_FUSE,
+    BASE_JSON_FORMAT_LINK_FORM,
+    build_base_score_format,
+)
+from .utils import parse_json_response_with_scores
 
 
 class BaseProcessor(object):
@@ -21,7 +27,9 @@ class BaseProcessor(object):
 
     The executor LLM outputs answer, additional_question, and separate
     relevance, confidence, surprise scores in a single call. The final
-    weight is computed as: relevance + confidence + (surprise × 0.2).
+    weight is computed as: relevance × w_r + confidence × w_c + surprise × w_s,
+    where the per-dimension weights are configurable via ``score_weights``
+    (defaults: w_r=1.0, w_c=1.0, w_s=0.2).
     """
 
     _processor_registry: Dict[str, Type['BaseProcessor']] = {}
@@ -74,6 +82,11 @@ class BaseProcessor(object):
         self.max_tokens = kwargs.get('max_tokens', 4096)
         self.return_num = kwargs.get('return_num', 1)
         self.temperature = kwargs.get('temperature', 0.2)
+        self.score_weights: Dict[str, float] = {
+            **DEFAULT_SCORE_WEIGHTS,
+            **(kwargs.get('score_weights') or {}),
+        }
+        self.num_additional_questions: int = kwargs.get('num_additional_questions', 3)
         self.fuse_history = []
         self.winner_answer = []
         self.all_context_history = []
@@ -110,25 +123,26 @@ class BaseProcessor(object):
         )
 
     def add_all_context_history(
-        self, query: str, answer: str, additional_question: str
+        self, query: str, answer: str, additional_questions: List[str]
     ) -> None:
         self.all_context_history.append(
             {
                 'query': query,
                 'answer': answer,
-                'additional_question': additional_question,
+                'additional_questions': additional_questions,
             }
         )
 
     def _build_executor_content(
         self,
         query: str,
-        is_fuse: bool = False,
+        phase: str = 'initial',
         **kwargs: Any,
     ) -> str:
         content = f'Query: {query}\n'
 
-        if not is_fuse:
+        # Add context history for initial and link_form phases
+        if phase in ('initial', 'link_form'):
             if len(self.fuse_history) > 0:
                 content += '\nThere are extra information from other processors:\n'
                 for i, item in enumerate(self.fuse_history, 1):
@@ -139,14 +153,21 @@ class BaseProcessor(object):
                 for i, item in enumerate(self.winner_answer, 1):
                     content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
-        content += JSON_FORMAT_SCORE
+        # Add phase-specific format
+        if phase == 'initial':
+            content += build_base_score_format(self.num_additional_questions)
+        elif phase == 'link_form':
+            content += BASE_JSON_FORMAT_LINK_FORM
+        elif phase == 'fuse':
+            content += BASE_JSON_FORMAT_FUSE
+
         return content
 
     @message_exponential_backoff()
     def ask_executor(
         self,
         messages: List[Dict[str, Any]],
-        default_additional_question: str = '',
+        default_additional_questions: List[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -161,7 +182,9 @@ class BaseProcessor(object):
         contents = [
             response.choices[i].message.content for i in range(len(response.choices))
         ]
-        return parse_json_response_with_scores(contents[0], default_additional_question)
+        return parse_json_response_with_scores(
+            contents[0], default_additional_questions
+        )
 
     def build_executor_messages(
         self,
@@ -171,19 +194,29 @@ class BaseProcessor(object):
     ) -> List[Dict[str, Any]]:
         raise NotImplementedError('Subclasses must implement this method')
 
-    @staticmethod
     def _extract_scores_from_executor_output(
+        self,
         executor_output: Dict[str, Any],
     ) -> Dict[str, float]:
-        """Extract relevance/confidence/surprise from executor output and compute weight."""
+        """Extract relevance/confidence/surprise from executor output and compute weight.
+
+        Weight formula: sum of (score * weight) for each dimension.
+        The per-dimension weights come from ``self.score_weights`` which
+        defaults to ``{relevance: 1.0, confidence: 1.0, surprise: 0.2}``.
+        """
         relevance = float(executor_output.get('relevance', 0.5))
         confidence = float(executor_output.get('confidence', 0.5))
         surprise = float(executor_output.get('surprise', 0.5))
+        w = self.score_weights
         return {
             'relevance': relevance,
             'confidence': confidence,
             'surprise': surprise,
-            'weight': relevance + confidence + (surprise * 0.2),
+            'weight': (
+                relevance * w.get('relevance', 1.0)
+                + confidence * w.get('confidence', 1.0)
+                + surprise * w.get('surprise', 0.2)
+            ),
         }
 
     def ask(
@@ -198,7 +231,7 @@ class BaseProcessor(object):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
         api_manager: Any = None,
-        is_fuse: bool = False,
+        phase: str = 'initial',
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
@@ -212,16 +245,16 @@ class BaseProcessor(object):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
-            is_fuse=is_fuse,
+            phase=phase,
         )
 
         # Log the query content sent to this processor
         from ..utils import logger
 
         logger.info(
-            f'\n{self.name} received query:\n{executor_content[:500]}...'
+            f'\n{self.name} received query (phase={phase}):\n{executor_content[:500]}...'
             if len(executor_content) > 500
-            else f'\n{self.name} received query:\n{executor_content}'
+            else f'\n{self.name} received query (phase={phase}):\n{executor_content}'
         )
 
         executor_messages = self.build_executor_messages(
@@ -238,27 +271,69 @@ class BaseProcessor(object):
         )
         if executor_messages is None:
             return None
+
+        default_qs = (
+            ['Would you like me to explain any specific aspects in more detail?']
+            if phase == 'initial' and self.num_additional_questions > 0
+            else []
+        )
         executor_output = self.ask_executor(
             messages=executor_messages,
-            default_additional_question='Would you like me to explain any specific aspects in more detail?',
+            default_additional_questions=default_qs,
         )
+
+        # Handle different phases
+        if phase == 'link_form':
+            # Need response + relevance for link_form
+            response = executor_output.get('response', '')
+            relevance = float(executor_output.get('relevance', 0.5))
+            return Chunk(
+                time_step=0,
+                processor_name=self.name,
+                gist=response,
+                relevance=relevance,
+                confidence=0.0,
+                surprise=0.0,
+                weight=relevance,
+                additional_questions=[],
+                executor_content=executor_content,
+            )
+        elif phase == 'fuse':
+            # Only need response for fuse
+            response = executor_output.get('response')
+            if response is None:
+                return None
+            return Chunk(
+                time_step=0,
+                processor_name=self.name,
+                gist=response,
+                relevance=0.0,
+                confidence=0.0,
+                surprise=0.0,
+                weight=0.0,
+                additional_questions=[],
+                executor_content=executor_content,
+            )
+
+        # Initial phase - full processing
         if executor_output.get('response') is None:
             return None
         self.add_all_context_history(
             query,
             executor_output['response'],
-            executor_output['additional_question'],
+            executor_output['additional_questions'],
         )
 
         # Extract scores from executor output
         scorer_output = self._extract_scores_from_executor_output(executor_output)
-        additional_question = executor_output['additional_question'] or ''
+        additional_questions = executor_output['additional_questions'] or []
 
         chunk = self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,
             executor_output=executor_output,
-            additional_question=additional_question,
+            additional_questions=additional_questions,
+            executor_content=executor_content,
         )
         return chunk
 
@@ -280,7 +355,8 @@ class BaseProcessor(object):
         name: str,
         executor_output: Dict[str, Any],
         scorer_output: Dict[str, float],
-        additional_question: str = '',
+        additional_questions: List[str] = None,
+        executor_content: str = '',
     ) -> Chunk:
         return Chunk(
             time_step=0,
@@ -290,7 +366,8 @@ class BaseProcessor(object):
             confidence=scorer_output['confidence'],
             surprise=scorer_output['surprise'],
             weight=scorer_output['weight'],
-            additional_question=additional_question,
+            additional_questions=additional_questions or [],
+            executor_content=executor_content,
         )
 
     def __hash__(self):

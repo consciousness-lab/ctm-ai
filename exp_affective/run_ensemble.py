@@ -55,9 +55,14 @@ def majority_vote(votes):
 
 
 def run_instance(
-    test_file, dataset, dataset_name,
-    text_agent, audio_agent, video_agent,
-    tracker, output_file,
+    test_file,
+    dataset,
+    dataset_name,
+    text_agent,
+    audio_agent,
+    video_agent,
+    tracker,
+    output_file,
 ):
     """Process one sample: load inputs -> 3 parallel agent calls -> majority vote -> save."""
     start_time = time.time()
@@ -118,7 +123,9 @@ def run_instance(
 
     label_normalized = normalize_label(label)
     is_correct = final_vote == label_normalized
-    print(f'  Result: {final_vote} | GT: {label_normalized} | {"✓" if is_correct else "✗"} ({duration:.1f}s)')
+    print(
+        f'  Result: {final_vote} | GT: {label_normalized} | {"✓" if is_correct else "✗"} ({duration:.1f}s)'
+    )
 
     # Step 3: Save result
     result = {
@@ -148,26 +155,41 @@ if __name__ == '__main__':
         description='Modality Ensemble (Text+Audio+Video majority voting)'
     )
     parser.add_argument(
-        '--dataset_name', type=str, default='urfunny',
-        choices=['urfunny', 'mustard'], help='Dataset name (default: urfunny)',
+        '--dataset_name',
+        type=str,
+        default='urfunny',
+        choices=['urfunny', 'mustard'],
+        help='Dataset name (default: urfunny)',
     )
     parser.add_argument(
-        '--provider', type=str, default='gemini',
-        choices=['gemini', 'qwen'], help='LLM provider (default: gemini)',
+        '--provider',
+        type=str,
+        default='gemini',
+        choices=['gemini', 'qwen'],
+        help='LLM provider (default: gemini)',
     )
     parser.add_argument(
-        '--model', type=str, default=None,
+        '--model',
+        type=str,
+        default=None,
         help='Model name for litellm (default: auto based on provider)',
     )
     parser.add_argument(
-        '--dataset', type=str, default=None,
+        '--dataset',
+        type=str,
+        default=None,
         help='Path to dataset JSON file (default: auto based on dataset_name)',
     )
     parser.add_argument(
-        '--output', type=str, default=None, help='Output JSONL file path',
+        '--output',
+        type=str,
+        default=None,
+        help='Output JSONL file path',
     )
     parser.add_argument(
-        '--temperature', type=float, default=1.0,
+        '--temperature',
+        type=float,
+        default=1.0,
         help='Sampling temperature (default: 1.0)',
     )
     args = parser.parse_args()
@@ -193,14 +215,18 @@ if __name__ == '__main__':
     video_agent = create_agent(
         'video', provider=args.provider, model=args.model, temperature=args.temperature
     )
-    print(f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {text_agent.model}')
+    print(
+        f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {text_agent.model}'
+    )
     print(f'Agents: TextAgent + AudioAgent + VideoAgent -> Majority Vote')
 
     dataset = load_data(args.dataset)
     test_list = list(dataset.keys())
     processed_keys = load_processed_keys(output_file)
     if processed_keys:
-        print(f'Resuming: {len(processed_keys)} done, {len(test_list) - len(processed_keys)} remaining')
+        print(
+            f'Resuming: {len(processed_keys)} done, {len(test_list) - len(processed_keys)} remaining'
+        )
 
     try:
         for test_file in test_list:
@@ -208,9 +234,14 @@ if __name__ == '__main__':
                 continue
             try:
                 run_instance(
-                    test_file, dataset, args.dataset_name,
-                    text_agent, audio_agent, video_agent,
-                    tracker, output_file,
+                    test_file,
+                    dataset,
+                    args.dataset_name,
+                    text_agent,
+                    audio_agent,
+                    video_agent,
+                    tracker,
+                    output_file,
                 )
             except Exception as e:
                 print(f'[ERROR] {test_file}: {e}')

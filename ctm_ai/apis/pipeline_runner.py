@@ -1,4 +1,5 @@
 import json
+import multiprocessing
 import os
 import random
 
@@ -8,14 +9,30 @@ from .api_manager import contain, get_white_list, rapidapi_wrapper
 from .api_server import standardize
 
 
-def method_converter(env, query):
-    """Convert method using CTM"""
-    from ctm_ai.ctms import CTM
+def method_converter(
+    env,
+    query,
+    num_additional_questions: int = 3,
+    ctm_name: str = None,
+):
+    """
+    Convert method using CTM.
 
-    ctm = CTM(io_function=env, ctm_name='toolbench')
-    answer = ctm.forward(
+    Args:
+        env: The API environment/manager
+        query: The query to process
+        num_additional_questions: Number of additional questions to generate (default: 3)
+        ctm_name: Optional CTM config name to load from ctm_conf/{ctm_name}_config.json
+    """
+    from ctm_ai.ctms import ToolCTM
+
+    ctm = ToolCTM(
+        api_manager=env,
+        ctm_name=ctm_name,
+        num_additional_questions=num_additional_questions,
+    )
+    answer = ctm(
         query=query,
-        io_function=env,
     )
     return answer
 
@@ -46,8 +63,30 @@ def run_single_task(
     if (not server) and os.path.exists(output_file_path):
         return
 
+    # Set up logging for this query_id
+    from ctm_ai.utils import set_iteration_log_file
+
+    log_file = os.path.join(output_dir_path, f'ctm_iterations_{query_id}.jsonl')
+    set_iteration_log_file(str(query_id), log_file)
+
     [callback.on_tool_retrieval_start() for callback in callbacks]
     env = rapidapi_wrapper(data_dict, tool_des, args, process_id=process_id)
+
+    if (
+        env.funcs_to_all_info is None
+        or len(env.funcs_to_all_info) == 0
+        or len(env.tool_names) == 0
+        or len(env.functions) == 0
+    ):
+        if process_id == 0:
+            print(
+                colored(
+                    f'[process({process_id})]Skipping query {query_id}: no available tools/functions',
+                    'yellow',
+                )
+            )
+        return None
+
     [callback.on_tool_retrieval_end(tools=env.functions) for callback in callbacks]
     query = data_dict['query']
 
@@ -67,9 +106,14 @@ def run_single_task(
         for callback in callbacks
     ]
 
-    answer = method_converter(
+    num_additional_questions = getattr(args, 'num_additional_questions', 3)
+    ctm_name = getattr(args, 'ctm_name', None)
+
+    answer, weight_score, parsed_answer = method_converter(
         env=env,
         query=query,
+        num_additional_questions=num_additional_questions,
+        ctm_name=ctm_name,
     )
 
     [
@@ -79,7 +123,17 @@ def run_single_task(
         )
         for callback in callbacks
     ]
-
+    if output_dir_path is not None:
+        with open(output_file_path, 'w') as writer:
+            data = {}
+            data['query'] = query
+            data['query_id'] = query_id
+            data['final_answer'] = answer
+            data['weight_score'] = weight_score
+            data['parsed_answer'] = parsed_answer
+            json.dump(data, writer, indent=2)
+            success = True
+            print(colored(f'[process({process_id})]valid={success}', 'green'))
     return answer
 
 
@@ -110,6 +164,11 @@ class pipeline_runner:
         for query_id, data_dict in enumerate(querys):
             if 'query_id' in data_dict:
                 query_id = data_dict['query_id']
+
+            if hasattr(args, 'query_id') and args.query_id is not None:
+                if query_id != args.query_id:
+                    continue
+
             if 'api_list' in data_dict:
                 origin_tool_names = [
                     standardize(cont['tool_name']) for cont in data_dict['api_list']
@@ -137,9 +196,18 @@ class pipeline_runner:
             task_list = [task_list[0]]
             print('========================TEST MODE=========================')
             print(f'task_list: {task_list}')
+
+        if hasattr(self.args, 'query_id') and self.args.query_id is not None:
+            if not task_list:
+                print(f'Warning: No task found with query_id={self.args.query_id}')
+            else:
+                print(
+                    f'Found {len(task_list)} task(s) with query_id={self.args.query_id}'
+                )
+
         return task_list
 
-    def run(self):
+    def run(self, num_processes=1):
         """Run the pipeline with the task list"""
         random.seed(42)
         random.shuffle(self.task_list)
@@ -158,8 +226,16 @@ class pipeline_runner:
         task_list = new_task_list
         print(f'undo tasks: {len(task_list)}')
 
-        for k, task in enumerate(task_list):
-            print(
-                f'process[{self.process_id}] doing task {k}/{len(task_list)}: real_task_id_{task[2]}'
-            )
-            run_single_task(*task, process_id=self.process_id)
+        if num_processes > 1:
+            print(f'Running in parallel with {num_processes} processes.')
+            tasks_for_pool = [
+                task + (i % num_processes,) for i, task in enumerate(task_list)
+            ]
+            with multiprocessing.Pool(processes=num_processes) as pool:
+                pool.starmap(run_single_task, tasks_for_pool)
+        else:
+            for k, task in enumerate(task_list):
+                print(
+                    f'process[{self.process_id}] doing task {k}/{len(task_list)}: real_task_id_{task[1]}'
+                )
+                run_single_task(*task, process_id=self.process_id)

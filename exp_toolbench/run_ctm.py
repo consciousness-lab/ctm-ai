@@ -69,14 +69,38 @@ if __name__ == '__main__':
         '--openai_key',
         type=str,
         default='',
-        required=True,
+        required=False,
         help='your openai key to request openai service',
     )
     parser.add_argument(
         '--test', type=bool, default=False, help='To use test mode or not.'
     )
+    parser.add_argument(
+        '--num_processes',
+        type=int,
+        default=1,
+        help='Number of parallel processes to run.',
+    )
+    parser.add_argument(
+        '--query_id',
+        type=int,
+        default=None,
+        help='Specific query ID to run. If not specified, run all queries.',
+    )
+    parser.add_argument(
+        '--num_additional_questions',
+        type=int,
+        default=3,
+        help='Number of additional questions to generate per processor (default: 3, set to 0 to disable).',
+    )
+    parser.add_argument(
+        '--ctm_name',
+        type=str,
+        default=None,
+        help="CTM config name to load from ctm_conf/{ctm_name}_config.json (e.g. 'tooluse_ctm').",
+    )
 
     args = parser.parse_args()
 
     pipeline_runner = pipeline_runner(args)
-    pipeline_runner.run()
+    pipeline_runner.run(num_processes=args.num_processes)

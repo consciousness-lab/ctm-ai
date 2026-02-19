@@ -20,12 +20,17 @@ from .loader import (
     load_video,
 )
 from .logger import (
+    get_iteration_log_file,
+    log_forward_iteration,
+    log_go_up_iteration,
+    log_iteration,
     logger,
     logging_ask,
     logging_chunk,
     logging_chunk_compete,
     logging_func,
     logging_func_with_count,
+    set_iteration_log_file,
 )
 from .tool import logprobs_to_softmax
 
@@ -60,6 +65,12 @@ __all__ = [
     'logging_func',
     'logging_func_with_count',
     'logging_chunk_compete',
+    # Iteration logging for ToolBench
+    'set_iteration_log_file',
+    'get_iteration_log_file',
+    'log_iteration',
+    'log_go_up_iteration',
+    'log_forward_iteration',
     # Tools
     'logprobs_to_softmax',
 ]
