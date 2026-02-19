@@ -148,7 +148,9 @@ class BaseConsciousTuringMachine(ABC):
     def parse_answer(self, answer: str, query: str) -> str:
         from litellm import completion
 
-        parse_prompt = self.config.parse_prompt_template.format(answer=answer)
+        parse_prompt = self.config.parse_prompt_template.format(
+            answer=answer, query=query
+        )
 
         parse_model = self.config.parse_model or 'gemini/gemini-2.5-flash-lite'
         completion_kwargs = get_completion_kwargs(parse_model)
