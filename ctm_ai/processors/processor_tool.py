@@ -1,104 +1,130 @@
-import json
-from typing import Any, Dict, List
+"""
+ToolProcessor for ToolBench – handles tool/API calling in CTM framework.
 
-from litellm import completion
-
-from ..chunks import Chunk
-from .processor_base import BaseProcessor
-from .utils import JSON_FORMAT_SCORE, parse_json_response_with_scores
-
-TOOL_SYSTEM_PROMPT = """
-You are a tool agent designed to help users by utilizing available tools to answer their queries or complete tasks.
+Two-stage pipeline (applies to every phase):
+  Stage 1 – Tool decision + execution   (with exponential backoff)
+  Stage 2 – Answer synthesis + scoring   (via ask_executor, also with backoff)
 """
 
+import json
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+from litellm import completion
+from numpy.typing import NDArray
+
+from ..chunks import Chunk
+from ..utils import message_exponential_backoff
+from .processor_base import BaseProcessor
+from .prompts.tool_prompts import (
+    DEFAULT_NUM_ADDITIONAL_QUESTIONS,
+    TOOLBENCH_SYSTEM_PROMPT,
+    TOOLBENCH_TOOL_DECISION_PROMPT,
+    build_tool_stage2_prompt,
+)
 
 def clean_tools_for_vertex_ai(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """
-    Clean tool definitions to remove fields not supported by Vertex AI
-    """
+    """Remove fields not supported by Vertex AI from tool definitions."""
     cleaned_tools = []
     for tool in tools:
-        if tool.get('type') == 'function' and 'function' in tool:
-            function_def = tool['function'].copy()
+        if tool.get("type") == "function" and "function" in tool:
+            function_def = tool["function"].copy()
 
-            # Clean parameters
-            if 'parameters' in function_def:
-                params = function_def['parameters'].copy()
-
-                # Remove 'optional' field
-                if 'optional' in params:
-                    del params['optional']
-
-                # Clean properties to remove 'example_value'
-                if 'properties' in params:
+            if "parameters" in function_def:
+                params = function_def["parameters"].copy()
+                if "optional" in params:
+                    del params["optional"]
+                if "properties" in params:
                     cleaned_properties = {}
-                    for prop_name, prop_def in params['properties'].items():
+                    for prop_name, prop_def in params["properties"].items():
                         cleaned_prop = prop_def.copy()
-                        if 'example_value' in cleaned_prop:
-                            del cleaned_prop['example_value']
+                        if "example_value" in cleaned_prop:
+                            del cleaned_prop["example_value"]
                         cleaned_properties[prop_name] = cleaned_prop
-                    params['properties'] = cleaned_properties
+                    params["properties"] = cleaned_properties
+                function_def["parameters"] = params
 
-                function_def['parameters'] = params
-
-            cleaned_tool = {'type': 'function', 'function': function_def}
-            cleaned_tools.append(cleaned_tool)
+            cleaned_tools.append({"type": "function", "function": function_def})
         else:
             cleaned_tools.append(tool)
-
     return cleaned_tools
 
+def register_tool_processors(openai_function_names: List[str]) -> None:
+    """Register tool processors dynamically based on available function names."""
+    for name in openai_function_names:
+        BaseProcessor._processor_registry[name] = ToolProcessor
 
-def register_tool_processors(openai_function_names: List[str]):
-    for openai_function_name in openai_function_names:
-        processor_name = openai_function_name
-        BaseProcessor._processor_registry[processor_name] = ToolProcessor
 
-
-@BaseProcessor.register_processor('tool_processor')
+@BaseProcessor.register_processor("tool_processor")
 class ToolProcessor(BaseProcessor):
-    REQUIRED_KEYS = ['OPENAI_API_KEY']
+    """
+    Processor for ToolBench that uses a two-stage pipeline for all phases:
+
+      Stage 1 – LLM decides whether to call a tool; if yes, executes it.
+      Stage 2 – LLM synthesizes a final answer (+ scores, per phase) based on
+                the complete Stage-1 outcome (tool called or not, result, etc.).
+
+    This ensures scores are generated *after* seeing the full picture and in the
+    *same* call as the final answer, consistent with BaseProcessor's approach.
+    """
+
+    TOOL_EXEC_RETRIES = 3
+
+    def __init__(
+        self, name: str, group_name: Optional[str] = None, *args: Any, **kwargs: Any
+    ) -> None:
+        super().__init__(name, group_name, *args, **kwargs)
+        self.api_manager = kwargs.get("api_manager")
+        self.system_prompt = kwargs.get("system_prompt") or TOOLBENCH_SYSTEM_PROMPT
+        self.num_additional_questions = kwargs.get(
+            "num_additional_questions", DEFAULT_NUM_ADDITIONAL_QUESTIONS
+        )
+
+    # ------------------------------------------------------------------
+    # Stage 1 helpers
+    # ------------------------------------------------------------------
 
     def _build_executor_content(
         self,
         query: str,
-        api_manager: Any = None,
-        function_name: str = None,
-        *args: Any,
+        phase: str = "initial",
         **kwargs: Any,
     ) -> str:
-        content = f'Task Description: {query}\n'
+        """Build Stage 1 content: task + context + tool-decision protocol.
 
-        content += f"""
-You should utilize the information in the context history and the tool `{function_name}` to solve the task.
-In the context history, there might have some answers to the task, or some information you can use to call the tool `{function_name}`, you should utilize them to better solve and answer the task. 
+        Context (fuse_history / winner_answer) is only included for initial and
+        link_form phases.  The fuse phase does not need it.
 
-DECISION:
-- First decide whether to call the tool `{function_name}`.
-- If the tool helps even partially or it is one of the steps/tools to solve the task, CALL IT.
-- If the tool does not help at all, or you think the context history already provides enough information to answer the task, answer directly, provide comprehensive answer to the task.
+        The context is placed *between* the task description and the DECISION
+        section so the LLM sees the full picture before deciding whether to
+        call the tool.
+        """
+        context_parts: List[str] = []
 
-OUTPUT PROTOCOL (MUST follow strictly):
-- If you CALL the tool:
-  - Return ONLY a function call via tool_calls.
-  - Set assistant.content to null (no natural-language text).
-  - Do NOT include any text explanation.
-- If you DO NOT call the tool:
-  - Return ONLY a natural-language answer in assistant.content.
-  - Do NOT include tool_calls.
-  - Include all the information you think is useful to answer the task in the extra information and previous answers.
-"""
+        if phase in ("initial", "link_form"):
+            if self.fuse_history:
+                context_parts.append(
+                    "The following extra information was obtained from other tools:"
+                )
+                for i, item in enumerate(self.fuse_history, 1):
+                    context_parts.append(
+                        f'{i}. {item["processor_name"]}: {item["answer"]}'
+                    )
 
-        if len(self.fuse_history) > 0:
-            content += '\nThere are extra information from other tools:\n'
-            for i, item in enumerate(self.fuse_history, 1):
-                content += f'{i}. {item["answer"]}\n'
+            if self.winner_answer:
+                context_parts.append(
+                    "The following are previous answers to the same query:"
+                )
+                for i, item in enumerate(self.winner_answer, 1):
+                    context_parts.append(
+                        f'{i}. {item["processor_name"]}: {item["answer"]}'
+                    )
 
-        if len(self.winner_answer) > 0:
-            content += '\nThere are some previous answers to the same query, think further based on this answer:\n'
-            for i, item in enumerate(self.winner_answer, 1):
-                content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
-        return content
+        context_str = "\n".join(context_parts) if context_parts else ""
+
+        return TOOLBENCH_TOOL_DECISION_PROMPT.format(
+            query=query, function_name=self.name, context=context_str
+        )
 
     def build_executor_messages(
         self,
@@ -106,215 +132,229 @@ OUTPUT PROTOCOL (MUST follow strictly):
         *args: Any,
         **kwargs: Any,
     ) -> List[Dict[str, Any]]:
-        """ToolProcessor doesn't use this method as it has custom tool execution flow."""
-        # This method is required by BaseProcessor but not used in custom ask()
-        return None
-
-    def ask_executor(
-        self,
-        query: str,
-        api_manager: Any = None,
-        function_name: str = None,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """Execute tool and get structured response with self-evaluation scores."""
-        messages = [
-            {'role': 'system', 'content': TOOL_SYSTEM_PROMPT},
-            {'role': 'user', 'content': query},
+        """Build messages for Stage 1 LLM call."""
+        return [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": query},
         ]
 
-        # Check if api_manager is None
-        if api_manager is None:
-            raise ValueError(
-                f'api_manager is None for function {function_name}. This should not happen in tool processors.'
-            )
+    @message_exponential_backoff()
+    def _ask_with_tools(
+        self,
+        messages: List[Dict[str, Any]],
+        tools: List[Dict[str, Any]],
+    ) -> Any:
+        """Stage 1 LLM call with tool definitions and exponential backoff."""
+        call_kwargs = {
+            **self._completion_kwargs,
+            "messages": messages,
+            "max_tokens": self.max_tokens,
+            "tools": tools,
+            "tool_choice": "auto",
+        }
+        return completion(**call_kwargs)
 
-        # Clean tools for Vertex AI compatibility
-        raw_tools = api_manager.funcs_to_all_info[function_name]
+    def _tool_decision_and_execute(
+        self,
+        query: str,
+        api_manager: Any,
+        function_name: str,
+    ) -> Tuple[bool, Optional[str], Optional[str], str]:
+        """
+        Stage 1: decide whether to call a tool and execute if needed.
+
+        Returns:
+            (tool_called, tool_name, tool_args, raw_result)
+        """
+        if api_manager is None:
+            return False, None, None, f"No API manager available for {function_name}"
+
+        raw_tools = api_manager.funcs_to_all_info.get(function_name, [])
+        if isinstance(raw_tools, dict):
+            raw_tools = [{"type": "function", "function": raw_tools}]
         cleaned_tools = clean_tools_for_vertex_ai(raw_tools)
 
-        response = completion(
-            **self._completion_kwargs,
-            messages=messages,
-            tools=cleaned_tools,
-            tool_choice='auto',
-        )
-        response_message = response.choices[0].message
-        retry_times = 3
+        messages = self.build_executor_messages(query)
 
-        # Process response based on whether tool was called or not
-        if response_message.content is not None and response_message.tool_calls is None:
-            # Case 1: Model provided direct answer without calling tool
-            executor_answer = response_message.content
-            structured_output = self._build_structured_output_from_text(
-                query, executor_answer, *args, **kwargs
-            )
-        elif (
-            response_message.tool_calls is not None and response_message.content is None
-        ):
-            # Case 2: Model called the tool
-            tool_call = response_message.tool_calls[0]
-            func_name = getattr(tool_call.function, 'name', None) or function_name
-            func_args = getattr(tool_call.function, 'arguments', '{}')
+        try:
+            response = self._ask_with_tools(messages, cleaned_tools)
+        except Exception as e:
+            return False, None, None, f"Error calling LLM: {e}"
+
+        if response is None:
+            return False, None, None, "LLM returned None after retries"
+
+        msg = response.choices[0].message
+
+        # Case 1: direct text answer (no tool call)
+        if msg.content is not None and msg.tool_calls is None:
+            return False, None, None, msg.content
+
+        # Case 2: model chose to call a tool
+        if msg.tool_calls is not None:
+            tool_call = msg.tool_calls[0]
+            func_name = getattr(tool_call.function, "name", None) or function_name
+            func_args = getattr(tool_call.function, "arguments", "{}")
 
             if isinstance(func_args, dict):
-                function_args = json.dumps(func_args, ensure_ascii=False)
+                func_args_str = json.dumps(func_args, ensure_ascii=False)
             else:
-                function_args = str(func_args) if func_args is not None else '{}'
+                func_args_str = str(func_args) if func_args is not None else "{}"
 
-            # Execute the tool with retries
-            for i in range(retry_times):
+            tool_result = None
+            for attempt in range(self.TOOL_EXEC_RETRIES):
                 try:
-                    tool_answer, status_code = api_manager.step(
-                        action=func_name, input_str=function_args
+                    tool_result, status_code = api_manager.step(
+                        action=func_name, input_str=func_args_str
                     )
                     if status_code in (0, 3):
                         break
                 except Exception as e:
-                    if i < retry_times - 1:
+                    if attempt < self.TOOL_EXEC_RETRIES - 1:
                         continue
-                    else:
-                        tool_answer = {
-                            'error': f'tool execution failed: {type(e).__name__}: {e}',
-                            'response': '',
+                    tool_result = json.dumps(
+                        {
+                            "error": f"tool execution failed: {type(e).__name__}: {e}",
+                            "response": "",
                         }
+                    )
 
-            structured_output = self._build_structured_output_from_tool(
-                query, tool_answer, *args, **kwargs
-            )
-        else:
-            # Handle unexpected case
-            structured_output = {
-                'response': 'No valid response received from the model',
-                'additional_questions': ['Can you provide more information?'],
-                'relevance': 0.5,
-                'confidence': 0.5,
-                'surprise': 0.5,
-            }
+            if tool_result is not None and not isinstance(tool_result, str):
+                tool_result = str(tool_result)
 
-        return structured_output
+            return True, func_name, func_args_str, tool_result or ""
 
-    def _build_structured_output_from_text(
-        self, query: str, text_answer: str, *args: Any, **kwargs: Any
-    ) -> Dict[str, Any]:
-        """Build structured output with scores when model provides direct text answer."""
-        context_info = self._get_context_info()
+        # Case 3: unexpected (no content, no tool_calls)
+        return False, None, None, "No valid response received from the model"
 
-        prompt = f"""Regarding the task: {query}
-
-The model's direct answer:
-{text_answer}
-{context_info}
-
-Based on this answer, please:
-1. Provide your final response to the task
-2. Generate an additional question if you need information from other tools (e.g., "what is the weather in the city?", "what is the stock price?"). If no additional information is needed, leave it empty.
-3. Self-evaluate your response with relevance, confidence, and surprise scores.
-
-{JSON_FORMAT_SCORE}"""
-
-        return self._ask_for_structured_output(prompt, *args, **kwargs)
-
-    def _build_structured_output_from_tool(
-        self, query: str, tool_answer: Any, *args: Any, **kwargs: Any
-    ) -> Dict[str, Any]:
-        """Build structured output with scores after tool execution."""
-        context_info = self._get_context_info()
-
-        prompt = f"""Regarding the task: {query}
-
-The tool execution result:
-{tool_answer}
-{context_info}
-
-Based on the tool result, please:
-1. Provide a comprehensive response to the task (be specific, don't just say you called the tool successfully)
-2. Generate an additional question if you need information from other tools. If no additional information is needed, leave it empty.
-3. Self-evaluate your response with relevance, confidence, and surprise scores.
-
-{JSON_FORMAT_SCORE}"""
-
-        return self._ask_for_structured_output(prompt, *args, **kwargs)
-
-    def _get_context_info(self) -> str:
-        """Get formatted context information from history."""
-        context_info = ''
-        if len(self.fuse_history) > 0:
-            context_info += '\nExtra information from other tools:\n'
-            for i, item in enumerate(self.fuse_history, 1):
-                context_info += f'{i}. {item["answer"]}\n'
-
-        if len(self.winner_answer) > 0:
-            context_info += '\nPrevious answers to consider:\n'
-            for i, item in enumerate(self.winner_answer, 1):
-                context_info += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
-
-        return context_info
-
-    def _ask_for_structured_output(
-        self, prompt: str, *args: Any, **kwargs: Any
-    ) -> Dict[str, Any]:
-        """Get structured output with self-evaluation scores using litellm."""
-        call_kwargs = {
-            **self._completion_kwargs,
-            'messages': [{'role': 'user', 'content': prompt}],
-            'max_tokens': self.max_tokens,
-            'n': self.return_num,
-            'temperature': self.temperature,
-            **kwargs,
-        }
-        response = completion(**call_kwargs)
-
-        content = response.choices[0].message.content
-
-        # Parse the JSON response with scores
-        parsed = parse_json_response_with_scores(
-            content, default_additional_questions=['Can you provide more information?']
-        )
-
-        return parsed
+    # ------------------------------------------------------------------
+    # Main entry point
+    # ------------------------------------------------------------------
 
     def ask(
         self,
         query: str,
+        text: Optional[str] = None,
+        image: Optional[np.uint8] = None,
+        image_path: Optional[str] = None,
+        audio: Optional[NDArray[np.float32]] = None,
+        audio_path: Optional[str] = None,
+        video_frames: Optional[List[NDArray[np.uint8]]] = None,
+        video_frames_path: Optional[List[str]] = None,
+        video_path: Optional[str] = None,
         api_manager: Any = None,
-        phase: str = 'initial',
+        phase: str = "initial",
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
-        """Process tool-based queries with self-evaluation scoring."""
-        content = self._build_executor_content(
+        """
+        Two-stage pipeline (all phases):
+          Stage 1 – Tool decision + optional execution (with backoff)
+          Stage 2 – Synthesis + self-evaluation    (via ask_executor with backoff)
+        """
+        if api_manager is None:
+            api_manager = self.api_manager
+
+        # ── Stage 1: Tool decision + execution ──
+        executor_content = self._build_executor_content(query=query, phase=phase)
+
+        from ..utils import logger
+
+        logger.info(
+            f"\n{self.name} received query (phase={phase}):\n{executor_content[:500]}..."
+            if len(executor_content) > 500
+            else f"\n{self.name} received query (phase={phase}):\n{executor_content}"
+        )
+
+        tool_called, tool_name, tool_args, raw_result = (
+            self._tool_decision_and_execute(
+                query=executor_content,
+                api_manager=api_manager,
+                function_name=self.name,
+            )
+        )
+
+        # ── Stage 2: Synthesis + scoring ──
+        # Context (fuse_history / winner_answer) is passed for initial and
+        # link_form so the LLM can synthesize a comprehensive answer.
+        # The fuse phase only needs to produce a short answer—no context.
+        include_context = phase in ("initial", "link_form")
+        stage2_prompt = build_tool_stage2_prompt(
             query=query,
-            api_manager=api_manager,
-            function_name=self.name,
+            tool_called=tool_called,
+            tool_name=tool_name,
+            tool_args=tool_args,
+            raw_result=raw_result,
+            phase=phase,
+            fuse_history=self.fuse_history if include_context else None,
+            winner_answer=self.winner_answer if include_context else None,
+            num_additional_questions=(
+                self.num_additional_questions if phase == "initial" else 0
+            ),
         )
 
-        executor_output = self.ask_executor(
-            query=content,
-            api_manager=api_manager,
-            function_name=self.name,
-            *args,
-            **kwargs,
+        default_qs = (
+            ["Can you provide more information?"]
+            if phase == "initial" and self.num_additional_questions > 0
+            else []
         )
 
-        if phase == 'fuse':
-            self.add_fuse_history(query, executor_output['response'])
+        stage2_output = self.ask_executor(
+            messages=[{"role": "user", "content": stage2_prompt}],
+            default_additional_questions=default_qs,
+        )
+
+        # ── Build Chunk based on phase ──
+        if stage2_output is None:
+            return None
+
+        if phase == "fuse":
+            response_str = stage2_output.get("response", "")
+            self.add_fuse_history(query, response_str, self.name)
+            return Chunk(
+                time_step=0,
+                processor_name=self.name,
+                gist=response_str,
+                relevance=0.0,
+                confidence=0.0,
+                surprise=0.0,
+                weight=0.0,
+                additional_questions=[],
+                executor_content=executor_content,
+            )
+
+        if phase == "link_form":
+            response_str = stage2_output.get("response", "")
+            relevance = float(stage2_output.get("relevance", 0.5))
+            return Chunk(
+                time_step=0,
+                processor_name=self.name,
+                gist=response_str,
+                relevance=relevance,
+                confidence=0.0,
+                surprise=0.0,
+                weight=relevance,
+                additional_questions=[],
+                executor_content=executor_content,
+            )
+
+        # ── Initial phase: full processing ──
+        if stage2_output.get("response") is None:
+            return None
 
         self.add_all_context_history(
             query,
-            executor_output['response'],
-            executor_output.get('additional_questions', []),
+            stage2_output["response"],
+            stage2_output.get("additional_questions", []),
         )
 
-        # Extract scores using the base processor method
-        scorer_output = self._extract_scores_from_executor_output(executor_output)
-        additional_questions = executor_output.get('additional_questions', [])
+        scorer_output = self._extract_scores_from_executor_output(stage2_output)
+        additional_questions = stage2_output.get("additional_questions", [])
 
-        chunk = self.merge_outputs_into_chunk(
+        return self.merge_outputs_into_chunk(
             name=self.name,
             scorer_output=scorer_output,
-            executor_output=executor_output,
+            executor_output=stage2_output,
             additional_questions=additional_questions,
+            executor_content=executor_content,
         )
-        return chunk

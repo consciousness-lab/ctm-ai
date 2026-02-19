@@ -16,7 +16,6 @@ def pil_to_base64(image) -> str:
 
 @BaseProcessor.register_processor('vision_processor')
 class VisionProcessor(BaseProcessor):
-    REQUIRED_KEYS = []
 
     def build_executor_messages(
         self,

@@ -2,6 +2,13 @@ import json
 from typing import Any, Dict, Optional
 
 
+DEFAULT_SCORE_WEIGHTS: Dict[str, float] = {
+    'relevance': 1.0,
+    'confidence': 1.0,
+    'surprise': 0.2,
+}
+
+
 class ConsciousTuringMachineConfig:
     DEFAULT_PARSE_PROMPT_TEMPLATE = """Based solely on the analysis provided below, give your final answer.
 
@@ -23,6 +30,8 @@ Analysis:
         supervisors_model: str = 'gemini/gemini-2.5-flash-lite',
         supervisors_prompt: str = None,
         parse_prompt_template: Optional[str] = None,
+        score_weights: Optional[Dict[str, float]] = None,
+        num_additional_questions: int = 3,
         **kwargs: Any,
     ) -> None:
         self.ctm_name: Optional[str] = ctm_name
@@ -38,6 +47,11 @@ Analysis:
             parse_prompt_template or self.DEFAULT_PARSE_PROMPT_TEMPLATE
         )
         self.output_threshold = output_threshold
+        self.score_weights: Dict[str, float] = {
+            **DEFAULT_SCORE_WEIGHTS,
+            **(score_weights or {}),
+        }
+        self.num_additional_questions: int = num_additional_questions
         for key, value in kwargs.items():
             setattr(self, key, value)
 

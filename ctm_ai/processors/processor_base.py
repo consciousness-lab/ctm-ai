@@ -6,6 +6,7 @@ from litellm import completion
 from numpy.typing import NDArray
 
 from ..chunks import Chunk
+from ..configs.ctm_config_base import DEFAULT_SCORE_WEIGHTS
 from ..utils import (
     configure_litellm,
     get_completion_kwargs,
@@ -13,12 +14,12 @@ from ..utils import (
     get_required_api_key_name,
     message_exponential_backoff,
 )
-from .utils import (
-    JSON_FORMAT_FUSE,
-    JSON_FORMAT_LINK_FORM,
-    JSON_FORMAT_SCORE,
-    parse_json_response_with_scores,
+from .prompts.base_prompts import (
+    BASE_JSON_FORMAT_LINK_FORM,
+    BASE_JSON_FORMAT_FUSE,
+    build_base_score_format,
 )
+from .utils import parse_json_response_with_scores
 
 
 class BaseProcessor(object):
@@ -26,7 +27,9 @@ class BaseProcessor(object):
 
     The executor LLM outputs answer, additional_question, and separate
     relevance, confidence, surprise scores in a single call. The final
-    weight is computed as: relevance + confidence + (surprise × 0.2).
+    weight is computed as: relevance × w_r + confidence × w_c + surprise × w_s,
+    where the per-dimension weights are configurable via ``score_weights``
+    (defaults: w_r=1.0, w_c=1.0, w_s=0.2).
     """
 
     _processor_registry: Dict[str, Type['BaseProcessor']] = {}
@@ -79,6 +82,11 @@ class BaseProcessor(object):
         self.max_tokens = kwargs.get('max_tokens', 4096)
         self.return_num = kwargs.get('return_num', 1)
         self.temperature = kwargs.get('temperature', 0.2)
+        self.score_weights: Dict[str, float] = {
+            **DEFAULT_SCORE_WEIGHTS,
+            **(kwargs.get('score_weights') or {}),
+        }
+        self.num_additional_questions: int = kwargs.get('num_additional_questions', 3)
         self.fuse_history = []
         self.winner_answer = []
         self.all_context_history = []
@@ -147,11 +155,11 @@ class BaseProcessor(object):
 
         # Add phase-specific format
         if phase == 'initial':
-            content += JSON_FORMAT_SCORE
+            content += build_base_score_format(self.num_additional_questions)
         elif phase == 'link_form':
-            content += JSON_FORMAT_LINK_FORM
+            content += BASE_JSON_FORMAT_LINK_FORM
         elif phase == 'fuse':
-            content += JSON_FORMAT_FUSE
+            content += BASE_JSON_FORMAT_FUSE
 
         return content
 
@@ -186,19 +194,29 @@ class BaseProcessor(object):
     ) -> List[Dict[str, Any]]:
         raise NotImplementedError('Subclasses must implement this method')
 
-    @staticmethod
     def _extract_scores_from_executor_output(
+        self,
         executor_output: Dict[str, Any],
     ) -> Dict[str, float]:
-        """Extract relevance/confidence/surprise from executor output and compute weight."""
+        """Extract relevance/confidence/surprise from executor output and compute weight.
+
+        Weight formula: sum of (score * weight) for each dimension.
+        The per-dimension weights come from ``self.score_weights`` which
+        defaults to ``{relevance: 1.0, confidence: 1.0, surprise: 0.2}``.
+        """
         relevance = float(executor_output.get('relevance', 0.5))
         confidence = float(executor_output.get('confidence', 0.5))
         surprise = float(executor_output.get('surprise', 0.5))
+        w = self.score_weights
         return {
             'relevance': relevance,
             'confidence': confidence,
             'surprise': surprise,
-            'weight': relevance + confidence + (surprise * 0.2),
+            'weight': (
+                relevance * w.get('relevance', 1.0)
+                + confidence * w.get('confidence', 1.0)
+                + surprise * w.get('surprise', 0.2)
+            ),
         }
 
     def ask(
@@ -254,15 +272,14 @@ class BaseProcessor(object):
         if executor_messages is None:
             return None
 
+        default_qs = (
+            ['Would you like me to explain any specific aspects in more detail?']
+            if phase == 'initial' and self.num_additional_questions > 0
+            else []
+        )
         executor_output = self.ask_executor(
             messages=executor_messages,
-            default_additional_questions=(
-                []
-                if phase != 'initial'
-                else [
-                    'Would you like me to explain any specific aspects in more detail?'
-                ]
-            ),
+            default_additional_questions=default_qs,
         )
 
         # Handle different phases

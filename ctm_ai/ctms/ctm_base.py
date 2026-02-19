@@ -1,8 +1,6 @@
 import concurrent.futures
-import json
-import os
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -22,31 +20,7 @@ class BaseConsciousTuringMachine(ABC):
             else ConsciousTuringMachineConfig()
         )
         self.load_ctm()
-        self.detailed_log = None  # Will store detailed execution log
-
-    def __call__(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[np.uint8] = None,
-        image_path: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        audio_path: Optional[str] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
-        video_frames_path: Optional[List[str]] = None,
-        video_path: Optional[str] = None,
-    ) -> Tuple[str, float]:
-        return self.forward(
-            query,
-            text,
-            image,
-            image_path,
-            audio,
-            audio_path,
-            video_frames,
-            video_frames_path,
-            video_path,
-        )
+        self.detailed_log = None
 
     def reset(self) -> None:
         self.load_ctm()
@@ -58,8 +32,10 @@ class BaseConsciousTuringMachine(ABC):
             self.processor_graph.add_node(
                 processor_name=processor_name,
                 processor_group_name=None,
-                system_prompt=processor_config.get('system_prompt'),
-                model=processor_config.get('model'),
+                system_prompt=processor_config.get("system_prompt"),
+                model=processor_config.get("model"),
+                score_weights=self.config.score_weights,
+                num_additional_questions=self.config.num_additional_questions,
             )
 
         self.output_threshold = self.config.output_threshold
@@ -72,8 +48,10 @@ class BaseConsciousTuringMachine(ABC):
         self.processor_graph.add_node(
             processor_name=processor_name,
             processor_group_name=group_name,
-            system_prompt=processor_config.get('system_prompt'),
-            model=processor_config.get('model'),
+            system_prompt=processor_config.get("system_prompt"),
+            model=processor_config.get("model"),
+            score_weights=self.config.score_weights,
+            num_additional_questions=self.config.num_additional_questions,
         )
 
     def remove_processor(self, processor_name: str) -> None:
@@ -91,9 +69,10 @@ class BaseConsciousTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        phase: str = 'initial',
+        api_manager: Any = None,
+        phase: str = "initial",
     ) -> Chunk:
-        """Ask processor with support for both standard and tool processors"""
+        """Ask a single processor, passing api_manager when available."""
         return processor.ask(
             query=query,
             text=text,
@@ -104,6 +83,7 @@ class BaseConsciousTuringMachine(ABC):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
+            api_manager=api_manager,
             phase=phase,
         )
 
@@ -119,9 +99,11 @@ class BaseConsciousTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
-        phase: str = 'initial',
+        api_manager: Any = None,
+        phase: str = "initial",
+        **kwargs,
     ) -> List[Chunk]:
-        """Ask all processors with support for both standard and tool processors"""
+        """Ask all processors in parallel."""
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
@@ -136,6 +118,7 @@ class BaseConsciousTuringMachine(ABC):
                     video_frames,
                     video_frames_path,
                     video_path,
+                    api_manager,
                     phase,
                 )
                 for processor in self.processor_graph.nodes
@@ -145,21 +128,20 @@ class BaseConsciousTuringMachine(ABC):
             ]
         chunks = [chunk for chunk in chunks if chunk is not None]
 
-        # Log detailed information for each chunk
-        if self.detailed_log is not None and phase == 'initial':
-            current_iteration = self.detailed_log['current_iteration']
+        if self.detailed_log is not None and phase == "initial":
+            current_iteration = self.detailed_log["current_iteration"]
             for chunk in chunks:
                 chunk_info = {
-                    'processor_name': chunk.processor_name,
-                    'query': chunk.executor_content or query,
-                    'answer': chunk.gist,
-                    'relevance': chunk.relevance,
-                    'confidence': chunk.confidence,
-                    'surprise': chunk.surprise,
-                    'weight': chunk.weight,
-                    'additional_questions': chunk.additional_questions,
+                    "processor_name": chunk.processor_name,
+                    "query": chunk.executor_content or query,
+                    "answer": chunk.gist,
+                    "relevance": chunk.relevance,
+                    "confidence": chunk.confidence,
+                    "surprise": chunk.surprise,
+                    "weight": chunk.weight,
+                    "additional_questions": chunk.additional_questions,
                 }
-                current_iteration['initial_phase'].append(chunk_info)
+                current_iteration["initial_phase"].append(chunk_info)
 
         return chunks
 
@@ -168,13 +150,13 @@ class BaseConsciousTuringMachine(ABC):
 
         parse_prompt = self.config.parse_prompt_template.format(answer=answer)
 
-        parse_model = self.config.parse_model or 'gemini/gemini-2.5-flash-lite'
+        parse_model = self.config.parse_model or "gemini/gemini-2.5-flash-lite"
         completion_kwargs = get_completion_kwargs(parse_model)
 
         try:
             response = completion(
                 **completion_kwargs,
-                messages=[{'role': 'user', 'content': parse_prompt}],
+                messages=[{"role": "user", "content": parse_prompt}],
                 max_tokens=4096,
                 temperature=0.3,
             )
@@ -183,7 +165,7 @@ class BaseConsciousTuringMachine(ABC):
             return parsed_answer
 
         except Exception as e:
-            logger.warning(f'Failed to parse answer with litellm: {e}')
+            logger.warning(f"Failed to parse answer with litellm: {e}")
             return answer
 
     @logging_func_with_count
@@ -215,33 +197,33 @@ class BaseConsciousTuringMachine(ABC):
             return
 
         # Combine all questions into one query
-        combined_query = 'Please answer the following questions:\n'
+        combined_query = "Please answer the following questions:\n"
         for i, q in enumerate(valid_questions, 1):
-            combined_query += f'{i}. {q}\n'
+            combined_query += f"{i}. {q}\n"
 
         # Use link_form phase - ask all questions at once
         question_chunks = self.ask_processors(
             query=combined_query,
-            phase='link_form',
+            phase="link_form",
             **input_kwargs,
         )
 
         # Log link_form phase details
         if self.detailed_log is not None:
-            current_iteration = self.detailed_log['current_iteration']
+            current_iteration = self.detailed_log["current_iteration"]
             for chunk in question_chunks:
                 link_info = {
-                    'processor_name': chunk.processor_name,
-                    'query': chunk.executor_content or combined_query,
-                    'answer': chunk.gist,
-                    'relevance': chunk.relevance,
+                    "processor_name": chunk.processor_name,
+                    "query": chunk.executor_content or combined_query,
+                    "answer": chunk.gist,
+                    "relevance": chunk.relevance,
                 }
-                current_iteration['link_form_phase'].append(link_info)
+                current_iteration["link_form_phase"].append(link_info)
 
         for chunk in question_chunks:
             if chunk.relevance >= 0.8:
                 logger.info(
-                    f'Adding link between {winning_chunk.processor_name} and {chunk.processor_name}'
+                    f"Adding link between {winning_chunk.processor_name} and {chunk.processor_name}"
                 )
                 self.processor_graph.add_link(
                     processor1_name=winning_chunk.processor_name,
@@ -265,9 +247,9 @@ class BaseConsciousTuringMachine(ABC):
                 continue
 
             # Combine all questions into one query
-            combined_query = 'Please answer the following questions:\n'
+            combined_query = "Please answer the following questions:\n"
             for i, q in enumerate(valid_questions, 1):
-                combined_query += f'{i}. {q}\n'
+                combined_query += f"{i}. {q}\n"
 
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
                 if nbr == chunk.processor_name:
@@ -276,7 +258,7 @@ class BaseConsciousTuringMachine(ABC):
                 # Use fuse phase - ask all questions at once, only need response
                 answer_chunk = proc_map[nbr].ask(
                     query=combined_query,
-                    phase='fuse',
+                    phase="fuse",
                     **input_kwargs,
                 )
                 if answer_chunk is not None:
@@ -286,14 +268,14 @@ class BaseConsciousTuringMachine(ABC):
 
                     # Log fuse phase details
                     if self.detailed_log is not None:
-                        current_iteration = self.detailed_log['current_iteration']
+                        current_iteration = self.detailed_log["current_iteration"]
                         fuse_info = {
-                            'from_processor': chunk.processor_name,
-                            'to_processor': nbr,
-                            'query': answer_chunk.executor_content or combined_query,
-                            'answer': answer_chunk.gist,
+                            "from_processor": chunk.processor_name,
+                            "to_processor": nbr,
+                            "query": answer_chunk.executor_content or combined_query,
+                            "answer": answer_chunk.gist,
                         }
-                        current_iteration['fuse_phase'].append(fuse_info)
+                        current_iteration["fuse_phase"].append(fuse_info)
 
     @abstractmethod
     def forward(

@@ -5,7 +5,7 @@ from .processor_code import CodeProcessor
 from .processor_language import LanguageProcessor
 from .processor_math import MathProcessor
 from .processor_search import SearchProcessor
-from .processor_tool import ToolProcessor
+from .processor_tool import ToolProcessor, register_tool_processors
 from .processor_video import VideoProcessor
 from .processor_vision import VisionProcessor
 from .rapidapi_processors.processor_exercise import ExerciseProcessor
@@ -19,23 +19,24 @@ from .rapidapi_processors.processor_weather import WeatherProcessor
 from .rapidapi_processors.processor_youtube import YouTubeProcessor
 
 __all__ = [
-    'APIProcessor',
-    'AudioProcessor',
-    'BaseProcessor',
-    'CodeProcessor',
-    'FinanceProcessor',
-    'GeoDBProcessor',
-    'LanguageProcessor',
-    'MathProcessor',
-    'NewsProcessor',
-    'SearchProcessor',
-    'SocialProcessor',
-    'ToolProcessor',
-    'TwitterProcessor',
-    'VideoProcessor',
-    'VisionProcessor',
-    'WeatherProcessor',
-    'YouTubeProcessor',
-    'ExerciseProcessor',
-    'MusicProcessor',
+    "APIProcessor",
+    "AudioProcessor",
+    "BaseProcessor",
+    "CodeProcessor",
+    "FinanceProcessor",
+    "GeoDBProcessor",
+    "LanguageProcessor",
+    "MathProcessor",
+    "NewsProcessor",
+    "SearchProcessor",
+    "SocialProcessor",
+    "ToolProcessor",
+    "TwitterProcessor",
+    "VideoProcessor",
+    "VisionProcessor",
+    "WeatherProcessor",
+    "YouTubeProcessor",
+    "ExerciseProcessor",
+    "MusicProcessor",
+    "register_tool_processors",
 ]
