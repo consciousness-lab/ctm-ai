@@ -89,8 +89,8 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         for func_name in openai_function_names:
             self.processor_graph.add_node(
                 processor_name=func_name,
-                processor_group_name="tool",
-                model=getattr(self.config, "model", "gemini/gemini-2.0-flash-lite"),
+                processor_group_name='tool',
+                model=getattr(self.config, 'model', 'gemini/gemini-2.0-flash-lite'),
                 api_manager=self.api_manager,
                 num_additional_questions=self.config.num_additional_questions,
                 score_weights=self.config.score_weights,
@@ -104,7 +104,7 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
     def go_down(
         self, winning_chunk: Chunk, chunks: List[Chunk], **input_kwargs
     ) -> None:
-        logger.info(f"Going down with winning chunk: {winning_chunk.processor_name}")
+        logger.info(f'Going down with winning chunk: {winning_chunk.processor_name}')
         self.downtree_broadcast(winning_chunk)
         self.link_form(chunks, winning_chunk, **input_kwargs)
 
@@ -137,37 +137,37 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
             api_manager = self.api_manager
 
         input_params: dict = {
-            "text": text,
-            "image": image,
-            "image_path": image_path,
-            "audio": audio,
-            "audio_path": audio_path,
-            "video_frames": video_frames,
-            "video_frames_path": video_frames_path,
-            "video_path": video_path,
+            'text': text,
+            'image': image,
+            'image_path': image_path,
+            'audio': audio,
+            'audio_path': audio_path,
+            'video_frames': video_frames,
+            'video_frames_path': video_frames_path,
+            'video_path': video_path,
         }
         if api_manager is not None:
-            input_params["api_manager"] = api_manager
+            input_params['api_manager'] = api_manager
 
         self.detailed_log = {
-            "instance_id": instance_id,
-            "initial_query": query,
-            "iterations": [],
-            "current_iteration": None,
+            'instance_id': instance_id,
+            'initial_query': query,
+            'iterations': [],
+            'current_iteration': None,
         }
 
         self.iteration_history = []
-        answer = ""
+        answer = ''
         weight_score = 0.0
 
         for i in range(self.config.max_iter_num):
-            self.detailed_log["current_iteration"] = {
-                "iteration": i + 1,
-                "initial_phase": [],
-                "winning_processor": None,
-                "winning_weight": None,
-                "link_form_phase": [],
-                "fuse_phase": [],
+            self.detailed_log['current_iteration'] = {
+                'iteration': i + 1,
+                'initial_phase': [],
+                'winning_processor': None,
+                'winning_weight': None,
+                'link_form_phase': [],
+                'fuse_phase': [],
             }
 
             chunks = self.ask_processors(query, **input_params)
@@ -176,25 +176,25 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
             answer = winning_chunk.gist
             weight_score = winning_chunk.weight
 
-            self.detailed_log["current_iteration"][
-                "winning_processor"
-            ] = winning_chunk.processor_name
-            self.detailed_log["current_iteration"][
-                "winning_weight"
-            ] = winning_chunk.weight
+            self.detailed_log['current_iteration']['winning_processor'] = (
+                winning_chunk.processor_name
+            )
+            self.detailed_log['current_iteration']['winning_weight'] = (
+                winning_chunk.weight
+            )
 
             iteration_info = {
-                "iteration": i + 1,
-                "winning_processor": winning_chunk.processor_name,
-                "winning_weight": winning_chunk.weight,
-                "winning_answer": winning_chunk.gist,
-                "all_chunks": [
+                'iteration': i + 1,
+                'winning_processor': winning_chunk.processor_name,
+                'winning_weight': winning_chunk.weight,
+                'winning_answer': winning_chunk.gist,
+                'all_chunks': [
                     {
-                        "processor_name": c.processor_name,
-                        "weight": c.weight,
-                        "relevance": c.relevance,
-                        "confidence": c.confidence,
-                        "surprise": c.surprise,
+                        'processor_name': c.processor_name,
+                        'weight': c.weight,
+                        'relevance': c.relevance,
+                        'confidence': c.confidence,
+                        'surprise': c.surprise,
                     }
                     for c in chunks
                 ],
@@ -205,16 +205,16 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
                 i == self.config.max_iter_num - 1
                 or weight_score >= self.config.output_threshold
             ):
-                self.detailed_log["iterations"].append(
-                    self.detailed_log["current_iteration"]
+                self.detailed_log['iterations'].append(
+                    self.detailed_log['current_iteration']
                 )
-                self.detailed_log["current_iteration"] = None
+                self.detailed_log['current_iteration'] = None
 
                 parsed_answer = self.parse_answer(answer=answer, query=query)
 
-                self.detailed_log["final_answer"] = answer
-                self.detailed_log["final_weight"] = weight_score
-                self.detailed_log["parsed_answer"] = parsed_answer
+                self.detailed_log['final_answer'] = answer
+                self.detailed_log['final_weight'] = weight_score
+                self.detailed_log['parsed_answer'] = parsed_answer
                 self._save_detailed_log()
 
                 return answer, weight_score, parsed_answer
@@ -222,15 +222,15 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
             self.go_down(winning_chunk, chunks, **input_params)
             self.fuse_processor(chunks, query, **input_params)
 
-            self.detailed_log["iterations"].append(
-                self.detailed_log["current_iteration"]
+            self.detailed_log['iterations'].append(
+                self.detailed_log['current_iteration']
             )
 
         parsed_answer = self.parse_answer(answer=answer, query=query)
 
-        self.detailed_log["final_answer"] = answer
-        self.detailed_log["final_weight"] = weight_score
-        self.detailed_log["parsed_answer"] = parsed_answer
+        self.detailed_log['final_answer'] = answer
+        self.detailed_log['final_weight'] = weight_score
+        self.detailed_log['parsed_answer'] = parsed_answer
         self._save_detailed_log()
 
         return answer, weight_score, parsed_answer
@@ -240,20 +240,20 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
     # ------------------------------------------------------------------
 
     def _save_detailed_log(self) -> None:
-        if self.detailed_log is None or self.detailed_log.get("instance_id") is None:
+        if self.detailed_log is None or self.detailed_log.get('instance_id') is None:
             return
 
-        output_dir = "detailed_info"
+        output_dir = 'detailed_info'
         os.makedirs(output_dir, exist_ok=True)
 
         log_to_save = {
-            k: v for k, v in self.detailed_log.items() if k != "current_iteration"
+            k: v for k, v in self.detailed_log.items() if k != 'current_iteration'
         }
 
-        instance_id = self.detailed_log["instance_id"]
-        output_path = os.path.join(output_dir, f"{instance_id}.json")
+        instance_id = self.detailed_log['instance_id']
+        output_path = os.path.join(output_dir, f'{instance_id}.json')
 
-        with open(output_path, "w", encoding="utf-8") as f:
+        with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(log_to_save, f, indent=2, ensure_ascii=False)
 
-        logger.info(f"Detailed log saved to {output_path}")
+        logger.info(f'Detailed log saved to {output_path}')

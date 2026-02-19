@@ -23,31 +23,33 @@ from .prompts.tool_prompts import (
     build_tool_stage2_prompt,
 )
 
+
 def clean_tools_for_vertex_ai(tools: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Remove fields not supported by Vertex AI from tool definitions."""
     cleaned_tools = []
     for tool in tools:
-        if tool.get("type") == "function" and "function" in tool:
-            function_def = tool["function"].copy()
+        if tool.get('type') == 'function' and 'function' in tool:
+            function_def = tool['function'].copy()
 
-            if "parameters" in function_def:
-                params = function_def["parameters"].copy()
-                if "optional" in params:
-                    del params["optional"]
-                if "properties" in params:
+            if 'parameters' in function_def:
+                params = function_def['parameters'].copy()
+                if 'optional' in params:
+                    del params['optional']
+                if 'properties' in params:
                     cleaned_properties = {}
-                    for prop_name, prop_def in params["properties"].items():
+                    for prop_name, prop_def in params['properties'].items():
                         cleaned_prop = prop_def.copy()
-                        if "example_value" in cleaned_prop:
-                            del cleaned_prop["example_value"]
+                        if 'example_value' in cleaned_prop:
+                            del cleaned_prop['example_value']
                         cleaned_properties[prop_name] = cleaned_prop
-                    params["properties"] = cleaned_properties
-                function_def["parameters"] = params
+                    params['properties'] = cleaned_properties
+                function_def['parameters'] = params
 
-            cleaned_tools.append({"type": "function", "function": function_def})
+            cleaned_tools.append({'type': 'function', 'function': function_def})
         else:
             cleaned_tools.append(tool)
     return cleaned_tools
+
 
 def register_tool_processors(openai_function_names: List[str]) -> None:
     """Register tool processors dynamically based on available function names."""
@@ -55,7 +57,7 @@ def register_tool_processors(openai_function_names: List[str]) -> None:
         BaseProcessor._processor_registry[name] = ToolProcessor
 
 
-@BaseProcessor.register_processor("tool_processor")
+@BaseProcessor.register_processor('tool_processor')
 class ToolProcessor(BaseProcessor):
     """
     Processor for ToolBench that uses a two-stage pipeline for all phases:
@@ -74,10 +76,10 @@ class ToolProcessor(BaseProcessor):
         self, name: str, group_name: Optional[str] = None, *args: Any, **kwargs: Any
     ) -> None:
         super().__init__(name, group_name, *args, **kwargs)
-        self.api_manager = kwargs.get("api_manager")
-        self.system_prompt = kwargs.get("system_prompt") or TOOLBENCH_SYSTEM_PROMPT
+        self.api_manager = kwargs.get('api_manager')
+        self.system_prompt = kwargs.get('system_prompt') or TOOLBENCH_SYSTEM_PROMPT
         self.num_additional_questions = kwargs.get(
-            "num_additional_questions", DEFAULT_NUM_ADDITIONAL_QUESTIONS
+            'num_additional_questions', DEFAULT_NUM_ADDITIONAL_QUESTIONS
         )
 
     # ------------------------------------------------------------------
@@ -87,7 +89,7 @@ class ToolProcessor(BaseProcessor):
     def _build_executor_content(
         self,
         query: str,
-        phase: str = "initial",
+        phase: str = 'initial',
         **kwargs: Any,
     ) -> str:
         """Build Stage 1 content: task + context + tool-decision protocol.
@@ -101,10 +103,10 @@ class ToolProcessor(BaseProcessor):
         """
         context_parts: List[str] = []
 
-        if phase in ("initial", "link_form"):
+        if phase in ('initial', 'link_form'):
             if self.fuse_history:
                 context_parts.append(
-                    "The following extra information was obtained from other tools:"
+                    'The following extra information was obtained from other tools:'
                 )
                 for i, item in enumerate(self.fuse_history, 1):
                     context_parts.append(
@@ -113,14 +115,14 @@ class ToolProcessor(BaseProcessor):
 
             if self.winner_answer:
                 context_parts.append(
-                    "The following are previous answers to the same query:"
+                    'The following are previous answers to the same query:'
                 )
                 for i, item in enumerate(self.winner_answer, 1):
                     context_parts.append(
                         f'{i}. {item["processor_name"]}: {item["answer"]}'
                     )
 
-        context_str = "\n".join(context_parts) if context_parts else ""
+        context_str = '\n'.join(context_parts) if context_parts else ''
 
         return TOOLBENCH_TOOL_DECISION_PROMPT.format(
             query=query, function_name=self.name, context=context_str
@@ -134,8 +136,8 @@ class ToolProcessor(BaseProcessor):
     ) -> List[Dict[str, Any]]:
         """Build messages for Stage 1 LLM call."""
         return [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": query},
+            {'role': 'system', 'content': self.system_prompt},
+            {'role': 'user', 'content': query},
         ]
 
     @message_exponential_backoff()
@@ -147,10 +149,10 @@ class ToolProcessor(BaseProcessor):
         """Stage 1 LLM call with tool definitions and exponential backoff."""
         call_kwargs = {
             **self._completion_kwargs,
-            "messages": messages,
-            "max_tokens": self.max_tokens,
-            "tools": tools,
-            "tool_choice": "auto",
+            'messages': messages,
+            'max_tokens': self.max_tokens,
+            'tools': tools,
+            'tool_choice': 'auto',
         }
         return completion(**call_kwargs)
 
@@ -167,11 +169,11 @@ class ToolProcessor(BaseProcessor):
             (tool_called, tool_name, tool_args, raw_result)
         """
         if api_manager is None:
-            return False, None, None, f"No API manager available for {function_name}"
+            return False, None, None, f'No API manager available for {function_name}'
 
         raw_tools = api_manager.funcs_to_all_info.get(function_name, [])
         if isinstance(raw_tools, dict):
-            raw_tools = [{"type": "function", "function": raw_tools}]
+            raw_tools = [{'type': 'function', 'function': raw_tools}]
         cleaned_tools = clean_tools_for_vertex_ai(raw_tools)
 
         messages = self.build_executor_messages(query)
@@ -179,10 +181,10 @@ class ToolProcessor(BaseProcessor):
         try:
             response = self._ask_with_tools(messages, cleaned_tools)
         except Exception as e:
-            return False, None, None, f"Error calling LLM: {e}"
+            return False, None, None, f'Error calling LLM: {e}'
 
         if response is None:
-            return False, None, None, "LLM returned None after retries"
+            return False, None, None, 'LLM returned None after retries'
 
         msg = response.choices[0].message
 
@@ -193,13 +195,13 @@ class ToolProcessor(BaseProcessor):
         # Case 2: model chose to call a tool
         if msg.tool_calls is not None:
             tool_call = msg.tool_calls[0]
-            func_name = getattr(tool_call.function, "name", None) or function_name
-            func_args = getattr(tool_call.function, "arguments", "{}")
+            func_name = getattr(tool_call.function, 'name', None) or function_name
+            func_args = getattr(tool_call.function, 'arguments', '{}')
 
             if isinstance(func_args, dict):
                 func_args_str = json.dumps(func_args, ensure_ascii=False)
             else:
-                func_args_str = str(func_args) if func_args is not None else "{}"
+                func_args_str = str(func_args) if func_args is not None else '{}'
 
             tool_result = None
             for attempt in range(self.TOOL_EXEC_RETRIES):
@@ -214,18 +216,18 @@ class ToolProcessor(BaseProcessor):
                         continue
                     tool_result = json.dumps(
                         {
-                            "error": f"tool execution failed: {type(e).__name__}: {e}",
-                            "response": "",
+                            'error': f'tool execution failed: {type(e).__name__}: {e}',
+                            'response': '',
                         }
                     )
 
             if tool_result is not None and not isinstance(tool_result, str):
                 tool_result = str(tool_result)
 
-            return True, func_name, func_args_str, tool_result or ""
+            return True, func_name, func_args_str, tool_result or ''
 
         # Case 3: unexpected (no content, no tool_calls)
-        return False, None, None, "No valid response received from the model"
+        return False, None, None, 'No valid response received from the model'
 
     # ------------------------------------------------------------------
     # Main entry point
@@ -243,7 +245,7 @@ class ToolProcessor(BaseProcessor):
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
         api_manager: Any = None,
-        phase: str = "initial",
+        phase: str = 'initial',
         *args: Any,
         **kwargs: Any,
     ) -> Chunk:
@@ -261,24 +263,22 @@ class ToolProcessor(BaseProcessor):
         from ..utils import logger
 
         logger.info(
-            f"\n{self.name} received query (phase={phase}):\n{executor_content[:500]}..."
+            f'\n{self.name} received query (phase={phase}):\n{executor_content[:500]}...'
             if len(executor_content) > 500
-            else f"\n{self.name} received query (phase={phase}):\n{executor_content}"
+            else f'\n{self.name} received query (phase={phase}):\n{executor_content}'
         )
 
-        tool_called, tool_name, tool_args, raw_result = (
-            self._tool_decision_and_execute(
-                query=executor_content,
-                api_manager=api_manager,
-                function_name=self.name,
-            )
+        tool_called, tool_name, tool_args, raw_result = self._tool_decision_and_execute(
+            query=executor_content,
+            api_manager=api_manager,
+            function_name=self.name,
         )
 
         # ── Stage 2: Synthesis + scoring ──
         # Context (fuse_history / winner_answer) is passed for initial and
         # link_form so the LLM can synthesize a comprehensive answer.
         # The fuse phase only needs to produce a short answer—no context.
-        include_context = phase in ("initial", "link_form")
+        include_context = phase in ('initial', 'link_form')
         stage2_prompt = build_tool_stage2_prompt(
             query=query,
             tool_called=tool_called,
@@ -289,18 +289,18 @@ class ToolProcessor(BaseProcessor):
             fuse_history=self.fuse_history if include_context else None,
             winner_answer=self.winner_answer if include_context else None,
             num_additional_questions=(
-                self.num_additional_questions if phase == "initial" else 0
+                self.num_additional_questions if phase == 'initial' else 0
             ),
         )
 
         default_qs = (
-            ["Can you provide more information?"]
-            if phase == "initial" and self.num_additional_questions > 0
+            ['Can you provide more information?']
+            if phase == 'initial' and self.num_additional_questions > 0
             else []
         )
 
         stage2_output = self.ask_executor(
-            messages=[{"role": "user", "content": stage2_prompt}],
+            messages=[{'role': 'user', 'content': stage2_prompt}],
             default_additional_questions=default_qs,
         )
 
@@ -308,8 +308,8 @@ class ToolProcessor(BaseProcessor):
         if stage2_output is None:
             return None
 
-        if phase == "fuse":
-            response_str = stage2_output.get("response", "")
+        if phase == 'fuse':
+            response_str = stage2_output.get('response', '')
             self.add_fuse_history(query, response_str, self.name)
             return Chunk(
                 time_step=0,
@@ -323,9 +323,9 @@ class ToolProcessor(BaseProcessor):
                 executor_content=executor_content,
             )
 
-        if phase == "link_form":
-            response_str = stage2_output.get("response", "")
-            relevance = float(stage2_output.get("relevance", 0.5))
+        if phase == 'link_form':
+            response_str = stage2_output.get('response', '')
+            relevance = float(stage2_output.get('relevance', 0.5))
             return Chunk(
                 time_step=0,
                 processor_name=self.name,
@@ -339,17 +339,17 @@ class ToolProcessor(BaseProcessor):
             )
 
         # ── Initial phase: full processing ──
-        if stage2_output.get("response") is None:
+        if stage2_output.get('response') is None:
             return None
 
         self.add_all_context_history(
             query,
-            stage2_output["response"],
-            stage2_output.get("additional_questions", []),
+            stage2_output['response'],
+            stage2_output.get('additional_questions', []),
         )
 
         scorer_output = self._extract_scores_from_executor_output(stage2_output)
-        additional_questions = stage2_output.get("additional_questions", [])
+        additional_questions = stage2_output.get('additional_questions', [])
 
         return self.merge_outputs_into_chunk(
             name=self.name,

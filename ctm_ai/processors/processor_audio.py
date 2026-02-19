@@ -9,7 +9,6 @@ from .processor_base import BaseProcessor
 
 @BaseProcessor.register_processor('audio_processor')
 class AudioProcessor(BaseProcessor):
-
     def _init_info(self, *args: Any, **kwargs: Any) -> None:
         # Use system_prompt from config if provided, otherwise use default
         if not self.system_prompt:

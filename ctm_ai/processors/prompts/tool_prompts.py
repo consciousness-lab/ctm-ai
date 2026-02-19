@@ -5,10 +5,10 @@ DEFAULT_NUM_ADDITIONAL_QUESTIONS = 1
 # ---------------------------------------------------------------------------
 
 TOOLBENCH_SYSTEM_PROMPT = (
-    "You are a tool agent designed to help users by utilizing available tools "
-    "to answer their queries or complete tasks. You have access to various APIs "
-    "and tools, and your job is to decide whether to call a tool or answer "
-    "directly based on the context."
+    'You are a tool agent designed to help users by utilizing available tools '
+    'to answer their queries or complete tasks. You have access to various APIs '
+    'and tools, and your job is to decide whether to call a tool or answer '
+    'directly based on the context.'
 )
 
 # ---------------------------------------------------------------------------
@@ -101,19 +101,19 @@ def _build_additional_questions_instruction(num_questions: int) -> str:
     """Build instruction for generating additional questions."""
     if num_questions <= 0:
         return (
-            "Do not generate any additional questions. "
-            "Set additional_questions to an empty list []."
+            'Do not generate any additional questions. '
+            'Set additional_questions to an empty list [].'
         )
     return (
-        "Your additional_questions should be potentially answerable by other tools "
-        "like search engine and about specific information that you are not sure about.\n"
-        "Your additional_questions should be just about what kind of information you "
-        "need to get from other tools like search engine, nothing else about the task "
-        "or original query should be included. For example, what is the weather in the "
-        "city, what is the stock price of the company, etc. The question needs to be "
-        "short and clean.\n"
-        f"Generate exactly {num_questions} diverse question(s) targeting different "
-        "aspects or tools."
+        'Your additional_questions should be potentially answerable by other tools '
+        'like search engine and about specific information that you are not sure about.\n'
+        'Your additional_questions should be just about what kind of information you '
+        'need to get from other tools like search engine, nothing else about the task '
+        'or original query should be included. For example, what is the weather in the '
+        'city, what is the stock price of the company, etc. The question needs to be '
+        'short and clean.\n'
+        f'Generate exactly {num_questions} diverse question(s) targeting different '
+        'aspects or tools.'
     )
 
 
@@ -126,10 +126,10 @@ def _build_action_description(
     """Describe what happened in Stage 1 so Stage 2 has full decision context."""
     if tool_called:
         return (
-            f"You called tool `{tool_name}` with arguments: {tool_args}\n"
-            f"The tool returned:\n{raw_result}"
+            f'You called tool `{tool_name}` with arguments: {tool_args}\n'
+            f'The tool returned:\n{raw_result}'
         )
-    return f"You analyzed the query and provided this direct assessment:\n{raw_result}"
+    return f'You analyzed the query and provided this direct assessment:\n{raw_result}'
 
 
 def _build_context_section(
@@ -139,14 +139,14 @@ def _build_context_section(
     """Build context section from fuse_history and winner_answer."""
     parts = []
     if fuse_history:
-        parts.append("\nExtra information from other tools:")
+        parts.append('\nExtra information from other tools:')
         for i, item in enumerate(fuse_history, 1):
             parts.append(f'{i}. {item["processor_name"]}: {item["answer"]}')
     if winner_answer:
-        parts.append("\nPrevious answers to the same query:")
+        parts.append('\nPrevious answers to the same query:')
         for i, item in enumerate(winner_answer, 1):
             parts.append(f'{i}. {item["processor_name"]}: {item["answer"]}')
-    return "\n".join(parts)
+    return '\n'.join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -177,7 +177,7 @@ def build_tool_stage2_prompt(
         tool_called, tool_name, tool_args, raw_result
     )
 
-    if phase == "initial":
+    if phase == 'initial':
         context = _build_context_section(fuse_history or [], winner_answer or [])
         json_example = _build_additional_questions_json_example(
             num_additional_questions
@@ -185,7 +185,7 @@ def build_tool_stage2_prompt(
         questions_instruction = _build_additional_questions_instruction(
             num_additional_questions
         )
-        context_block = f"\n{context}\n" if context else ""
+        context_block = f'\n{context}\n' if context else ''
 
         return f"""Regarding the task: {query}
 
@@ -209,9 +209,9 @@ Please respond in JSON format:
 {questions_instruction}
 {_SCORE_RUBRIC_FULL}"""
 
-    if phase == "link_form":
+    if phase == 'link_form':
         context = _build_context_section(fuse_history or [], winner_answer or [])
-        context_block = f"\n{context}\n" if context else ""
+        context_block = f'\n{context}\n' if context else ''
 
         return f"""Regarding the query: {query}
 

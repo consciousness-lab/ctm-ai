@@ -13,23 +13,24 @@ These prompts provide standardized JSON response formats and scoring rubrics.
 _BASE_CONTEXT_PREAMBLE = """You should utilize the information in the context history and modality-specific information to answer the query.
 There might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones."""
 
+
 def _build_base_additional_questions_instruction(num_questions: int = 3) -> str:
     if num_questions <= 0:
         return (
-            "\nDo not generate any additional questions. "
-            "Set additional_questions to an empty list []."
+            '\nDo not generate any additional questions. '
+            'Set additional_questions to an empty list [].'
         )
     return (
-        "\nYour additional_questions should be potentially answerable by other modality "
-        "models or other tools like search engine and about specific information that "
-        "you are not sure about.\n"
-        "Each question should be just about what kind of information you need to get "
-        "from other modality models or other tools like search engine, nothing else "
-        "about the task or original query should be included. For example, what is the "
-        "tone of the audio, what is the facial expression of the person, what is the "
-        "caption of the image, etc. Each question needs to be short and clean.\n"
-        f"Generate exactly {num_questions} diverse questions targeting different "
-        "aspects or modalities."
+        '\nYour additional_questions should be potentially answerable by other modality '
+        'models or other tools like search engine and about specific information that '
+        'you are not sure about.\n'
+        'Each question should be just about what kind of information you need to get '
+        'from other modality models or other tools like search engine, nothing else '
+        'about the task or original query should be included. For example, what is the '
+        'tone of the audio, what is the facial expression of the person, what is the '
+        'caption of the image, etc. Each question needs to be short and clean.\n'
+        f'Generate exactly {num_questions} diverse questions targeting different '
+        'aspects or modalities.'
     )
 
 
@@ -38,6 +39,7 @@ def _build_base_additional_questions_json(num_questions: int = 3) -> str:
         return '"additional_questions": []'
     questions = [f'"question{i}"' for i in range(1, num_questions + 1)]
     return f'"additional_questions": [{", ".join(questions)}]'
+
 
 _BASE_SCORE_RUBRIC = """
 ## Self-Evaluation Instructions
@@ -74,6 +76,7 @@ Only answers that completely refuse, ignore, or go off-topic should be scored as
 - 0.0 = Entirely expected, standard response
 
 Be honest and well-calibrated. Do NOT inflate scores. Most routine answers should score around relevance ~0.6, confidence ~0.6, surprise ~0.3."""
+
 
 def build_base_score_format(num_questions: int = 3) -> str:
     """Build the JSON format prompt for initial phase with configurable question count."""

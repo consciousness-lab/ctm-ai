@@ -16,28 +16,28 @@ def get_white_list(tool_root_dir):
 
     # 检查根目录是否存在
     if not os.path.exists(white_list_dir):
-        print(f"Warning: Tool root directory not found: {white_list_dir}")
+        print(f'Warning: Tool root directory not found: {white_list_dir}')
         return white_list
 
     for cate in tqdm(os.listdir(white_list_dir)):
         if not os.path.isdir(os.path.join(white_list_dir, cate)):
             continue
         for file in os.listdir(os.path.join(white_list_dir, cate)):
-            if not file.endswith(".json"):
+            if not file.endswith('.json'):
                 continue
-            standard_tool_name = file.split(".")[0]
+            standard_tool_name = file.split('.')[0]
             file_path = os.path.join(white_list_dir, cate, file)
 
             try:
                 with open(file_path) as reader:
                     js_data = json.load(reader)
-                origin_tool_name = js_data["tool_name"]
+                origin_tool_name = js_data['tool_name']
                 white_list[standardize(origin_tool_name)] = {
-                    "description": js_data["tool_description"],
-                    "standard_tool_name": standard_tool_name,
+                    'description': js_data['tool_description'],
+                    'standard_tool_name': standard_tool_name,
                 }
             except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-                print(f"Warning: Error loading tool file {file_path}: {e}, skipping...")
+                print(f'Warning: Error loading tool file {file_path}: {e}, skipping...')
                 continue
     return white_list
 
@@ -61,7 +61,7 @@ class rapidapi_wrapper(base_env):
         self.rapidapi_key = args.rapidapi_key
         self.use_rapidapi_key = args.use_rapidapi_key
         self.api_customization = args.api_customization
-        self.service_url = os.getenv("SERVICE_URL", "http://8.130.32.149:8080/rapidapi")
+        self.service_url = os.getenv('SERVICE_URL', 'http://8.130.32.149:8080/rapidapi')
         self.max_observation_length = args.max_observation_length
         self.observ_compress_method = args.observ_compress_method
         self.process_id = process_id
@@ -69,7 +69,7 @@ class rapidapi_wrapper(base_env):
         self.tool_names = []
         self.cate_names = []
 
-        self.input_description = query_json["query"]
+        self.input_description = query_json['query']
         self.functions = []
         self.api_name_reflect = {}
         self.standard_tool_name_reflect_all_info = {}
@@ -79,7 +79,7 @@ class rapidapi_wrapper(base_env):
         data_dict = self.fetch_api_json(query_json)
         self.tool_descriptions = self.build_tool_description(data_dict)
 
-        for k, api_json in enumerate(data_dict["api_list"]):
+        for k, api_json in enumerate(data_dict['api_list']):
             standard_tool_name = tool_descriptions[k][0]
             (
                 openai_function_json,
@@ -91,7 +91,7 @@ class rapidapi_wrapper(base_env):
             self.functions.append(openai_function_json)
             self.function_names.append(openai_function_name)
 
-            self.api_name_reflect[openai_function_json["function"]["name"]] = (
+            self.api_name_reflect[openai_function_json['function']['name']] = (
                 pure_api_name
             )
             self.tool_names.append(standard_tool_name)
@@ -99,21 +99,21 @@ class rapidapi_wrapper(base_env):
             self.funcs_to_all_info[openai_function_name] = [openai_function_json]
 
         finish_func = {
-            "name": "Finish",
-            "description": "If you believe that you have obtained a result that can answer the task, please call this function to provide the final answer. Alternatively, if you recognize that you are unable to proceed with the task in the current state, call this function to restart. Remember: you must ALWAYS call this function at the end of your attempt, and the only part that will be shown to the user is the final answer, so it should contain sufficient information.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "return_type": {
-                        "type": "string",
-                        "enum": ["give_answer", "give_up_and_restart"],
+            'name': 'Finish',
+            'description': 'If you believe that you have obtained a result that can answer the task, please call this function to provide the final answer. Alternatively, if you recognize that you are unable to proceed with the task in the current state, call this function to restart. Remember: you must ALWAYS call this function at the end of your attempt, and the only part that will be shown to the user is the final answer, so it should contain sufficient information.',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'return_type': {
+                        'type': 'string',
+                        'enum': ['give_answer', 'give_up_and_restart'],
                     },
-                    "final_answer": {
-                        "type": "string",
-                        "description": 'The final answer you want to give the user. You should have this field if "return_type"=="give_answer"',
+                    'final_answer': {
+                        'type': 'string',
+                        'description': 'The final answer you want to give the user. You should have this field if "return_type"=="give_answer"',
                     },
                 },
-                "required": ["return_type"],
+                'required': ['return_type'],
             },
         }
 
@@ -130,60 +130,60 @@ You have access of the following tools:\n"""
         for k, (standardize_tool_name, tool_des) in enumerate(
             unduplicated_reflection.items()
         ):
-            striped = tool_des[:512].replace("\n", "").strip()
-            if striped == "":
-                striped = "None"
-            self.task_description += f"{k + 1}.{standardize_tool_name}: {striped}\n"
+            striped = tool_des[:512].replace('\n', '').strip()
+            if striped == '':
+                striped = 'None'
+            self.task_description += f'{k + 1}.{standardize_tool_name}: {striped}\n'
 
         self.success = 0
 
     def build_tool_description(self, data_dict):
         white_list = get_white_list(self.tool_root_dir)
         origin_tool_names = [
-            standardize(cont["tool_name"]) for cont in data_dict["api_list"]
+            standardize(cont['tool_name']) for cont in data_dict['api_list']
         ]
         tool_des = contain(origin_tool_names, white_list)
         tool_descriptions = [
-            [cont["standard_tool_name"], cont["description"]] for cont in tool_des
+            [cont['standard_tool_name'], cont['description']] for cont in tool_des
         ]
         return tool_descriptions
 
     def fetch_api_json(self, query_json):
-        data_dict = {"api_list": []}
-        for item in query_json["api_list"]:
-            cate_name = item["category_name"]
-            tool_name = standardize(item["tool_name"])
-            api_name = change_name(standardize(item["api_name"]))
+        data_dict = {'api_list': []}
+        for item in query_json['api_list']:
+            cate_name = item['category_name']
+            tool_name = standardize(item['tool_name'])
+            api_name = change_name(standardize(item['api_name']))
 
             # 构建文件路径
-            file_path = os.path.join(self.tool_root_dir, cate_name, tool_name + ".json")
+            file_path = os.path.join(self.tool_root_dir, cate_name, tool_name + '.json')
 
             # 检查文件是否存在
             if not os.path.exists(file_path):
-                print(f"Warning: Tool file not found: {file_path}, skipping...")
+                print(f'Warning: Tool file not found: {file_path}, skipping...')
                 continue
 
             try:
-                tool_json = json.load(open(file_path, "r"))
+                tool_json = json.load(open(file_path, 'r'))
             except (FileNotFoundError, json.JSONDecodeError) as e:
-                print(f"Warning: Error loading tool file {file_path}: {e}, skipping...")
+                print(f'Warning: Error loading tool file {file_path}: {e}, skipping...')
                 continue
 
             append_flag = False
             api_dict_names = []
-            for api_dict in tool_json["api_list"]:
-                api_dict_names.append(api_dict["name"])
-                pure_api_name = change_name(standardize(api_dict["name"]))
+            for api_dict in tool_json['api_list']:
+                api_dict_names.append(api_dict['name'])
+                pure_api_name = change_name(standardize(api_dict['name']))
                 if pure_api_name != api_name:
                     continue
                 api_json = {}
-                api_json["category_name"] = cate_name
-                api_json["api_name"] = api_dict["name"]
-                api_json["api_description"] = api_dict["description"]
-                api_json["required_parameters"] = api_dict["required_parameters"]
-                api_json["optional_parameters"] = api_dict["optional_parameters"]
-                api_json["tool_name"] = tool_json["tool_name"]
-                data_dict["api_list"].append(api_json)
+                api_json['category_name'] = cate_name
+                api_json['api_name'] = api_dict['name']
+                api_json['api_description'] = api_dict['description']
+                api_json['required_parameters'] = api_dict['required_parameters']
+                api_json['optional_parameters'] = api_dict['optional_parameters']
+                api_json['tool_name'] = tool_json['tool_name']
+                data_dict['api_list'].append(api_json)
                 append_flag = True
                 break
             if not append_flag:
@@ -193,77 +193,77 @@ You have access of the following tools:\n"""
     def api_json_to_openai_json(self, api_json, standard_tool_name):
         description_max_length = 256
         templete = {
-            "name": "",
-            "description": "",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": [],
-                "optional": [],
+            'name': '',
+            'description': '',
+            'parameters': {
+                'type': 'object',
+                'properties': {},
+                'required': [],
+                'optional': [],
                 # "required": [""],
                 # "optional": [""],
             },
         }
 
-        map_type = {"NUMBER": "integer", "STRING": "string", "BOOLEAN": "boolean"}
+        map_type = {'NUMBER': 'integer', 'STRING': 'string', 'BOOLEAN': 'boolean'}
 
-        pure_api_name = change_name(standardize(api_json["api_name"]))
-        templete["name"] = pure_api_name + f"_for_{standard_tool_name}"
-        templete["name"] = templete["name"][-64:]
-        openai_function_name = templete["name"]
+        pure_api_name = change_name(standardize(api_json['api_name']))
+        templete['name'] = pure_api_name + f'_for_{standard_tool_name}'
+        templete['name'] = templete['name'][-64:]
+        openai_function_name = templete['name']
 
-        templete["description"] = (
+        templete['description'] = (
             f'This is the subfunction for tool "{standard_tool_name}", you can use this tool.'
         )
 
-        if api_json["api_description"].strip() != "":
+        if api_json['api_description'].strip() != '':
             tuncated_description = (
-                api_json["api_description"]
+                api_json['api_description']
                 .strip()
-                .replace(api_json["api_name"], templete["name"])[
+                .replace(api_json['api_name'], templete['name'])[
                     :description_max_length
                 ]
             )
-            templete["description"] = (
-                templete["description"]
+            templete['description'] = (
+                templete['description']
                 + f'The description of this function is: "{tuncated_description}"'
             )
-        req_params = api_json.get("required_parameters") or []
+        req_params = api_json.get('required_parameters') or []
         for para in req_params:
-            name = change_name(standardize(para["name"]))
-            param_type = map_type.get(para.get("type", ""), "string")
+            name = change_name(standardize(para['name']))
+            param_type = map_type.get(para.get('type', ''), 'string')
             prompt = {
-                "type": param_type,
-                "description": (para.get("description") or "")[:description_max_length],
+                'type': param_type,
+                'description': (para.get('description') or '')[:description_max_length],
             }
-            default_value = para.get("default", None)
-            if default_value not in (None, ""):
-                prompt["example_value"] = default_value
+            default_value = para.get('default', None)
+            if default_value not in (None, ''):
+                prompt['example_value'] = default_value
 
-            templete["parameters"]["properties"][name] = prompt
-            templete["parameters"]["required"].append(name)
+            templete['parameters']['properties'][name] = prompt
+            templete['parameters']['required'].append(name)
 
-        opt_params = api_json.get("optional_parameters") or []
+        opt_params = api_json.get('optional_parameters') or []
         for para in opt_params:
-            name = change_name(standardize(para["name"]))
-            param_type = map_type.get(para.get("type", ""), "string")
+            name = change_name(standardize(para['name']))
+            param_type = map_type.get(para.get('type', ''), 'string')
             prompt = {
-                "type": param_type,
-                "description": (para.get("description") or "")[:description_max_length],
+                'type': param_type,
+                'description': (para.get('description') or '')[:description_max_length],
             }
-            default_value = para.get("default", None)
-            if default_value not in (None, ""):
-                prompt["example_value"] = default_value
+            default_value = para.get('default', None)
+            if default_value not in (None, ''):
+                prompt['example_value'] = default_value
 
-            templete["parameters"]["properties"][name] = prompt
-            templete["parameters"]["optional"].append(name)
+            templete['parameters']['properties'][name] = prompt
+            templete['parameters']['optional'].append(name)
 
-        function_templete = {"type": "function", "function": templete}
+        function_templete = {'type': 'function', 'function': templete}
 
         return (
             function_templete,
             templete,
-            api_json["category_name"],
+            api_json['category_name'],
             pure_api_name,
             openai_function_name,
         )
@@ -284,7 +284,7 @@ You have access of the following tools:\n"""
         obs, code = self._step(action_name=action, action_input=input_str)
         return obs, code
 
-    def _step(self, action_name="", action_input=""):
+    def _step(self, action_name='', action_input=''):
         """Need to return an observation string and status code:
         0 means normal response
         1 means there is no corresponding api name
@@ -301,34 +301,34 @@ You have access of the following tools:\n"""
         12 error sending request
         """
         # breakpoint()
-        if action_name == "Finish":
+        if action_name == 'Finish':
             try:
                 json_data = json.loads(action_input, strict=False)
             except json.JSONDecodeError:
                 json_data = {}
                 if '"return_type": "' in action_input:
                     if '"return_type": "give_answer"' in action_input:
-                        return_type = "give_answer"
+                        return_type = 'give_answer'
                     elif '"return_type": "give_up_and_restart"' in action_input:
-                        return_type = "give_up_and_restart"
+                        return_type = 'give_up_and_restart'
                     else:
                         return_type = action_input[
                             action_input.find('"return_type": "')
                             + len('"return_type": "') : action_input.find('",')
                         ]
-                    json_data["return_type"] = return_type
+                    json_data['return_type'] = return_type
                 if '"final_answer": "' in action_input:
                     final_answer = action_input[
                         action_input.find('"final_answer": "')
                         + len('"final_answer": "') :
                     ]
-                    json_data["final_answer"] = final_answer
-            if "return_type" not in json_data.keys():
+                    json_data['final_answer'] = final_answer
+            if 'return_type' not in json_data.keys():
                 return '{error:"must have "return_type""}', 2
-            if json_data["return_type"] == "give_up_and_restart":
+            if json_data['return_type'] == 'give_up_and_restart':
                 return '{"response":"chose to give up and restart"}', 4
-            elif json_data["return_type"] == "give_answer":
-                if "final_answer" not in json_data.keys():
+            elif json_data['return_type'] == 'give_answer':
+                if 'final_answer' not in json_data.keys():
                     return '{error:"must have "final_answer""}', 2
 
                 self.success = 1  # succesfully return final_answer
@@ -337,33 +337,33 @@ You have access of the following tools:\n"""
                 return '{error:""return_type" is not a valid choice"}', 2
         else:
             for k, function_dict in enumerate(self.functions):
-                function = function_dict["function"]
-                if function["name"].endswith(action_name):
-                    pure_api_name = self.api_name_reflect[function["name"]]
+                function = function_dict['function']
+                if function['name'].endswith(action_name):
+                    pure_api_name = self.api_name_reflect[function['name']]
                     payload = {
-                        "category": self.cate_names[k],
-                        "tool_name": self.tool_names[k],
-                        "api_name": pure_api_name,
-                        "tool_input": action_input,
-                        "strip": self.observ_compress_method,
-                        "toolbench_key": self.toolbench_key,
+                        'category': self.cate_names[k],
+                        'tool_name': self.tool_names[k],
+                        'api_name': pure_api_name,
+                        'tool_input': action_input,
+                        'strip': self.observ_compress_method,
+                        'toolbench_key': self.toolbench_key,
                     }
                     if self.process_id == 0:
                         print(
                             colored(
-                                f"query to {self.cate_names[k]}-->{self.tool_names[k]}-->{action_name}",
-                                color="yellow",
+                                f'query to {self.cate_names[k]}-->{self.tool_names[k]}-->{action_name}',
+                                color='yellow',
                             )
                         )
                     if self.use_rapidapi_key or self.api_customization:
-                        payload["rapidapi_key"] = self.rapidapi_key
+                        payload['rapidapi_key'] = self.rapidapi_key
                         response = get_rapidapi_response(
                             payload, api_customization=self.api_customization
                         )
                     else:
                         time.sleep(2)  # rate limit: 30 per minute
-                        headers = {"toolbench_key": self.toolbench_key}
-                        timeout = None if self.service_url.endswith("virtual") else 15
+                        headers = {'toolbench_key': self.toolbench_key}
+                        timeout = None if self.service_url.endswith('virtual') else 15
                         try:
                             response = requests.post(
                                 self.service_url,
@@ -374,7 +374,7 @@ You have access of the following tools:\n"""
                         except requests.exceptions.Timeout:
                             return (
                                 json.dumps(
-                                    {"error": f"Timeout error...", "response": ""}
+                                    {'error': f'Timeout error...', 'response': ''}
                                 ),
                                 5,
                             )
@@ -382,8 +382,8 @@ You have access of the following tools:\n"""
                             return (
                                 json.dumps(
                                     {
-                                        "error": f"request invalid, data error. status_code={response.status_code}",
-                                        "response": "",
+                                        'error': f'request invalid, data error. status_code={response.status_code}',
+                                        'response': '',
                                     }
                                 ),
                                 12,
@@ -395,8 +395,8 @@ You have access of the following tools:\n"""
                             return (
                                 json.dumps(
                                     {
-                                        "error": f"request invalid, data error",
-                                        "response": "",
+                                        'error': f'request invalid, data error',
+                                        'response': '',
                                     }
                                 ),
                                 12,
@@ -411,19 +411,19 @@ You have access of the following tools:\n"""
                     # 10 stands for rate limit
                     # 11 message contains "error" field
                     # 12 error sending request
-                    if response["error"] == "API not working error...":
+                    if response['error'] == 'API not working error...':
                         status_code = 6
-                    elif response["error"] == "Unauthorized error...":
+                    elif response['error'] == 'Unauthorized error...':
                         status_code = 7
-                    elif response["error"] == "Unsubscribed error...":
+                    elif response['error'] == 'Unsubscribed error...':
                         status_code = 8
-                    elif response["error"] == "Too many requests error...":
+                    elif response['error'] == 'Too many requests error...':
                         status_code = 9
-                    elif response["error"] == "Rate limit per minute error...":
-                        print("Reach api calling limit per minute, sleeping...")
+                    elif response['error'] == 'Rate limit per minute error...':
+                        print('Reach api calling limit per minute, sleeping...')
                         time.sleep(10)
                         status_code = 10
-                    elif response["error"] == "Message error...":
+                    elif response['error'] == 'Message error...':
                         status_code = 11
                     else:
                         status_code = 0
@@ -432,7 +432,7 @@ You have access of the following tools:\n"""
                     #     return json.dumps({"error": f"Timeout error...{e}", "response": ""}), 5
             return (
                 json.dumps(
-                    {"error": f"No such function name: {action_name}", "response": ""}
+                    {'error': f'No such function name: {action_name}', 'response': ''}
                 ),
                 1,
             )

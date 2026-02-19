@@ -9,8 +9,9 @@ import json
 import os
 import subprocess
 
-from ctm_ai.utils import extract_video_frames
 from dataset_configs import get_dataset_config
+
+from ctm_ai.utils import extract_video_frames
 
 
 def prepare_frames(

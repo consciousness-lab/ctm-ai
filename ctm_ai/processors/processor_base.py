@@ -15,8 +15,8 @@ from ..utils import (
     message_exponential_backoff,
 )
 from .prompts.base_prompts import (
-    BASE_JSON_FORMAT_LINK_FORM,
     BASE_JSON_FORMAT_FUSE,
+    BASE_JSON_FORMAT_LINK_FORM,
     build_base_score_format,
 )
 from .utils import parse_json_response_with_scores

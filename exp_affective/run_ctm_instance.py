@@ -14,9 +14,10 @@ import os
 import sys
 import time
 
-from ctm_ai.ctms.ctm import ConsciousTuringMachine
 from dataset_configs import get_dataset_config
 from llm_utils import get_audio_path, get_muted_video_path, load_data
+
+from ctm_ai.ctms.ctm import ConsciousTuringMachine
 
 sys.path.append('..')
 

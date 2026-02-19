@@ -1,7 +1,6 @@
 import json
 from typing import Any, Dict, Optional
 
-
 DEFAULT_SCORE_WEIGHTS: Dict[str, float] = {
     'relevance': 1.0,
     'confidence': 1.0,
