@@ -27,12 +27,12 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
         self,
         query: str,
         *,
-        axtree: str = "",
-        html: str = "",
+        axtree: str = '',
+        html: str = '',
         screenshot: Optional[str] = None,
-        action_history: str = "",
-        action_space: str = "",
-        other_info: str = "",
+        action_history: str = '',
+        action_space: str = '',
+        other_info: str = '',
         **kwargs: Any,
     ) -> Tuple[str, str, str]:
         """Run one CTM step and return ``(reasoning, action, parsed_action)``.
@@ -59,12 +59,12 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
     def forward(
         self,
         query: str,
-        axtree: str = "",
-        html: str = "",
+        axtree: str = '',
+        html: str = '',
         screenshot: Optional[str] = None,
-        action_history: str = "",
-        action_space: str = "",
-        other_info: str = "",
+        action_history: str = '',
+        action_space: str = '',
+        other_info: str = '',
         **kwargs: Any,
     ) -> Tuple[str, str, str]:
         """Iterative CTM loop adapted for web agents.
@@ -72,21 +72,21 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
         Returns ``(reasoning, action, parsed_action)``.
         """
         web_params: dict = {
-            "axtree": axtree,
-            "html": html,
-            "screenshot": screenshot,
-            "action_history": action_history,
-            "action_space": action_space,
-            "other_info": other_info,
+            'axtree': axtree,
+            'html': html,
+            'screenshot': screenshot,
+            'action_history': action_history,
+            'action_space': action_space,
+            'other_info': other_info,
         }
 
-        action = ""
-        reasoning = ""
+        action = ''
+        reasoning = ''
 
         for i in range(self.config.max_iter_num):
-            chunks = self._ask_web_processors(query, phase="initial", **web_params)
+            chunks = self._ask_web_processors(query, phase='initial', **web_params)
             if not chunks:
-                logger.warning("WebCTM: no processor returned a valid chunk.")
+                logger.warning('WebCTM: no processor returned a valid chunk.')
                 break
 
             winning_chunk = self.uptree_competition(chunks)
@@ -123,7 +123,7 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
         video_frames_path=None,
         video_path: Optional[str] = None,
         api_manager: Any = None,
-        phase: str = "initial",
+        phase: str = 'initial',
         **kwargs: Any,
     ) -> List[Chunk]:
         """Override base ask_processors to use web routing.
@@ -137,26 +137,26 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
     def _ask_web_processors(
         self,
         query: str,
-        phase: str = "initial",
+        phase: str = 'initial',
         **web_kwargs: Any,
     ) -> List[Chunk]:
         """Dispatch processors in parallel, routing each to its modality."""
-        axtree = web_kwargs.get("axtree", web_kwargs.get("text", ""))
-        html = web_kwargs.get("html", web_kwargs.get("text", ""))
-        screenshot = web_kwargs.get("screenshot")
+        axtree = web_kwargs.get('axtree', web_kwargs.get('text', ''))
+        html = web_kwargs.get('html', web_kwargs.get('text', ''))
+        screenshot = web_kwargs.get('screenshot')
 
         shared = {
-            "action_history": web_kwargs.get("action_history", ""),
-            "action_space": web_kwargs.get("action_space", ""),
-            "other_info": web_kwargs.get("other_info", ""),
-            "phase": phase,
+            'action_history': web_kwargs.get('action_history', ''),
+            'action_space': web_kwargs.get('action_space', ''),
+            'other_info': web_kwargs.get('other_info', ''),
+            'phase': phase,
         }
 
         # Per-processor modality routing
         _modality: dict = {
-            "axtree_processor": {"text": axtree},
-            "html_processor": {"text": html},
-            "screenshot_processor": {"screenshot": screenshot},
+            'axtree_processor': {'text': axtree},
+            'html_processor': {'text': html},
+            'screenshot_processor': {'screenshot': screenshot},
         }
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -177,7 +177,7 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
                         chunks.append(chunk)
                 except Exception as exc:
                     proc_name = futures[future]
-                    logger.warning(f"WebCTM: processor {proc_name} raised: {exc}")
+                    logger.warning(f'WebCTM: processor {proc_name} raised: {exc}')
 
         return chunks
 
@@ -188,9 +188,9 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
     @staticmethod
     def _extract_reasoning(chunk: Chunk) -> str:
         """Pull the CoT reasoning out of executor_content if present."""
-        content = chunk.executor_content or ""
-        prefix = "[Reasoning]: "
+        content = chunk.executor_content or ''
+        prefix = '[Reasoning]: '
         if content.startswith(prefix):
-            end = content.find("\n\n")
+            end = content.find('\n\n')
             return content[len(prefix) : end] if end != -1 else content[len(prefix) :]
         return chunk.gist

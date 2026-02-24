@@ -1,22 +1,3 @@
-"""
-WebAgentBaseProcessor — shared base class for web-agent processors.
-
-This class is NOT registered in the processor registry and is never
-instantiated directly.  It provides the common overrides required by
-AXTreeProcessor, HTMLProcessor, and ScreenshotProcessor:
-
-  - ``ask``                   captures web-specific kwargs (action_history,
-                               action_space, axtree, html, screenshot, other_info)
-                               as instance state before delegating to
-                               ``BaseProcessor.ask``.
-  - ``_build_executor_content`` calls the subclass's ``_build_web_prompt``
-                               to produce a fully-formatted web-agent prompt.
-  - ``ask_executor``          uses ``parse_webagent_response`` so the
-                               ``action`` field is extracted correctly.
-  - ``merge_outputs_into_chunk`` stores the browser action in ``gist`` and
-                               carries the reasoning in ``executor_content``.
-"""
-
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -112,10 +93,15 @@ class WebAgentBaseProcessor(BaseProcessor):
             other_info_parts.append(f'[{item["processor_name"]}]: {item["answer"]}')
 
         # 3. Previous CTM round winners
-        for item in self.winner_answer:
+        if self.winner_answer and phase == "initial":
             other_info_parts.append(
-                f'[{item["processor_name"]} – previous round]: {item["answer"]}'
+                "There are previous answers for "
+                "the same step. Think further based on this:"
             )
+            for item in self.winner_answer:
+                other_info_parts.append(
+                    f'[{item["processor_name"]} – previous round]: {item["answer"]}'
+                )
 
         other_info = "\n".join(other_info_parts) if other_info_parts else "None"
 
@@ -164,8 +150,36 @@ class WebAgentBaseProcessor(BaseProcessor):
         return parse_webagent_response(content, default_additional_questions)
 
     # ------------------------------------------------------------------
-    # Chunk assembly — browser action goes into gist
+    # Memory — store reasoning + action so next iteration has full context
     # ------------------------------------------------------------------
+
+    def update(self, chunk: Chunk) -> None:
+        """Override to store both reasoning and action in winner_answer."""
+        if chunk.processor_name == self.name:
+            return
+
+        reasoning = self._extract_chunk_reasoning(chunk)
+        action = chunk.gist
+
+        parts = []
+        if reasoning:
+            parts.append(f"Reasoning: {reasoning}")
+        if action:
+            parts.append(f"Action: {action}")
+        answer = "\n".join(parts) if parts else action
+
+        self.winner_answer.append(
+            {"processor_name": chunk.processor_name, "answer": answer}
+        )
+
+    @staticmethod
+    def _extract_chunk_reasoning(chunk: Chunk) -> str:
+        content = chunk.executor_content or ""
+        prefix = "[Reasoning]: "
+        if content.startswith(prefix):
+            end = content.find("\n\n")
+            return content[len(prefix) : end] if end != -1 else content[len(prefix) :]
+        return ""
 
     def merge_outputs_into_chunk(
         self,

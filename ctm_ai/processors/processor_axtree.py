@@ -5,7 +5,7 @@ from .processor_webagent_base import WebAgentBaseProcessor
 from .prompts.webagent_prompts import AXTREE_SYSTEM_PROMPT, build_axtree_user_prompt
 
 
-@BaseProcessor.register_processor("axtree_processor")
+@BaseProcessor.register_processor('axtree_processor')
 class AXTreeProcessor(WebAgentBaseProcessor):
     """Web-agent processor specialised in accessibility-tree interpretation."""
 
@@ -15,12 +15,12 @@ class AXTreeProcessor(WebAgentBaseProcessor):
         action_history: str,
         action_space: str,
         other_info: str,
-        phase: str = "initial",
+        phase: str = 'initial',
         **kwargs: Any,
     ) -> str:
         # WebConsciousTuringMachine routes axtree content via self._axtree;
         # fall back to the generic text kwarg for direct calls.
-        axtree = getattr(self, "_axtree", None) or kwargs.get("text", "") or ""
+        axtree = getattr(self, '_axtree', None) or kwargs.get('text', '') or ''
         return build_axtree_user_prompt(
             objective=objective,
             axtree=axtree,
@@ -38,6 +38,6 @@ class AXTreeProcessor(WebAgentBaseProcessor):
     ) -> List[Dict[str, Any]]:
         system_prompt = self.system_prompt or AXTREE_SYSTEM_PROMPT
         return [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": query},
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': query},
         ]

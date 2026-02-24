@@ -2,9 +2,6 @@ import json
 import re
 from typing import Dict, List, Optional
 
-# ---------------------------------------------------------------------------
-# System Prompts (one per processor)
-# ---------------------------------------------------------------------------
 
 AXTREE_SYSTEM_PROMPT = (
     "You are a UI Assistant specialized in interpreting web accessibility trees "
@@ -30,9 +27,6 @@ SCREENSHOT_SYSTEM_PROMPT = (
     "state from a visual perspective."
 )
 
-# ---------------------------------------------------------------------------
-# Shared instruction blocks
-# ---------------------------------------------------------------------------
 
 _INSTRUCTIONS_BLOCK = """\
 # Instructions
@@ -46,6 +40,13 @@ Your answer will be interpreted and executed by a program — follow the \
 formatting instructions exactly. Issue only ONE action at a time. Reflect on \
 your past actions, any resulting error messages, and the current page state \
 before deciding on your next action.\
+"""
+
+_INSTRUCTIONS_ANSWER_BLOCK = """\
+# Instructions
+You are a UI Assistant helping a user perform tasks using a web browser. \
+Review the task, the current page state, and all available information to \
+provide a concise answer based on this processor's modality. \
 """
 
 _OUTPUT_RULES_BLOCK = """\
@@ -130,7 +131,7 @@ Answer the question(s) above using this processor's modality, then score how rel
 _JSON_FUSE_FORMAT = """\
 # JSON Output Format
 {{
-  "response": "Your recommended action integrating all available information."
+  "response": "Your synthesized answer integrating all available information. Do not include any browser action."
 }}\
 """
 
@@ -175,18 +176,18 @@ def build_axtree_user_prompt(
 ) -> str:
     """Build the user-turn prompt for the AXTree processor."""
     other_info_str = _format_other_info(other_info)
-    base = (
-        f"{_INSTRUCTIONS_BLOCK}\n\n"
-        f"# Input Information\n"
-        f"## User's objective\n{objective}\n\n"
-        f"## Accessibility tree\n{axtree}\n\n"
-        f"## Previous action\n{action_history}\n\n"
-        f"## Action space\n{action_space}\n\n"
-        f"## Additional info (outputs from other processors + history)\n"
-        f"{other_info_str}\n\n"
-        f"*Hint*: {_AXTREE_ADDITIONAL_HINT}\n\n"
-    )
     if phase == "initial":
+        base = (
+            f"{_INSTRUCTIONS_BLOCK}\n\n"
+            f"# Input Information\n"
+            f"## User's objective\n{objective}\n\n"
+            f"## Accessibility tree\n{axtree}\n\n"
+            f"## Previous action\n{action_history}\n\n"
+            f"## Action space\n{action_space}\n\n"
+            f"## Additional info (outputs from other processors + history)\n"
+            f"{other_info_str}\n\n"
+            f"*Hint*: {_AXTREE_ADDITIONAL_HINT}\n\n"
+        )
         return (
             base
             + _OUTPUT_RULES_BLOCK
@@ -195,6 +196,16 @@ def build_axtree_user_prompt(
             + "\n\n"
             + _JSON_INITIAL_FORMAT
         )
+    base = (
+        f"{_INSTRUCTIONS_ANSWER_BLOCK}\n\n"
+        f"# Input Information\n"
+        f"## User's objective\n{objective}\n\n"
+        f"## Accessibility tree\n{axtree}\n\n"
+        f"## Previous action\n{action_history}\n\n"
+        f"## Additional info (outputs from other processors + history)\n"
+        f"{other_info_str}\n\n"
+        f"*Hint*: {_AXTREE_ADDITIONAL_HINT}\n\n"
+    )
     if phase == "link_form":
         return base + _JSON_LINK_FORM_FORMAT
     # fuse
@@ -211,18 +222,18 @@ def build_html_user_prompt(
 ) -> str:
     """Build the user-turn prompt for the HTML processor."""
     other_info_str = _format_other_info(other_info)
-    base = (
-        f"{_INSTRUCTIONS_BLOCK}\n\n"
-        f"# Input Information\n"
-        f"## User's objective\n{objective}\n\n"
-        f"## HTML source\n{html}\n\n"
-        f"## Previous action\n{action_history}\n\n"
-        f"## Action space\n{action_space}\n\n"
-        f"## Additional info (outputs from other processors + history)\n"
-        f"{other_info_str}\n\n"
-        f"*Hint*: {_HTML_ADDITIONAL_HINT}\n\n"
-    )
     if phase == "initial":
+        base = (
+            f"{_INSTRUCTIONS_BLOCK}\n\n"
+            f"# Input Information\n"
+            f"## User's objective\n{objective}\n\n"
+            f"## HTML source\n{html}\n\n"
+            f"## Previous action\n{action_history}\n\n"
+            f"## Action space\n{action_space}\n\n"
+            f"## Additional info (outputs from other processors + history)\n"
+            f"{other_info_str}\n\n"
+            f"*Hint*: {_HTML_ADDITIONAL_HINT}\n\n"
+        )
         return (
             base
             + _OUTPUT_RULES_BLOCK
@@ -231,6 +242,16 @@ def build_html_user_prompt(
             + "\n\n"
             + _JSON_INITIAL_FORMAT
         )
+    base = (
+        f"{_INSTRUCTIONS_ANSWER_BLOCK}\n\n"
+        f"# Input Information\n"
+        f"## User's objective\n{objective}\n\n"
+        f"## HTML source\n{html}\n\n"
+        f"## Previous action\n{action_history}\n\n"
+        f"## Additional info (outputs from other processors + history)\n"
+        f"{other_info_str}\n\n"
+        f"*Hint*: {_HTML_ADDITIONAL_HINT}\n\n"
+    )
     if phase == "link_form":
         return base + _JSON_LINK_FORM_FORMAT
     return base + _JSON_FUSE_FORMAT
@@ -248,18 +269,18 @@ def build_screenshot_user_prompt(
     The actual screenshot image is attached separately in the message payload.
     """
     other_info_str = _format_other_info(other_info)
-    base = (
-        f"{_INSTRUCTIONS_BLOCK}\n\n"
-        f"# Input Information\n"
-        f"## User's objective\n{objective}\n\n"
-        f"## Screenshot\n[See the attached screenshot image.]\n\n"
-        f"## Previous action\n{action_history}\n\n"
-        f"## Action space\n{action_space}\n\n"
-        f"## Additional info (outputs from other processors + history)\n"
-        f"{other_info_str}\n\n"
-        f"*Hint*: {_SCREENSHOT_ADDITIONAL_HINT}\n\n"
-    )
     if phase == "initial":
+        base = (
+            f"{_INSTRUCTIONS_BLOCK}\n\n"
+            f"# Input Information\n"
+            f"## User's objective\n{objective}\n\n"
+            f"## Screenshot\n[See the attached screenshot image.]\n\n"
+            f"## Previous action\n{action_history}\n\n"
+            f"## Action space\n{action_space}\n\n"
+            f"## Additional info (outputs from other processors + history)\n"
+            f"{other_info_str}\n\n"
+            f"*Hint*: {_SCREENSHOT_ADDITIONAL_HINT}\n\n"
+        )
         return (
             base
             + _OUTPUT_RULES_BLOCK
@@ -268,6 +289,16 @@ def build_screenshot_user_prompt(
             + "\n\n"
             + _JSON_INITIAL_FORMAT
         )
+    base = (
+        f"{_INSTRUCTIONS_ANSWER_BLOCK}\n\n"
+        f"# Input Information\n"
+        f"## User's objective\n{objective}\n\n"
+        f"## Screenshot\n[See the attached screenshot image.]\n\n"
+        f"## Previous action\n{action_history}\n\n"
+        f"## Additional info (outputs from other processors + history)\n"
+        f"{other_info_str}\n\n"
+        f"*Hint*: {_SCREENSHOT_ADDITIONAL_HINT}\n\n"
+    )
     if phase == "link_form":
         return base + _JSON_LINK_FORM_FORMAT
     return base + _JSON_FUSE_FORMAT
@@ -312,16 +343,6 @@ def parse_webagent_response(
     content: str,
     default_additional_questions: Optional[List[str]] = None,
 ) -> Dict:
-    """Parse LLM output for web agent processors.
-
-    Maps the web-agent JSON schema to the CTM framework's internal dict:
-      - ``action``              → ``response``  (gist = the browser action)
-      - ``response``            → ``reasoning`` (stored for logging)
-      - ``additional_question`` → ``additional_questions`` (single-item list)
-      - ``relevance / confidence / surprise`` → scores (defaults to 0.5)
-
-    Returns a dict compatible with ``merge_outputs_into_chunk``.
-    """
     if default_additional_questions is None:
         default_additional_questions = []
 

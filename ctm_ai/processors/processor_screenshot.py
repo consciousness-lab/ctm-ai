@@ -14,11 +14,11 @@ from .prompts.webagent_prompts import (
 def _pil_to_base64(image) -> str:
     """Convert a PIL Image to a base64-encoded JPEG string."""
     buffer = io.BytesIO()
-    image.save(buffer, format="JPEG")
-    return base64.b64encode(buffer.getvalue()).decode("utf-8")
+    image.save(buffer, format='JPEG')
+    return base64.b64encode(buffer.getvalue()).decode('utf-8')
 
 
-@BaseProcessor.register_processor("screenshot_processor")
+@BaseProcessor.register_processor('screenshot_processor')
 class ScreenshotProcessor(WebAgentBaseProcessor):
     """Web-agent processor specialised in visual screenshot analysis."""
 
@@ -28,7 +28,7 @@ class ScreenshotProcessor(WebAgentBaseProcessor):
         action_history: str,
         action_space: str,
         other_info: str,
-        phase: str = "initial",
+        phase: str = 'initial',
         **kwargs: Any,
     ) -> str:
         return build_screenshot_user_prompt(
@@ -46,9 +46,9 @@ class ScreenshotProcessor(WebAgentBaseProcessor):
         **kwargs: Any,
     ) -> Optional[List[Dict[str, Any]]]:
         # Priority 1: pre-encoded base64 string routed by WebConsciousTuringMachine
-        screenshot_b64 = getattr(self, "_screenshot_b64", None)
-        image_path = kwargs.get("image_path")
-        image = kwargs.get("image")
+        screenshot_b64 = getattr(self, '_screenshot_b64', None)
+        image_path = kwargs.get('image_path')
+        image = kwargs.get('image')
 
         if not screenshot_b64 and not image_path and image is None:
             return None
@@ -63,16 +63,16 @@ class ScreenshotProcessor(WebAgentBaseProcessor):
         system_prompt = self.system_prompt or SCREENSHOT_SYSTEM_PROMPT
 
         user_message: Dict[str, Any] = {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": query},
+            'role': 'user',
+            'content': [
+                {'type': 'text', 'text': query},
                 {
-                    "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                    'type': 'image_url',
+                    'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
                 },
             ],
         }
         return [
-            {"role": "system", "content": system_prompt},
+            {'role': 'system', 'content': system_prompt},
             user_message,
         ]

@@ -8,5 +8,19 @@
     "confidence": 1.0,
     "surprise": 1.0
   },
+  "processors_config": {
+    "html_processor": {
+      "system_prompt": "",
+      "model": "gemini/gemini-2.5-flash-lite"
+    },
+    "screenshot_processor": {
+      "system_prompt": "",
+      "model": "gemini/gemini-2.5-flash-lite"
+    },
+    "axtree_processor": {
+      "system_prompt": "",
+      "model": "gemini/gemini-2.5-flash-lite"
+    }
+  },
   "parse_prompt_template": "You are a expert UI assistant, you should answer the task based solely on the analysis provided below. Your answer should be comprehensive and concise.\n Task: {query}\n Analysis: {answer}\n"
 }

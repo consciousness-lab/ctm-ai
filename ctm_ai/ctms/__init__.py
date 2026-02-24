@@ -4,4 +4,4 @@ from .ctm_webagent import WebConsciousTuringMachine as WebCTM
 
 ToolCTM = CTM
 
-__all__ = ["CTM", "BaseCTM", "ToolCTM", "WebCTM"]
+__all__ = ['CTM', 'BaseCTM', 'ToolCTM', 'WebCTM']

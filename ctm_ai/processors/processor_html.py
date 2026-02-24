@@ -5,7 +5,7 @@ from .processor_webagent_base import WebAgentBaseProcessor
 from .prompts.webagent_prompts import HTML_SYSTEM_PROMPT, build_html_user_prompt
 
 
-@BaseProcessor.register_processor("html_processor")
+@BaseProcessor.register_processor('html_processor')
 class HTMLProcessor(WebAgentBaseProcessor):
     """Web-agent processor specialised in HTML source analysis."""
 
@@ -15,12 +15,12 @@ class HTMLProcessor(WebAgentBaseProcessor):
         action_history: str,
         action_space: str,
         other_info: str,
-        phase: str = "initial",
+        phase: str = 'initial',
         **kwargs: Any,
     ) -> str:
         # WebConsciousTuringMachine routes html content via self._html;
         # fall back to the generic text kwarg for direct calls.
-        html = getattr(self, "_html", None) or kwargs.get("text", "") or ""
+        html = getattr(self, '_html', None) or kwargs.get('text', '') or ''
         return build_html_user_prompt(
             objective=objective,
             html=html,
@@ -38,6 +38,6 @@ class HTMLProcessor(WebAgentBaseProcessor):
     ) -> List[Dict[str, Any]]:
         system_prompt = self.system_prompt or HTML_SYSTEM_PROMPT
         return [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": query},
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': query},
         ]

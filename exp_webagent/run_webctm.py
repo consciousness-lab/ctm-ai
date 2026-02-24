@@ -17,6 +17,7 @@ import json
 import traceback
 from pathlib import Path
 
+import browsergym.webarena_verified  # registers webarena_verified tasks to gym
 from browsergym.experiments import EnvArgs, ExpArgs, get_exp_result
 from browsergym.experiments.loop import (
     StepInfo,
@@ -26,34 +27,49 @@ from browsergym.experiments.loop import (
     save_package_versions,
 )
 from ctm_webagent import CTMAgentArgs
-from task_by_category import gitlab, map, reddit, shopping, shopping_admin, wikipedia
 
-CATEGORY_TASKS = {
-    'gitlab': gitlab,
-    'map': map,
-    'reddit': reddit,
-    'shopping': shopping,
-    'shopping_admin': shopping_admin,
-    'wikipedia': wikipedia,
-}
+# ---------------------------------------------------------------------------
+# Load task list from webarena-verified-hard.json and group by site
+# Tasks with multiple sites appear in every matching category.
+# ---------------------------------------------------------------------------
+_TASKS_JSON = Path(__file__).parent / "webarena-verified-hard.json"
 
-ALL_CATEGORIES = list(CATEGORY_TASKS.keys())
+
+def _load_category_tasks(json_path: Path) -> dict:
+    """Return {site: [task_record, ...]} grouped by site.
+
+    Tasks that span multiple sites are included in each site's list so
+    they can be run under any of their categories.
+    """
+    with open(json_path, "r", encoding="utf-8") as f:
+        all_tasks = json.load(f)
+    groups: dict = {}
+    for task in all_tasks:
+        for site in task["sites"]:
+            groups.setdefault(site, []).append(task)
+    return groups
+
+
+CATEGORY_TASKS = _load_category_tasks(_TASKS_JSON)
+ALL_CATEGORIES = sorted(
+    CATEGORY_TASKS.keys()
+)  # gitlab, map, reddit, shopping, shopping_admin, wikipedia
 
 
 def str2bool(v):
     if isinstance(v, bool):
         return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    if v.lower() in ("yes", "true", "t", "y", "1"):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ("no", "false", "f", "n", "0"):
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError("Boolean value expected.")
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Batch run CTM web agent experiments',
+        description="Batch run CTM web agent experiments",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -80,44 +96,44 @@ Examples:
     # Category selection
     category_group = parser.add_mutually_exclusive_group(required=True)
     category_group.add_argument(
-        '--all',
-        action='store_true',
-        help='Run all categories',
+        "--all",
+        action="store_true",
+        help="Run all categories",
     )
     category_group.add_argument(
-        '--categories',
-        nargs='+',
+        "--categories",
+        nargs="+",
         choices=ALL_CATEGORIES,
         help=f'Specify categories to run, options: {", ".join(ALL_CATEGORIES)}',
     )
 
     # CTM configuration parameters
     parser.add_argument(
-        '--ctm_name',
+        "--ctm_name",
         type=str,
-        default='web',
-        help='CTM configuration name',
+        default="web",
+        help="CTM configuration name",
     )
     parser.add_argument(
-        '--visual_effects',
+        "--visual_effects",
         type=str2bool,
         default=True,
-        help='Add visual effects when performing actions',
+        help="Add visual effects when performing actions",
     )
     parser.add_argument(
-        '--use_html',
+        "--use_html",
         type=str2bool,
         default=True,
         help="Use HTML in agent's observation space",
     )
     parser.add_argument(
-        '--use_axtree',
+        "--use_axtree",
         type=str2bool,
         default=True,
         help="Use AXTree in agent's observation space",
     )
     parser.add_argument(
-        '--use_screenshot',
+        "--use_screenshot",
         type=str2bool,
         default=True,
         help="Use screenshot in agent's observation space",
@@ -125,55 +141,55 @@ Examples:
 
     # Environment parameters
     parser.add_argument(
-        '--max_steps',
+        "--max_steps",
         type=int,
         default=10,
-        help='Maximum steps per task',
+        help="Maximum steps per task",
     )
     parser.add_argument(
-        '--headless',
+        "--headless",
         type=str2bool,
-        default=True,
-        help='Whether to run browser in headless mode',
+        default=False,
+        help="Whether to run browser in headless mode",
     )
 
     # Experiment saving parameters
     parser.add_argument(
-        '--save_screenshot',
+        "--save_screenshot",
         type=str2bool,
         default=True,
-        help='Whether to save screenshots for each step',
+        help="Whether to save screenshots for each step",
     )
     parser.add_argument(
-        '--save_som',
+        "--save_som",
         type=str2bool,
         default=True,
-        help='Whether to save screenshots with SOM (Set of Marks) overlay',
+        help="Whether to save screenshots with SOM (Set of Marks) overlay",
     )
     parser.add_argument(
-        '--results_dir',
+        "--results_dir",
         type=str,
-        default='./results_',
-        help='Base directory to save experiment results',
+        default="./results_",
+        help="Base directory to save experiment results",
     )
     parser.add_argument(
-        '--start_idx',
+        "--start_idx",
         type=int,
         default=0,
-        help='Start index for tasks in each category (default: 0, starts from the beginning)',
+        help="Start index for tasks in each category (default: 0, starts from the beginning)",
     )
     parser.add_argument(
-        '--task_ids',
+        "--task_ids",
         type=int,
-        nargs='+',
+        nargs="+",
         default=None,
-        help='Specific task IDs to run (must specify a single category when using this option)',
+        help="Specific task IDs to run (must specify a single category when using this option)",
     )
     parser.add_argument(
-        '--action_timeout',
+        "--action_timeout",
         type=float,
         default=None,
-        help='Action timeout in seconds. If an action takes longer than this time (from extraction to execution end), the task will be marked as timeout. Action time excludes model inference time.',
+        help="Action timeout in seconds. If an action takes longer than this time (from extraction to execution end), the task will be marked as timeout. Action time excludes model inference time.",
     )
 
     return parser.parse_args()
@@ -199,16 +215,16 @@ def run_with_action_timeout(exp_args: ExpArgs, action_timeout: float = None):
     episode_info = []
     env, step_info, err_msg, stack_trace = None, None, None, None
     try:
-        logger.info(f'Running experiment {exp_args.exp_name} in:\n  {exp_args.exp_dir}')
+        logger.info(f"Running experiment {exp_args.exp_name} in:\n  {exp_args.exp_dir}")
         agent = exp_args.agent_args.make_agent()
-        logger.debug(f'Agent created.')
+        logger.debug(f"Agent created.")
 
         env = exp_args.env_args.make_env(
             action_mapping=agent.action_set.to_python_code,
             exp_dir=exp_args.exp_dir,
         )
 
-        logger.debug(f'Environment created.')
+        logger.debug(f"Environment created.")
 
         step_info = StepInfo(step=0)
         episode_info = [step_info]
@@ -217,12 +233,12 @@ def run_with_action_timeout(exp_args: ExpArgs, action_timeout: float = None):
             seed=exp_args.env_args.task_seed,
             obs_preprocessor=agent.obs_preprocessor,
         )
-        logger.debug(f'Environment reset.')
+        logger.debug(f"Environment reset.")
 
         while not step_info.is_done:
-            logger.debug(f'Starting step {step_info.step}.')
+            logger.debug(f"Starting step {step_info.step}.")
             action = step_info.from_action(agent)
-            logger.debug(f'Agent chose action:\n {action}')
+            logger.debug(f"Agent chose action:\n {action}")
 
             if action is None:
                 step_info.truncated = True
@@ -232,21 +248,21 @@ def run_with_action_timeout(exp_args: ExpArgs, action_timeout: float = None):
                 save_screenshot=exp_args.save_screenshot,
                 save_som=exp_args.save_som,
             )
-            logger.debug(f'Step info saved.')
+            logger.debug(f"Step info saved.")
 
             _send_chat_info(env.unwrapped.chat, action, step_info.agent_info)
-            logger.debug(f'Chat info sent.')
+            logger.debug(f"Chat info sent.")
 
             if action is None:
-                logger.debug(f'Agent returned None action. Ending episode.')
+                logger.debug(f"Agent returned None action. Ending episode.")
                 break
 
             step_info = StepInfo(step=step_info.step + 1)
             episode_info.append(step_info)
 
-            logger.debug(f'Sending action to environment.')
+            logger.debug(f"Sending action to environment.")
             step_info.from_step(env, action, obs_preprocessor=agent.obs_preprocessor)
-            logger.debug(f'Environment stepped.')
+            logger.debug(f"Environment stepped.")
 
             # Check action execution time (from extraction to execution end)
             # action_exec_start is set in pre_step(), action_exec_stop is set in post_step()
@@ -262,26 +278,26 @@ def run_with_action_timeout(exp_args: ExpArgs, action_timeout: float = None):
 
                 if action_exec_time > action_timeout:
                     logger.warning(
-                        f'Action timeout exceeded: {action_exec_time:.2f}s > {action_timeout}s. '
-                        f'Marking task as timeout.'
+                        f"Action timeout exceeded: {action_exec_time:.2f}s > {action_timeout}s. "
+                        f"Marking task as timeout."
                     )
                     step_info.truncated = True
                     step_info.stats = step_info.stats or {}
-                    step_info.stats['action_timeout'] = True
-                    step_info.stats['action_exec_time'] = action_exec_time
-                    step_info.stats['action_timeout_limit'] = action_timeout
+                    step_info.stats["action_timeout"] = True
+                    step_info.stats["action_exec_time"] = action_exec_time
+                    step_info.stats["action_timeout_limit"] = action_timeout
                     break
 
     except Exception as e:
-        err_msg = f'Exception uncaught by agent or environment in task {exp_args.env_args.task_name}.\n{type(e).__name__}:\n{e}'
+        err_msg = f"Exception uncaught by agent or environment in task {exp_args.env_args.task_name}.\n{type(e).__name__}:\n{e}"
         stack_trace = traceback.format_exc()
 
         exp_args.err_msg = err_msg
         exp_args.stack_trace = stack_trace
 
-        logger.warning(err_msg + '\n' + stack_trace)
+        logger.warning(err_msg + "\n" + stack_trace)
         if _is_debugging() and exp_args.enable_debug:
-            logger.warning('Debug mode is enabled. Raising the error.')
+            logger.warning("Debug mode is enabled. Raising the error.")
             raise
 
     finally:
@@ -293,36 +309,36 @@ def run_with_action_timeout(exp_args: ExpArgs, action_timeout: float = None):
                     save_som=exp_args.save_som,
                 )
         except Exception as e:
-            logger.error(f'Error while saving step info in the finally block: {e}')
+            logger.error(f"Error while saving step info in the finally block: {e}")
         try:
             if (
                 not err_msg
                 and len(episode_info) > 0
                 and not (episode_info[-1].terminated or episode_info[-1].truncated)
             ):
-                e = KeyboardInterrupt('Early termination??')
-                err_msg = f'Exception uncaught by agent or environment in task {exp_args.env_args.task_name}.\n{type(e).__name__}:\n{e}'
-            logger.info(f'Saving summary info.')
+                e = KeyboardInterrupt("Early termination??")
+                err_msg = f"Exception uncaught by agent or environment in task {exp_args.env_args.task_name}.\n{type(e).__name__}:\n{e}"
+            logger.info(f"Saving summary info.")
             exp_args.save_summary_info(
                 episode_info, exp_args.exp_dir, err_msg, stack_trace
             )
         except Exception as e:
-            logger.error(f'Error while saving summary info in the finally block: {e}')
+            logger.error(f"Error while saving summary info in the finally block: {e}")
         try:
             if env is not None:
                 env.close()
         except Exception as e:
             logger.error(
-                f'Error while closing the environment in the finally block: {e}'
+                f"Error while closing the environment in the finally block: {e}"
             )
         try:
             exp_args._unset_logger()
         except Exception as e:
-            logger.error(f'Error while unsetting the logger in the finally block: {e}')
+            logger.error(f"Error while unsetting the logger in the finally block: {e}")
 
 
 def run_single_task(
-    task_id: int,
+    task_record: dict,
     category: str,
     result_base_dir: Path,
     agent_args: CTMAgentArgs,
@@ -332,10 +348,13 @@ def run_single_task(
     save_som: bool = False,
     action_timeout: float = None,
 ):
-    """Run a single task using CTM agent (same logic as run_web.py)"""
-    task_name = f'webarena.{task_id}'
+    """Run a single task using CTM agent."""
+    task_id = task_record["task_id"]
+    intent_template_id = task_record["intent_template_id"]
+    revision = task_record["revision"]
+    task_name = f"webarena_verified.{intent_template_id}.{task_id}.{revision}"
     print(f'\n{"=" * 80}')
-    print(f'Running task: {task_name} (category: {category})')
+    print(f"Running task: {task_name} (category: {category})")
     print(f'{"=" * 80}')
 
     # Create environment arguments (same as run_web.py)
@@ -381,25 +400,25 @@ def run_single_task(
 
                 # Extract detailed step information
                 step_detail = {
-                    'step': step_info.step,
-                    'action': step_info.action,
+                    "step": step_info.step,
+                    "action": step_info.action,
                 }
 
                 # Try to get observation from step_info first
                 obs = None
-                if hasattr(step_info, 'obs') and step_info.obs:
+                if hasattr(step_info, "obs") and step_info.obs:
                     obs = step_info.obs
                 else:
                     # If not available, try to load from saved step file
-                    step_file = exp_dir_path / f'step_{step_info.step}.pkl.gz'
+                    step_file = exp_dir_path / f"step_{step_info.step}.pkl.gz"
                     if step_file.exists():
                         try:
                             import gzip
                             import pickle
 
-                            with gzip.open(step_file, 'rb') as f:
+                            with gzip.open(step_file, "rb") as f:
                                 saved_step = pickle.load(f)
-                                if hasattr(saved_step, 'obs') and saved_step.obs:
+                                if hasattr(saved_step, "obs") and saved_step.obs:
                                     obs = saved_step.obs
                         except Exception as e:
                             pass  # Silently continue if loading fails
@@ -407,97 +426,97 @@ def run_single_task(
                 # Extract reference_url and query from observation
                 if obs and isinstance(obs, dict):
                     # Get current page URL
-                    if 'open_pages_urls' in obs and 'active_page_index' in obs:
-                        urls = obs['open_pages_urls']
-                        active_idx = obs['active_page_index']
+                    if "open_pages_urls" in obs and "active_page_index" in obs:
+                        urls = obs["open_pages_urls"]
+                        active_idx = int(obs["active_page_index"])
                         if urls and 0 <= active_idx < len(urls):
-                            step_detail['reference_url'] = urls[active_idx]
+                            step_detail["reference_url"] = urls[active_idx]
 
                     # Get query/goal
-                    if 'goal_object' in obs and obs['goal_object']:
+                    if "goal_object" in obs and obs["goal_object"]:
                         if (
-                            isinstance(obs['goal_object'], list)
-                            and len(obs['goal_object']) > 0
+                            isinstance(obs["goal_object"], list)
+                            and len(obs["goal_object"]) > 0
                         ):
-                            goal = obs['goal_object'][0]
-                            if isinstance(goal, dict) and 'text' in goal:
-                                step_detail['query'] = goal['text']
+                            goal = obs["goal_object"][0]
+                            if isinstance(goal, dict) and "text" in goal:
+                                step_detail["query"] = goal["text"]
 
                 step_details.append(step_detail)
 
         except Exception as e:
-            print(f'  Warning: Failed to extract step details: {e}')
+            print(f"  Warning: Failed to extract step details: {e}")
             import traceback
 
             traceback.print_exc()
 
         # Update summary_info.json with detailed information
-        summary_info_path = Path(exp_args.exp_dir) / 'summary_info.json'
+        summary_info_path = Path(exp_args.exp_dir) / "summary_info.json"
         if summary_info_path.exists():
             try:
-                with open(summary_info_path, 'r', encoding='utf-8') as f:
+                with open(summary_info_path, "r", encoding="utf-8") as f:
                     summary_info = json.load(f)
 
                 # Add detailed step information
-                summary_info['action_history'] = action_history
-                summary_info['step_details'] = step_details
+                summary_info["action_history"] = action_history
+                summary_info["step_details"] = step_details
 
                 # Save updated summary_info
-                with open(summary_info_path, 'w', encoding='utf-8') as f:
+                with open(summary_info_path, "w", encoding="utf-8") as f:
                     json.dump(summary_info, f, indent=4, ensure_ascii=False)
 
                 print(
-                    f'  Added {len(action_history)} actions and {len(step_details)} step details to summary_info.json'
+                    f"  Added {len(action_history)} actions and {len(step_details)} step details to summary_info.json"
                 )
 
                 # Print query and reference_url for each step
                 print(f'\n  {"-" * 76}')
-                print(f'  Query and Reference URLs:')
+                print(f"  Query and Reference URLs:")
                 print(f'  {"-" * 76}')
 
                 # Get query from first step or summary_info
                 query = None
                 if step_details and len(step_details) > 0:
-                    query = step_details[0].get('query')
+                    query = step_details[0].get("query")
                 if not query:
                     query = (
-                        summary_info.get('query')
-                        or summary_info.get('task_name')
-                        or '未找到 query'
+                        summary_info.get("query")
+                        or summary_info.get("task_name")
+                        or "未找到 query"
                     )
 
-                print(f'  Query: {query}')
-                print(f'\n  Step Details:')
+                print(f"  Query: {query}")
+                print(f"\n  Step Details:")
 
                 # Print each step's reference_url
                 for step_detail in step_details:
-                    step_num = step_detail.get('step', 'N/A')
+                    step_num = step_detail.get("step", "N/A")
                     reference_url = step_detail.get(
-                        'reference_url', '未找到 reference_url'
+                        "reference_url", "未找到 reference_url"
                     )
-                    action = step_detail.get('action', 'N/A')
-                    print(f'    步骤 {step_num}: {reference_url}')
-                    print(f'      动作: {action}')
+                    action = step_detail.get("action", "N/A")
+                    print(f"    步骤 {step_num}: {reference_url}")
+                    print(f"      动作: {action}")
 
                 print(f'  {"-" * 76}')
             except Exception as e:
-                print(f'  Warning: Failed to update summary_info.json: {e}')
+                print(f"  Warning: Failed to update summary_info.json: {e}")
         else:
-            print(f'  Warning: summary_info.json not found at {summary_info_path}')
+            print(f"  Warning: summary_info.json not found at {summary_info_path}")
 
-        print(f'\nTask {task_name} completed!')
-        print(f'Result directory: {exp_args.exp_dir}')
+        print(f"\nTask {task_name} completed!")
+        print(f"Result directory: {exp_args.exp_dir}")
         for key, val in exp_record.items():
-            if key not in ['exp_dir']:  # exp_dir already printed
-                print(f'  {key}: {val}')
+            if key not in ["exp_dir"]:  # exp_dir already printed
+                print(f"  {key}: {val}")
 
         return True, exp_record
     except Exception as e:
-        print(f'\nTask {task_name} failed: {e}')
+        print(f"\nTask {task_name} failed: {e}")
         import traceback
 
         traceback.print_exc()
-        return False, {'error': str(e)}
+        return False, {"error": str(e)}
 
 
 def main():
@@ -507,15 +526,15 @@ def main():
     if args.task_ids is not None:
         if args.all:
             raise ValueError(
-                'Cannot use --task_ids with --all. Please specify a single category with --categories.'
+                "Cannot use --task_ids with --all. Please specify a single category with --categories."
             )
         if args.categories is None or len(args.categories) == 0:
             raise ValueError(
-                'Must specify a category with --categories when using --task_ids.'
+                "Must specify a category with --categories when using --task_ids."
             )
         if len(args.categories) > 1:
             raise ValueError(
-                'Cannot use --task_ids with multiple categories. Please specify a single category.'
+                "Cannot use --task_ids with multiple categories. Please specify a single category."
             )
 
     # Determine categories to run
@@ -525,17 +544,17 @@ def main():
         categories_to_run = args.categories
 
     print(f'Will run the following categories: {", ".join(categories_to_run)}')
-    print(f'Total number of categories: {len(categories_to_run)}')
+    print(f"Total number of categories: {len(categories_to_run)}")
 
     if args.task_ids:
-        print(f'Will run specific task IDs: {args.task_ids}')
+        print(f"Will run specific task IDs: {args.task_ids}")
 
     # Create CTM agent arguments (same as run_web.py)
     # This ensures each task uses CTM agent with the same configuration
     agent_args = CTMAgentArgs(
         ctm_name=args.ctm_name,
         chat_mode=False,  # Same as run_web.py
-        demo_mode='default' if args.visual_effects else 'off',  # Same as run_web.py
+        demo_mode="default" if args.visual_effects else "off",  # Same as run_web.py
         use_html=args.use_html,
         use_axtree=args.use_axtree,
         use_screenshot=args.use_screenshot,
@@ -553,75 +572,75 @@ def main():
 
     # Iterate through each category
     for category in categories_to_run:
-        task_ids = CATEGORY_TASKS[category]
+        task_records = CATEGORY_TASKS[category]
 
         # Create category-specific result directory
         category_result_dir = result_base_dir / category
         category_result_dir.mkdir(parents=True, exist_ok=True)
 
         print(f'\n{"#" * 80}')
-        print(f'Category: {category} (total {len(task_ids)} tasks)')
-        print(f'Results will be saved to: {category_result_dir.absolute()}')
+        print(f"Category: {category} (total {len(task_records)} tasks)")
+        print(f"Results will be saved to: {category_result_dir.absolute()}")
 
         # Determine which tasks to run
         if args.task_ids is not None:
             # Run only specified task IDs
-            task_ids_to_run = []
-            invalid_task_ids = []
-            for task_id in args.task_ids:
-                if task_id in task_ids:
-                    task_ids_to_run.append(task_id)
-                else:
-                    invalid_task_ids.append(task_id)
+            valid_ids = {t["task_id"] for t in task_records}
+            task_records_to_run = [
+                t for t in task_records if t["task_id"] in args.task_ids
+            ]
+            invalid_task_ids = [tid for tid in args.task_ids if tid not in valid_ids]
 
             if invalid_task_ids:
                 print(
                     f"  Warning: The following task IDs are not in category '{category}': {invalid_task_ids}"
                 )
 
-            if not task_ids_to_run:
+            if not task_records_to_run:
                 print(
                     f"  Warning: No valid task IDs found for category '{category}', skipping"
                 )
                 category_stats[category] = {
-                    'total': 0,
-                    'completed': 0,
-                    'failed': 0,
+                    "total": 0,
+                    "completed": 0,
+                    "failed": 0,
                 }
                 continue
 
-            print(f'  Running specified task IDs: {task_ids_to_run}')
+            print(
+                f'  Running specified task IDs: {[t["task_id"] for t in task_records_to_run]}'
+            )
         else:
             # Apply start_idx to slice the task list
             start_idx = args.start_idx
             if start_idx > 0:
-                if start_idx >= len(task_ids):
+                if start_idx >= len(task_records):
                     print(
-                        f'  Warning: start_idx ({start_idx}) >= total tasks ({len(task_ids)}), skipping this category'
+                        f"  Warning: start_idx ({start_idx}) >= total tasks ({len(task_records)}), skipping this category"
                     )
                     category_stats[category] = {
-                        'total': len(task_ids),
-                        'completed': 0,
-                        'failed': 0,
+                        "total": len(task_records),
+                        "completed": 0,
+                        "failed": 0,
                     }
                     continue
-                task_ids_to_run = task_ids[start_idx:]
+                task_records_to_run = task_records[start_idx:]
                 print(
-                    f'  Starting from index {start_idx}, will run {len(task_ids_to_run)} tasks'
+                    f"  Starting from index {start_idx}, will run {len(task_records_to_run)} tasks"
                 )
             else:
-                task_ids_to_run = task_ids
+                task_records_to_run = task_records
 
         print(f'{"#" * 80}')
 
         category_completed = 0
         category_failed = 0
 
-        # Iterate through tasks in this category (starting from start_idx)
-        for task_id in task_ids_to_run:
+        # Iterate through tasks in this category
+        for task_record in task_records_to_run:
             total_tasks += 1
             success, record = run_single_task(
-                task_id=task_id,
+                task_record=task_record,
                 category=category,
                 result_base_dir=result_base_dir,
                 agent_args=agent_args,
@@ -640,31 +659,31 @@ def main():
                 category_failed += 1
 
         category_stats[category] = {
-            'total': len(task_ids_to_run),
-            'completed': category_completed,
-            'failed': category_failed,
+            "total": len(task_records_to_run),
+            "completed": category_completed,
+            "failed": category_failed,
         }
 
     # Print summary
     print(f'\n{"=" * 80}')
-    print('Batch run summary')
+    print("Batch run summary")
     print(f'{"=" * 80}')
-    print(f'Total tasks: {total_tasks}')
-    print(f'Success: {completed_tasks}')
-    print(f'Failed: {failed_tasks}')
-    print('\nStatistics by category:')
+    print(f"Total tasks: {total_tasks}")
+    print(f"Success: {completed_tasks}")
+    print(f"Failed: {failed_tasks}")
+    print("\nStatistics by category:")
     for category, stats in category_stats.items():
         print(
             f'  {category}: {stats["completed"]}/{stats["total"]} success, '
             f'{stats["failed"]}/{stats["total"]} failed'
         )
-    print(f'\nResults saved in: {result_base_dir.absolute()}')
-    print('\nFolder structure:')
+    print(f"\nResults saved in: {result_base_dir.absolute()}")
+    print("\nFolder structure:")
     for category in categories_to_run:
         category_dir = result_base_dir / category
-        print(f'  {category}/ -> {category_dir.absolute()}')
+        print(f"  {category}/ -> {category_dir.absolute()}")
     print(f'{"=" * 80}\n')
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
