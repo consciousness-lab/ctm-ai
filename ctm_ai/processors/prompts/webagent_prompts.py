@@ -2,38 +2,37 @@ import json
 import re
 from typing import Dict, List, Optional
 
-
 AXTREE_SYSTEM_PROMPT = (
-    "You are a UI Assistant specialized in interpreting web accessibility trees "
-    "to control a browser. Your strength is understanding the semantic structure "
-    "of web pages through accessibility information, identifying interactive "
-    "elements by their bid (browser ID) values, and determining the most "
-    "appropriate action based on the tree hierarchy and element roles. "
-    "IMPORTANT: You MUST always respond with a single valid JSON object exactly "
-    "matching the requested format. Do NOT output plain text, markdown prose, "
-    "or any content outside the JSON object."
+    'You are a UI Assistant specialized in interpreting web accessibility trees '
+    'to control a browser. Your strength is understanding the semantic structure '
+    'of web pages through accessibility information, identifying interactive '
+    'elements by their bid (browser ID) values, and determining the most '
+    'appropriate action based on the tree hierarchy and element roles. '
+    'IMPORTANT: You MUST always respond with a single valid JSON object exactly '
+    'matching the requested format. Do NOT output plain text, markdown prose, '
+    'or any content outside the JSON object.'
 )
 
 HTML_SYSTEM_PROMPT = (
-    "You are a UI Assistant specialized in analyzing raw HTML source code to "
-    "control a browser. Your strength is understanding the DOM structure, "
-    "locating elements by their attributes (id, class, name, type, aria-*), "
-    "reading form fields and link targets, and determining appropriate actions "
-    "from the HTML content. "
-    "IMPORTANT: You MUST always respond with a single valid JSON object exactly "
-    "matching the requested format. Do NOT output plain text, markdown prose, "
-    "or any content outside the JSON object."
+    'You are a UI Assistant specialized in analyzing raw HTML source code to '
+    'control a browser. Your strength is understanding the DOM structure, '
+    'locating elements by their attributes (id, class, name, type, aria-*), '
+    'reading form fields and link targets, and determining appropriate actions '
+    'from the HTML content. '
+    'IMPORTANT: You MUST always respond with a single valid JSON object exactly '
+    'matching the requested format. Do NOT output plain text, markdown prose, '
+    'or any content outside the JSON object.'
 )
 
 SCREENSHOT_SYSTEM_PROMPT = (
-    "You are a UI Assistant specialized in visual analysis of web page "
-    "screenshots to control a browser. Your strength is understanding the "
-    "visual layout, identifying UI elements by their appearance and position, "
-    "reading visible text and labels, and interpreting the current interface "
-    "state from a visual perspective. "
-    "IMPORTANT: You MUST always respond with a single valid JSON object exactly "
-    "matching the requested format. Do NOT output plain text, markdown prose, "
-    "or any content outside the JSON object."
+    'You are a UI Assistant specialized in visual analysis of web page '
+    'screenshots to control a browser. Your strength is understanding the '
+    'visual layout, identifying UI elements by their appearance and position, '
+    'reading visible text and labels, and interpreting the current interface '
+    'state from a visual perspective. '
+    'IMPORTANT: You MUST always respond with a single valid JSON object exactly '
+    'matching the requested format. Do NOT output plain text, markdown prose, '
+    'or any content outside the JSON object.'
 )
 
 
@@ -177,21 +176,21 @@ _JSON_FUSE_FORMAT = """\
 # ---------------------------------------------------------------------------
 
 _AXTREE_ADDITIONAL_HINT = (
-    "When uncertain about visual appearance (colors, exact positions, images), "
-    "ask the screenshot processor. When uncertain about exact HTML attributes "
-    "or non-visible metadata, ask the html processor."
+    'When uncertain about visual appearance (colors, exact positions, images), '
+    'ask the screenshot processor. When uncertain about exact HTML attributes '
+    'or non-visible metadata, ask the html processor.'
 )
 
 _HTML_ADDITIONAL_HINT = (
-    "When uncertain about the visual layout or which element is visually "
-    "prominent, ask the screenshot processor. When uncertain about the exact "
-    "bid value for a visually identified element, ask the axtree processor."
+    'When uncertain about the visual layout or which element is visually '
+    'prominent, ask the screenshot processor. When uncertain about the exact '
+    'bid value for a visually identified element, ask the axtree processor.'
 )
 
 _SCREENSHOT_ADDITIONAL_HINT = (
-    "When uncertain about the exact bid value for a visually identified "
-    "element, ask the axtree processor. When uncertain about hidden fields "
-    "or non-visible attributes, ask the html processor."
+    'When uncertain about the exact bid value for a visually identified '
+    'element, ask the axtree processor. When uncertain about hidden fields '
+    'or non-visible attributes, ask the html processor.'
 )
 
 # ---------------------------------------------------------------------------
@@ -200,7 +199,7 @@ _SCREENSHOT_ADDITIONAL_HINT = (
 
 
 def _format_other_info(other_info: str) -> str:
-    return other_info if other_info and other_info.strip() else "None"
+    return other_info if other_info and other_info.strip() else 'None'
 
 
 def build_axtree_user_prompt(
@@ -209,41 +208,41 @@ def build_axtree_user_prompt(
     action_history: str,
     action_space: str,
     other_info: str,
-    phase: str = "initial",
+    phase: str = 'initial',
 ) -> str:
     """Build the user-turn prompt for the AXTree processor."""
     other_info_str = _format_other_info(other_info)
-    if phase == "initial":
+    if phase == 'initial':
         base = (
-            f"{_INSTRUCTIONS_BLOCK}\n\n"
-            f"# Input Information\n"
+            f'{_INSTRUCTIONS_BLOCK}\n\n'
+            f'# Input Information\n'
             f"## User's objective\n{objective}\n\n"
-            f"## Accessibility tree\n{axtree}\n\n"
-            f"## Previous action\n{action_history}\n\n"
-            f"## Action space\n{action_space}\n\n"
-            f"## Additional info (outputs from other processors + history)\n"
-            f"{other_info_str}\n\n"
-            f"*Hint*: {_AXTREE_ADDITIONAL_HINT}\n\n"
+            f'## Accessibility tree\n{axtree}\n\n'
+            f'## Previous action\n{action_history}\n\n'
+            f'## Action space\n{action_space}\n\n'
+            f'## Additional info (outputs from other processors + history)\n'
+            f'{other_info_str}\n\n'
+            f'*Hint*: {_AXTREE_ADDITIONAL_HINT}\n\n'
         )
         return (
             base
             + _OUTPUT_RULES_BLOCK
-            + "\n\n"
+            + '\n\n'
             + _SCORE_RUBRIC_BLOCK
-            + "\n\n"
+            + '\n\n'
             + _JSON_INITIAL_FORMAT
         )
     base = (
-        f"{_INSTRUCTIONS_ANSWER_BLOCK}\n\n"
-        f"# Input Information\n"
+        f'{_INSTRUCTIONS_ANSWER_BLOCK}\n\n'
+        f'# Input Information\n'
         f"## User's objective\n{objective}\n\n"
-        f"## Accessibility tree\n{axtree}\n\n"
-        f"## Previous action\n{action_history}\n\n"
-        f"## Additional info (outputs from other processors + history)\n"
-        f"{other_info_str}\n\n"
-        f"*Hint*: {_AXTREE_ADDITIONAL_HINT}\n\n"
+        f'## Accessibility tree\n{axtree}\n\n'
+        f'## Previous action\n{action_history}\n\n'
+        f'## Additional info (outputs from other processors + history)\n'
+        f'{other_info_str}\n\n'
+        f'*Hint*: {_AXTREE_ADDITIONAL_HINT}\n\n'
     )
-    if phase == "link_form":
+    if phase == 'link_form':
         return base + _JSON_LINK_FORM_FORMAT
     # fuse
     return base + _JSON_FUSE_FORMAT
@@ -255,41 +254,41 @@ def build_html_user_prompt(
     action_history: str,
     action_space: str,
     other_info: str,
-    phase: str = "initial",
+    phase: str = 'initial',
 ) -> str:
     """Build the user-turn prompt for the HTML processor."""
     other_info_str = _format_other_info(other_info)
-    if phase == "initial":
+    if phase == 'initial':
         base = (
-            f"{_INSTRUCTIONS_BLOCK}\n\n"
-            f"# Input Information\n"
+            f'{_INSTRUCTIONS_BLOCK}\n\n'
+            f'# Input Information\n'
             f"## User's objective\n{objective}\n\n"
-            f"## HTML source\n{html}\n\n"
-            f"## Previous action\n{action_history}\n\n"
-            f"## Action space\n{action_space}\n\n"
-            f"## Additional info (outputs from other processors + history)\n"
-            f"{other_info_str}\n\n"
-            f"*Hint*: {_HTML_ADDITIONAL_HINT}\n\n"
+            f'## HTML source\n{html}\n\n'
+            f'## Previous action\n{action_history}\n\n'
+            f'## Action space\n{action_space}\n\n'
+            f'## Additional info (outputs from other processors + history)\n'
+            f'{other_info_str}\n\n'
+            f'*Hint*: {_HTML_ADDITIONAL_HINT}\n\n'
         )
         return (
             base
             + _OUTPUT_RULES_BLOCK
-            + "\n\n"
+            + '\n\n'
             + _SCORE_RUBRIC_BLOCK
-            + "\n\n"
+            + '\n\n'
             + _JSON_INITIAL_FORMAT
         )
     base = (
-        f"{_INSTRUCTIONS_ANSWER_BLOCK}\n\n"
-        f"# Input Information\n"
+        f'{_INSTRUCTIONS_ANSWER_BLOCK}\n\n'
+        f'# Input Information\n'
         f"## User's objective\n{objective}\n\n"
-        f"## HTML source\n{html}\n\n"
-        f"## Previous action\n{action_history}\n\n"
-        f"## Additional info (outputs from other processors + history)\n"
-        f"{other_info_str}\n\n"
-        f"*Hint*: {_HTML_ADDITIONAL_HINT}\n\n"
+        f'## HTML source\n{html}\n\n'
+        f'## Previous action\n{action_history}\n\n'
+        f'## Additional info (outputs from other processors + history)\n'
+        f'{other_info_str}\n\n'
+        f'*Hint*: {_HTML_ADDITIONAL_HINT}\n\n'
     )
-    if phase == "link_form":
+    if phase == 'link_form':
         return base + _JSON_LINK_FORM_FORMAT
     return base + _JSON_FUSE_FORMAT
 
@@ -299,44 +298,44 @@ def build_screenshot_user_prompt(
     action_history: str,
     action_space: str,
     other_info: str,
-    phase: str = "initial",
+    phase: str = 'initial',
 ) -> str:
     """Build the text portion of the user-turn prompt for the Screenshot processor.
 
     The actual screenshot image is attached separately in the message payload.
     """
     other_info_str = _format_other_info(other_info)
-    if phase == "initial":
+    if phase == 'initial':
         base = (
-            f"{_INSTRUCTIONS_BLOCK}\n\n"
-            f"# Input Information\n"
+            f'{_INSTRUCTIONS_BLOCK}\n\n'
+            f'# Input Information\n'
             f"## User's objective\n{objective}\n\n"
-            f"## Screenshot\n[See the attached screenshot image.]\n\n"
-            f"## Previous action\n{action_history}\n\n"
-            f"## Action space\n{action_space}\n\n"
-            f"## Additional info (outputs from other processors + history)\n"
-            f"{other_info_str}\n\n"
-            f"*Hint*: {_SCREENSHOT_ADDITIONAL_HINT}\n\n"
+            f'## Screenshot\n[See the attached screenshot image.]\n\n'
+            f'## Previous action\n{action_history}\n\n'
+            f'## Action space\n{action_space}\n\n'
+            f'## Additional info (outputs from other processors + history)\n'
+            f'{other_info_str}\n\n'
+            f'*Hint*: {_SCREENSHOT_ADDITIONAL_HINT}\n\n'
         )
         return (
             base
             + _OUTPUT_RULES_BLOCK
-            + "\n\n"
+            + '\n\n'
             + _SCORE_RUBRIC_BLOCK
-            + "\n\n"
+            + '\n\n'
             + _JSON_INITIAL_FORMAT
         )
     base = (
-        f"{_INSTRUCTIONS_ANSWER_BLOCK}\n\n"
-        f"# Input Information\n"
+        f'{_INSTRUCTIONS_ANSWER_BLOCK}\n\n'
+        f'# Input Information\n'
         f"## User's objective\n{objective}\n\n"
-        f"## Screenshot\n[See the attached screenshot image.]\n\n"
-        f"## Previous action\n{action_history}\n\n"
-        f"## Additional info (outputs from other processors + history)\n"
-        f"{other_info_str}\n\n"
-        f"*Hint*: {_SCREENSHOT_ADDITIONAL_HINT}\n\n"
+        f'## Screenshot\n[See the attached screenshot image.]\n\n'
+        f'## Previous action\n{action_history}\n\n'
+        f'## Additional info (outputs from other processors + history)\n'
+        f'{other_info_str}\n\n'
+        f'*Hint*: {_SCREENSHOT_ADDITIONAL_HINT}\n\n'
     )
-    if phase == "link_form":
+    if phase == 'link_form':
         return base + _JSON_LINK_FORM_FORMAT
     return base + _JSON_FUSE_FORMAT
 
@@ -346,14 +345,21 @@ def build_screenshot_user_prompt(
 # ---------------------------------------------------------------------------
 
 
-_PROCESSOR_OUTPUT_KEYS = {"response", "action", "additional_question", "relevance", "confidence", "surprise"}
+_PROCESSOR_OUTPUT_KEYS = {
+    'response',
+    'action',
+    'additional_question',
+    'relevance',
+    'confidence',
+    'surprise',
+}
 
 
 def _extract_json_safe(content: str) -> dict:
     """Attempt to extract a JSON object from raw LLM output."""
-    if "```json" in content:
-        start = content.find("```json") + 7
-        end = content.rfind("```")
+    if '```json' in content:
+        start = content.find('```json') + 7
+        end = content.rfind('```')
         if start > 6 and end > start:
             try:
                 obj = json.loads(content[start:end].strip())
@@ -369,14 +375,14 @@ def _extract_json_safe(content: str) -> dict:
         pass
     # JSON-style regex fallback: handles partially-formed JSON with quoted values
     parsed: Dict = {}
-    for key in ("relevance", "confidence", "surprise"):
+    for key in ('relevance', 'confidence', 'surprise'):
         m = re.search(rf'"{key}"\s*:\s*([0-9.]+)', content, re.IGNORECASE)
         if m:
             try:
                 parsed[key] = float(m.group(1))
             except ValueError:
                 pass
-    for key in ("response", "action", "additional_question"):
+    for key in ('response', 'action', 'additional_question'):
         m = re.search(rf'"{key}"\s*:\s*"((?:[^"\\]|\\.)*)"', content, re.DOTALL)
         if m:
             parsed[key] = m.group(1).replace('\\"', '"')
@@ -386,32 +392,32 @@ def _extract_json_safe(content: str) -> dict:
     plain: Dict = {}
     # Scores (unquoted numbers, e.g. "Relevance: 0.9")
     for key, label in [
-        ("relevance", "Relevance"),
-        ("confidence", "Confidence"),
-        ("surprise", "Surprise"),
+        ('relevance', 'Relevance'),
+        ('confidence', 'Confidence'),
+        ('surprise', 'Surprise'),
     ]:
-        m = re.search(rf"^{label}:\s*([0-9.]+)", content, re.MULTILINE | re.IGNORECASE)
+        m = re.search(rf'^{label}:\s*([0-9.]+)', content, re.MULTILINE | re.IGNORECASE)
         if m:
             try:
                 plain[key] = float(m.group(1))
             except ValueError:
                 pass
     # Action: single line (may be a function call like scroll(0, 200))
-    m = re.search(r"^Action:\s*(.+)$", content, re.MULTILINE)
+    m = re.search(r'^Action:\s*(.+)$', content, re.MULTILINE)
     if m:
-        plain["action"] = m.group(1).strip().strip('"')
+        plain['action'] = m.group(1).strip().strip('"')
     # Reasoning: everything from "Reasoning:" until the next labeled field
     m = re.search(
-        r"^Reasoning:\s*(.*?)(?=\n(?:Action|Additional_question|Relevance|Confidence|Surprise):)",
+        r'^Reasoning:\s*(.*?)(?=\n(?:Action|Additional_question|Relevance|Confidence|Surprise):)',
         content,
         re.DOTALL | re.MULTILINE,
     )
     if m:
-        plain["response"] = m.group(1).strip()
+        plain['response'] = m.group(1).strip()
     # Additional_question: strip surrounding quotes if present
     m = re.search(r'^Additional_question:\s*"?(.*?)"?\s*$', content, re.MULTILINE)
     if m:
-        plain["additional_question"] = m.group(1).strip()
+        plain['additional_question'] = m.group(1).strip()
     return plain
 
 
@@ -430,12 +436,12 @@ def parse_webagent_response(
 
     parsed = _extract_json_safe(content)
 
-    action = parsed.get("action", "").strip()
-    reasoning = parsed.get("response", content).strip()
+    action = parsed.get('action', '').strip()
+    reasoning = parsed.get('response', content).strip()
 
     if not action:
         m = re.search(
-            r"((?:send_msg_to_user|click|fill|scroll|tab_focus|go_back|go_forward|goto|hover|press|select_option|new_tab|close_tab)\s*\(.*?\))",
+            r'((?:send_msg_to_user|click|fill|scroll|tab_focus|go_back|go_forward|goto|hover|press|select_option|new_tab|close_tab)\s*\(.*?\))',
             content,
             re.DOTALL,
         )
@@ -443,15 +449,15 @@ def parse_webagent_response(
             action = m.group(1).strip()
 
     # The ``additional_question`` from web agent maps to additional_questions
-    aq = parsed.get("additional_question", "").strip()
+    aq = parsed.get('additional_question', '').strip()
     additional_questions = [aq] if aq else list(default_additional_questions)
 
     return {
         # action is the primary output (goes into Chunk.gist)
-        "response": action if action else reasoning,
-        "reasoning": reasoning,
-        "additional_questions": additional_questions,
-        "relevance": _safe_float(parsed.get("relevance", 0.5)),
-        "confidence": _safe_float(parsed.get("confidence", 0.5)),
-        "surprise": _safe_float(parsed.get("surprise", 0.2)),
+        'response': action if action else reasoning,
+        'reasoning': reasoning,
+        'additional_questions': additional_questions,
+        'relevance': _safe_float(parsed.get('relevance', 0.5)),
+        'confidence': _safe_float(parsed.get('confidence', 0.5)),
+        'surprise': _safe_float(parsed.get('surprise', 0.2)),
     }

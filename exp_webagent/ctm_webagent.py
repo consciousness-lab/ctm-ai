@@ -27,11 +27,11 @@ def image_to_jpg_base64_url(image: np.ndarray | Image.Image):
     """Convert a numpy array to a base64 encoded image url."""
     if isinstance(image, np.ndarray):
         image = Image.fromarray(image)
-    if image.mode in ("RGBA", "LA"):
-        image = image.convert("RGB")
+    if image.mode in ('RGBA', 'LA'):
+        image = image.convert('RGB')
 
     with io.BytesIO() as buffer:
-        image.save(buffer, format="JPEG")
+        image.save(buffer, format='JPEG')
         image_base64 = base64.b64encode(buffer.getvalue()).decode()
 
     # return f"data:image/jpeg;base64,{image_base64}"
@@ -44,7 +44,7 @@ def _sanitize_send_msg_action(action: str) -> str:
     - Replace double curly braces {{ / }} with single { / }
       (LLMs sometimes mimic Python f-string escaping)
     """
-    m = re.match(r"send_msg_to_user\((.+)\)\s*$", action, re.DOTALL)
+    m = re.match(r'send_msg_to_user\((.+)\)\s*$', action, re.DOTALL)
     if not m:
         return action
     arg = m.group(1).strip()
@@ -53,19 +53,19 @@ def _sanitize_send_msg_action(action: str) -> str:
         inner = arg[1:]
         if inner.endswith(quote):
             inner = inner[:-1]
-        inner = inner.replace("{{", "{").replace("}}", "}")
-        return f"send_msg_to_user({quote}{inner}{quote})"
+        inner = inner.replace('{{', '{').replace('}}', '}')
+        return f'send_msg_to_user({quote}{inner}{quote})'
     return action
 
 
 class CTMAgent(Agent):
     def __init__(
         self,
-        ctm_name: str = "web",
+        ctm_name: str = 'web',
         use_html: bool = True,
         use_axtree: bool = True,
         use_screenshot: bool = True,
-        demo_mode: str = "off",
+        demo_mode: str = 'off',
         task_log_dir: Optional[str] = None,
     ) -> None:
         super().__init__()
@@ -75,10 +75,10 @@ class CTMAgent(Agent):
         self.use_axtree = use_axtree
         self.use_screenshot = use_screenshot
 
-        self.ctm = WebCTM(ctm_name="web_ctm")
+        self.ctm = WebCTM(ctm_name='web_ctm')
 
         self.action_set = HighLevelActionSet(
-            subsets=["chat", "tab", "nav", "bid", "infeas"],
+            subsets=['chat', 'tab', 'nav', 'bid', 'infeas'],
             strict=False,
             multiaction=False,
             demo_mode=demo_mode,
@@ -91,7 +91,7 @@ class CTMAgent(Agent):
 
     def obs_preprocessor(self, obs: dict) -> dict:
         # Get extra_element_properties safely
-        extra_element_properties = obs.get("extra_element_properties")
+        extra_element_properties = obs.get('extra_element_properties')
 
         # Create screenshot_som numpy array for saving (keep original format)
         screenshot_som_array = None
@@ -99,52 +99,49 @@ class CTMAgent(Agent):
 
         if self.use_screenshot and extra_element_properties is not None:
             screenshot_som_array = overlay_som(
-                screenshot=obs["screenshot"],
+                screenshot=obs['screenshot'],
                 extra_properties=extra_element_properties,
             )
             screenshot_som_base64 = image_to_jpg_base64_url(screenshot_som_array)
 
         return {
-            "chat_messages": obs["chat_messages"],
-            "screenshot": obs["screenshot"],
-            "goal_object": obs["goal_object"],
-            "last_action": obs["last_action"],
-            "last_action_error": obs["last_action_error"],
-            "open_pages_urls": obs["open_pages_urls"],
-            "open_pages_titles": obs["open_pages_titles"],
-            "active_page_index": obs["active_page_index"],
-            "extra_element_properties": extra_element_properties,
-            "axtree_txt": flatten_axtree_to_str(obs["axtree_object"]),
-            "pruned_html": prune_html(flatten_dom_to_str(obs["dom_object"])),
+            'chat_messages': obs['chat_messages'],
+            'screenshot': obs['screenshot'],
+            'goal_object': obs['goal_object'],
+            'last_action': obs['last_action'],
+            'last_action_error': obs['last_action_error'],
+            'open_pages_urls': obs['open_pages_urls'],
+            'open_pages_titles': obs['open_pages_titles'],
+            'active_page_index': obs['active_page_index'],
+            'extra_element_properties': extra_element_properties,
+            'axtree_txt': flatten_axtree_to_str(obs['axtree_object']),
+            'pruned_html': prune_html(flatten_dom_to_str(obs['dom_object'])),
             # Keep original numpy array format for save_step_info
-            "screenshot_som": screenshot_som_array,
+            'screenshot_som': screenshot_som_array,
             # Base64 version for CTM processing
-            "screenshot_som_base64": screenshot_som_base64,
+            'screenshot_som_base64': screenshot_som_base64,
         }
 
     def get_action(self, obs: dict) -> tuple[str, AgentInfo]:
         input_params = self._prepare_ctm_inputs(obs)
 
-        force_final = (
-            len(self.action_history) >= self.ctm.config.max_steps_before_force
-        )
+        force_final = len(self.action_history) >= self.ctm.config.max_steps_before_force
 
         try:
             reasoning, action, parsed_answer = self.ctm(
-                query=obs["goal_object"][0]["text"],
-                action_space=input_params.get("action_space"),
-                action_history=input_params.get("action_history"),
-                html=obs["pruned_html"],
-                axtree=obs["axtree_txt"],
-                screenshot=obs["screenshot_som_base64"],
-                other_info=input_params.get("other_info"),
+                query=obs['goal_object'][0]['text'],
+                action_space=input_params.get('action_space'),
+                action_history=input_params.get('action_history'),
+                html=obs['pruned_html'],
+                axtree=obs['axtree_txt'],
+                screenshot=obs['screenshot_som_base64'],
+                other_info=input_params.get('other_info'),
                 force_final=force_final,
             )
 
-            if force_final and not action.strip().startswith("send_msg_to_user"):
+            if force_final and not action.strip().startswith('send_msg_to_user'):
                 logger.info(
-                    "Force final: overriding action with parsed_answer "
-                    "(step %d >= %d)",
+                    'Force final: overriding action with parsed_answer (step %d >= %d)',
                     len(self.action_history),
                     self.ctm.config.max_steps_before_force,
                 )
@@ -158,13 +155,13 @@ class CTMAgent(Agent):
             self.answer_history.append(parsed_answer)
             self.step_count += 1
 
-            print("Reasoning: ", reasoning)
-            print("Action:    ", action)
+            print('Reasoning: ', reasoning)
+            print('Action:    ', action)
 
             return action, {}
 
         except Exception as e:
-            logger.error(f"CTM error: {e}")
+            logger.error(f'CTM error: {e}')
             fallback_action = (
                 "send_msg_to_user('I encountered an error. Please try again.')"
             )
@@ -172,9 +169,9 @@ class CTMAgent(Agent):
             self.step_count += 1
 
             info = AgentInfo(
-                think=f"CTM error: {str(e)}",
-                stats={"error": str(e)},
-                extra_info={"fallback": True},
+                think=f'CTM error: {str(e)}',
+                stats={'error': str(e)},
+                extra_info={'fallback': True},
             )
 
             return fallback_action, info
@@ -190,40 +187,38 @@ class CTMAgent(Agent):
 
         step_log['step'] = self.step_count
 
-        active_idx = obs.get("active_page_index")
-        urls = obs.get("open_pages_urls", [])
+        active_idx = obs.get('active_page_index')
+        urls = obs.get('open_pages_urls', [])
         if active_idx is not None and urls:
             idx = int(np.asarray(active_idx).flat[0])
             if 0 <= idx < len(urls):
                 step_log['current_url'] = urls[idx]
 
         os.makedirs(self.task_log_dir, exist_ok=True)
-        path = os.path.join(self.task_log_dir, f"step{self.step_count}.json")
+        path = os.path.join(self.task_log_dir, f'step{self.step_count}.json')
 
         try:
             with open(path, 'w', encoding='utf-8') as f:
                 json.dump(step_log, f, indent=2, ensure_ascii=False, default=str)
-            logger.info(f"Step log saved to {path}")
+            logger.info(f'Step log saved to {path}')
         except Exception as exc:
-            logger.warning(f"Failed to save step log: {exc}")
+            logger.warning(f'Failed to save step log: {exc}')
 
     def _prepare_ctm_inputs(self, obs: dict) -> Dict[str, Any]:
         inputs = {}
 
-        inputs["other_info"] = "Currently open tabs:\n"
+        inputs['other_info'] = 'Currently open tabs:\n'
         for page_index, (page_url, page_title) in enumerate(
-            zip(obs["open_pages_urls"], obs["open_pages_titles"])
+            zip(obs['open_pages_urls'], obs['open_pages_titles'])
         ):
             inputs[
-                "other_info"
+                'other_info'
             ] += f"""Tab {page_index}{' (active tab)' if page_index == obs['active_page_index'] else ''}
   Title: {page_title}
   URL: {page_url}
 """
 
-        inputs[
-            "action_space"
-        ] = f"""\
+        inputs['action_space'] = f"""\
 # Action Space
 
 {self.action_set.describe(with_long_description=False, with_examples=True)}
@@ -246,21 +241,23 @@ CRITICAL: The argument to send_msg_to_user() MUST be a JSON string with keys "ta
             history_parts = []
             max_len = max(len(self.action_history), len(self.answer_history))
             for i in range(max_len):
-                step_label = f"[Step {i}]"
+                step_label = f'[Step {i}]'
                 if i < len(self.action_history):
-                    history_parts.append(f"{step_label} Action: {self.action_history[i]}")
+                    history_parts.append(
+                        f'{step_label} Action: {self.action_history[i]}'
+                    )
                 if i < len(self.answer_history):
-                    history_parts.append(f"{step_label} Observation: {self.answer_history[i]}")
-            inputs["action_history"] = "# History of past actions\n\n" + "\n\n".join(
+                    history_parts.append(
+                        f'{step_label} Observation: {self.answer_history[i]}'
+                    )
+            inputs['action_history'] = '# History of past actions\n\n' + '\n\n'.join(
                 history_parts
             )
         else:
-            inputs["action_history"] = ""
+            inputs['action_history'] = ''
 
-        if obs["last_action_error"]:
-            inputs[
-                "action_history"
-            ] += f"""
+        if obs['last_action_error']:
+            inputs['action_history'] += f"""
 
 # Error message from last action
 
@@ -275,15 +272,15 @@ CRITICAL: The argument to send_msg_to_user() MUST be a JSON string with keys "ta
         self.answer_history = []
         self.current_obs = None
         self.step_count = 0
-        if hasattr(self.ctm, "reset"):
+        if hasattr(self.ctm, 'reset'):
             self.ctm.reset()
 
 
 @dataclasses.dataclass
 class CTMAgentArgs(AbstractAgentArgs):
-    ctm_name: str = "web"
+    ctm_name: str = 'web'
     chat_mode: bool = False
-    demo_mode: str = "off"
+    demo_mode: str = 'off'
     use_html: bool = True
     use_axtree: bool = True
     use_screenshot: bool = True
