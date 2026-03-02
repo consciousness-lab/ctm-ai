@@ -15,6 +15,7 @@ python run_webctm.py --all --use_screenshot True --save_screenshot False
 import argparse
 import json
 import traceback
+from datetime import datetime
 from pathlib import Path
 
 import browsergym.webarena_verified  # registers webarena_verified tasks to gym
@@ -347,6 +348,7 @@ def run_single_task(
     save_screenshot: bool = True,
     save_som: bool = False,
     action_timeout: float = None,
+    ctm_log_base_dir: str = None,
 ):
     """Run a single task using CTM agent."""
     task_id = task_record["task_id"]
@@ -356,6 +358,14 @@ def run_single_task(
     print(f'\n{"=" * 80}')
     print(f"Running task: {task_name} (category: {category})")
     print(f'{"=" * 80}')
+
+    if ctm_log_base_dir:
+        sites_name = "_".join(task_record["sites"])
+        agent_args.task_log_dir = str(
+            Path(ctm_log_base_dir) / f"{sites_name}_{task_id}"
+        )
+    else:
+        agent_args.task_log_dir = None
 
     # Create environment arguments (same as run_web.py)
     env_args = EnvArgs(
@@ -428,7 +438,8 @@ def run_single_task(
                     # Get current page URL
                     if "open_pages_urls" in obs and "active_page_index" in obs:
                         urls = obs["open_pages_urls"]
-                        active_idx = int(obs["active_page_index"])
+                        import numpy as np
+                        active_idx = int(np.asarray(obs["active_page_index"]).flat[0])
                         if urls and 0 <= active_idx < len(urls):
                             step_detail["reference_url"] = urls[active_idx]
 
@@ -564,6 +575,12 @@ def main():
     result_base_dir = Path(args.results_dir)
     result_base_dir.mkdir(parents=True, exist_ok=True)
 
+    # CTM detailed log directory
+    start_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ctm_log_base_dir = str(Path(args.results_dir) / f"all_results_{start_time}")
+    Path(ctm_log_base_dir).mkdir(parents=True, exist_ok=True)
+    print(f"CTM detailed logs will be saved to: {ctm_log_base_dir}")
+
     # Statistics
     total_tasks = 0
     completed_tasks = 0
@@ -649,6 +666,7 @@ def main():
                 save_screenshot=args.save_screenshot,
                 save_som=args.save_som,
                 action_timeout=args.action_timeout,
+                ctm_log_base_dir=ctm_log_base_dir,
             )
 
             if success:

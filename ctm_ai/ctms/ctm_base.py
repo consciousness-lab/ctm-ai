@@ -145,11 +145,26 @@ class BaseConsciousTuringMachine(ABC):
 
         return chunks
 
-    def parse_answer(self, answer: str, query: str) -> str:
+    def parse_answer(
+        self,
+        answer: str,
+        query: str,
+        reasoning: str = '',
+        action_history: str = '',
+        force_final: bool = False,
+    ) -> str:
         from litellm import completion
 
-        parse_prompt = self.config.parse_prompt_template.format(
-            answer=answer, query=query
+        template = (
+            self.config.force_final_prompt_template
+            if force_final
+            else self.config.parse_prompt_template
+        )
+        parse_prompt = template.format(
+            answer=answer,
+            query=query,
+            reasoning=reasoning,
+            action_history=action_history,
         )
 
         parse_model = self.config.parse_model or 'gemini/gemini-2.5-flash-lite'

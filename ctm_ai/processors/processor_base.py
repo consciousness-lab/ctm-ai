@@ -272,11 +272,7 @@ class BaseProcessor(object):
         if executor_messages is None:
             return None
 
-        default_qs = (
-            ['Would you like me to explain any specific aspects in more detail?']
-            if phase == 'initial' and self.num_additional_questions > 0
-            else []
-        )
+        default_qs = []
         executor_output = self.ask_executor(
             messages=executor_messages,
             default_additional_questions=default_qs,

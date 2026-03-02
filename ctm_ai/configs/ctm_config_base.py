@@ -19,6 +19,11 @@ Analysis:
 {answer}
 """
 
+    DEFAULT_FORCE_FINAL_PROMPT_TEMPLATE = (
+        "Based on all analysis so far, produce the final answer.\n\n"
+        "Analysis:\n{answer}\n"
+    )
+
     def __init__(
         self,
         ctm_name: Optional[str] = None,
@@ -31,6 +36,8 @@ Analysis:
         parse_prompt_template: Optional[str] = None,
         score_weights: Optional[Dict[str, float]] = None,
         num_additional_questions: int = 3,
+        max_steps_before_force: int = 9,
+        force_final_prompt_template: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         self.ctm_name: Optional[str] = ctm_name
@@ -44,6 +51,10 @@ Analysis:
         self.supervisors_prompt = supervisors_prompt
         self.parse_prompt_template = (
             parse_prompt_template or self.DEFAULT_PARSE_PROMPT_TEMPLATE
+        )
+        self.max_steps_before_force: int = max_steps_before_force
+        self.force_final_prompt_template = (
+            force_final_prompt_template or self.DEFAULT_FORCE_FINAL_PROMPT_TEMPLATE
         )
         self.output_threshold = output_threshold
         self.score_weights: Dict[str, float] = {

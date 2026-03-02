@@ -57,20 +57,30 @@ resolve_sites() {
 # Core Functions
 # ==========================================
 
-# Print environment variables required for evaluation (always full list, unchanged)
+# Set and export environment variables required for evaluation
+set_env_vars() {
+  export WA_SHOPPING="http://${HOST_IP}:${PORT_SHOPPING}"
+  export WA_SHOPPING_ADMIN="http://${HOST_IP}:${PORT_SHOPPING_ADMIN}/admin"
+  export WA_REDDIT="http://${HOST_IP}:${PORT_REDDIT}/forums/all"
+  export WA_GITLAB="http://${HOST_IP}:${PORT_GITLAB}"
+  export WA_WIKIPEDIA="http://${HOST_IP}:${PORT_WIKIPEDIA}/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing"
+  export WA_MAP="http://${HOST_IP}:${PORT_MAP}"
+  export WA_HOMEPAGE="http://${HOST_IP}:${PORT_HOMEPAGE}"
+  export PW_EXTRA_HEADERS=""
+}
+
+# Print environment variables for the user
 print_exports() {
-  echo -e "\n📋 Please copy the following environment variables to your terminal, or add them to your evaluation startup script:"
-  cat << EOF
-export WA_SHOPPING="http://${HOST_IP}:${PORT_SHOPPING}"
-export WA_SHOPPING_ADMIN="http://${HOST_IP}:${PORT_SHOPPING_ADMIN}/admin"
-export WA_REDDIT="http://${HOST_IP}:${PORT_REDDIT}/forums/all"
-export WA_GITLAB="http://${HOST_IP}:${PORT_GITLAB}/explore"
-export WA_WIKIPEDIA="http://${HOST_IP}:${PORT_WIKIPEDIA}/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing"
-export WA_MAP="http://${HOST_IP}:${PORT_MAP}"
-export WA_HOMEPAGE="http://${HOST_IP}:${PORT_HOMEPAGE}"
-export PW_EXTRA_HEADERS=""
-EOF
-  echo -e "--------------------------------------------------\n"
+  echo -e "\n📋 Environment variables (already exported if you used 'source $0 env'):"
+  echo "--------------------------------------------------"
+  echo "WA_SHOPPING=$WA_SHOPPING"
+  echo "WA_SHOPPING_ADMIN=$WA_SHOPPING_ADMIN"
+  echo "WA_REDDIT=$WA_REDDIT"
+  echo "WA_GITLAB=$WA_GITLAB"
+  echo "WA_WIKIPEDIA=$WA_WIKIPEDIA"
+  echo "WA_MAP=$WA_MAP"
+  echo "WA_HOMEPAGE=$WA_HOMEPAGE"
+  echo "--------------------------------------------------"
 }
 
 # Init a single site by index (0=shopping .. 5=map)
@@ -119,6 +129,7 @@ init_all() {
     done
   done
   echo "✅ Initialization complete!"
+  set_env_vars
   print_exports
 }
 
@@ -137,6 +148,7 @@ start_all() {
   fi
   docker start "${TARGET_CONTAINERS[@]}"
   echo "✅ Startup complete!"
+  set_env_vars
   print_exports
 }
 
@@ -164,6 +176,7 @@ restart_all() {
   echo "🔄 [RESTART] Restarting: ${TARGET_CONTAINERS[*]}"
   docker restart "${TARGET_CONTAINERS[@]}"
   echo "✅ Restart complete!"
+  set_env_vars
   print_exports
 }
 
@@ -200,6 +213,7 @@ reset_all() {
     done
   done
   echo "✅ Reset complete!"
+  set_env_vars
   print_exports
 }
 
@@ -213,10 +227,12 @@ case "$1" in
   restart) restart_all "$@" ;;
   remove)  remove_all "$@" ;;
   reset)   reset_all "$@" ;;
+  env)     set_env_vars; print_exports ;;
   *)
-    echo "Usage: $0 {init|start|stop|restart|remove|reset} [site ...]"
+    echo "Usage: $0 {env|init|start|stop|restart|remove|reset} [site ...]"
     echo "  site: optional, one or more of: ${SITES[*]} (default: all)"
     echo ""
+    echo "  env     - Export environment variables (use: source $0 env)"
     echo "  init    - Create and start the environment for the first time (runs docker run)"
     echo "  start   - Wake up existing environment (runs docker start)"
     echo "  stop    - Pause execution to free resources (runs docker stop)"
@@ -225,7 +241,8 @@ case "$1" in
     echo "  reset   - Destroy and recreate (ideal for restoring a clean state after running an Agent)"
     echo ""
     echo "Examples:"
-    echo "  $0 start                    # start all"
+    echo "  source $0 env              # export env vars to current shell"
+    echo "  $0 start                   # start all"
     echo "  $0 start shopping map      # start only shopping and map"
     echo "  $0 init wikipedia          # init only wikipedia"
     exit 1

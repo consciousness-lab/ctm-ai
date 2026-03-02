@@ -88,15 +88,21 @@ class WebAgentBaseProcessor(BaseProcessor):
         if extra:
             other_info_parts.append(extra)
 
-        # 2. Fuse history — answers from sibling processors
-        for item in self.fuse_history:
-            other_info_parts.append(f'[{item["processor_name"]}]: {item["answer"]}')
+        # 2. Fuse history — additional info from sibling processors (different modalities)
+        if self.fuse_history:
+            other_info_parts.append(
+                "Additional information from other processors that might be useful:"
+            )
+            for item in self.fuse_history:
+                other_info_parts.append(f'[{item["processor_name"]}]: {item["answer"]}')
 
-        # 3. Previous CTM round winners
+        # 3. Previous CTM round winners — same observation, action NOT yet executed
         if self.winner_answer and phase == "initial":
             other_info_parts.append(
-                "There are previous answers for "
-                "the same step. Think further based on this:"
+                "Below are proposed answers from a previous reasoning round for the SAME "
+                "observation and the SAME step. These actions have NOT been executed yet "
+                "and the page state has NOT changed. Use them as reference to refine "
+                "your reasoning, but you may choose a different action if you disagree:"
             )
             for item in self.winner_answer:
                 other_info_parts.append(
@@ -194,9 +200,7 @@ class WebAgentBaseProcessor(BaseProcessor):
         action = executor_output.get("response", "")
         reasoning = executor_output.get("reasoning", "")
 
-        enriched_content = executor_content
-        if reasoning:
-            enriched_content = f"[Reasoning]: {reasoning}\n\n{executor_content}"
+        enriched_content = f"[Reasoning]: {reasoning}" if reasoning else ""
 
         return Chunk(
             time_step=0,

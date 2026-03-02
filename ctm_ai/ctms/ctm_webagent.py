@@ -33,6 +33,7 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
         action_history: str = '',
         action_space: str = '',
         other_info: str = '',
+        force_final: bool = False,
         **kwargs: Any,
     ) -> Tuple[str, str, str]:
         """Run one CTM step and return ``(reasoning, action, parsed_action)``.
@@ -49,6 +50,7 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
             action_history=action_history,
             action_space=action_space,
             other_info=other_info,
+            force_final=force_final,
             **kwargs,
         )
 
@@ -65,6 +67,7 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
         action_history: str = '',
         action_space: str = '',
         other_info: str = '',
+        force_final: bool = False,
         **kwargs: Any,
     ) -> Tuple[str, str, str]:
         """Iterative CTM loop adapted for web agents.
@@ -80,30 +83,81 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
             'other_info': other_info,
         }
 
+        step_log: dict = {'query': query, 'iterations': []}
+
         action = ''
         reasoning = ''
 
         for i in range(self.config.max_iter_num):
+            iteration_log: dict = {
+                'iteration': i,
+                'all_chunks': [],
+                'winning_chunk': None,
+                'link_form_phase': [],
+                'fuse_phase': [],
+            }
+            self.detailed_log = {'current_iteration': iteration_log}
+
             chunks = self._ask_web_processors(query, phase='initial', **web_params)
+
+            for chunk in chunks:
+                iteration_log['all_chunks'].append({
+                    'processor_name': chunk.processor_name,
+                    'gist': chunk.gist,
+                    'executor_content': chunk.executor_content,
+                    'relevance': chunk.relevance,
+                    'confidence': chunk.confidence,
+                    'surprise': chunk.surprise,
+                    'weight': chunk.weight,
+                    'additional_questions': chunk.additional_questions,
+                })
+
             if not chunks:
                 logger.warning('WebCTM: no processor returned a valid chunk.')
+                step_log['iterations'].append(iteration_log)
                 break
 
             winning_chunk = self.uptree_competition(chunks)
             action = winning_chunk.gist
             reasoning = self._extract_reasoning(winning_chunk)
 
+            iteration_log['winning_chunk'] = {
+                'processor_name': winning_chunk.processor_name,
+                'gist': winning_chunk.gist,
+                'executor_content': winning_chunk.executor_content,
+                'reasoning': reasoning,
+                'weight': winning_chunk.weight,
+            }
+
             if (
                 i == self.config.max_iter_num - 1
                 or winning_chunk.weight >= self.config.output_threshold
             ):
+                step_log['iterations'].append(iteration_log)
                 break
 
             self.downtree_broadcast(winning_chunk)
             self.link_form(chunks, winning_chunk, **web_params)
             self.fuse_processor(chunks, query, **web_params)
 
-        parsed_answer = self.parse_answer(answer=action, query=query)
+            step_log['iterations'].append(iteration_log)
+
+        self.detailed_log = None
+
+        parsed_answer = self.parse_answer(
+            answer=action,
+            query=query,
+            reasoning=reasoning,
+            action_history=web_params.get('action_history', ''),
+            force_final=force_final,
+        )
+
+        step_log['final_action'] = action
+        step_log['final_reasoning'] = reasoning
+        step_log['parsed_answer'] = parsed_answer
+        step_log['force_final'] = force_final
+        self.last_step_log = step_log
+
         return reasoning, action, parsed_answer
 
     # ------------------------------------------------------------------
