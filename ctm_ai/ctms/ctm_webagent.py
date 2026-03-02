@@ -101,16 +101,18 @@ class WebConsciousTuringMachine(ConsciousTuringMachine):
             chunks = self._ask_web_processors(query, phase='initial', **web_params)
 
             for chunk in chunks:
-                iteration_log['all_chunks'].append({
-                    'processor_name': chunk.processor_name,
-                    'gist': chunk.gist,
-                    'executor_content': chunk.executor_content,
-                    'relevance': chunk.relevance,
-                    'confidence': chunk.confidence,
-                    'surprise': chunk.surprise,
-                    'weight': chunk.weight,
-                    'additional_questions': chunk.additional_questions,
-                })
+                iteration_log['all_chunks'].append(
+                    {
+                        'processor_name': chunk.processor_name,
+                        'gist': chunk.gist,
+                        'executor_content': chunk.executor_content,
+                        'relevance': chunk.relevance,
+                        'confidence': chunk.confidence,
+                        'surprise': chunk.surprise,
+                        'weight': chunk.weight,
+                        'additional_questions': chunk.additional_questions,
+                    }
+                )
 
             if not chunks:
                 logger.warning('WebCTM: no processor returned a valid chunk.')

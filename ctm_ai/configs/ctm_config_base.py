@@ -20,8 +20,8 @@ Analysis:
 """
 
     DEFAULT_FORCE_FINAL_PROMPT_TEMPLATE = (
-        "Based on all analysis so far, produce the final answer.\n\n"
-        "Analysis:\n{answer}\n"
+        'Based on all analysis so far, produce the final answer.\n\n'
+        'Analysis:\n{answer}\n'
     )
 
     def __init__(
