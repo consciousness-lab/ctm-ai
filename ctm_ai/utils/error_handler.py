@@ -103,7 +103,7 @@ def message_exponential_backoff(
             logger.error(
                 f"Failed to execute '{func.__name__}' after {retries} retries.",
             )
-            return {'response': None, 'additional_question': None}
+            return {'response': None, 'additional_questions': []}
 
         return wrapper
 

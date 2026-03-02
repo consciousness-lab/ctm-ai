@@ -105,7 +105,9 @@ def run_instance(test_file, dataset, dataset_name, agent, tracker, output_file):
 
     label_normalized = normalize_label(label)
     is_correct = final_vote == label_normalized
-    print(f'  Result: {final_vote} | GT: {label_normalized} | {"✓" if is_correct else "✗"} ({duration:.1f}s)')
+    print(
+        f'  Result: {final_vote} | GT: {label_normalized} | {"✓" if is_correct else "✗"} ({duration:.1f}s)'
+    )
 
     # Step 3: Save result
     result = {
@@ -131,32 +133,52 @@ def run_instance(test_file, dataset, dataset_name, agent, tracker, output_file):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Unified Ensemble (N multimodal votes)')
-    parser.add_argument(
-        '--dataset_name', type=str, default='urfunny',
-        choices=['urfunny', 'mustard'], help='Dataset name (default: urfunny)',
+    parser = argparse.ArgumentParser(
+        description='Unified Ensemble (N multimodal votes)'
     )
     parser.add_argument(
-        '--provider', type=str, default='gemini',
-        choices=['gemini', 'qwen'], help='LLM provider (default: gemini)',
+        '--dataset_name',
+        type=str,
+        default='urfunny',
+        choices=['urfunny', 'mustard'],
+        help='Dataset name (default: urfunny)',
     )
     parser.add_argument(
-        '--model', type=str, default=None,
+        '--provider',
+        type=str,
+        default='gemini',
+        choices=['gemini', 'qwen'],
+        help='LLM provider (default: gemini)',
+    )
+    parser.add_argument(
+        '--model',
+        type=str,
+        default=None,
         help='Model name for litellm (default: auto based on provider)',
     )
     parser.add_argument(
-        '--dataset', type=str, default=None,
+        '--dataset',
+        type=str,
+        default=None,
         help='Path to dataset JSON file (default: auto based on dataset_name)',
     )
     parser.add_argument(
-        '--output', type=str, default=None, help='Output JSONL file path',
+        '--output',
+        type=str,
+        default=None,
+        help='Output JSONL file path',
     )
     parser.add_argument(
-        '--temperature', type=float, default=1.0,
+        '--temperature',
+        type=float,
+        default=1.0,
         help='Sampling temperature (default: 1.0)',
     )
     parser.add_argument(
-        '--n_votes', type=int, default=3, help='Number of votes (default: 3)',
+        '--n_votes',
+        type=int,
+        default=3,
+        help='Number of votes (default: 3)',
     )
     args = parser.parse_args()
 
@@ -165,7 +187,9 @@ if __name__ == '__main__':
     config = get_dataset_config(args.dataset_name)
     if args.dataset is None:
         args.dataset = config.get_default_dataset_path()
-    output_file = args.output or f'unified_ensemble_{args.dataset_name}_{args.provider}.jsonl'
+    output_file = (
+        args.output or f'unified_ensemble_{args.dataset_name}_{args.provider}.jsonl'
+    )
 
     check_api_key(args.provider)
     litellm.set_verbose = False
@@ -180,20 +204,26 @@ if __name__ == '__main__':
         model=args.model,
         temperature=args.temperature,
     )
-    print(f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {agent.model}')
+    print(
+        f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {agent.model}'
+    )
 
     dataset = load_data(args.dataset)
     test_list = list(dataset.keys())
     processed_keys = load_processed_keys(output_file)
     if processed_keys:
-        print(f'Resuming: {len(processed_keys)} done, {len(test_list) - len(processed_keys)} remaining')
+        print(
+            f'Resuming: {len(processed_keys)} done, {len(test_list) - len(processed_keys)} remaining'
+        )
 
     try:
         for test_file in test_list:
             if test_file in processed_keys:
                 continue
             try:
-                run_instance(test_file, dataset, args.dataset_name, agent, tracker, output_file)
+                run_instance(
+                    test_file, dataset, args.dataset_name, agent, tracker, output_file
+                )
             except Exception as e:
                 print(f'[ERROR] {test_file}: {e}')
                 continue

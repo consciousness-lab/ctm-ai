@@ -50,9 +50,14 @@ def extract_answer(response):
 
 
 def run_instance(
-    test_file, dataset, dataset_name,
-    video_agent, audio_agent, text_agent,
-    tracker, output_file,
+    test_file,
+    dataset,
+    dataset_name,
+    video_agent,
+    audio_agent,
+    text_agent,
+    tracker,
+    output_file,
 ):
     """Process one sample: load inputs -> multi-round debate -> judge -> save."""
     start_time = time.time()
@@ -96,13 +101,17 @@ def run_instance(
             text_query = f"{prompts['text_init']}\n\ntarget text: '{target_sentence}'"
         else:
             video_query = prompts['video_refine'].format(
-                own_answer=video_answer, audio_answer=audio_answer, text_answer=text_answer,
+                own_answer=video_answer,
+                audio_answer=audio_answer,
+                text_answer=text_answer,
             )
             audio_query = prompts['audio_refine'].format(
-                own_answer=audio_answer, video_answer=video_answer, text_answer=text_answer,
+                own_answer=audio_answer,
+                video_answer=video_answer,
+                text_answer=text_answer,
             )
             text_query = (
-                f"{prompts['text_refine'].format(own_answer=text_answer, video_answer=video_answer, audio_answer=audio_answer)}"
+                f'{prompts["text_refine"].format(own_answer=text_answer, video_answer=video_answer, audio_answer=audio_answer)}'
                 f"\n\ntarget text: '{target_sentence}'"
             )
 
@@ -129,7 +138,9 @@ def run_instance(
         round_history += f'[Text Expert]: {text_answer}\n\n'
         debate_history += round_history
 
-        print(f'    Video: {extract_answer(video_answer)} | Audio: {extract_answer(audio_answer)} | Text: {extract_answer(text_answer)}')
+        print(
+            f'    Video: {extract_answer(video_answer)} | Audio: {extract_answer(audio_answer)} | Text: {extract_answer(text_answer)}'
+        )
 
     # Judge makes final decision
     judge_query = f"{prompts['judge'].format(debate_history=debate_history)}\n\ntarget text: '{target_sentence}'"
@@ -142,7 +153,9 @@ def run_instance(
     duration = end_time - start_time
     tracker.add(duration, total_prompt_tokens, total_completion_tokens, num_api_calls)
 
-    print(f'  Judge: {final_verdict[:80] if final_verdict else "None"}... ({duration:.1f}s)')
+    print(
+        f'  Judge: {final_verdict[:80] if final_verdict else "None"}... ({duration:.1f}s)'
+    )
 
     # Step 3: Save result
     result = {
@@ -170,30 +183,48 @@ def run_instance(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='3-Agent Multimodal Debate')
     parser.add_argument(
-        '--dataset_name', type=str, default='urfunny',
-        choices=['urfunny', 'mustard'], help='Dataset name (default: urfunny)',
+        '--dataset_name',
+        type=str,
+        default='urfunny',
+        choices=['urfunny', 'mustard'],
+        help='Dataset name (default: urfunny)',
     )
     parser.add_argument(
-        '--provider', type=str, default='gemini',
-        choices=['gemini', 'qwen'], help='LLM provider (default: gemini)',
+        '--provider',
+        type=str,
+        default='gemini',
+        choices=['gemini', 'qwen'],
+        help='LLM provider (default: gemini)',
     )
     parser.add_argument(
-        '--model', type=str, default=None,
+        '--model',
+        type=str,
+        default=None,
         help='Model name for litellm (default: auto based on provider)',
     )
     parser.add_argument(
-        '--dataset', type=str, default=None,
+        '--dataset',
+        type=str,
+        default=None,
         help='Path to dataset JSON file (default: auto based on dataset_name)',
     )
     parser.add_argument(
-        '--output', type=str, default=None, help='Output JSONL file path',
+        '--output',
+        type=str,
+        default=None,
+        help='Output JSONL file path',
     )
     parser.add_argument(
-        '--temperature', type=float, default=1.0,
+        '--temperature',
+        type=float,
+        default=1.0,
         help='Sampling temperature (default: 1.0)',
     )
     parser.add_argument(
-        '--rounds', type=int, default=3, help='Number of debate rounds (default: 3)',
+        '--rounds',
+        type=int,
+        default=3,
+        help='Number of debate rounds (default: 3)',
     )
     args = parser.parse_args()
 
@@ -220,13 +251,17 @@ if __name__ == '__main__':
     text_agent = create_agent(
         'text', provider=args.provider, model=args.model, temperature=args.temperature
     )
-    print(f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {text_agent.model}')
+    print(
+        f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {text_agent.model}'
+    )
 
     dataset = load_data(args.dataset)
     test_list = list(dataset.keys())
     processed_keys = load_processed_keys(output_file)
     if processed_keys:
-        print(f'Resuming: {len(processed_keys)} done, {len(test_list) - len(processed_keys)} remaining')
+        print(
+            f'Resuming: {len(processed_keys)} done, {len(test_list) - len(processed_keys)} remaining'
+        )
 
     try:
         for test_file in test_list:
@@ -234,9 +269,14 @@ if __name__ == '__main__':
                 continue
             try:
                 run_instance(
-                    test_file, dataset, args.dataset_name,
-                    video_agent, audio_agent, text_agent,
-                    tracker, output_file,
+                    test_file,
+                    dataset,
+                    args.dataset_name,
+                    video_agent,
+                    audio_agent,
+                    text_agent,
+                    tracker,
+                    output_file,
                 )
             except Exception as e:
                 print(f'[ERROR] {test_file}: {e}')
