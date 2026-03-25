@@ -49,6 +49,13 @@ formatting instructions exactly. Issue only ONE action at a time. Reflect on \
 your past actions, any resulting error messages, and the current page state \
 before deciding on your next action.
 
+# Data Completeness
+When the task asks you to list, count, or find information across a page:
+- Check if there is MORE content below (scroll indicators, pagination, "Show More" buttons)
+- Keep scrolling until you reach the bottom or see all items
+- Track your progress in the response field (e.g. "checked 3/12 reviews so far")
+- Only provide your final answer when you have seen ALL relevant content
+
 # MANDATORY OUTPUT FORMAT
 You MUST respond with a single valid JSON object. \
 Do NOT include any text, explanation, or markdown outside the JSON. \
@@ -85,9 +92,12 @@ _OUTPUT_RULES_BLOCK = """\
 6. BEFORE calling send_msg_to_user(...), verify in your reasoning that you \
 have gathered ALL required information. If there is unseen content (more \
 pages, scroll, pagination, unexplored sections), continue exploring first.
-7. The argument to send_msg_to_user() MUST be a JSON string matching the \
-response schema provided in the objective. It must contain "task_type", \
-"status", and "retrieved_data" fields. Do NOT send plain natural language text.\
+7. The argument to send_msg_to_user() MUST be a concise, direct answer — just \
+the data requested. No JSON, no extra formatting, no explanations.
+8. If the task cannot be completed or the requested information does not exist, \
+you MUST send exactly "N/A" — not a sentence explaining why. Just "N/A".
+9. NEVER send "N/A" or send_msg_to_user on your very first action. Always \
+navigate or explore the page first to gather information.\
 """
 
 _SCORE_RUBRIC_BLOCK = """\
@@ -138,17 +148,27 @@ Example 1 (exploring — need more info):
 Example 2 (final answer — retrieval, all data gathered):
 {{
   "response": "I have scrolled through all 12 reviews. Found 4 reviewers mentioning the keyword: Alice, Bob, Carol, Dave. All content checked, no more reviews below. Ready to submit.",
-  "action": "send_msg_to_user('{{\\"task_type\\": \\"RETRIEVE\\", \\"status\\": \\"SUCCESS\\", \\"retrieved_data\\": [\\"Alice\\", \\"Bob\\", \\"Carol\\", \\"Dave\\"]}}')",
+  "action": "send_msg_to_user('Alice, Bob, Carol, Dave')",
   "additional_question": "",
   "relevance": 1.0,
   "confidence": 0.95,
   "surprise": 0.9
 }}
 
-Example 3 (final answer — navigation):
+Example 3 (action task — subscribe, add to cart, sort, etc. — NO send_msg_to_user):
 {{
-  "response": "Current URL is /issues?state=open and the page displays the open issues list. This matches the objective. Navigation complete.",
-  "action": "send_msg_to_user('{{\\"task_type\\": \\"NAVIGATE\\", \\"status\\": \\"SUCCESS\\", \\"retrieved_data\\": null}}')",
+  "response": "I found the Subscribe button with bid 923. The task asks me to subscribe to the newsletter. I will click the button to complete the action.",
+  "action": "click('923')",
+  "additional_question": "",
+  "relevance": 1.0,
+  "confidence": 0.9,
+  "surprise": 0.9
+}}
+
+Example 4 (task impossible — send exactly N/A):
+{{
+  "response": "I have thoroughly searched the page and there is no matching result for the query. The task cannot be completed.",
+  "action": "send_msg_to_user('N/A')",
   "additional_question": "",
   "relevance": 1.0,
   "confidence": 0.9,

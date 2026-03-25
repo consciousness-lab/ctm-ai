@@ -228,13 +228,11 @@ Here are examples of actions with chain-of-thought reasoning:
 I now need to click on the Submit button to send the form. I will use the click action on the button, which has bid 12.
 ```click("12")```
 
-I found the requested data. I will send it as structured JSON matching the required response schema.
-```send_msg_to_user('{{"task_type": "RETRIEVE", "status": "SUCCESS", "retrieved_data": ["Alice", "Bob"]}}')```
+I found the requested information after checking all reviews.
+```send_msg_to_user('Alice, Bob')```
 
-I have navigated to the requested page.
-```send_msg_to_user('{{"task_type": "NAVIGATE", "status": "SUCCESS", "retrieved_data": null}}')```
-
-CRITICAL: The argument to send_msg_to_user() MUST be a JSON string with keys "task_type", "status", and "retrieved_data", matching the response schema in the objective. Do NOT send plain text.
+The task cannot be completed because the requested item does not exist.
+```send_msg_to_user('N/A')```
 
 """
         if self.action_history or self.answer_history:
