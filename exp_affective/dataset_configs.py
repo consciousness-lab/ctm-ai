@@ -237,7 +237,16 @@ class MustardConfig(DatasetConfig):
         super().__init__('mustard', 'sarcasm_detection')
 
     def get_text_field(self, sample: dict) -> str:
-        return sample['utterance']
+        context_list = sample.get('context', [])
+        context_speakers = sample.get('context_speakers', [])
+        utterance = sample['utterance']
+        speaker = sample.get('speaker', 'SPEAKER')
+        parts = []
+        for i, ctx in enumerate(context_list):
+            sp = context_speakers[i] if i < len(context_speakers) else 'OTHER'
+            parts.append(f'{sp}: {ctx}')
+        parts.append(f'{speaker}: {utterance}')
+        return '\n'.join(parts)
 
     def get_context_field(self, sample: dict) -> str:
         """Return full context (context + utterance)"""
