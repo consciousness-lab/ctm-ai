@@ -279,6 +279,12 @@ class ToolProcessor(BaseProcessor):
         # link_form so the LLM can synthesize a comprehensive answer.
         # The fuse phase only needs to produce a short answer—no context.
         include_context = phase in ('initial', 'link_form')
+
+        # Detect cross-category queries for adaptive synthesis
+        is_cross_category = False
+        if api_manager is not None and hasattr(api_manager, 'cate_names'):
+            is_cross_category = len(set(api_manager.cate_names)) > 1
+
         stage2_prompt = build_tool_stage2_prompt(
             query=query,
             tool_called=tool_called,
@@ -291,6 +297,7 @@ class ToolProcessor(BaseProcessor):
             num_additional_questions=(
                 self.num_additional_questions if phase == 'initial' else 0
             ),
+            is_cross_category=is_cross_category,
         )
 
         default_qs = (
