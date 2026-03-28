@@ -5,10 +5,12 @@ DEFAULT_NUM_ADDITIONAL_QUESTIONS = 1
 # ---------------------------------------------------------------------------
 
 TOOLBENCH_SYSTEM_PROMPT = (
-    'You are a tool agent designed to help users by utilizing available tools '
-    'to answer their queries or complete tasks. You have access to various APIs '
-    'and tools, and your job is to decide whether to call a tool or answer '
-    'directly based on the context.'
+    'You are an API tool agent. Your primary method of answering queries is by '
+    'calling the API tool assigned to you. When your tool is relevant to the task, '
+    'you MUST call it to get real data — never say "I cannot" or "I am unable" '
+    'if you have a relevant tool available. If the tool returns an error, still '
+    'report what you attempted and integrate any context from other tools into '
+    'a useful answer. Always provide specific data and details, not vague guidance.'
 )
 
 # ---------------------------------------------------------------------------
@@ -45,24 +47,27 @@ OUTPUT PROTOCOL (MUST follow strictly):
 _SCORE_RUBRIC_FULL = """
 ## Self-Evaluation Instructions
 
-IMPORTANT: Evaluate ONLY the "response" field you wrote above.
+IMPORTANT: Evaluate ONLY the "response" field you wrote above. Be brutally honest — inflated scores hurt overall answer quality.
 
-### Relevance (0.0 - 1.0): Does your response address the task with useful, specific information?
-"Relevant" means the response engages with the task and provides concrete information that helps answer it. Even a partial answer with specific data (e.g. a number, a name, a fact from the tool) is highly relevant. Vague acknowledgments like "I called the tool successfully" without actual data are NOT relevant.
-- 1.0 = Provides a direct, specific answer with concrete details (e.g. "The price is $142.50" or "The flight departs at 3pm")
-- 0.8 = Answers the core question with useful details, may miss minor aspects
-- 0.6 = Addresses the task but only partially — gives some useful data but leaves important parts unanswered
-- 0.4 = Loosely related to the task; mostly generic text without specific data
-- 0.2 = Barely connected; acknowledges the topic but provides no useful information
-- 0.0 = Completely off-topic, refuses to answer, or empty
+### Relevance (0.0 - 1.0): Does your response provide specific, actionable data that answers the task?
+- 1.0 = Provides a direct, specific answer with concrete data from the tool (e.g. "The price is $142.50", "The flight departs at 3pm", actual API results)
+- 0.8 = Answers the core question with useful details from tool output, may miss minor aspects
+- 0.6 = Provides some useful data from the tool but leaves important parts of the task unanswered
+- 0.4 = Only loosely addresses the task; mostly generic text without specific data from any tool
+- 0.2 = Acknowledges the topic but provides no concrete data; asks user for more information instead of answering
+- 0.0 = Says "I cannot", "I am unable", refuses to answer, is empty, or provides only general guidance without actual data
+
+CRITICAL: If your response says "I cannot", "I am unable", "please provide", or offers guidance instead of actual answers, relevance MUST be 0.0-0.2. Only responses with ACTUAL DATA from tool calls deserve 0.6+.
 
 ### Confidence (0.0 - 1.0): How certain are you about the information in your response?
-- 1.0 = Very certain — response is based on clear, unambiguous tool output or well-established facts
+- 1.0 = Very certain — response contains verified data directly from successful tool output
 - 0.8 = Mostly certain — tool output is clear but minor interpretation was needed
-- 0.6 = Moderate certainty — some assumptions or inferences were made
-- 0.4 = Significant uncertainty — tool output was ambiguous or incomplete
-- 0.2 = Very uncertain — largely guessing with minimal supporting evidence
-- 0.0 = Cannot determine — no reliable information available
+- 0.6 = Moderate certainty — some assumptions or inferences were made beyond the tool output
+- 0.4 = Significant uncertainty — tool output was ambiguous, incomplete, or errored
+- 0.2 = Very uncertain — largely guessing with minimal supporting evidence from tools
+- 0.0 = No tool was called or tool call failed — no reliable information available
+
+CRITICAL: If no tool was successfully called or the tool returned an error, confidence MUST be 0.0-0.3.
 
 ### Surprise (0.0 - 1.0): Does your response bring novel information beyond what was already known in context?
 - 1.0 = Reveals highly unexpected information or a non-obvious insight from combining tool results
@@ -164,6 +169,7 @@ def build_tool_stage2_prompt(
     fuse_history: list = None,
     winner_answer: list = None,
     num_additional_questions: int = DEFAULT_NUM_ADDITIONAL_QUESTIONS,
+    is_cross_category: bool = False,
 ) -> str:
     """
     Build the Stage 2 synthesis prompt for all phases.
@@ -172,6 +178,8 @@ def build_tool_stage2_prompt(
       - initial:   synthesize answer + additional_questions + full scores
       - link_form: synthesize answer + relevance score
       - fuse:      synthesize answer only
+
+    is_cross_category: adapts synthesis style for cross-category queries.
     """
     action_desc = _build_action_description(
         tool_called, tool_name, tool_args, raw_result
@@ -187,15 +195,32 @@ def build_tool_stage2_prompt(
         )
         context_block = f'\n{context}\n' if context else ''
 
+        if is_cross_category:
+            # Cross-category: aggressive — force synthesis from partial data
+            synthesis_rules = (
+                'IMPORTANT: Your response MUST directly answer the task with specific data and details.\n'
+                'Rules for your response:\n'
+                '1. If the tool was called successfully: extract ALL useful data from the result and present it clearly. Include numbers, names, dates, and specific values.\n'
+                '2. If the tool returned an error: report the error briefly, then synthesize the best possible answer from context information (other tools/previous answers).\n'
+                '3. NEVER say "I cannot", "I am unable", or "please provide more information". Instead, use whatever data you have to give the most helpful answer possible.\n'
+                '4. Combine tool results with ALL context information into one coherent, thorough response.\n'
+                '5. If you need additional data from other tools, generate targeted additional questions.'
+            )
+        else:
+            # Within-category: precise — comprehensive and data-focused
+            synthesis_rules = (
+                'IMPORTANT: Your response MUST be a comprehensive, self-contained answer to the task.\n'
+                '- You MUST combine the tool result above with ALL context information (extra information from other tools AND previous answers) to produce a COMPLETE answer.\n'
+                '- Do NOT only describe what you newly observed from the tool call. Instead, integrate ALL available information into one coherent, thorough response.\n'
+                '- Provide specific details and data whenever possible. Do not just say you successfully called a tool.\n'
+                '- If you think you need information from other APIs or tools, generate additional questions about what results you need.'
+            )
+
         return f"""Regarding the task: {query}
 
 {action_desc}
 {context_block}
-IMPORTANT: Your response MUST be a comprehensive, self-contained answer to the task.
-- You MUST combine the tool result above with ALL context information (extra information from other tools AND previous answers) to produce a COMPLETE answer.
-- Do NOT only describe what you newly observed from the tool call. Instead, integrate ALL available information into one coherent, thorough response.
-- Provide specific details and data whenever possible. Do not just say you successfully called a tool.
-- If you think you need information from other APIs or tools, generate additional questions about what results you need.
+{synthesis_rules}
 
 Please respond in JSON format:
 {{
