@@ -60,6 +60,7 @@ class BaseConsciousTuringMachine(ABC):
                 processor_group_name=None,
                 system_prompt=processor_config.get('system_prompt'),
                 model=processor_config.get('model'),
+                temperature=processor_config.get('temperature'),
             )
 
         self.output_threshold = self.config.output_threshold

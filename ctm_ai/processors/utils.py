@@ -269,4 +269,46 @@ def parse_json_response_with_scores(
             _DEFAULT_COMPONENT_SCORE,
         )
 
+    # Enforce scoring rubric: clamp confidence when response indicates inability
+    # to analyze. The rubric states "If your response says 'cannot determine' or
+    # equivalent, this MUST be 0.0" but LLMs often ignore this.
+    _HARD_UNCERTAINTY = [
+        'cannot determine',
+        'not possible to determine',
+        'difficult to determine',
+        'impossible to determine',
+        'unable to determine',
+        'cannot be determined',
+        'no discernible',
+        'no audible',
+        'is silent',
+        'entirely black',
+        'black screen',
+        'not enough information',
+    ]
+    # Softer: processor explicitly says it LACKS data or can only observe
+    # absence of evidence (common in video_processor)
+    _SOFT_UNCERTAINTY = [
+        'no visible signs',
+        'no clear indicators',
+        'no visual cues that',
+        'there are no visible',
+        'there are no clear',
+        'does not provide enough information',
+        'do not clearly indicate',
+        'cannot see any meaningful',
+        'does not contain any',
+    ]
+    resp_lower = response_text.lower()
+    for phrase in _HARD_UNCERTAINTY:
+        if phrase in resp_lower:
+            result['confidence'] = min(result['confidence'], 0.1)
+            result['relevance'] = min(result['relevance'], 0.3)
+            break
+    else:
+        for phrase in _SOFT_UNCERTAINTY:
+            if phrase in resp_lower:
+                result['confidence'] = min(result['confidence'], 0.4)
+                break
+
     return result
