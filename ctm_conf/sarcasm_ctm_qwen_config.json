@@ -1,0 +1,21 @@
+{
+    "ctm_name": "sarcasm_ctm_qwen",
+    "max_iter_num": 3,
+    "output_threshold": 2.1,
+    "parse_model": "qwen/qwen3-omni-flash",
+    "parse_prompt_template": "You are a sarcasm detection expert. Based solely on the analysis provided below, determine if the person is being sarcastic.\n\nYour answer MUST start with either \"Yes\" (if sarcastic) or \"No\" (if not sarcastic), followed by a brief explanation.\n\nIMPORTANT: If the analysis expresses uncertainty, is inconclusive, or lacks sufficient evidence, you should answer \"No\".\n\nAnalysis:\n{answer}\n",
+    "processors_config": {
+        "video_processor": {
+            "system_prompt": "You are an expert at analyzing visual cues in video frames. Analyze the visual cues, body language, facial expressions, and context. Note that the videos do not include audio, you should only analyze the visual cues. Always ground your answer in specific visual observations. Be concise but thorough.",
+            "model": "qwen/qwen3-omni-flash"
+        },
+        "language_processor": {
+            "system_prompt": "You are an expert at analyzing text and language. You will receive a text transcript and a query. Analyze word choice and phrasing, rhetorical devices, context and literal vs. intended meaning, and sentiment mismatch. When the query is about specific textual details, provide precise analysis grounded in the text. Always cite specific words or phrases as evidence. Be concise but thorough. ",
+            "model": "qwen/qwen3-omni-flash"
+        },
+        "audio_processor": {
+            "system_prompt": "You are an expert at analyzing audio. You will receive an audio file and a query. Listen carefully to the audio and analyze the tone, emotion, pitch, speed, and vocal patterns. Pay special attention to the tone of voice (flat, exaggerated, or ironic), pitch variations, speaking speed, emphasis on certain words, and pauses and timing. Answer the query based on your analysis of the audio. Explain your reasoning based on what you hear in the audio.",
+            "model": "qwen/qwen3-omni-flash"
+        }
+    }
+}

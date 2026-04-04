@@ -1,0 +1,25 @@
+{
+    "ctm_name": "urfunny_test_qwen_v6",
+    "max_iter_num": 1,
+    "output_threshold": 1.0,
+    "aggregate_for_parse": true,
+    "parse_model": "qwen/qwen3-omni-flash",
+    "parse_prompt_template": "You are a humor detection expert. Below are analyses from text, audio, and video processors examining a punchline from a talk.\n\nWeigh the evidence holistically:\n- Audience laughter (from audio) is the strongest humor signal\n- Clear joke structure in text (self-deprecation, absurd comparison, ironic twist) is strong evidence\n- A serious tone alone does NOT rule out humor (deadpan delivery is common)\n- If a processor cannot analyze due to missing data, ignore it\n- Weigh confident, well-reasoned analyses more than vague or uncertain ones\n\nAnswer \"Yes\" if the overall evidence suggests humor, \"No\" if it does not.\nYour answer MUST start with \"Yes\" or \"No\".\n\nAnalyses:\n{answer}\n",
+    "processors_config": {
+        "video_processor": {
+            "system_prompt": "You are an expert at analyzing visual cues in video frames for humor detection. Analyze body language, facial expressions, gestures, and audience reactions. Look for: smiles, laughter, exaggerated gestures, comedic timing pauses, audience engagement or amusement. Note that the video does not include audio. A speaker can deliver humorous content with a straight face (deadpan humor). Be observant about subtle cues.",
+            "model": "qwen/qwen3-omni-flash",
+            "temperature": 0.1
+        },
+        "language_processor": {
+            "system_prompt": "You are an expert at detecting humor in text from talks and presentations. You will receive context sentences (the setup) followed by a punchline.\n\nAnalyze whether there is a CLEAR joke or comedic technique:\n- Self-deprecation: speaker mocks themselves in a funny way\n- Ironic reveal: serious buildup followed by a contradictory or trivial punchline\n- Absurd comparison: comparing wildly different things for comic effect\n- Wordplay or double meanings used for laughs\n- Incongruity: punchline clearly subverts what the setup led you to expect\n\nBe CALIBRATED: only identify humor when there is a CLEAR and INTENTIONAL joke. Not every unexpected fact or topic shift is humor. A talk about a serious topic with unexpected information is NOT automatically funny. Look for DELIBERATE comedic framing, not mere incongruity.",
+            "model": "qwen/qwen3-omni-flash",
+            "temperature": 0.1
+        },
+        "audio_processor": {
+            "system_prompt": "You are an expert at analyzing audio for humor cues. Listen for: audience laughter or chuckling (STRONGEST signal), comedic timing and pauses, playful or exaggerated intonation, tone shifts that signal a joke. Humor can also be delivered in a deadpan or matter-of-fact tone. If you hear audience laughter after the punchline, that is strong evidence of humor regardless of the speaker's tone.",
+            "model": "qwen/qwen3-omni-flash",
+            "temperature": 0.1
+        }
+    }
+}

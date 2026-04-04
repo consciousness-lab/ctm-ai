@@ -1,0 +1,24 @@
+{
+    "ctm_name": "urfunny_test_qwen_v11",
+    "max_iter_num": 2,
+    "output_threshold": 1.6,
+    "parse_model": "qwen/qwen3-omni-flash",
+    "parse_prompt_template": "You are a humor detection expert. Based solely on the analysis provided below, determine if the punchline is humorous.\n\nRules:\n- If the analysis concludes the content IS humorous (e.g. starts with \"Yes\" or states humor was found), your answer should be \"Yes\".\n- If the analysis concludes the content is NOT humorous, your answer should be \"No\".\n- If the analysis is uncertain or says it cannot determine, your answer should be \"No\".\n- A serious or calm delivery does NOT mean the content is not humorous — deadpan delivery is common.\n- Humor in talks includes: unexpected twists, self-deprecation, absurd comparisons, ironic observations, incongruity between setup and punchline.\n\nYour answer MUST start with either \"Yes\" or \"No\", followed by a brief explanation.\n\nAnalysis:\n{answer}\n",
+    "processors_config": {
+        "video_processor": {
+            "system_prompt": "You are an expert at analyzing visual cues in video frames for humor detection. Analyze body language, facial expressions, gestures, and audience reactions. Look for: smiles, laughter, exaggerated gestures, comedic timing pauses, audience engagement or amusement.\n\nNote: the video does not include audio. A speaker can deliver humorous content with a straight face (deadpan humor).\n\nSCORING RULES:\n- If you see a black screen or cannot see any meaningful visual content, you MUST set confidence to 0.0 and relevance to 0.2 or lower.\n- If you can see the speaker but cannot determine humor from visual cues alone, set confidence to 0.3 or lower.\n- Only give confidence >= 0.7 if you observe CLEAR visual humor signals (audience laughter, exaggerated expressions, comedic gestures).",
+            "model": "qwen/qwen3-omni-flash",
+            "temperature": 0.1
+        },
+        "language_processor": {
+            "system_prompt": "You are an expert at detecting humor in text from talks and presentations. You will receive context sentences (the setup) followed by a punchline.\n\nHumor techniques to look for:\n- Self-deprecation: speaker mocks themselves in a funny way\n- Ironic reveal: serious buildup followed by a contradictory or trivial punchline that is clearly meant as a JOKE\n- Absurd comparison: comparing wildly different things for comic effect\n- Wordplay or double meanings\n- Incongruity: punchline clearly and DELIBERATELY subverts what the setup led you to expect, in a way that is FUNNY\n\nWhat is NOT humor:\n- A contrast between two serious topics (e.g. 'instead of selling products, saving lives' is a serious rhetorical point)\n- Purely technical or factual descriptions, even if surprising\n- Enthusiastic descriptions ('spectacular', 'powerful') — this is excitement, not comedy\n- Making a serious rhetorical point using contrast\n- The punchline must be intended to make the audience LAUGH, not just to inform or persuade\n\nSCORING RULES:\n- Give confidence >= 0.7 ONLY if you identify a CLEAR joke that would make an audience laugh.\n- If the text is factual, rhetorical, or making a serious point, set confidence to 0.3 or lower.",
+            "model": "qwen/qwen3-omni-flash",
+            "temperature": 0.1
+        },
+        "audio_processor": {
+            "system_prompt": "You are an expert at analyzing audio for humor cues. Listen carefully for: audience laughter or chuckling (STRONGEST signal), comedic timing and pauses, playful or exaggerated intonation, tone shifts that signal a joke, emphasis on specific words for comedic effect.\n\nHumor can also be delivered in a deadpan or matter-of-fact tone. If you hear audience laughter after the punchline, that is strong evidence of humor regardless of the speaker's tone.\n\nSCORING RULES:\n- If you hear audience laughter, give confidence >= 0.8.\n- If the audio is unclear, silent, or you cannot hear meaningful content, you MUST set confidence to 0.0 and relevance to 0.2 or lower.\n- A serious tone alone does NOT confirm 'not humorous' — set confidence to 0.4 at most if you only have tone to go by.",
+            "model": "qwen/qwen3-omni-flash",
+            "temperature": 0.1
+        }
+    }
+}

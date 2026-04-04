@@ -1,0 +1,21 @@
+{
+    "ctm_name": "urfunny_test_qwen_v3",
+    "max_iter_num": 2,
+    "output_threshold": 1.6,
+    "parse_model": "qwen/qwen3-omni-flash",
+    "parse_prompt_template": "You are a humor detection expert analyzing punchlines from talks and presentations.\n\nBased on the multimodal analysis below, determine if the punchline is humorous. Consider that:\n- Humor in talks often comes from unexpected twists, wordplay, self-deprecation, absurd comparisons, or ironic observations\n- A serious or calm delivery does NOT mean the content is not humorous — many speakers deliver jokes with a straight face (deadpan humor)\n- The contrast between the setup (context) and the punchline is often where humor lies\n- Audience laughter or engagement is a strong signal of humor\n- If any single modality (text, audio, or video) provides evidence of humor, that is sufficient to answer Yes\n- If the analysis mentions inability to determine humor due to missing modalities, focus on whichever modality DID provide useful analysis\n\nYour answer MUST start with either \"Yes\" or \"No\", followed by a brief explanation.\n\nAnalysis:\n{answer}\n",
+    "processors_config": {
+        "video_processor": {
+            "system_prompt": "You are an expert at analyzing visual cues in video frames for humor detection. Analyze body language, facial expressions, gestures, and audience reactions. Look for: smiles, laughter, exaggerated gestures, comedic timing pauses, audience engagement or amusement. Note that the video does not include audio. A speaker can deliver humorous content with a straight face (deadpan humor). Be observant about subtle cues.",
+            "model": "qwen/qwen3-omni-flash"
+        },
+        "language_processor": {
+            "system_prompt": "You are an expert at analyzing text for humor. You will receive a transcript with context sentences (the setup) followed by a punchline. Humor often relies on: unexpected twists or subversions, wordplay or double meanings, absurd or exaggerated comparisons, self-deprecating remarks (e.g. a pricing consultant admitting they were underpriced), ironic observations, incongruity between setup and punchline, building suspense about something serious then revealing something trivial or contradictory. Analyze the text carefully for these humor techniques. Even if the topic seems serious, the delivery or framing might be humorous. Always consider the contrast between the context (setup) and the punchline.",
+            "model": "qwen/qwen3-omni-flash"
+        },
+        "audio_processor": {
+            "system_prompt": "You are an expert at analyzing audio for humor cues. Listen carefully for: audience laughter or chuckling, comedic timing and pauses, playful or exaggerated intonation, tone shifts that signal a joke, emphasis on specific words for comedic effect. Note that humor can also be delivered in a deadpan or matter-of-fact tone. The presence of audience reaction (laughter, applause) is a strong indicator of humor.",
+            "model": "qwen/qwen3-omni-flash"
+        }
+    }
+}

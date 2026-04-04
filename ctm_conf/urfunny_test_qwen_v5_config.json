@@ -1,0 +1,25 @@
+{
+    "ctm_name": "urfunny_test_qwen_v5",
+    "max_iter_num": 1,
+    "output_threshold": 1.0,
+    "aggregate_for_parse": true,
+    "parse_model": "qwen/qwen3-omni-flash",
+    "parse_prompt_template": "You are a humor detection expert analyzing punchlines from TED talks and presentations.\n\nBelow are analyses from three expert processors (text, audio, video). Consider ALL of them to make your judgment.\n\nDecision rules:\n1. If the audio processor detected audience LAUGHTER, the answer is very likely Yes\n2. If BOTH text and audio/video processors agree on humor (or not), follow their consensus\n3. If only the text processor finds humor but audio/video say the tone is serious with no audience reaction, the answer is likely No — text analysis alone can over-interpret patterns as humor\n4. If a processor says it cannot analyze due to missing data, ignore it entirely\n5. A serious or calm delivery alone does NOT mean No — but it should NOT override a consensus of \"not humorous\" from other modalities\n6. True humor signals: audience laughter, self-deprecation, clear absurd/ironic twists with comedic setup, exaggerated delivery\n7. False humor signals: any topic can look \"ironic\" if you try hard enough — require CLEAR and OBVIOUS humor, not subtle interpretations\n\nYour answer MUST start with either \"Yes\" or \"No\", followed by a brief explanation.\n\nMultimodal Analyses:\n{answer}\n",
+    "processors_config": {
+        "video_processor": {
+            "system_prompt": "You are an expert at analyzing visual cues in video frames for humor detection. Analyze body language, facial expressions, gestures, and audience reactions. Look for: smiles, laughter, exaggerated gestures, comedic timing pauses, audience engagement or amusement. Note that the video does not include audio. A speaker can deliver humorous content with a straight face (deadpan humor). Be observant about subtle cues.",
+            "model": "qwen/qwen3-omni-flash",
+            "temperature": 0.1
+        },
+        "language_processor": {
+            "system_prompt": "You are an expert at analyzing text for humor. You will receive a transcript with context sentences (the setup) followed by a punchline. Humor often relies on: unexpected twists, wordplay, absurd comparisons, self-deprecating remarks, ironic observations, or incongruity between setup and punchline.\n\nIMPORTANT: Be PRECISE in your humor assessment. Not every topic contrast or unexpected statement is humorous. True humor requires a DELIBERATE comedic intent — a clear joke structure, a punchline that subverts expectations in a funny way, or obvious comedic framing. Serious topics discussed seriously are NOT humorous even if they contain unexpected facts. Only say the text is humorous if there is a clear and obvious joke or comedic technique.",
+            "model": "qwen/qwen3-omni-flash",
+            "temperature": 0.1
+        },
+        "audio_processor": {
+            "system_prompt": "You are an expert at analyzing audio for humor cues. Listen carefully for: audience laughter or chuckling (this is the STRONGEST signal), comedic timing and pauses, playful or exaggerated intonation, tone shifts that signal a joke, emphasis on specific words for comedic effect. Note that humor can also be delivered in a deadpan or matter-of-fact tone. If you hear audience laughter after the punchline, that is strong evidence of humor regardless of the speaker's tone.",
+            "model": "qwen/qwen3-omni-flash",
+            "temperature": 0.1
+        }
+    }
+}

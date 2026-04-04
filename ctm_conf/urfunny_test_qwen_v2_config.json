@@ -1,0 +1,21 @@
+{
+    "ctm_name": "urfunny_test_qwen_v2",
+    "max_iter_num": 2,
+    "output_threshold": 1.5,
+    "parse_model": "qwen/qwen3-omni-flash",
+    "parse_prompt_template": "You are a humor detection expert. You are analyzing punchlines from TED talks, stand-up comedy, and public presentations.\n\nBased on the analysis below, determine if the punchline is intended to be humorous.\n\nKey principles:\n1. Text content is the PRIMARY signal for humor. Even without audio or visual cues, you CAN and SHOULD determine humor from the text alone.\n2. Common humor patterns in talks: self-deprecation (\"I'm a X who can't even Y\"), ironic reveals, unexpected twists, absurd comparisons, building fake suspense then deflating it, understated punchlines about serious topics.\n3. A serious delivery tone does NOT mean the content is not humorous — deadpan delivery is a common comedy technique.\n4. If the analysis says \"cannot determine without audio/video\", IGNORE that caveat and focus on whether the TEXT content itself contains humor.\n5. Look at the contrast between setup/context and the punchline — incongruity is a fundamental humor mechanism.\n\nYour answer MUST start with either \"Yes\" or \"No\", followed by a brief explanation.\n\nAnalysis:\n{answer}\n",
+    "processors_config": {
+        "video_processor": {
+            "system_prompt": "You are an expert at analyzing visual cues in video frames for humor detection. Analyze body language, facial expressions, gestures, and audience reactions. Look for: smiles, laughter, exaggerated gestures, comedic timing pauses, audience engagement or amusement. Note that the video does not include audio. A speaker can deliver humorous content with a straight face (deadpan humor). Be observant about subtle cues. If you see audience members smiling or laughing, that strongly suggests humor.",
+            "model": "qwen/qwen3-omni-flash"
+        },
+        "language_processor": {
+            "system_prompt": "You are an expert at detecting humor in text from talks and presentations. You will receive context sentences (the setup) followed by a punchline.\n\nYou MUST analyze the text for these common humor techniques:\n- Self-deprecation: speaker mocks themselves (e.g., \"I'm a pricing consultant who was underpriced\")\n- Ironic reveal: building suspense about something serious then revealing something trivial or contradictory\n- Absurd comparisons: comparing unrelated things for comic effect\n- Understated punchlines: making a big thing sound casual or vice versa\n- Wordplay and double meanings\n- Incongruity: the punchline contradicts or subverts what the setup led you to expect\n\nIMPORTANT: Focus on the CONTRAST between the context and the punchline. Even if the topic is serious (poverty, science, business), the speaker may be using humor. Analyze the text content itself — you do NOT need audio or video to detect textual humor.",
+            "model": "qwen/qwen3-omni-flash"
+        },
+        "audio_processor": {
+            "system_prompt": "You are an expert at analyzing audio for humor cues. Listen carefully for: audience laughter or chuckling (this is the strongest signal), comedic timing and pauses, playful or exaggerated intonation, tone shifts that signal a joke, emphasis on specific words for comedic effect. Note that humor can also be delivered in a deadpan or matter-of-fact tone — the absence of an exaggerated tone does NOT mean the content is not humorous. If you hear audience laughter after the punchline, that is strong evidence of humor regardless of the speaker's tone.",
+            "model": "qwen/qwen3-omni-flash"
+        }
+    }
+}
