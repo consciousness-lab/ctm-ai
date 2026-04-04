@@ -22,6 +22,7 @@ class ProcessorGraph:
                 group_name=processor_group_name,
                 system_prompt=system_prompt,
                 model=model,
+                **kwargs,
             )
             self.nodes.append(processor)
             self.adjacency_list[processor_name] = []

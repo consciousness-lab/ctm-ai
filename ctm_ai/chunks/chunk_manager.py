@@ -57,20 +57,29 @@ class ChunkManager:
         self.chunks.clear()
         self.tfidf_matrix = None
 
-    def uptree_competition(self) -> Chunk:
+    def uptree_competition(self, temperature: float = 0.1) -> Chunk:
         if not self.chunks:
             raise ValueError('No chunks available for competition')
 
         if len(self.chunks) == 1:
             return self.chunks[0]
 
-        weights = [self._sanitize_weight(chunk.weight) for chunk in self.chunks]
+        weights = np.array(
+            [self._sanitize_weight(chunk.weight) for chunk in self.chunks]
+        )
 
-        total_weight = sum(weights)
-        if total_weight == 0:
-            normalized_weights = [1.0 / len(weights)] * len(weights)
+        if temperature <= 0:
+            temperature = 1e-10
+
+        weights_scaled = weights / temperature
+        weights_shifted = weights_scaled - np.max(weights_scaled)
+        exp_weights = np.exp(weights_shifted)
+
+        total_exp = np.sum(exp_weights)
+        if total_exp == 0 or not np.isfinite(total_exp):
+            normalized_weights = np.ones(len(weights)) / len(weights)
         else:
-            normalized_weights = [w / total_weight for w in weights]
+            normalized_weights = exp_weights / total_exp
 
         winning_chunk = np.random.choice(self.chunks, p=normalized_weights)
 

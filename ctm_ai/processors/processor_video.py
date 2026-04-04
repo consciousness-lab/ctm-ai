@@ -14,8 +14,6 @@ def load_video_as_base64(video_path: str) -> str:
 
 @BaseProcessor.register_processor('video_processor')
 class VideoProcessor(BaseProcessor):
-    REQUIRED_KEYS = []
-
     def build_executor_messages(
         self,
         query: str,

@@ -18,12 +18,7 @@ import sys
 
 import litellm
 from dataset_configs import get_dataset_config
-from llm_utils import (
-    check_api_key,
-    create_agent,
-    load_data,
-    load_sample_inputs,
-)
+from llm_utils import check_api_key, create_agent, load_data, load_sample_inputs
 
 sys.path.append('..')
 

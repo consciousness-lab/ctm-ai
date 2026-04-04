@@ -15,8 +15,10 @@ python run_webctm.py --all --use_screenshot True --save_screenshot False
 import argparse
 import json
 import traceback
+from datetime import datetime
 from pathlib import Path
 
+import browsergym.webarenalite  # registers webarenalite tasks to gym
 from browsergym.experiments import EnvArgs, ExpArgs, get_exp_result
 from browsergym.experiments.loop import (
     StepInfo,
@@ -26,18 +28,33 @@ from browsergym.experiments.loop import (
     save_package_versions,
 )
 from ctm_webagent import CTMAgentArgs
-from task_by_category import gitlab, map, reddit, shopping, shopping_admin, wikipedia
 
-CATEGORY_TASKS = {
-    'gitlab': gitlab,
-    'map': map,
-    'reddit': reddit,
-    'shopping': shopping,
-    'shopping_admin': shopping_admin,
-    'wikipedia': wikipedia,
-}
+# ---------------------------------------------------------------------------
+# Load task list from test_webarena_lite.raw.json grouped by site.
+# Tasks with multiple sites appear in every matching category.
+# ---------------------------------------------------------------------------
+_TASKS_JSON = Path(__file__).parent / 'test_webarena_lite.raw.json'
 
-ALL_CATEGORIES = list(CATEGORY_TASKS.keys())
+
+def _load_category_tasks(json_path: Path) -> dict:
+    """Return {site: [task_record, ...]} grouped by site.
+
+    Tasks that span multiple sites are included in each site's list so
+    they can be run under any of their categories.
+    """
+    with open(json_path, 'r', encoding='utf-8') as f:
+        all_tasks = json.load(f)
+    groups: dict = {}
+    for task in all_tasks:
+        for site in task['sites']:
+            groups.setdefault(site, []).append(task)
+    return groups
+
+
+CATEGORY_TASKS = _load_category_tasks(_TASKS_JSON)
+ALL_CATEGORIES = sorted(
+    CATEGORY_TASKS.keys()
+)  # gitlab, map, reddit, shopping, shopping_admin, wikipedia
 
 
 def str2bool(v):
@@ -133,7 +150,7 @@ Examples:
     parser.add_argument(
         '--headless',
         type=str2bool,
-        default=True,
+        default=False,
         help='Whether to run browser in headless mode',
     )
 
@@ -322,7 +339,7 @@ def run_with_action_timeout(exp_args: ExpArgs, action_timeout: float = None):
 
 
 def run_single_task(
-    task_id: int,
+    task_record: dict,
     category: str,
     result_base_dir: Path,
     agent_args: CTMAgentArgs,
@@ -331,12 +348,22 @@ def run_single_task(
     save_screenshot: bool = True,
     save_som: bool = False,
     action_timeout: float = None,
+    ctm_log_base_dir: str = None,
 ):
-    """Run a single task using CTM agent (same logic as run_web.py)"""
-    task_name = f'webarena.{task_id}'
+    """Run a single task using CTM agent."""
+    old_task_id = task_record['old_task_id']
+    task_name = f'webarenalite.{old_task_id}'
     print(f'\n{"=" * 80}')
     print(f'Running task: {task_name} (category: {category})')
     print(f'{"=" * 80}')
+
+    if ctm_log_base_dir:
+        sites_name = '_'.join(task_record['sites'])
+        agent_args.task_log_dir = str(
+            Path(ctm_log_base_dir) / f'{sites_name}_{old_task_id}'
+        )
+    else:
+        agent_args.task_log_dir = None
 
     # Create environment arguments (same as run_web.py)
     env_args = EnvArgs(
@@ -409,7 +436,9 @@ def run_single_task(
                     # Get current page URL
                     if 'open_pages_urls' in obs and 'active_page_index' in obs:
                         urls = obs['open_pages_urls']
-                        active_idx = obs['active_page_index']
+                        import numpy as np
+
+                        active_idx = int(np.asarray(obs['active_page_index']).flat[0])
                         if urls and 0 <= active_idx < len(urls):
                             step_detail['reference_url'] = urls[active_idx]
 
@@ -545,6 +574,12 @@ def main():
     result_base_dir = Path(args.results_dir)
     result_base_dir.mkdir(parents=True, exist_ok=True)
 
+    # CTM detailed log directory
+    start_time = datetime.now().strftime('%Y%m%d_%H%M%S')
+    ctm_log_base_dir = str(Path(args.results_dir) / f'all_results_{start_time}')
+    Path(ctm_log_base_dir).mkdir(parents=True, exist_ok=True)
+    print(f'CTM detailed logs will be saved to: {ctm_log_base_dir}')
+
     # Statistics
     total_tasks = 0
     completed_tasks = 0
@@ -553,33 +588,31 @@ def main():
 
     # Iterate through each category
     for category in categories_to_run:
-        task_ids = CATEGORY_TASKS[category]
+        task_records = CATEGORY_TASKS[category]
 
         # Create category-specific result directory
         category_result_dir = result_base_dir / category
         category_result_dir.mkdir(parents=True, exist_ok=True)
 
         print(f'\n{"#" * 80}')
-        print(f'Category: {category} (total {len(task_ids)} tasks)')
+        print(f'Category: {category} (total {len(task_records)} tasks)')
         print(f'Results will be saved to: {category_result_dir.absolute()}')
 
         # Determine which tasks to run
         if args.task_ids is not None:
-            # Run only specified task IDs
-            task_ids_to_run = []
-            invalid_task_ids = []
-            for task_id in args.task_ids:
-                if task_id in task_ids:
-                    task_ids_to_run.append(task_id)
-                else:
-                    invalid_task_ids.append(task_id)
+            # Run only specified task IDs (matched against old_task_id)
+            valid_ids = {t['old_task_id'] for t in task_records}
+            task_records_to_run = [
+                t for t in task_records if t['old_task_id'] in args.task_ids
+            ]
+            invalid_task_ids = [tid for tid in args.task_ids if tid not in valid_ids]
 
             if invalid_task_ids:
                 print(
                     f"  Warning: The following task IDs are not in category '{category}': {invalid_task_ids}"
                 )
 
-            if not task_ids_to_run:
+            if not task_records_to_run:
                 print(
                     f"  Warning: No valid task IDs found for category '{category}', skipping"
                 )
@@ -590,38 +623,40 @@ def main():
                 }
                 continue
 
-            print(f'  Running specified task IDs: {task_ids_to_run}')
+            print(
+                f'  Running specified task IDs: {[t["task_id"] for t in task_records_to_run]}'
+            )
         else:
             # Apply start_idx to slice the task list
             start_idx = args.start_idx
             if start_idx > 0:
-                if start_idx >= len(task_ids):
+                if start_idx >= len(task_records):
                     print(
-                        f'  Warning: start_idx ({start_idx}) >= total tasks ({len(task_ids)}), skipping this category'
+                        f'  Warning: start_idx ({start_idx}) >= total tasks ({len(task_records)}), skipping this category'
                     )
                     category_stats[category] = {
-                        'total': len(task_ids),
+                        'total': len(task_records),
                         'completed': 0,
                         'failed': 0,
                     }
                     continue
-                task_ids_to_run = task_ids[start_idx:]
+                task_records_to_run = task_records[start_idx:]
                 print(
-                    f'  Starting from index {start_idx}, will run {len(task_ids_to_run)} tasks'
+                    f'  Starting from index {start_idx}, will run {len(task_records_to_run)} tasks'
                 )
             else:
-                task_ids_to_run = task_ids
+                task_records_to_run = task_records
 
         print(f'{"#" * 80}')
 
         category_completed = 0
         category_failed = 0
 
-        # Iterate through tasks in this category (starting from start_idx)
-        for task_id in task_ids_to_run:
+        # Iterate through tasks in this category
+        for task_record in task_records_to_run:
             total_tasks += 1
             success, record = run_single_task(
-                task_id=task_id,
+                task_record=task_record,
                 category=category,
                 result_base_dir=result_base_dir,
                 agent_args=agent_args,
@@ -630,6 +665,7 @@ def main():
                 save_screenshot=args.save_screenshot,
                 save_som=args.save_som,
                 action_timeout=args.action_timeout,
+                ctm_log_base_dir=ctm_log_base_dir,
             )
 
             if success:
@@ -640,7 +676,7 @@ def main():
                 category_failed += 1
 
         category_stats[category] = {
-            'total': len(task_ids_to_run),
+            'total': len(task_records_to_run),
             'completed': category_completed,
             'failed': category_failed,
         }

@@ -119,7 +119,7 @@ class MathProcessor(BaseProcessor):
             for i, item in enumerate(self.winner_answer, 1):
                 context_info += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
-        from .utils import JSON_FORMAT_SCORE
+        from .prompts.base_prompts import BASE_JSON_FORMAT_SCORE
 
         prompt = f"""Query: {query}
 
@@ -132,7 +132,7 @@ Based on the Wolfram|Alpha result above, please:
 2. Generate an additional question if you need more information from other modality models (e.g., "what is shown in the diagram?", "what additional context is needed?"). If no additional information is needed, leave it empty.
 3. Self-evaluate your response with relevance, confidence, and surprise scores.
 
-{JSON_FORMAT_SCORE}"""
+{BASE_JSON_FORMAT_SCORE}"""
 
         return prompt
 

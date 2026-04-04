@@ -1,8 +1,6 @@
 import concurrent.futures
-import json
-import os
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 from numpy.typing import NDArray
@@ -22,31 +20,7 @@ class BaseConsciousTuringMachine(ABC):
             else ConsciousTuringMachineConfig()
         )
         self.load_ctm()
-        self.detailed_log = None  # Will store detailed execution log
-
-    def __call__(
-        self,
-        query: str,
-        text: Optional[str] = None,
-        image: Optional[np.uint8] = None,
-        image_path: Optional[str] = None,
-        audio: Optional[NDArray[np.float32]] = None,
-        audio_path: Optional[str] = None,
-        video_frames: Optional[List[NDArray[np.uint8]]] = None,
-        video_frames_path: Optional[List[str]] = None,
-        video_path: Optional[str] = None,
-    ) -> Tuple[str, float]:
-        return self.forward(
-            query,
-            text,
-            image,
-            image_path,
-            audio,
-            audio_path,
-            video_frames,
-            video_frames_path,
-            video_path,
-        )
+        self.detailed_log = None
 
     def reset(self) -> None:
         self.load_ctm()
@@ -60,6 +34,8 @@ class BaseConsciousTuringMachine(ABC):
                 processor_group_name=None,
                 system_prompt=processor_config.get('system_prompt'),
                 model=processor_config.get('model'),
+                score_weights=self.config.score_weights,
+                num_additional_questions=self.config.num_additional_questions,
             )
 
         self.output_threshold = self.config.output_threshold
@@ -74,6 +50,8 @@ class BaseConsciousTuringMachine(ABC):
             processor_group_name=group_name,
             system_prompt=processor_config.get('system_prompt'),
             model=processor_config.get('model'),
+            score_weights=self.config.score_weights,
+            num_additional_questions=self.config.num_additional_questions,
         )
 
     def remove_processor(self, processor_name: str) -> None:
@@ -91,9 +69,10 @@ class BaseConsciousTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        api_manager: Any = None,
         phase: str = 'initial',
     ) -> Chunk:
-        """Ask processor with support for both standard and tool processors"""
+        """Ask a single processor, passing api_manager when available."""
         return processor.ask(
             query=query,
             text=text,
@@ -104,6 +83,7 @@ class BaseConsciousTuringMachine(ABC):
             video_frames=video_frames,
             video_frames_path=video_frames_path,
             video_path=video_path,
+            api_manager=api_manager,
             phase=phase,
         )
 
@@ -119,9 +99,11 @@ class BaseConsciousTuringMachine(ABC):
         video_frames: Optional[List[NDArray[np.uint8]]] = None,
         video_frames_path: Optional[List[str]] = None,
         video_path: Optional[str] = None,
+        api_manager: Any = None,
         phase: str = 'initial',
+        **kwargs,
     ) -> List[Chunk]:
-        """Ask all processors with support for both standard and tool processors"""
+        """Ask all processors in parallel."""
         with concurrent.futures.ThreadPoolExecutor() as executor:
             futures = [
                 executor.submit(
@@ -136,6 +118,7 @@ class BaseConsciousTuringMachine(ABC):
                     video_frames,
                     video_frames_path,
                     video_path,
+                    api_manager,
                     phase,
                 )
                 for processor in self.processor_graph.nodes
@@ -145,7 +128,6 @@ class BaseConsciousTuringMachine(ABC):
             ]
         chunks = [chunk for chunk in chunks if chunk is not None]
 
-        # Log detailed information for each chunk
         if self.detailed_log is not None and phase == 'initial':
             current_iteration = self.detailed_log['current_iteration']
             for chunk in chunks:
@@ -163,10 +145,27 @@ class BaseConsciousTuringMachine(ABC):
 
         return chunks
 
-    def parse_answer(self, answer: str, query: str) -> str:
+    def parse_answer(
+        self,
+        answer: str,
+        query: str,
+        reasoning: str = '',
+        action_history: str = '',
+        force_final: bool = False,
+    ) -> str:
         from litellm import completion
 
-        parse_prompt = self.config.parse_prompt_template.format(answer=answer)
+        template = (
+            self.config.force_final_prompt_template
+            if force_final
+            else self.config.parse_prompt_template
+        )
+        parse_prompt = template.format(
+            answer=answer,
+            query=query,
+            reasoning=reasoning,
+            action_history=action_history,
+        )
 
         parse_model = self.config.parse_model or 'gemini/gemini-2.5-flash-lite'
         completion_kwargs = get_completion_kwargs(parse_model)

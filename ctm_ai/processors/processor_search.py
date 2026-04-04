@@ -10,10 +10,6 @@ from .utils import parse_json_response_with_scores
 
 @BaseProcessor.register_processor('search_processor')
 class SearchProcessor(BaseProcessor):
-    # Google Search grounding requires GEMINI_API_KEY but is only used for Gemini.
-    # The provider-specific key check in BaseProcessor handles the rest.
-    REQUIRED_KEYS = []
-
     def _build_executor_content(
         self,
         query: str,
@@ -172,7 +168,7 @@ class SearchProcessor(BaseProcessor):
             for i, item in enumerate(self.winner_answer, 1):
                 context_info += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
-        from .utils import JSON_FORMAT_SCORE
+        from .prompts.base_prompts import BASE_JSON_FORMAT_SCORE
 
         prompt = f"""Query: {query}
 
@@ -185,7 +181,7 @@ Based on the search result above, please:
 2. Generate an additional question if you need more information from other modality models (e.g., "what is the facial expression?", "what is shown in the image?"). If no additional information is needed, leave it empty.
 3. Self-evaluate your response with relevance, confidence, and surprise scores.
 
-{JSON_FORMAT_SCORE}"""
+{BASE_JSON_FORMAT_SCORE}"""
 
         return prompt
 

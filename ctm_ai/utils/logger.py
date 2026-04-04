@@ -1,7 +1,9 @@
+import json
 import logging
+import os
 from functools import wraps
 from logging import StreamHandler
-from typing import Any, Callable, Dict, List, Mapping, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Union
 
 try:
     from typing import Literal
@@ -11,6 +13,9 @@ except ImportError:
 from termcolor import colored
 
 LogType = Union[List[Dict[str, str]], None]
+
+# Global dictionary to store iteration log files per query_id
+_iteration_log_files: Dict[str, str] = {}
 
 ColorType = Literal[
     'grey',
@@ -186,6 +191,64 @@ def logging_chunk_compete(func: Callable[..., Any]) -> Callable[..., Any]:
         logger.info(f'Competing {chunk1.processor_name} vs {chunk2.processor_name}')
         result = func(self, chunk1, chunk2)
         logger.info(f'Winner: {result.processor_name}')
+        return result
+
+    return wrapper
+
+
+# ---------------------------------------------------------------------------
+# Iteration logging for ToolBench
+# ---------------------------------------------------------------------------
+
+
+def set_iteration_log_file(query_id: str, log_file: str) -> None:
+    """
+    Set the log file path for a specific query_id.
+    Used for ToolBench to track iterations per query.
+    """
+    global _iteration_log_files
+    _iteration_log_files[query_id] = log_file
+
+    # Create directory if not exists
+    log_dir = os.path.dirname(log_file)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+
+
+def get_iteration_log_file(query_id: str) -> Optional[str]:
+    """Get the log file path for a specific query_id."""
+    return _iteration_log_files.get(query_id)
+
+
+def log_iteration(query_id: str, iteration_data: Dict[str, Any]) -> None:
+    """Log an iteration's data to the corresponding log file."""
+    log_file = get_iteration_log_file(query_id)
+    if log_file:
+        with open(log_file, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(iteration_data, ensure_ascii=False) + '\n')
+
+
+def log_go_up_iteration(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator to log go_up phase iterations."""
+
+    @wraps(func)
+    def wrapper(self: Any, *args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+        logger.info('========== go_up iteration starting ==========')
+        result = func(self, *args, **kwargs)
+        logger.info('========== go_up iteration finished ==========')
+        return result
+
+    return wrapper
+
+
+def log_forward_iteration(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator to log forward iterations."""
+
+    @wraps(func)
+    def wrapper(self: Any, *args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+        logger.info('========== forward starting ==========')
+        result = func(self, *args, **kwargs)
+        logger.info('========== forward finished ==========')
         return result
 
     return wrapper

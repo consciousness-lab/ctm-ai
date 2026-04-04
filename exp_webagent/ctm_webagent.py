@@ -1,8 +1,11 @@
 import base64
 import dataclasses
 import io
+import json
 import logging
-from typing import Any, Dict
+import os
+import re
+from typing import Any, Dict, Optional
 
 import numpy as np
 from browsergym.core.action.highlevel import HighLevelActionSet
@@ -15,7 +18,7 @@ from browsergym.utils.obs import (
 )
 from PIL import Image
 
-from ctm_ai.ctms.ctm_webagent import WebConsciousTuringMachine
+from ctm_ai.ctms import WebCTM
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +38,26 @@ def image_to_jpg_base64_url(image: np.ndarray | Image.Image):
     return image_base64
 
 
+def _sanitize_send_msg_action(action: str) -> str:
+    """Fix common LLM issues in send_msg_to_user actions.
+
+    - Replace double curly braces {{ / }} with single { / }
+      (LLMs sometimes mimic Python f-string escaping)
+    """
+    m = re.match(r'send_msg_to_user\((.+)\)\s*$', action, re.DOTALL)
+    if not m:
+        return action
+    arg = m.group(1).strip()
+    if arg.startswith(("'", '"')):
+        quote = arg[0]
+        inner = arg[1:]
+        if inner.endswith(quote):
+            inner = inner[:-1]
+        inner = inner.replace('{{', '{').replace('}}', '}')
+        return f'send_msg_to_user({quote}{inner}{quote})'
+    return action
+
+
 class CTMAgent(Agent):
     def __init__(
         self,
@@ -43,6 +66,7 @@ class CTMAgent(Agent):
         use_axtree: bool = True,
         use_screenshot: bool = True,
         demo_mode: str = 'off',
+        task_log_dir: Optional[str] = None,
     ) -> None:
         super().__init__()
 
@@ -51,7 +75,7 @@ class CTMAgent(Agent):
         self.use_axtree = use_axtree
         self.use_screenshot = use_screenshot
 
-        self.ctm = WebConsciousTuringMachine(ctm_name=ctm_name)
+        self.ctm = WebCTM(ctm_name='web_ctm')
 
         self.action_set = HighLevelActionSet(
             subsets=['chat', 'tab', 'nav', 'bid', 'infeas'],
@@ -62,6 +86,8 @@ class CTMAgent(Agent):
 
         self.action_history = []
         self.answer_history = []
+        self.task_log_dir = task_log_dir
+        self.step_count = 0
 
     def obs_preprocessor(self, obs: dict) -> dict:
         # Get extra_element_properties safely
@@ -99,8 +125,10 @@ class CTMAgent(Agent):
     def get_action(self, obs: dict) -> tuple[str, AgentInfo]:
         input_params = self._prepare_ctm_inputs(obs)
 
+        force_final = len(self.action_history) >= self.ctm.config.max_steps_before_force
+
         try:
-            answer, action = self.ctm(
+            reasoning, action, parsed_answer = self.ctm(
                 query=obs['goal_object'][0]['text'],
                 action_space=input_params.get('action_space'),
                 action_history=input_params.get('action_history'),
@@ -108,13 +136,27 @@ class CTMAgent(Agent):
                 axtree=obs['axtree_txt'],
                 screenshot=obs['screenshot_som_base64'],
                 other_info=input_params.get('other_info'),
+                force_final=force_final,
             )
 
-            self.action_history.append(action)
-            self.answer_history.append(answer)
+            if force_final and not action.strip().startswith('send_msg_to_user'):
+                logger.info(
+                    'Force final: overriding action with parsed_answer (step %d >= %d)',
+                    len(self.action_history),
+                    self.ctm.config.max_steps_before_force,
+                )
+                action = parsed_answer
 
-            print('Answer: ', answer)
-            print('Action: ', action)
+            action = _sanitize_send_msg_action(action)
+
+            self._save_step_log(obs)
+
+            self.action_history.append(action)
+            self.answer_history.append(parsed_answer)
+            self.step_count += 1
+
+            print('Reasoning: ', reasoning)
+            print('Action:    ', action)
 
             return action, {}
 
@@ -124,6 +166,7 @@ class CTMAgent(Agent):
                 "send_msg_to_user('I encountered an error. Please try again.')"
             )
             self.action_history.append(fallback_action)
+            self.step_count += 1
 
             info = AgentInfo(
                 think=f'CTM error: {str(e)}',
@@ -132,6 +175,34 @@ class CTMAgent(Agent):
             )
 
             return fallback_action, info
+
+    def _save_step_log(self, obs: dict) -> None:
+        """Save the CTM step log (all iterations) to disk."""
+        if not self.task_log_dir:
+            return
+
+        step_log = getattr(self.ctm, 'last_step_log', None)
+        if step_log is None:
+            return
+
+        step_log['step'] = self.step_count
+
+        active_idx = obs.get('active_page_index')
+        urls = obs.get('open_pages_urls', [])
+        if active_idx is not None and urls:
+            idx = int(np.asarray(active_idx).flat[0])
+            if 0 <= idx < len(urls):
+                step_log['current_url'] = urls[idx]
+
+        os.makedirs(self.task_log_dir, exist_ok=True)
+        path = os.path.join(self.task_log_dir, f'step{self.step_count}.json')
+
+        try:
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump(step_log, f, indent=2, ensure_ascii=False, default=str)
+            logger.info(f'Step log saved to {path}')
+        except Exception as exc:
+            logger.warning(f'Failed to save step log: {exc}')
 
     def _prepare_ctm_inputs(self, obs: dict) -> Dict[str, Any]:
         inputs = {}
@@ -157,18 +228,26 @@ Here are examples of actions with chain-of-thought reasoning:
 I now need to click on the Submit button to send the form. I will use the click action on the button, which has bid 12.
 ```click("12")```
 
-I found the information requested by the user, I will send it to the chat.
-```send_msg_to_user("The price for a 15\\" laptop is 1499 USD.")```
+I found the requested information after checking all reviews.
+```send_msg_to_user('Alice, Bob')```
+
+The task cannot be completed because the requested item does not exist.
+```send_msg_to_user('N/A')```
 
 """
         if self.action_history or self.answer_history:
             history_parts = []
             max_len = max(len(self.action_history), len(self.answer_history))
             for i in range(max_len):
-                if i < len(self.answer_history):
-                    history_parts.append(f'Answer: {self.answer_history[i]}')
+                step_label = f'[Step {i}]'
                 if i < len(self.action_history):
-                    history_parts.append(f'Action: {self.action_history[i]}')
+                    history_parts.append(
+                        f'{step_label} Action: {self.action_history[i]}'
+                    )
+                if i < len(self.answer_history):
+                    history_parts.append(
+                        f'{step_label} Observation: {self.answer_history[i]}'
+                    )
             inputs['action_history'] = '# History of past actions\n\n' + '\n\n'.join(
                 history_parts
             )
@@ -190,6 +269,7 @@ I found the information requested by the user, I will send it to the chat.
         self.action_history = []
         self.answer_history = []
         self.current_obs = None
+        self.step_count = 0
         if hasattr(self.ctm, 'reset'):
             self.ctm.reset()
 
@@ -202,6 +282,7 @@ class CTMAgentArgs(AbstractAgentArgs):
     use_html: bool = True
     use_axtree: bool = True
     use_screenshot: bool = True
+    task_log_dir: Optional[str] = None
 
     def make_agent(self):
         return CTMAgent(
@@ -210,4 +291,5 @@ class CTMAgentArgs(AbstractAgentArgs):
             use_axtree=self.use_axtree,
             use_screenshot=self.use_screenshot,
             demo_mode=self.demo_mode,
+            task_log_dir=self.task_log_dir,
         )
