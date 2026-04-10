@@ -34,6 +34,9 @@ class BaseConsciousTuringMachine(ABC):
                 processor_group_name=None,
                 system_prompt=processor_config.get('system_prompt'),
                 model=processor_config.get('model'),
+                thinking_budget=processor_config.get('thinking_budget'),
+                use_frames=processor_config.get('use_frames', False),
+                max_frames=processor_config.get('max_frames', 8),
                 score_weights=self.config.score_weights,
                 num_additional_questions=self.config.num_additional_questions,
             )
@@ -179,6 +182,15 @@ class BaseConsciousTuringMachine(ABC):
             )
 
             parsed_answer = response.choices[0].message.content.strip()
+
+            # Normalize: ensure answer starts with Yes/No for binary tasks
+            lower = parsed_answer.lower()
+            if not lower.startswith('yes') and not lower.startswith('no'):
+                if 'is sarcastic' in lower or 'is being sarcastic' in lower or 'clearly sarcastic' in lower:
+                    parsed_answer = 'Yes. ' + parsed_answer
+                elif 'not sarcastic' in lower or 'not being sarcastic' in lower or 'insufficient evidence' in lower or 'no clear evidence' in lower:
+                    parsed_answer = 'No. ' + parsed_answer
+
             return parsed_answer
 
         except Exception as e:
@@ -188,7 +200,8 @@ class BaseConsciousTuringMachine(ABC):
     @logging_func_with_count
     def uptree_competition(self, chunks: List[Chunk]) -> Chunk:
         chunk_manager = ChunkManager(chunks)
-        return chunk_manager.uptree_competition()
+        temperature = getattr(self.config, 'competition_temperature', 0.1)
+        return chunk_manager.uptree_competition(temperature=temperature)
 
     @logging_func_with_count
     def downtree_broadcast(self, chunk: Chunk) -> None:
