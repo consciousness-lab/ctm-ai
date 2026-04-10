@@ -273,8 +273,12 @@ class BaseAgent:
 
         for attempt in range(1, max_retries + 1):
             try:
+                model = self.model
+                if self.provider == 'qwen' and model.startswith('qwen/'):
+                    model = 'openai/' + model.split('/', 1)[1]
+
                 call_kwargs = {
-                    'model': self.model,
+                    'model': model,
                     'messages': [{'role': 'user', 'content': content}],
                     'temperature': self.temperature,
                 }

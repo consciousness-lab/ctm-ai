@@ -122,13 +122,24 @@ def run_parallel(
     dataset, dataset_name, ctm_name, max_workers=4, output_file='ctm_results.jsonl'
 ):
     test_list = list(dataset.keys())
+
+    # Resume support: skip already-done IDs
+    done_ids = set()
+    if os.path.exists(output_file):
+        with open(output_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                try:
+                    d = json.loads(line.strip())
+                    done_ids.update(d.keys())
+                except Exception:
+                    pass
+
+    remaining = [t for t in test_list if t not in done_ids]
     print(f'Total test samples: {len(test_list)}')
+    print(f'Already done: {len(done_ids)}, Remaining: {len(remaining)}')
     print(f'Using {max_workers} workers')
     print(f'Output file: {output_file}')
     print('=' * 50)
-
-    with open(output_file, 'w', encoding='utf-8'):
-        pass
 
     start_time = time.time()
     completed_count = 0
@@ -138,7 +149,7 @@ def run_parallel(
             executor.submit(
                 run_instance, test_file, dataset, dataset_name, ctm_name, output_file
             ): test_file
-            for test_file in test_list
+            for test_file in remaining
         }
 
         for future in as_completed(future_to_test):

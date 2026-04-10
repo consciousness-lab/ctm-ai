@@ -1,5 +1,6 @@
 import base64
 import os
+import tempfile
 from typing import Any, Dict, List
 
 from .processor_base import BaseProcessor
@@ -14,6 +15,63 @@ def load_video_as_base64(video_path: str) -> str:
 
 @BaseProcessor.register_processor('video_processor')
 class VideoProcessor(BaseProcessor):
+    def _build_frames_messages(
+        self, query: str, video_path: str
+    ) -> List[Dict[str, Any]]:
+        """Extract frames from video and build messages with images instead of video.
+
+        Used as fallback when the video is too long/short for the model's API.
+        """
+        from ..utils.loader import extract_video_frames
+
+        tmp_dir = tempfile.mkdtemp(prefix='ctm_frames_')
+        try:
+            frame_paths = extract_video_frames(
+                video_path, tmp_dir, max_frames=self.max_frames
+            )
+        except Exception:
+            frame_paths = []
+
+        if not frame_paths:
+            return None
+
+        content_parts = [
+            {
+                'type': 'text',
+                'text': (
+                    f'{query}\n\n'
+                    f'Below are {len(frame_paths)} frames extracted from the video. '
+                    f'Analyze them as if watching the video.'
+                ),
+            }
+        ]
+
+        for fp in frame_paths:
+            with open(fp, 'rb') as f:
+                encoded = base64.b64encode(f.read()).decode('utf-8')
+            content_parts.append(
+                {
+                    'type': 'image_url',
+                    'image_url': {'url': f'data:image/jpeg;base64,{encoded}'},
+                }
+            )
+
+        # Clean up temp files
+        for fp in frame_paths:
+            try:
+                os.unlink(fp)
+            except OSError:
+                pass
+        try:
+            os.rmdir(tmp_dir)
+        except OSError:
+            pass
+
+        return [
+            {'role': 'system', 'content': self.system_prompt},
+            {'role': 'user', 'content': content_parts},
+        ]
+
     def build_executor_messages(
         self,
         query: str,
@@ -30,6 +88,10 @@ class VideoProcessor(BaseProcessor):
 
         if not os.path.exists(video_path):
             raise FileNotFoundError(f'Video file not found: {video_path}')
+
+        # If use_frames is enabled, extract frames and send as images
+        if self.use_frames:
+            return self._build_frames_messages(query, video_path)
 
         # Check file size (inline data limit is 20MB)
         file_size = os.path.getsize(video_path)

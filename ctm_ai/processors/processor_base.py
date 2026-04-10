@@ -82,6 +82,9 @@ class BaseProcessor(object):
         self.max_tokens = kwargs.get('max_tokens', 4096)
         self.return_num = kwargs.get('return_num', 1)
         self.temperature = kwargs.get('temperature', 0.2)
+        self.thinking_budget = kwargs.get('thinking_budget', None)
+        self.use_frames = kwargs.get('use_frames', False)
+        self.max_frames = kwargs.get('max_frames', 8)
         self.score_weights: Dict[str, float] = {
             **DEFAULT_SCORE_WEIGHTS,
             **(kwargs.get('score_weights') or {}),
@@ -178,6 +181,8 @@ class BaseProcessor(object):
             'n': self.return_num,
             **kwargs,
         }
+        if self.thinking_budget is not None:
+            call_kwargs['extra_body'] = {'thinking_budget': self.thinking_budget}
         response = completion(**call_kwargs)
         contents = [
             response.choices[i].message.content for i in range(len(response.choices))

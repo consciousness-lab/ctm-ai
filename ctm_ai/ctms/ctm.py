@@ -243,7 +243,8 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         if self.detailed_log is None or self.detailed_log.get('instance_id') is None:
             return
 
-        output_dir = 'detailed_info'
+        ctm_name = self.config.ctm_name or 'default'
+        output_dir = os.path.join('detailed_info', ctm_name)
         os.makedirs(output_dir, exist_ok=True)
 
         log_to_save = {
