@@ -135,12 +135,38 @@ def _load_autogen_prompts(dataset_name='mustard'):
         'Analyze the text carefully. Be concise but thorough.\n\n'
         'Dialogue:\n{text}'
     )
-    return video_expert, audio_expert, text_expert, judge, video_tool_q, audio_tool_q, text_tool_q
+    # Task instruction sent to the group chat (dataset-aware)
+    task_instruction = (
+        f'Determine if the following utterance is {yes_label} or not.\n\n'
+        f'Dialogue:\n{{target_sentence}}\n\n'
+        f'The last line is the target utterance. '
+        f'Each expert should use their analysis tool to examine evidence, '
+        f'then provide their assessment.'
+    )
+    # Tool docstrings (AutoGen uses these as tool descriptions sent to the LLM)
+    video_tool_doc = (
+        f'Analyze video frames for visual {yes_label} cues. Call this to examine '
+        f"the speaker's facial expressions, body language, and gestures in the muted video."
+    )
+    audio_tool_doc = (
+        f'Analyze audio for vocal {yes_label} cues. Call this to examine '
+        f"the speaker's tone, pitch, pace, and emphasis."
+    )
+    text_tool_doc = (
+        f'Analyze dialogue text for linguistic {yes_label} cues. Call this to examine '
+        f'the utterance in its conversational context.'
+    )
+    return (
+        video_expert, audio_expert, text_expert, judge,
+        video_tool_q, audio_tool_q, text_tool_q,
+        task_instruction, video_tool_doc, audio_tool_doc, text_tool_doc,
+    )
 
 
 # Defaults (overridden in main based on dataset_name)
 (VIDEO_EXPERT_PROMPT, AUDIO_EXPERT_PROMPT, TEXT_EXPERT_PROMPT,
- JUDGE_PROMPT, VIDEO_TOOL_QUERY, AUDIO_TOOL_QUERY, TEXT_TOOL_QUERY) = _load_autogen_prompts()
+ JUDGE_PROMPT, VIDEO_TOOL_QUERY, AUDIO_TOOL_QUERY, TEXT_TOOL_QUERY,
+ TASK_INSTRUCTION, VIDEO_TOOL_DOC, AUDIO_TOOL_DOC, TEXT_TOOL_DOC) = _load_autogen_prompts()
 
 
 
@@ -271,7 +297,6 @@ async def run_instance_async(
     # ------------------------------------------------------------------
 
     def analyze_video() -> str:
-        """Analyze video frames for visual sarcasm cues. Call this to examine the speaker's facial expressions, body language, and gestures in the muted video."""
         nonlocal tool_api_calls, tool_prompt_tokens, tool_completion_tokens
         agent = create_litellm_agent(
             'video', provider='gemini', model=_litellm_model_name(model)
@@ -283,7 +308,6 @@ async def run_instance_async(
         return result or 'No visual analysis available.'
 
     def analyze_audio() -> str:
-        """Analyze audio for vocal sarcasm cues. Call this to examine the speaker's tone, pitch, pace, and emphasis."""
         nonlocal tool_api_calls, tool_prompt_tokens, tool_completion_tokens
         agent = create_litellm_agent(
             'audio', provider='gemini', model=_litellm_model_name(model)
@@ -295,7 +319,6 @@ async def run_instance_async(
         return result or 'No audio analysis available.'
 
     def analyze_text() -> str:
-        """Analyze dialogue text for linguistic sarcasm cues. Call this to examine the utterance in its conversational context."""
         nonlocal tool_api_calls, tool_prompt_tokens, tool_completion_tokens
         agent = create_litellm_agent(
             'text', provider='gemini', model=_litellm_model_name(effective_text_model)
@@ -306,6 +329,12 @@ async def run_instance_async(
         tool_prompt_tokens += usage.get('prompt_tokens', 0)
         tool_completion_tokens += usage.get('completion_tokens', 0)
         return result or 'No text analysis available.'
+
+    # Dataset-aware tool descriptions (AutoGen passes these as function descriptions
+    # to the LLM, so they must reflect the active task — sarcasm vs humor).
+    analyze_video.__doc__ = VIDEO_TOOL_DOC
+    analyze_audio.__doc__ = AUDIO_TOOL_DOC
+    analyze_text.__doc__ = TEXT_TOOL_DOC
 
     # ------------------------------------------------------------------
     # Create AutoGen agents
@@ -318,23 +347,30 @@ async def run_instance_async(
         else base_model_client
     )
 
+    # reflect_on_tool_use=True makes the expert make a second LLM call after the
+    # tool returns, so it can produce a real assessment ending with "My Answer: Yes/No".
+    # Without this, AssistantAgent would return a raw ToolCallSummaryMessage and the
+    # expert never gets to "speak" — its system prompt instructions are ignored.
     video_expert = AssistantAgent(
         name='video_expert',
         model_client=base_model_client,
         tools=[analyze_video],
         system_message=VIDEO_EXPERT_PROMPT,
+        reflect_on_tool_use=True,
     )
     audio_expert = AssistantAgent(
         name='audio_expert',
         model_client=base_model_client,
         tools=[analyze_audio],
         system_message=AUDIO_EXPERT_PROMPT,
+        reflect_on_tool_use=True,
     )
     text_expert = AssistantAgent(
         name='text_expert',
         model_client=text_model_client,
         tools=[analyze_text],
         system_message=TEXT_EXPERT_PROMPT,
+        reflect_on_tool_use=True,
     )
     judge = AssistantAgent(
         name='judge',
@@ -346,8 +382,12 @@ async def run_instance_async(
     # Create team
     # ------------------------------------------------------------------
 
+    # With reflect_on_tool_use=True each tool-calling turn produces:
+    #   tool-request event + tool-result event + follow-up TextMessage
+    # RoundRobinGroupChat counts all of these toward MaxMessageTermination, so
+    # scale the cap generously: 8 messages/round covers 3 tool turns + 1 judge.
     termination = TextMentionTermination('FINAL ANSWER') | MaxMessageTermination(
-        rounds * 4 + 4  # 4 agents/round + buffer for tool messages
+        rounds * 8 + 4
     )
 
     team = RoundRobinGroupChat(
@@ -359,13 +399,7 @@ async def run_instance_async(
     # Run debate
     # ------------------------------------------------------------------
 
-    task = (
-        f'Determine if the following utterance is sarcastic or not.\n\n'
-        f'Dialogue:\n{target_sentence}\n\n'
-        f'The last line is the target utterance. '
-        f'Each expert should use their analysis tool to examine evidence, '
-        f'then provide their assessment.'
-    )
+    task = TASK_INSTRUCTION.format(target_sentence=target_sentence)
 
     result = await team.run(task=task, cancellation_token=CancellationToken())
 
@@ -397,18 +431,36 @@ async def run_instance_async(
     end_time = time.time()
     latency = end_time - start_time
 
-    # Estimate total API calls:
-    # - tool_api_calls: litellm multimodal calls (exact)
-    # - agent_turns with tool use: 2 model client calls each (tool decision + response)
-    # - agent_turns without tool use: 1 model client call each
-    # Approximate: tool-using turns = tool_api_calls, non-tool turns = agent_turns - tool_api_calls
-    autogen_model_calls = agent_turns + tool_api_calls  # extra call per tool use
+    # Pull real AutoGen-side token usage from the model clients (cumulative over
+    # this instance, since clients are created fresh per sample).
+    def _client_usage(client):
+        try:
+            u = client.total_usage()
+            return (getattr(u, 'prompt_tokens', 0) or 0,
+                    getattr(u, 'completion_tokens', 0) or 0)
+        except Exception:
+            return (0, 0)
+
+    base_pt, base_ct = _client_usage(base_model_client)
+    if text_model and text_model_client is not base_model_client:
+        text_pt, text_ct = _client_usage(text_model_client)
+    else:
+        text_pt, text_ct = (0, 0)
+    autogen_prompt_tokens = base_pt + text_pt
+    autogen_completion_tokens = base_ct + text_ct
+
+    # autogen_model_calls: each agent_turn with a tool call is 2 LLM calls
+    # (tool-decide + reflect), turns without tool use are 1.
+    autogen_model_calls = agent_turns + tool_api_calls
     total_api_calls = tool_api_calls + autogen_model_calls
+    total_prompt_tokens = tool_prompt_tokens + autogen_prompt_tokens
+    total_completion_tokens = tool_completion_tokens + autogen_completion_tokens
 
     print(
         f'  {test_file}: {final_answer} (label={label}) | '
         f'api_calls={total_api_calls} '
         f'(tool={tool_api_calls}, autogen={autogen_model_calls}) | '
+        f'tok={total_prompt_tokens + total_completion_tokens} | '
         f'{latency:.1f}s'
     )
 
@@ -427,6 +479,10 @@ async def run_instance_async(
             'usage': {
                 'tool_prompt_tokens': tool_prompt_tokens,
                 'tool_completion_tokens': tool_completion_tokens,
+                'autogen_prompt_tokens': autogen_prompt_tokens,
+                'autogen_completion_tokens': autogen_completion_tokens,
+                'total_prompt_tokens': total_prompt_tokens,
+                'total_completion_tokens': total_completion_tokens,
             },
         }
     }
@@ -523,7 +579,9 @@ def main():
     import sys as _sys
     _this = _sys.modules[__name__]
     (_this.VIDEO_EXPERT_PROMPT, _this.AUDIO_EXPERT_PROMPT, _this.TEXT_EXPERT_PROMPT,
-     _this.JUDGE_PROMPT, _this.VIDEO_TOOL_QUERY, _this.AUDIO_TOOL_QUERY, _this.TEXT_TOOL_QUERY) = _load_autogen_prompts(args.dataset_name)
+     _this.JUDGE_PROMPT, _this.VIDEO_TOOL_QUERY, _this.AUDIO_TOOL_QUERY, _this.TEXT_TOOL_QUERY,
+     _this.TASK_INSTRUCTION, _this.VIDEO_TOOL_DOC, _this.AUDIO_TOOL_DOC,
+     _this.TEXT_TOOL_DOC) = _load_autogen_prompts(args.dataset_name)
 
     config = get_dataset_config(args.dataset_name)
     dataset_path = args.dataset or config.get_default_dataset_path()
@@ -614,8 +672,8 @@ def main():
                     data = result[test_file]
                     stats.add(
                         data['latency'],
-                        data['usage']['tool_prompt_tokens'],
-                        data['usage']['tool_completion_tokens'],
+                        data['usage']['total_prompt_tokens'],
+                        data['usage']['total_completion_tokens'],
                         data['api_calls'],
                     )
                     completed += 1
