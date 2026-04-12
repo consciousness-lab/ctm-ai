@@ -12,18 +12,21 @@ python run_orchestra.py --dataset_name mustard --provider gemini --rounds 3
 
 import argparse
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import litellm
 from dataset_configs import get_dataset_config
 from llm_utils import (
+    KeyRotator,
     StatsTracker,
     check_api_key,
     create_agent,
     load_data,
     load_processed_keys,
     load_sample_inputs,
+    parse_api_keys,
     save_result_to_jsonl,
 )
 
@@ -108,7 +111,9 @@ def run_instance(
 
         # Controller generates questions
         if round_num == 1:
-            controller_query = prompts['controller_init']
+            controller_query = prompts['controller_init'].format(
+                target_sentence=target_sentence
+            )
         else:
             controller_query = prompts['controller_followup'].format(
                 prev_round=round_num - 1,
@@ -162,8 +167,9 @@ def run_instance(
         print(f'    Text:  {text_response[:60] if text_response else "None"}...')
 
     # Controller final decision
-    decision_query = prompts['controller_decision'].format(
-        num_rounds=ROUNDS, conversation_history=conversation_history
+    decision_query = (
+        f"{prompts['controller_decision'].format(num_rounds=ROUNDS, conversation_history=conversation_history)}"
+        f"\n\ntarget text: '{target_sentence}'"
     )
     final_verdict, usage = text_agent.call(decision_query)
     num_api_calls += 1
@@ -244,6 +250,18 @@ if __name__ == '__main__':
         default=3,
         help='Number of questioning rounds (default: 3)',
     )
+    parser.add_argument(
+        '--max-workers',
+        type=int,
+        default=4,
+        help='Number of samples to process concurrently (default: 4)',
+    )
+    parser.add_argument(
+        '--api-keys',
+        type=str,
+        default=None,
+        help='Comma-separated API keys to rotate across (default: env var)',
+    )
     args = parser.parse_args()
 
     ROUNDS = args.rounds
@@ -253,24 +271,42 @@ if __name__ == '__main__':
         args.dataset = config.get_default_dataset_path()
     output_file = args.output or f'orchestra_{args.dataset_name}_{args.provider}.jsonl'
 
-    check_api_key(args.provider)
+    api_keys = parse_api_keys(args.api_keys, args.provider)
+    check_api_key(args.provider, keys=api_keys)
     litellm.set_verbose = False
 
     tracker = StatsTracker(
         cost_input_per_1m=COST_INPUT_PER_1M, cost_output_per_1m=COST_OUTPUT_PER_1M
     )
+    rotator = KeyRotator(api_keys) if len(api_keys) > 1 else None
 
     video_agent = create_agent(
-        'video', provider=args.provider, model=args.model, temperature=args.temperature
+        'video',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        api_key=api_keys[0] if api_keys else None,
+        key_rotator=rotator,
     )
     audio_agent = create_agent(
-        'audio', provider=args.provider, model=args.model, temperature=args.temperature
+        'audio',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        api_key=api_keys[0] if api_keys else None,
+        key_rotator=rotator,
     )
     text_agent = create_agent(
-        'text', provider=args.provider, model=args.model, temperature=args.temperature
+        'text',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        api_key=api_keys[0] if api_keys else None,
+        key_rotator=rotator,
     )
     print(
-        f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {text_agent.model}'
+        f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {text_agent.model} '
+        f'| keys={len(api_keys)} | workers={args.max_workers}'
     )
 
     dataset = load_data(args.dataset)
@@ -281,24 +317,37 @@ if __name__ == '__main__':
             f'Resuming: {len(processed_keys)} done, {len(test_list) - len(processed_keys)} remaining'
         )
 
+    pending = [tf for tf in test_list if tf not in processed_keys]
+    progress_lock = threading.Lock()
+    done_counter = [0]
+    total_pending = len(pending)
+
+    def worker(test_file):
+        try:
+            run_instance(
+                test_file,
+                dataset,
+                args.dataset_name,
+                video_agent,
+                audio_agent,
+                text_agent,
+                tracker,
+                output_file,
+            )
+        except Exception as e:
+            print(f'[ERROR] {test_file}: {e}')
+        finally:
+            with progress_lock:
+                done_counter[0] += 1
+                if done_counter[0] % 10 == 0 or done_counter[0] == total_pending:
+                    print(
+                        f'[progress] {done_counter[0]}/{total_pending} samples done'
+                    )
+
     try:
-        for test_file in test_list:
-            if test_file in processed_keys:
-                continue
-            try:
-                run_instance(
-                    test_file,
-                    dataset,
-                    args.dataset_name,
-                    video_agent,
-                    audio_agent,
-                    text_agent,
-                    tracker,
-                    output_file,
-                )
-            except Exception as e:
-                print(f'[ERROR] {test_file}: {e}')
-                continue
-            time.sleep(2)
+        with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
+            futures = [executor.submit(worker, tf) for tf in pending]
+            for fut in as_completed(futures):
+                fut.result()
     finally:
         tracker.print_summary(f'Orchestra - {ROUNDS} Rounds')

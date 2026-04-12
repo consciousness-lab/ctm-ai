@@ -16,7 +16,8 @@ import os
 import statistics
 import subprocess
 import tempfile
-from typing import Any, Dict, List, Optional, Tuple
+import threading
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import litellm
 from dataset_configs import get_dataset_config
@@ -38,14 +39,61 @@ QWEN_API_BASE = 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
 # ============================================================================
 
 
-def check_api_key(provider: str = 'gemini'):
-    """Check if required API key environment variable is set"""
+def check_api_key(
+    provider: str = 'gemini', keys: Optional[Sequence[str]] = None
+):
+    """Check that at least one API key is available.
+
+    If `keys` is provided, use those; otherwise fall back to the standard
+    environment variable (GEMINI_API_KEY / DASHSCOPE_API_KEY).
+    """
+    if keys:
+        if any(k and k.strip() for k in keys):
+            return
+        raise ValueError(f'No valid {provider} API keys provided')
     if provider == 'gemini':
         if not os.getenv('GEMINI_API_KEY'):
             raise ValueError('GEMINI_API_KEY environment variable not set')
     elif provider == 'qwen':
         if not os.getenv('DASHSCOPE_API_KEY'):
             raise ValueError('DASHSCOPE_API_KEY environment variable not set')
+
+
+class KeyRotator:
+    """Thread-safe round-robin API key rotator.
+
+    Each call to `next()` returns the next key in the pool; rotation is
+    atomic so concurrent threads always get distinct sequential keys.
+    """
+
+    def __init__(self, keys: Sequence[str]):
+        self.keys: List[str] = [k.strip() for k in keys if k and k.strip()]
+        if not self.keys:
+            raise ValueError('KeyRotator: no non-empty keys provided')
+        self._idx = 0
+        self._lock = threading.Lock()
+
+    def next(self) -> str:
+        with self._lock:
+            k = self.keys[self._idx % len(self.keys)]
+            self._idx += 1
+            return k
+
+    def __len__(self) -> int:
+        return len(self.keys)
+
+
+def parse_api_keys(
+    api_keys_arg: Optional[str], provider: str = 'gemini'
+) -> List[str]:
+    """Parse --api-keys CLI arg (comma-separated) with env var fallback."""
+    if api_keys_arg:
+        keys = [k.strip() for k in api_keys_arg.split(',') if k.strip()]
+        if keys:
+            return keys
+    env_name = 'GEMINI_API_KEY' if provider == 'gemini' else 'DASHSCOPE_API_KEY'
+    env_val = os.getenv(env_name)
+    return [env_val] if env_val else []
 
 
 # ============================================================================
@@ -247,7 +295,11 @@ def build_video_content(video_path: str, provider: str = 'gemini') -> List[Dict]
 
 
 class BaseAgent:
-    """Base agent for LLM API calls with provider support"""
+    """Base agent for LLM API calls with provider support.
+
+    Thread-safe: a single agent instance can be shared across worker threads,
+    and each call rotates the API key via the shared KeyRotator (if provided).
+    """
 
     AGENT_TYPE = 'base'
 
@@ -256,10 +308,26 @@ class BaseAgent:
         provider: str = 'gemini',
         model: Optional[str] = None,
         temperature: float = 1.0,
+        api_key: Optional[str] = None,
+        key_rotator: Optional[KeyRotator] = None,
     ):
         self.provider = provider
         self.model = model or DEFAULT_MODELS.get(provider, DEFAULT_MODELS['gemini'])
         self.temperature = temperature
+        self.api_key = api_key
+        self.key_rotator = key_rotator
+
+    def _resolve_api_key(self) -> Optional[str]:
+        """Get an API key for this call. Rotates if a KeyRotator is set."""
+        if self.key_rotator is not None:
+            return self.key_rotator.next()
+        if self.api_key is not None:
+            return self.api_key
+        if self.provider == 'gemini':
+            return os.getenv('GEMINI_API_KEY')
+        if self.provider == 'qwen':
+            return os.getenv('DASHSCOPE_API_KEY')
+        return None
 
     def _build_content(self, query: str, **kwargs: Any) -> List[Dict]:
         """Build content list. Override in subclasses"""
@@ -268,7 +336,11 @@ class BaseAgent:
     def call(
         self, query: str, max_retries: int = 3, **kwargs: Any
     ) -> Tuple[Optional[str], Dict[str, int]]:
-        """Make an LLM API call with the agent's modality, retry up to max_retries on failure"""
+        """Make an LLM API call with the agent's modality, retry up to max_retries on failure.
+
+        On retry, the API key is re-resolved — so if multiple keys are provided
+        via KeyRotator, a failing key will be rotated away on the next attempt.
+        """
         content = self._build_content(query, **kwargs)
 
         for attempt in range(1, max_retries + 1):
@@ -277,10 +349,10 @@ class BaseAgent:
                     'model': self.model,
                     'messages': [{'role': 'user', 'content': content}],
                     'temperature': self.temperature,
+                    'api_key': self._resolve_api_key(),
                 }
 
                 if self.provider == 'qwen':
-                    call_kwargs['api_key'] = os.getenv('DASHSCOPE_API_KEY')
                     call_kwargs['api_base'] = QWEN_API_BASE
                     call_kwargs['modalities'] = ['text']
 
@@ -402,6 +474,8 @@ def create_agent(
     provider: str = 'gemini',
     model: Optional[str] = None,
     temperature: float = 1.0,
+    api_key: Optional[str] = None,
+    key_rotator: Optional[KeyRotator] = None,
 ) -> BaseAgent:
     """Factory function to create an agent by type"""
     if agent_type not in AGENT_CLASSES:
@@ -410,7 +484,11 @@ def create_agent(
             f'Choose from: {list(AGENT_CLASSES.keys())}'
         )
     return AGENT_CLASSES[agent_type](
-        provider=provider, model=model, temperature=temperature
+        provider=provider,
+        model=model,
+        temperature=temperature,
+        api_key=api_key,
+        key_rotator=key_rotator,
     )
 
 
@@ -449,8 +527,17 @@ def load_sample_inputs(
 
 def normalize_label(label) -> str:
     """Normalize label to 'Yes'/'No' format"""
+    if isinstance(label, bool):
+        return 'Yes' if label else 'No'
     if isinstance(label, (int, float)):
         return 'Yes' if label == 1 else 'No'
+    if isinstance(label, str):
+        lower = label.strip().lower()
+        if lower in ('yes', 'true', '1'):
+            return 'Yes'
+        if lower in ('no', 'false', '0'):
+            return 'No'
+        return label
     return str(label)
 
 
@@ -460,7 +547,7 @@ def normalize_label(label) -> str:
 
 
 class StatsTracker:
-    """Track performance statistics across multiple samples"""
+    """Track performance statistics across multiple samples (thread-safe)"""
 
     def __init__(
         self,
@@ -474,6 +561,7 @@ class StatsTracker:
         self.api_calls: List[int] = []
         self.cost_input_per_1m = cost_input_per_1m
         self.cost_output_per_1m = cost_output_per_1m
+        self._lock = threading.Lock()
 
     def add(
         self,
@@ -486,11 +574,12 @@ class StatsTracker:
         cost = (input_tok / 1_000_000 * self.cost_input_per_1m) + (
             output_tok / 1_000_000 * self.cost_output_per_1m
         )
-        self.times.append(duration)
-        self.input_tokens.append(input_tok)
-        self.output_tokens.append(output_tok)
-        self.costs.append(cost)
-        self.api_calls.append(num_api_calls)
+        with self._lock:
+            self.times.append(duration)
+            self.input_tokens.append(input_tok)
+            self.output_tokens.append(output_tok)
+            self.costs.append(cost)
+            self.api_calls.append(num_api_calls)
 
     def print_summary(self, method_name: str = 'Experiment'):
         """Print summary statistics"""
@@ -529,10 +618,27 @@ class StatsTracker:
 # ============================================================================
 
 
+_jsonl_write_locks: Dict[str, threading.Lock] = {}
+_jsonl_write_locks_lock = threading.Lock()
+
+
+def _get_jsonl_lock(output_file: str) -> threading.Lock:
+    """Return a per-file threading lock (created lazily)."""
+    with _jsonl_write_locks_lock:
+        lock = _jsonl_write_locks.get(output_file)
+        if lock is None:
+            lock = threading.Lock()
+            _jsonl_write_locks[output_file] = lock
+        return lock
+
+
 def save_result_to_jsonl(result: dict, output_file: str):
-    """Append result dictionary to JSONL file"""
-    with open(output_file, 'a', encoding='utf-8') as f:
-        f.write(json.dumps(result, ensure_ascii=False) + '\n')
+    """Append result dictionary to JSONL file (thread-safe per output_file)."""
+    lock = _get_jsonl_lock(output_file)
+    line = json.dumps(result, ensure_ascii=False) + '\n'
+    with lock:
+        with open(output_file, 'a', encoding='utf-8') as f:
+            f.write(line)
 
 
 # ============================================================================
@@ -579,5 +685,20 @@ def add_common_args(parser):
         type=float,
         default=1.0,
         help='Sampling temperature (default: 1.0)',
+    )
+    parser.add_argument(
+        '--max-workers',
+        type=int,
+        default=4,
+        help='Number of samples to process concurrently (default: 4)',
+    )
+    parser.add_argument(
+        '--api-keys',
+        type=str,
+        default=None,
+        help=(
+            'Comma-separated list of API keys to rotate across. '
+            'If omitted, falls back to the GEMINI_API_KEY / DASHSCOPE_API_KEY env var.'
+        ),
     )
     return parser
