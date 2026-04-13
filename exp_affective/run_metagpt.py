@@ -160,66 +160,124 @@ def _load_ctm_prompts(dataset_name='mustard'):
 
 
 def _build_pipeline_prompts(dataset_name='mustard'):
-    """Return synthesiser/critic/judge system prompts for the target task."""
+    """Return synthesiser/critic/judge system prompts for the target task.
+
+    Key design choices (motivated by the empirical observation that the
+    previous hand-written prompts under-performed on MUStARD):
+    - Explicit incongruity framing — sarcasm/humor is fundamentally about
+      mismatch, and this is the single strongest signal.
+    - The Critic audits in BOTH directions (false positive AND false
+      negative), instead of only flagging "might be mistaking X for
+      sarcasm". The previous asymmetric critic biased the pipeline toward
+      "not sarcastic".
+    - Neutral prior: MUStARD is balanced ≈50/50, so "default to No under
+      uncertainty" is systematically wrong. Remove that bias.
+    - Judge output format is strict: "Yes/No + one sentence", to keep the
+      parser (calc_ctm_res.extract_prediction) happy.
+    """
     if dataset_name == 'urfunny':
         task = 'humor detection'
         yes_label = 'humorous'
         no_label = 'not humorous'
-        pitfalls = (
-            '   - Enthusiasm/excitement vs actual humorous intent\n'
-            '   - Deadpan delivery with comedic intent\n'
-            '   - Informative surprises vs real jokes\n'
-            '   - Rhetorical contrasts vs humorous incongruity'
+        core_def = (
+            'Humor is characterised by UNEXPECTED INCONGRUITY — a gap between '
+            'setup and punchline, absurd comparisons, self-deprecation, ironic '
+            'observations, or twists that subvert expectation.'
         )
+        signals = (
+            '- Setup/punchline structure: buildup followed by an unexpected payoff.\n'
+            '- Audience laughter/applause noted in the audio report (near-definitive).\n'
+            '- Exaggeration or understatement disproportionate to the situation.\n'
+            '- Deadpan delivery of absurd content.'
+        )
+        fp_traps = 'mistaking enthusiasm, surprise, or informative statements for humor'
+        fn_traps = 'dismissing deadpan jokes because the delivery is flat'
     else:
         task = 'sarcasm detection'
         yes_label = 'sarcastic'
         no_label = 'not sarcastic'
-        pitfalls = (
-            '   - Genuine anger/frustration vs sarcasm\n'
-            '   - Dry/deadpan delivery vs sarcastic intent\n'
-            '   - Playful teasing vs sarcasm\n'
-            '   - Short responses as automatically non-sarcastic'
+        core_def = (
+            'Sarcasm is fundamentally about INCONGRUITY — a mismatch between '
+            'what is literally said and what is meant, or between the content '
+            'and the way it is delivered.'
+        )
+        signals = (
+            '- Text–audio mismatch: literal praise/agreement with flat, '
+            'exaggerated, or drawn-out tone.\n'
+            '- Text–visual mismatch: positive words with deadpan face, eye-roll, '
+            'smirk, or exaggerated gesture.\n'
+            '- Content–context mismatch: over-enthusiastic statements about '
+            'mundane or unpleasant things.\n'
+            '- Exaggerated positive framing of something obviously negative.'
+        )
+        fp_traps = 'treating genuine frustration or dry humour as sarcasm'
+        fn_traps = (
+            'missing subtle sarcasm where the tone or face quietly contradicts '
+            'the words'
         )
 
     synthesizer = (
-        f'You are the Synthesizer in a multi-agent {task} team. '
-        'You have received independent analysis reports from three modality '
-        'experts (Text, Audio, Video). Integrate them into a coherent '
-        'cross-modal synthesis covering:\n'
-        '1. **Agreement Points**: Where do the experts agree?\n'
-        '2. **Conflicts**: Where do they disagree? Which has stronger evidence?\n'
-        f'3. **Evidence Strength**: Rate the overall evidence for {yes_label} '
-        f'vs {no_label}.\n'
-        '4. **Modality Reliability**: For this sample, which modality is '
-        'most reliable and why?\n'
-        f'5. **Synthesis Verdict**: Is the person likely {yes_label} or not?'
+        f'You are the Synthesizer in a multi-agent {task} team. You receive '
+        'independent analysis reports from three modality experts (Text, '
+        'Audio, Video). Produce a concise cross-modal synthesis.\n\n'
+        f'{core_def}\n\nKey signals to watch for:\n{signals}\n\n'
+        'Your synthesis must cover:\n'
+        '1. **Modality agreement** — where do the experts agree?\n'
+        '2. **Modality conflict** — where do they disagree? Disagreement '
+        'between literal text and non-literal delivery is often the '
+        f'STRONGEST {yes_label} signal; do not dismiss it as "experts '
+        'conflicting".\n'
+        '3. **Incongruity audit** — list any specific mismatches between '
+        'what is said and how it is delivered.\n'
+        f'4. **Tentative verdict** — on balance, {yes_label} or {no_label}? '
+        'State it with a confidence level (high/medium/low). Do not make '
+        'the final call here; your job is to surface evidence cleanly so '
+        'the Critic and Judge can decide.'
     )
     critic = (
-        f'You are the Critic in a multi-agent {task} team. '
-        'You have received the modality analyses and the synthesizer\'s '
-        'integration. Critically review the synthesis covering:\n'
-        '1. **Logical Consistency**: Are conclusions supported by evidence?\n'
-        '2. **Overlooked Evidence**: Was anything under-weighted?\n'
-        '3. **Common Pitfalls**: Flag if the analysis might confuse:\n'
-        f'{pitfalls}\n'
-        '4. **Uncertainty Assessment**: How confident is the judgment?\n'
-        '5. **Revised Verdict**: Do you agree with the synthesis? Why?'
+        f'You are the Critic in a multi-agent {task} team. You have '
+        'received the modality analyses and the Synthesizer\'s integration. '
+        'Your job is to audit the synthesis for BOTH directional errors — '
+        'not only false positives.\n\n'
+        f'{core_def}\n\nReview checklist:\n'
+        '1. **Evidence grounding** — are the conclusions tied to specific '
+        'observations in the modality reports, or is the synthesis hand-waving?\n'
+        '2. **Under-weighted incongruity** — did the synthesis miss or '
+        'down-play any text/audio or text/visual mismatch? Subtle incongruity '
+        f'is the main source of missed {yes_label} cases.\n'
+        f'3. **False-positive check** — is the synthesis {fp_traps}? Flag if so.\n'
+        f'4. **False-negative check** — is the synthesis {fn_traps}? Flag if so.\n'
+        '5. **Bias check** — MUStARD-style datasets are roughly 50/50, so a '
+        f'synthesis that defaults to "{no_label}" under uncertainty is '
+        'systematically wrong. If the synthesis hedges without evidence, '
+        'push it to commit.\n'
+        '6. **Revised verdict** — after critique, do you agree with the '
+        'synthesis? Provide your own tentative call with reasoning.'
     )
     judge = (
         f'You are the Final Judge in a multi-agent {task} team. You have '
-        'received modality reports, a cross-modal synthesis, and a critic '
-        'review. Make the final determination.\n\n'
-        f'Your answer MUST start with exactly "Yes" ({yes_label}) or "No" '
-        f'({no_label}), then a brief justification citing the most decisive '
-        'evidence.\n\n'
-        'Guidelines:\n'
-        f'- If the Critic identified significant weaknesses in the '
-        f'{yes_label} case, weigh that heavily.\n'
-        '- If modalities strongly agree, trust the consensus.\n'
-        '- If modalities conflict, prioritize text > audio > video for '
-        'semantic judgment.\n'
-        '- Make a definitive decision — do not hedge.'
+        'received three modality reports, a cross-modal synthesis, and a '
+        'critic review. Make the final call.\n\n'
+        f'{core_def}\n\nDecision rules:\n'
+        '- When the modalities AGREE that the statement is literal and the '
+        f'delivery matches the content, answer "{no_label}".\n'
+        '- When any modality reports INCONGRUITY (literal words paired with '
+        'incongruent delivery or context), that alone is strong evidence '
+        f'for {yes_label}. Do not require all three modalities to converge.\n'
+        '- Trust the Critic in BOTH directions: a flagged false-negative '
+        '(missed subtle incongruity) matters as much as a flagged '
+        'false-positive (genuine frustration misread as sarcasm).\n'
+        '- The dataset is roughly 50/50. Do NOT default to '
+        f'"{no_label}" under uncertainty — commit based on the strongest '
+        'evidence available.\n'
+        '- If the evidence is truly balanced, prefer the modality with the '
+        'most concrete, specific grounding (a concrete observation '
+        'outweighs a general impression).\n\n'
+        'OUTPUT FORMAT (strict): your response MUST begin with the single '
+        f'word "Yes" ({yes_label}) or "No" ({no_label}) followed by a period '
+        'and one short sentence citing the most decisive piece of evidence. '
+        'Do NOT prefix your answer with any reasoning or preamble before '
+        'the Yes/No.'
     )
     return synthesizer, critic, judge
 
