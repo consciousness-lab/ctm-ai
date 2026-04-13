@@ -154,15 +154,20 @@ def _audio_mime(path: str) -> str:
 def _build_messages(
     system_prompt: str,
     query: str,
-    text_with_context: str,
+    target_text: str,
     audio_path,
     video_path,
 ):
-    """Build the [system, user] messages with multimodal user content."""
+    """Build the [system, user] messages with multimodal user content.
+
+    `target_text` is the bare target utterance (mustard) or punchline
+    (urfunny) WITHOUT surrounding conversational context — this matches
+    what MoA, MetaGPT, and AutoGen feed their text experts via
+    `dataset_configs.*.get_text_field()`, so all four baselines see the
+    same text input."""
     text_part = (
         f'{query}\n\n'
-        f'Dialogue (with conversational context, target utterance on the '
-        f'last line):\n{text_with_context}'
+        f'Target utterance:\n{target_text}'
     )
 
     content = [{'type': 'text', 'text': text_part}]
@@ -306,7 +311,7 @@ def run_instance(test_file, dataset, dataset_name, output_file,
     try:
         config = get_dataset_config(dataset_name)
         sample = dataset[test_file]
-        text_with_context = config.get_context_field(sample)
+        target_text = config.get_text_field(sample)
         label = config.get_label_field(sample)
         query = config.get_task_query()
 
@@ -318,7 +323,7 @@ def run_instance(test_file, dataset, dataset_name, output_file,
             video_path = None
 
         messages = _build_messages(
-            system_prompt, query, text_with_context, audio_path, video_path,
+            system_prompt, query, target_text, audio_path, video_path,
         )
 
         start_time = time.time()
