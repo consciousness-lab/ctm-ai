@@ -78,8 +78,6 @@ def _load_autogen_prompts(dataset_name='mustard'):
     with open(config_path) as f:
         cfg = json.load(f)
     procs = cfg['processors_config']
-    # CTM's final-decision prompt, reused verbatim for the Judge below.
-    parse_prompt_template = cfg['parse_prompt_template']
 
     if dataset_name == 'urfunny':
         task = 'humor detection'
@@ -110,20 +108,13 @@ def _load_autogen_prompts(dataset_name='mustard'):
         f"In subsequent turns, consider other experts' perspectives and refine your position.\n\n"
         f'Always end your response with "My Answer: Yes" ({yes_label}) or "My Answer: No" ({no_label}).'
     )
-    # CTM's parse_prompt_template is the Judge's system prompt, with two
-    # small additions required by the RoundRobinGroupChat termination
-    # condition (`TextMentionTermination('FINAL ANSWER')`):
-    #   1. Strip the trailing `Analysis:\n{answer}` block — in AutoGen the
-    #      expert analyses arrive as previous messages in the group chat,
-    #      not as a format-string substitution.
-    #   2. Append a short instruction requiring the "FINAL ANSWER: Yes/No"
-    #      marker so the team can terminate cleanly.
-    judge_body = parse_prompt_template.split('Analysis:')[0].rstrip()
     judge = (
-        f'{judge_body}\n\n'
-        f'You are receiving the expert analyses as the preceding messages in '
-        f'this conversation. Base your judgment solely on those analyses.\n\n'
-        f'Format requirement: your response MUST contain exactly one of:\n'
+        f'You are a {task} expert. You synthesize evidence from Video, Audio, and Text experts '
+        f'to make a final determination.\n\n'
+        f'Based solely on the analyses provided by the experts, determine if the person is being {yes_label}.\n\n'
+        f'IMPORTANT: If the analyses express uncertainty, are inconclusive, or lack sufficient evidence, '
+        f'you should answer "No" ({no_label}). Only answer "Yes" when there is clear, converging evidence.\n\n'
+        f'Your response MUST contain exactly one of:\n'
         f'  FINAL ANSWER: Yes\n'
         f'  FINAL ANSWER: No'
     )
