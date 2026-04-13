@@ -90,58 +90,33 @@ def _load_autogen_prompts(dataset_name='mustard'):
         no_label = 'not sarcastic'
         query = 'Is the person being sarcastic or not?'
 
-    # Domain definition shared between experts and judge.
-    if dataset_name == 'urfunny':
-        core_def = (
-            'Humor is characterised by UNEXPECTED INCONGRUITY — a gap between '
-            'setup and punchline, absurd comparisons, self-deprecation, or a '
-            'twist that subverts expectation. Audience laughter/applause is '
-            'near-definitive evidence. Deadpan delivery does not imply the '
-            'content is not humorous.'
-        )
-    else:
-        core_def = (
-            'Sarcasm is fundamentally about INCONGRUITY — a mismatch between '
-            'what is literally said and what is meant, or between the content '
-            'and the way it is delivered. Look for text/audio mismatch (literal '
-            'praise with flat or exaggerated tone), text/visual mismatch '
-            '(positive words with deadpan face or eye-roll), and over-enthusiastic '
-            'statements about mundane or unpleasant things.'
-        )
-    expert_footer = (
-        f"\n\n{core_def}\n\n"
-        f"In your FIRST turn, you MUST call the analysis tool to examine your "
-        f"modality. In subsequent turns, consider the other experts' "
-        f"perspectives and refine your position.\n\n"
-        f"Remember: the dataset is roughly 50/50, so do not default to "
-        f'"{no_label}" under uncertainty. Weigh evidence on both sides and '
-        f"commit. Always end your response with \"My Answer: Yes\" ({yes_label}) "
-        f'or "My Answer: No" ({no_label}).'
+    video_expert = (
+        f"{procs['video_processor']['system_prompt']}\n\n"
+        f"In your FIRST turn, you MUST call the analyze_video tool to examine visual cues.\n"
+        f"In subsequent turns, consider other experts' perspectives and refine your position.\n\n"
+        f'Always end your response with "My Answer: Yes" ({yes_label}) or "My Answer: No" ({no_label}).'
     )
-    video_expert = f"{procs['video_processor']['system_prompt']}{expert_footer}"
-    audio_expert = f"{procs['audio_processor']['system_prompt']}{expert_footer}"
-    text_expert = f"{procs['language_processor']['system_prompt']}{expert_footer}"
+    audio_expert = (
+        f"{procs['audio_processor']['system_prompt']}\n\n"
+        f"In your FIRST turn, you MUST call the analyze_audio tool to examine vocal cues.\n"
+        f"In subsequent turns, consider other experts' perspectives and refine your position.\n\n"
+        f'Always end your response with "My Answer: Yes" ({yes_label}) or "My Answer: No" ({no_label}).'
+    )
+    text_expert = (
+        f"{procs['language_processor']['system_prompt']}\n\n"
+        f"In your FIRST turn, you MUST call the analyze_text tool to examine the dialogue.\n"
+        f"In subsequent turns, consider other experts' perspectives and refine your position.\n\n"
+        f'Always end your response with "My Answer: Yes" ({yes_label}) or "My Answer: No" ({no_label}).'
+    )
     judge = (
-        f'You are a {task} expert. You synthesise evidence from Video, Audio, '
-        f'and Text experts to make a final determination.\n\n{core_def}\n\n'
-        'Decision rules:\n'
-        '- When any expert reports INCONGRUITY (literal words paired with '
-        f'incongruent delivery or context), that alone is strong evidence for '
-        f'{yes_label}. You do NOT need all three experts to converge.\n'
-        '- When the experts AGREE that the statement is literal and the '
-        f'delivery matches the content, answer {no_label}.\n'
-        '- Weigh reasoning quality over simple majority voting — a confident '
-        'expert with a concrete observation outweighs two hedging ones.\n'
-        '- The dataset is roughly 50/50. Do NOT default to '
-        f'"{no_label}" under uncertainty — commit based on the strongest '
-        'available evidence on either side.\n'
-        '- If evidence is truly balanced, prefer the modality with the most '
-        'concrete, specific observation (a named cue beats a general impression).\n\n'
-        'Your response MUST contain exactly one of:\n'
-        '  FINAL ANSWER: Yes\n'
-        '  FINAL ANSWER: No\n'
-        'followed by a brief one-sentence justification citing the most '
-        'decisive piece of evidence.'
+        f'You are a {task} expert. You synthesize evidence from Video, Audio, and Text experts '
+        f'to make a final determination.\n\n'
+        f'Based solely on the analyses provided by the experts, determine if the person is being {yes_label}.\n\n'
+        f'IMPORTANT: If the analyses express uncertainty, are inconclusive, or lack sufficient evidence, '
+        f'you should answer "No" ({no_label}). Only answer "Yes" when there is clear, converging evidence.\n\n'
+        f'Your response MUST contain exactly one of:\n'
+        f'  FINAL ANSWER: Yes\n'
+        f'  FINAL ANSWER: No'
     )
     video_tool_q = (
         f'{query} '
