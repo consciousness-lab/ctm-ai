@@ -277,6 +277,9 @@ class BaseAgent:
                     'model': self.model,
                     'messages': [{'role': 'user', 'content': content}],
                     'temperature': self.temperature,
+                    # Hard per-request cap so a stalled Gemini multimodal
+                    # request can't wedge the whole pipeline.
+                    'timeout': 90,
                 }
 
                 if self.provider == 'qwen':

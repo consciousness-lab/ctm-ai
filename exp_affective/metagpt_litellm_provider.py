@@ -103,19 +103,28 @@ class LiteLLMProvider(BaseLLM):
     # ------------------------------------------------------------------
 
     def _sync_litellm_call(self, messages: List[dict]) -> tuple[str, Dict[str, Any]]:
-        """Single blocking litellm.completion call with bounded retry.
-        Captures usage onto self.last_response_usage AND feeds metagpt's
-        cost_manager (via BaseLLM._update_costs) so cost tracking works
-        through the standard metagpt machinery."""
+        """Single blocking litellm.completion call with bounded retry and a
+        hard per-request timeout so we don't hang forever on a stalled
+        upstream (this is the failure mode we've observed intermittently
+        on Gemini multimodal requests). Captures usage onto
+        self.last_response_usage AND feeds metagpt's cost_manager (via
+        BaseLLM._update_costs) so cost tracking works through the standard
+        metagpt machinery."""
         start = time.time()
         max_retries = 3
         last_error: Optional[str] = None
+        # Hard per-request cap (seconds). litellm passes this through to
+        # the underlying provider's request timeout. Default is generous
+        # enough for multimodal requests but tight enough to prevent the
+        # whole pipeline from wedging on a stuck sample.
+        per_request_timeout = 90
         for attempt in range(1, max_retries + 1):
             try:
                 resp = litellm.completion(
                     model=self.model,
                     messages=messages,
                     temperature=getattr(self.config, 'temperature', 0.0) or 0.0,
+                    timeout=per_request_timeout,
                 )
                 text = resp.choices[0].message.content or ''
                 usage = {
