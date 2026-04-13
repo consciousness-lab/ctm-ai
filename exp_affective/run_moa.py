@@ -86,7 +86,8 @@ MODALITIES = ('text', 'audio', 'video')
 # fair: only the *orchestration* differs between baselines.
 # =============================================================================
 
-def _load_ctm_prompts(dataset_name='mustard'):
+def _load_ctm_config(dataset_name='mustard'):
+    """Load the full CTM config (processors_config + parse_prompt_template)."""
     config_map = {
         'mustard': 'sarcasm_ctm_config.json',
         'urfunny': 'urfunny_test_qwen_v12_config.json',
@@ -96,37 +97,19 @@ def _load_ctm_prompts(dataset_name='mustard'):
         config_map.get(dataset_name, config_map['mustard']),
     )
     with open(config_path) as f:
-        cfg = json.load(f)
-    return cfg['processors_config']
+        return json.load(f)
 
 
-def _get_aggregator_prompt(dataset_name='mustard'):
-    """Final aggregator system-prompt prefix.
+def _load_ctm_prompts(dataset_name='mustard'):
+    return _load_ctm_config(dataset_name)['processors_config']
 
-    `inject_references_to_messages` from MoA/utils.py will append the text
-    'Responses from models:' followed by a numbered list of reference
-    responses to whatever system prompt we pass in. So this prompt is the
-    task-specific prefix that precedes the injected references.
-    """
-    if dataset_name == 'urfunny':
-        yes_label, no_label = 'humorous', 'not humorous'
-    else:
-        yes_label, no_label = 'sarcastic', 'not sarcastic'
-    return (
-        f'You are the final aggregator in a Mixture-of-Agents pipeline for '
-        f'detecting whether a person is {yes_label}. You will receive '
-        f'analyses from modality-specific experts (text, audio, video). '
-        f'Critically synthesize them and produce a single definitive answer.\n\n'
-        f'Guidelines:\n'
-        f'- Weigh evidence across modalities; text usually gives the strongest '
-        f'semantic signal, audio gives tonal confirmation, video gives '
-        f'supplementary cues.\n'
-        f'- If experts disagree, decide which has the strongest evidence.\n'
-        f'- Do not just follow the majority — weigh reasoning quality.\n\n'
-        f'Your answer MUST start with exactly "Yes" ({yes_label}) or "No" '
-        f'({no_label}), followed by a brief justification citing the most '
-        f'decisive evidence.'
-    )
+
+def _get_parse_prompt_template(dataset_name='mustard'):
+    """Return CTM's parse_prompt_template verbatim (the final decision prompt
+    CTM itself uses). Keeping this identical across baselines ensures the
+    final Yes/No judgment is driven by exactly the same instructions CTM
+    would use — only the upstream orchestration differs."""
+    return _load_ctm_config(dataset_name)['parse_prompt_template']
 
 
 # Module-level defaults (overridden from main() once --dataset_name is known)
@@ -134,7 +117,7 @@ _CTM_PROMPTS = _load_ctm_prompts()
 TEXT_PROPOSER_SYSTEM = _CTM_PROMPTS['language_processor']['system_prompt']
 AUDIO_PROPOSER_SYSTEM = _CTM_PROMPTS['audio_processor']['system_prompt']
 VIDEO_PROPOSER_SYSTEM = _CTM_PROMPTS['video_processor']['system_prompt']
-AGGREGATOR_SYSTEM = _get_aggregator_prompt()
+PARSE_PROMPT_TEMPLATE = _get_parse_prompt_template()
 
 
 # =============================================================================
@@ -305,15 +288,24 @@ def run_moa_pipeline(query, target_sentence, audio_path, video_path,
         all_usages.extend(usages)
 
     # ---- Final aggregator: synthesize last layer's outputs ----
-    final_refs = [
-        f'[{m.capitalize()} expert] {layer_results[-1][m]}'
-        for m in MODALITIES
-    ]
+    #
+    # For CTM-prompt alignment, the final aggregation step uses CTM's
+    # parse_prompt_template verbatim, with the last-layer expert outputs
+    # substituted into the {answer} placeholder exactly the way CTM itself
+    # consumes its uptree competition output. This bypasses MoA's
+    # inject_references_to_messages at the final step so the LLM sees
+    # literally CTM's "final decision" instructions, not MoA's boilerplate
+    # synthesiser preamble. The earlier layers still use
+    # inject_references_to_messages for the intra-layer refinement, so the
+    # MoA recursive-aggregation algorithm is preserved.
+    combined_analyses = '\n\n'.join(
+        f'[{m.capitalize()} expert]\n{layer_results[-1][m]}' for m in MODALITIES
+    )
+    system_prompt = PARSE_PROMPT_TEMPLATE.replace('{answer}', combined_analyses)
     agg_messages = [
-        {'role': 'system', 'content': AGGREGATOR_SYSTEM},
+        {'role': 'system', 'content': system_prompt},
         {'role': 'user', 'content': query},
     ]
-    agg_messages = inject_references_to_messages(agg_messages, final_refs)
     final_answer, agg_usage = _call_llm(agg_messages, model=aggregator_model)
     all_usages.append(('aggregator', agg_usage))
 
@@ -592,7 +584,7 @@ if __name__ == '__main__':
     _this.TEXT_PROPOSER_SYSTEM = _prompts['language_processor']['system_prompt']
     _this.AUDIO_PROPOSER_SYSTEM = _prompts['audio_processor']['system_prompt']
     _this.VIDEO_PROPOSER_SYSTEM = _prompts['video_processor']['system_prompt']
-    _this.AGGREGATOR_SYSTEM = _get_aggregator_prompt(args.dataset_name)
+    _this.PARSE_PROMPT_TEMPLATE = _get_parse_prompt_template(args.dataset_name)
 
     proposer_models = _parse_proposer_models(args.proposer_models, DEFAULT_MODEL)
 

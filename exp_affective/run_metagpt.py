@@ -145,7 +145,7 @@ def _audio_mime(path):
 # Prompts (loaded from CTM config for fair comparison with other baselines)
 # =============================================================================
 
-def _load_ctm_prompts(dataset_name='mustard'):
+def _load_ctm_config(dataset_name='mustard'):
     config_map = {
         'mustard': 'sarcasm_ctm_config.json',
         'urfunny': 'urfunny_test_qwen_v12_config.json',
@@ -155,12 +155,33 @@ def _load_ctm_prompts(dataset_name='mustard'):
         config_map.get(dataset_name, config_map['mustard']),
     )
     with open(config_path) as f:
-        cfg = json.load(f)
-    return cfg['processors_config']
+        return json.load(f)
+
+
+def _load_ctm_prompts(dataset_name='mustard'):
+    return _load_ctm_config(dataset_name)['processors_config']
+
+
+def _get_parse_prompt_template(dataset_name='mustard'):
+    """CTM's final decision prompt — reused verbatim as the Judge's system
+    prompt so the final Yes/No step is driven by exactly the instructions
+    CTM itself uses."""
+    return _load_ctm_config(dataset_name)['parse_prompt_template']
 
 
 def _build_pipeline_prompts(dataset_name='mustard'):
-    """Return synthesiser/critic/judge system prompts for the target task."""
+    """Return synthesiser/critic/judge system prompts for the target task.
+
+    Synthesiser and Critic are MetaGPT-specific stages (CTM has no direct
+    equivalent), so these are hand-written. The Judge, however, is just
+    CTM's `parse_prompt_template` verbatim — the final Yes/No decision is
+    driven by exactly the instructions CTM itself uses, so the baseline is
+    comparable to CTM on equal prompt footing.
+
+    The judge template still contains the literal `{answer}` placeholder
+    here; JudgeAction.run() substitutes the upstream reports in at call
+    time.
+    """
     if dataset_name == 'urfunny':
         task = 'humor detection'
         yes_label = 'humorous'
@@ -206,21 +227,7 @@ def _build_pipeline_prompts(dataset_name='mustard'):
         '4. **Uncertainty Assessment**: How confident is the judgment?\n'
         '5. **Revised Verdict**: Do you agree with the synthesis? Why?'
     )
-    judge = (
-        f'You are the Final Judge in a multi-agent {task} team. You have '
-        'received modality reports, a cross-modal synthesis, and a critic '
-        'review. Make the final determination.\n\n'
-        f'Your answer MUST start with exactly "Yes" ({yes_label}) or "No" '
-        f'({no_label}), then a brief justification citing the most decisive '
-        'evidence.\n\n'
-        'Guidelines:\n'
-        f'- If the Critic identified significant weaknesses in the '
-        f'{yes_label} case, weigh that heavily.\n'
-        '- If modalities strongly agree, trust the consensus.\n'
-        '- If modalities conflict, prioritize text > audio > video for '
-        'semantic judgment.\n'
-        '- Make a definitive decision — do not hedge.'
-    )
+    judge = _get_parse_prompt_template(dataset_name)
     return synthesizer, critic, judge
 
 
@@ -375,24 +382,29 @@ class CriticAction(Action):
 
 
 class JudgeAction(Action):
+    """The Judge stage uses CTM's `parse_prompt_template` verbatim. All the
+    upstream reports (3 modality + synthesis + critique) are flattened into
+    a single block and substituted into the template's `{answer}`
+    placeholder, matching the way CTM itself feeds its uptree-competition
+    output into parse_prompt_template."""
     name: str = 'JudgeAction'
-    system_prompt: str = ''
+    system_prompt: str = ''  # CTM parse_prompt_template (with {answer})
     model: str = DEFAULT_MODEL
     last_usage: Dict[str, Any] = Field(default_factory=dict)
 
     async def run(self, query: str, text_report: str, audio_report: str,
                   video_report: str, synthesis: str, critique: str) -> str:
+        combined = (
+            f'=== TEXT ANALYST REPORT ===\n{text_report}\n\n'
+            f'=== AUDIO ANALYST REPORT ===\n{audio_report}\n\n'
+            f'=== VIDEO ANALYST REPORT ===\n{video_report}\n\n'
+            f'=== SYNTHESIZER REPORT ===\n{synthesis}\n\n'
+            f'=== CRITIC REVIEW ===\n{critique}'
+        )
+        system = self.system_prompt.replace('{answer}', combined)
         messages = [
-            {'role': 'system', 'content': self.system_prompt},
-            {'role': 'user', 'content': (
-                f'Task: {query}\n\n'
-                f'=== TEXT ANALYST REPORT ===\n{text_report}\n\n'
-                f'=== AUDIO ANALYST REPORT ===\n{audio_report}\n\n'
-                f'=== VIDEO ANALYST REPORT ===\n{video_report}\n\n'
-                f'=== SYNTHESIZER REPORT ===\n{synthesis}\n\n'
-                f'=== CRITIC REVIEW ===\n{critique}\n\n'
-                'Make your final determination. Start with "Yes" or "No".'
-            )},
+            {'role': 'system', 'content': system},
+            {'role': 'user', 'content': query},
         ]
         loop = asyncio.get_running_loop()
         text, usage = await loop.run_in_executor(
