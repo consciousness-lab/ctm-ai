@@ -185,7 +185,15 @@ def _is_openai_model(model: str) -> bool:
 
 
 def create_model_client(model: str = DEFAULT_MODEL) -> OpenAIChatCompletionClient:
-    """Create AutoGen model client. Auto-detects OpenAI vs Gemini from model name."""
+    """Create AutoGen model client. Auto-detects OpenAI vs Gemini from model name.
+
+    `timeout` is set to 300s (5 min) so long-context debate messages on
+    urfunny v28 don't trip autogen's default request timeout. Without this
+    we observed ~17% of urfunny samples failing with APITimeoutError when
+    the gemini_v28 prompts (which are ~70% longer than the qwen_v12 ones)
+    were combined with multi-turn debate context.
+    """
+    common_kwargs = dict(timeout=300)
     if _is_openai_model(model):
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
@@ -200,6 +208,7 @@ def create_model_client(model: str = DEFAULT_MODEL) -> OpenAIChatCompletionClien
                 'family': 'unknown',
                 'structured_output': True,
             },
+            **common_kwargs,
         )
     else:
         api_key = os.getenv('GEMINI_API_KEY')
@@ -216,6 +225,7 @@ def create_model_client(model: str = DEFAULT_MODEL) -> OpenAIChatCompletionClien
                 'family': 'unknown',
                 'structured_output': False,
             },
+            **common_kwargs,
         )
 
 
