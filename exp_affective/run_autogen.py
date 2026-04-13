@@ -69,7 +69,9 @@ def _load_autogen_prompts(dataset_name='mustard'):
     """Load AutoGen prompts based on dataset."""
     config_map = {
         'mustard': 'sarcasm_ctm_config.json',
-        'urfunny': 'urfunny_test_qwen_v12_config.json',
+        # urfunny: use the Gemini-tuned config (was wrongly using
+        # urfunny_test_qwen_v12_config.json which is calibrated for Qwen).
+        'urfunny': 'urfunny_test_gemini_v28_config.json',
     }
     config_path = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), '..', 'ctm_conf',

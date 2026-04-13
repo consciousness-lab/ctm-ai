@@ -89,7 +89,9 @@ MODALITIES = ('text', 'audio', 'video')
 def _load_ctm_prompts(dataset_name='mustard'):
     config_map = {
         'mustard': 'sarcasm_ctm_config.json',
-        'urfunny': 'urfunny_test_qwen_v12_config.json',
+        # urfunny: use the Gemini-tuned config (was wrongly using
+        # urfunny_test_qwen_v12_config.json which is calibrated for Qwen).
+        'urfunny': 'urfunny_test_gemini_v28_config.json',
     }
     config_path = os.path.join(
         os.path.dirname(__file__), '..', 'ctm_conf',
@@ -142,14 +144,19 @@ AGGREGATOR_SYSTEM = _get_aggregator_prompt()
 # =============================================================================
 
 def _call_llm(messages, model, max_retries=3):
-    """Single litellm.completion call with retry. Returns (text, usage)."""
+    """Single litellm.completion call with retry + hard per-request timeout
+    so the whole run doesn't wedge when a single Gemini multimodal request
+    stalls (intermittent failure mode observed on this dataset). Returns
+    (text, usage)."""
     start = time.time()
     api_calls = 0
+    per_request_timeout = 90
     for attempt in range(1, max_retries + 1):
         try:
             api_calls += 1
             resp = litellm.completion(
                 model=model, messages=messages, temperature=0.0,
+                timeout=per_request_timeout,
             )
             text = resp.choices[0].message.content
             usage = {

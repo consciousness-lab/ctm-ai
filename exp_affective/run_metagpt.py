@@ -103,7 +103,9 @@ DEFAULT_MODEL = 'gemini/gemini-2.5-flash-lite'
 def _load_ctm_prompts(dataset_name='mustard'):
     config_map = {
         'mustard': 'sarcasm_ctm_config.json',
-        'urfunny': 'urfunny_test_qwen_v12_config.json',
+        # urfunny: use the Gemini-tuned config (was wrongly using
+        # urfunny_test_qwen_v12_config.json which is calibrated for Qwen).
+        'urfunny': 'urfunny_test_gemini_v28_config.json',
     }
     config_path = os.path.join(
         os.path.dirname(__file__), '..', 'ctm_conf',
