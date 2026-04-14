@@ -29,11 +29,18 @@ class BaseConsciousTuringMachine(ABC):
         self.processor_graph = ProcessorGraph()
 
         for processor_name, processor_config in self.config.processors_config.items():
+            # Per-processor temperature overrides config-level default
+            temp = processor_config.get(
+                'temperature',
+                getattr(self.config, 'processor_temperature', 0.2),
+            )
             self.processor_graph.add_node(
                 processor_name=processor_name,
                 processor_group_name=None,
                 system_prompt=processor_config.get('system_prompt'),
                 model=processor_config.get('model'),
+                extra_body=processor_config.get('extra_body'),
+                temperature=temp,
                 score_weights=self.config.score_weights,
                 num_additional_questions=self.config.num_additional_questions,
             )
@@ -170,15 +177,25 @@ class BaseConsciousTuringMachine(ABC):
         parse_model = self.config.parse_model or 'gemini/gemini-2.5-flash-lite'
         completion_kwargs = get_completion_kwargs(parse_model)
 
+        parse_extra_body = getattr(self.config, 'parse_extra_body', None)
+        if parse_extra_body:
+            completion_kwargs['extra_body'] = parse_extra_body
+
         try:
+            parse_temp = getattr(self.config, 'parse_temperature', 0.3)
             response = completion(
                 **completion_kwargs,
                 messages=[{'role': 'user', 'content': parse_prompt}],
                 max_tokens=4096,
-                temperature=0.3,
+                temperature=parse_temp,
             )
 
             parsed_answer = response.choices[0].message.content.strip()
+            if hasattr(self, '_parse_usage') and hasattr(response, 'usage') and response.usage:
+                self._parse_usage['prompt_tokens'] += getattr(response.usage, 'prompt_tokens', 0) or 0
+                self._parse_usage['completion_tokens'] += getattr(response.usage, 'completion_tokens', 0) or 0
+                self._parse_usage['total_tokens'] += getattr(response.usage, 'total_tokens', 0) or 0
+                self._parse_usage['api_calls'] += 1
             return parsed_answer
 
         except Exception as e:

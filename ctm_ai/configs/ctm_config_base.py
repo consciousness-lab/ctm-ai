@@ -31,6 +31,9 @@ Analysis:
         output_threshold: float = 1.8,
         processors_config: Optional[Dict[str, Any]] = None,
         parse_model: str = 'gemini/gemini-2.5-flash-lite',
+        parse_extra_body: Optional[Dict[str, Any]] = None,
+        parse_temperature: float = 0.3,
+        processor_temperature: float = 0.2,
         supervisors_model: str = 'gemini/gemini-2.5-flash-lite',
         supervisors_prompt: str = None,
         parse_prompt_template: Optional[str] = None,
@@ -47,6 +50,9 @@ Analysis:
             processors_config if processors_config is not None else {}
         )
         self.parse_model = parse_model
+        self.parse_extra_body: Optional[Dict[str, Any]] = parse_extra_body
+        self.parse_temperature: float = parse_temperature
+        self.processor_temperature: float = processor_temperature
         self.supervisors_model = supervisors_model
         self.supervisors_prompt = supervisors_prompt
         self.parse_prompt_template = (
