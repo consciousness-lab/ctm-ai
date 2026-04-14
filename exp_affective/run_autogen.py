@@ -192,8 +192,12 @@ def create_model_client(model: str = DEFAULT_MODEL) -> OpenAIChatCompletionClien
     we observed ~17% of urfunny samples failing with APITimeoutError when
     the gemini_v28 prompts (which are ~70% longer than the qwen_v12 ones)
     were combined with multi-turn debate context.
+
+    `temperature=0.0` so the expert debate and judge decisions are
+    deterministic, matching the other 3 baselines (MoA, MetaGPT, Pure
+    Gemini) which are all already at T=0.
     """
-    common_kwargs = dict(timeout=300)
+    common_kwargs = dict(timeout=300, temperature=0.0)
     if _is_openai_model(model):
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
@@ -311,7 +315,8 @@ async def run_instance_async(
     def analyze_video() -> str:
         nonlocal tool_api_calls, tool_prompt_tokens, tool_completion_tokens
         agent = create_litellm_agent(
-            'video', provider='gemini', model=_litellm_model_name(model)
+            'video', provider='gemini', model=_litellm_model_name(model),
+            temperature=0.0,
         )
         result, usage = agent.call(VIDEO_TOOL_QUERY, video_path=muted_video_path)
         tool_api_calls += 1
@@ -322,7 +327,8 @@ async def run_instance_async(
     def analyze_audio() -> str:
         nonlocal tool_api_calls, tool_prompt_tokens, tool_completion_tokens
         agent = create_litellm_agent(
-            'audio', provider='gemini', model=_litellm_model_name(model)
+            'audio', provider='gemini', model=_litellm_model_name(model),
+            temperature=0.0,
         )
         result, usage = agent.call(AUDIO_TOOL_QUERY, audio_path=audio_path)
         tool_api_calls += 1
@@ -333,7 +339,8 @@ async def run_instance_async(
     def analyze_text() -> str:
         nonlocal tool_api_calls, tool_prompt_tokens, tool_completion_tokens
         agent = create_litellm_agent(
-            'text', provider='gemini', model=_litellm_model_name(effective_text_model)
+            'text', provider='gemini', model=_litellm_model_name(effective_text_model),
+            temperature=0.0,
         )
         query = TEXT_TOOL_QUERY.format(text=target_sentence)
         result, usage = agent.call(query)
