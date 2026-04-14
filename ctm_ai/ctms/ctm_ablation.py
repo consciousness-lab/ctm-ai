@@ -2,8 +2,7 @@
 
 Adds optional overrides on top of the standard ConsciousTuringMachine:
   - output_threshold_override: override config.output_threshold
-  - link_form_threshold / link_break_threshold: override hardcoded 0.8 / 0.2
-    in BaseConsciousTuringMachine.link_form
+  - link_form_threshold: override hardcoded 0.8 link-add threshold
   - enable_* flags: selectively disable CTM phases for component ablation
   - detailed_log_dir: where per-instance trajectories are saved
 """
@@ -38,7 +37,6 @@ class AblationCTM(ConsciousTuringMachine):
         enable_link_form: bool = True,
         enable_iteration: bool = True,
         link_form_threshold: Optional[float] = None,
-        link_break_threshold: Optional[float] = None,
         output_threshold_override: Optional[float] = None,
         max_iter_override: Optional[int] = None,
         detailed_log_dir: Optional[str] = None,
@@ -54,7 +52,6 @@ class AblationCTM(ConsciousTuringMachine):
         self.enable_link_form = enable_link_form
         self.enable_iteration = enable_iteration
         self.link_form_threshold = link_form_threshold
-        self.link_break_threshold = link_break_threshold
         self.output_threshold_override = output_threshold_override
         self.max_iter_override = max_iter_override
         self.detailed_log_dir = detailed_log_dir
@@ -65,9 +62,7 @@ class AblationCTM(ConsciousTuringMachine):
             self.config.max_iter_num = max_iter_override
 
         self._iter_links_added = 0
-        self._iter_links_broken = 0
         self._total_links_added = 0
-        self._total_links_broken = 0
         self._api_calls = 0
         self._parse_usage = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0, 'api_calls': 0}
 
@@ -106,7 +101,7 @@ class AblationCTM(ConsciousTuringMachine):
         Only asks non-winner processors (winner's own answer is useless
         for cross-modal exchange). If relevance >= threshold, add link
         AND cache the answer into the winner's fuse_history directly.
-        No link_break — edges only grow.
+        Edges only grow (no link break).
         """
         import concurrent.futures
 
@@ -306,7 +301,6 @@ class AblationCTM(ConsciousTuringMachine):
                 'enable_link_form': self.enable_link_form,
                 'enable_iteration': self.enable_iteration,
                 'link_form_threshold': self.link_form_threshold,
-                'link_break_threshold': self.link_break_threshold,
                 'output_threshold_override': self.output_threshold_override,
             },
             'iterations': [],
@@ -315,7 +309,6 @@ class AblationCTM(ConsciousTuringMachine):
 
         self.iteration_history = []
         self._total_links_added = 0
-        self._total_links_broken = 0
         self._api_calls = 0
         self.reset_usage_stats()
         answer = ''
@@ -325,7 +318,6 @@ class AblationCTM(ConsciousTuringMachine):
 
         for i in range(max_iters):
             self._iter_links_added = 0
-            self._iter_links_broken = 0
 
             self.detailed_log['current_iteration'] = {
                 'iteration': i + 1,
@@ -378,7 +370,6 @@ class AblationCTM(ConsciousTuringMachine):
                         for c in chunks
                     ],
                     'links_added': self._iter_links_added,
-                    'links_broken': self._iter_links_broken,
                 }
                 self.iteration_history.append(iteration_info)
 
@@ -422,7 +413,6 @@ class AblationCTM(ConsciousTuringMachine):
                     for c in chunks
                 ],
                 'links_added': self._iter_links_added,
-                'links_broken': self._iter_links_broken,
             }
             self.iteration_history.append(iteration_info)
 

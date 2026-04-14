@@ -4,7 +4,6 @@ CTM Ablation runner for affective benchmarks (MUSTARD / URFunny).
 Uses AblationCTM which supports:
   - --output_threshold          override config output_threshold
   - --link_form_threshold       override hardcoded 0.8 link-add threshold
-  - --link_break_threshold      override hardcoded 0.2 link-break threshold
   - --ablation                  component ablation flags
   - --modality                  single-modality ablation
   - --run_output_thresholds     preset sweep
@@ -24,7 +23,7 @@ Examples:
       --output_threshold 2.1 --results_dir urfunny_v28_ablation
 
   python run_ctm_ablation.py --dataset_name urfunny --ctm_name urfunny_test_gemini_v28 \\
-      --link_form_threshold 0.5 --link_break_threshold 0.3 \\
+      --link_form_threshold 0.5 \\
       --results_dir urfunny_v28_ablation --max_workers 4
 """
 
@@ -147,14 +146,12 @@ def run_instance(
         winning_processors = [it['winning_processor'] for it in iteration_history]
 
         total_links_added = ctm._total_links_added
-        total_links_broken = ctm._total_links_broken
         ctm_usage = ctm.get_usage_stats()
         parse_usage = ctm.get_parse_usage_stats()
         links_per_iter = [
             {
                 'iter': it['iteration'],
                 'added': it.get('links_added', 0),
-                'broken': it.get('links_broken', 0),
             }
             for it in iteration_history
         ]
@@ -196,7 +193,6 @@ def run_instance(
                 'parse_total_tokens': parse_usage['total_tokens'],
                 'total_cost_usd': round(total_cost, 6),
                 'total_links_added': total_links_added,
-                'total_links_broken': total_links_broken,
                 'links_per_iter': links_per_iter,
             }
         }
@@ -261,10 +257,9 @@ def run_ablation(
     ablation_tag = make_ablation_tag(ablation_list)
 
     tk = threshold_kwargs or {}
-    if tk.get('link_form_threshold') is not None or tk.get('link_break_threshold') is not None:
+    if tk.get('link_form_threshold') is not None:
         lf = tk.get('link_form_threshold', 0.8)
-        lb = tk.get('link_break_threshold', 0.2)
-        ablation_tag = f'{ablation_tag}_lf{lf}_lb{lb}'
+        ablation_tag = f'{ablation_tag}_lf{lf}'
     if tk.get('output_threshold_override') is not None:
         ablation_tag = f'{ablation_tag}_ot{tk["output_threshold_override"]}'
     if tk.get('max_iter_override') is not None:
@@ -393,7 +388,6 @@ if __name__ == '__main__':
 
     # Threshold ablation arguments
     parser.add_argument('--link_form_threshold', type=float, default=None)
-    parser.add_argument('--link_break_threshold', type=float, default=None)
     parser.add_argument('--output_threshold', type=float, default=None)
     parser.add_argument('--max_iter', type=int, default=None,
         help='Override max_iter_num in config.')
@@ -418,19 +412,17 @@ if __name__ == '__main__':
     threshold_kwargs = {}
     if args.link_form_threshold is not None:
         threshold_kwargs['link_form_threshold'] = args.link_form_threshold
-    if args.link_break_threshold is not None:
-        threshold_kwargs['link_break_threshold'] = args.link_break_threshold
     if args.output_threshold is not None:
         threshold_kwargs['output_threshold_override'] = args.output_threshold
     if args.max_iter is not None:
         threshold_kwargs['max_iter_override'] = args.max_iter
 
     LINK_THRESHOLD_PRESETS = [
-        {'link_form_threshold': 0.3, 'link_break_threshold': 0.5},
-        {'link_form_threshold': 0.5, 'link_break_threshold': 0.3},
-        {'link_form_threshold': 0.8, 'link_break_threshold': 0.2},
-        {'link_form_threshold': 0.9, 'link_break_threshold': 0.1},
-        {'link_form_threshold': 0.95, 'link_break_threshold': 0.05},
+        {'link_form_threshold': 0.3},
+        {'link_form_threshold': 0.5},
+        {'link_form_threshold': 0.8},
+        {'link_form_threshold': 0.9},
+        {'link_form_threshold': 0.95},
     ]
     OUTPUT_THRESHOLD_PRESETS = [1.2, 1.5, 1.8, 2.1, 2.5, 3.0]
 

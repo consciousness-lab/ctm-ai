@@ -263,11 +263,6 @@ class BaseConsciousTuringMachine(ABC):
                     processor1_name=winning_chunk.processor_name,
                     processor2_name=chunk.processor_name,
                 )
-            elif chunk.relevance <= 0.2:
-                self.processor_graph.remove_link(
-                    processor1_name=winning_chunk.processor_name,
-                    processor2_name=chunk.processor_name,
-                )
 
     @logging_func_with_count
     def fuse_processor(self, chunks: List[Chunk], query: str, **input_kwargs) -> None:
