@@ -49,6 +49,8 @@ class AudioProcessor(BaseProcessor):
             'libx264',
             '-tune',
             'stillimage',
+            '-ac',
+            '2',
             '-c:a',
             'aac',
             '-pix_fmt',

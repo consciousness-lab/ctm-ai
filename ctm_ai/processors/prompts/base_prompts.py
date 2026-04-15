@@ -11,7 +11,8 @@ These prompts provide standardized JSON response formats and scoring rubrics.
 # ===========================================================================
 
 _BASE_CONTEXT_PREAMBLE = """You should utilize the information in the context history and modality-specific information to answer the query.
-There might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones."""
+There might have some answers to other queries, you should utilize them to answer the query. You should not generate the same additional questions as the previous ones.
+IMPORTANT: Your PRIMARY evidence should come from your own modality. Use other modalities' analyses as supplementary context, but do not let them override clear evidence from your own analysis. If your modality provides strong evidence, maintain your position even if other modalities disagree."""
 
 
 def _build_base_additional_questions_instruction(num_questions: int = 3) -> str:

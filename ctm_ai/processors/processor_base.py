@@ -75,6 +75,11 @@ class BaseProcessor(object):
         self.provider = get_model_provider(self.model)
         self._completion_kwargs = get_completion_kwargs(self.model)
 
+        # Merge extra_body from config (e.g. thinking_budget for Qwen models)
+        extra_body = kwargs.get('extra_body')
+        if extra_body:
+            self._completion_kwargs['extra_body'] = extra_body
+
         # Check env vars after model/provider is known
         self.check_required_env_vars()
 
@@ -90,6 +95,7 @@ class BaseProcessor(object):
         self.fuse_history = []
         self.winner_answer = []
         self.all_context_history = []
+        self._usage_stats = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0, 'api_calls': 0}
 
         configure_litellm(model_name=self.model_name)
 
@@ -179,6 +185,11 @@ class BaseProcessor(object):
             **kwargs,
         }
         response = completion(**call_kwargs)
+        if hasattr(response, 'usage') and response.usage:
+            self._usage_stats['prompt_tokens'] += getattr(response.usage, 'prompt_tokens', 0) or 0
+            self._usage_stats['completion_tokens'] += getattr(response.usage, 'completion_tokens', 0) or 0
+            self._usage_stats['total_tokens'] += getattr(response.usage, 'total_tokens', 0) or 0
+        self._usage_stats['api_calls'] += 1
         contents = [
             response.choices[i].message.content for i in range(len(response.choices))
         ]

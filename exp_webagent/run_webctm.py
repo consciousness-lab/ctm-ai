@@ -18,7 +18,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
-import browsergym.webarena_verified  # registers webarena_verified tasks to gym
+import browsergym.webarenalite  # registers webarenalite tasks to gym
 from browsergym.experiments import EnvArgs, ExpArgs, get_exp_result
 from browsergym.experiments.loop import (
     StepInfo,
@@ -30,10 +30,10 @@ from browsergym.experiments.loop import (
 from ctm_webagent import CTMAgentArgs
 
 # ---------------------------------------------------------------------------
-# Load task list from webarena-verified-hard.json and group by site
+# Load task list from test_webarena_lite.raw.json grouped by site.
 # Tasks with multiple sites appear in every matching category.
 # ---------------------------------------------------------------------------
-_TASKS_JSON = Path(__file__).parent / 'webarena-verified-hard.json'
+_TASKS_JSON = Path(__file__).parent / 'test_webarena_lite.raw.json'
 
 
 def _load_category_tasks(json_path: Path) -> dict:
@@ -351,10 +351,8 @@ def run_single_task(
     ctm_log_base_dir: str = None,
 ):
     """Run a single task using CTM agent."""
-    task_id = task_record['task_id']
-    intent_template_id = task_record['intent_template_id']
-    revision = task_record['revision']
-    task_name = f'webarena_verified.{intent_template_id}.{task_id}.{revision}'
+    old_task_id = task_record['old_task_id']
+    task_name = f'webarenalite.{old_task_id}'
     print(f'\n{"=" * 80}')
     print(f'Running task: {task_name} (category: {category})')
     print(f'{"=" * 80}')
@@ -362,7 +360,7 @@ def run_single_task(
     if ctm_log_base_dir:
         sites_name = '_'.join(task_record['sites'])
         agent_args.task_log_dir = str(
-            Path(ctm_log_base_dir) / f'{sites_name}_{task_id}'
+            Path(ctm_log_base_dir) / f'{sites_name}_{old_task_id}'
         )
     else:
         agent_args.task_log_dir = None
@@ -602,10 +600,10 @@ def main():
 
         # Determine which tasks to run
         if args.task_ids is not None:
-            # Run only specified task IDs
-            valid_ids = {t['task_id'] for t in task_records}
+            # Run only specified task IDs (matched against old_task_id)
+            valid_ids = {t['old_task_id'] for t in task_records}
             task_records_to_run = [
-                t for t in task_records if t['task_id'] in args.task_ids
+                t for t in task_records if t['old_task_id'] in args.task_ids
             ]
             invalid_task_ids = [tid for tid in args.task_ids if tid not in valid_ids]
 

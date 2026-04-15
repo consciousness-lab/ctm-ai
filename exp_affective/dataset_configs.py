@@ -237,11 +237,6 @@ class MustardConfig(DatasetConfig):
         super().__init__('mustard', 'sarcasm_detection')
 
     def get_text_field(self, sample: dict) -> str:
-        """Return the full conversation with speaker labels, matching the
-        canonical CTM implementation (ctm-ai-ablate). Each baseline that
-        calls get_text_field on a mustard sample sees the same multi-line
-        speaker-prefixed dialog CTM itself feeds to its language processor.
-        """
         context_list = sample.get('context', [])
         context_speakers = sample.get('context_speakers', [])
         utterance = sample['utterance']
