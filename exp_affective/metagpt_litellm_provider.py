@@ -123,7 +123,7 @@ class LiteLLMProvider(BaseLLM):
                 resp = litellm.completion(
                     model=self.model,
                     messages=messages,
-                    temperature=getattr(self.config, 'temperature', 0.0) or 0.0,
+                    temperature=0.2,
                     timeout=per_request_timeout,
                 )
                 text = resp.choices[0].message.content or ''
