@@ -205,7 +205,7 @@ def _call_llm(messages, model, max_retries=3):
         try:
             api_calls += 1
             resp = litellm.completion(
-                model=model, messages=messages, temperature=0.0,
+                model=model, messages=messages, temperature=0.2,
                 timeout=90,
             )
             text = resp.choices[0].message.content
