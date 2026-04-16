@@ -76,7 +76,7 @@ from llm_utils import (  # noqa: E402
 file_lock = Lock()
 
 DEFAULT_MODEL = 'gemini/gemini-2.5-flash-lite'
-DEFAULT_LAYERS = 2  # layer 1 = initial; layer 2 = refinement; then aggregator
+DEFAULT_LAYERS = 3  # layer 1 = initial; layer 2 = refinement; then aggregator
 MODALITIES = ('text', 'audio', 'video')
 
 
@@ -155,7 +155,7 @@ def _call_llm(messages, model, max_retries=3):
         try:
             api_calls += 1
             resp = litellm.completion(
-                model=model, messages=messages, temperature=0.0,
+                model=model, messages=messages, temperature=0.2,
                 timeout=per_request_timeout,
             )
             text = resp.choices[0].message.content
