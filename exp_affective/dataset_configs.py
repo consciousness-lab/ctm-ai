@@ -120,32 +120,76 @@ class URFunnyConfig(DatasetConfig):
             'If you are not sure, please provide your best guess and do not say that you are not sure.'
         )
 
+    def get_modality_system_prompts(self) -> Dict[str, str]:
+        """Modality-specific expert system prompts, aligned with ctm_conf/urfunny_test_config.json."""
+        return {
+            'video': (
+                'You are an expert at analyzing visual cues in video frames. '
+                'Analyze the visual cues, body language, facial expressions, and context. '
+                'Note that the videos do not include audio, you should only analyze the visual cues. '
+                'Always ground your answer in specific visual observations. Be concise but thorough.'
+            ),
+            'text': (
+                'You are an expert at analyzing text and language. '
+                'You will receive a text transcript and a query. Analyze word choice and phrasing, '
+                'rhetorical devices, context and literal vs. intended meaning, and sentiment mismatch. '
+                'When the query is about specific textual details, provide precise analysis grounded in '
+                'the text. Always cite specific words or phrases as evidence. Be concise but thorough.'
+            ),
+            'audio': (
+                'You are an expert at analyzing audio. You will receive an audio file and a query. '
+                'Listen carefully to the audio and analyze the tone, emotion, pitch, speed, and vocal patterns. '
+                'Pay special attention to the tone of voice (flat, exaggerated, or ironic), pitch variations, '
+                'speaking speed, emphasis on certain words, and pauses and timing. Answer the query based on '
+                'your analysis of the audio. Explain your reasoning based on what you hear in the audio.'
+            ),
+        }
+
+    def get_aggregation_prompt(self) -> str:
+        """CTM-aligned final aggregation prompt (from urfunny_test_config parse_prompt_template)."""
+        return (
+            'You are a humor detection expert. Based solely on the analysis provided below, '
+            'determine if the punchline is humorous.\n\n'
+            'Your answer MUST start with either "Yes" (if humorous) or "No" (if not humorous), '
+            'followed by a brief explanation.\n\n'
+            'IMPORTANT: If the analysis expresses uncertainty, is inconclusive, or lacks sufficient '
+            'evidence, you should answer "No".'
+        )
+
     def get_debate_prompts(self) -> Dict[str, str]:
+        mod = self.get_modality_system_prompts()
         return {
             'video_init': (
-                'You are a Video Analysis Expert. You will analyze whether the person in the video is being humorous or not. Note that the video does not contain audio, you should just focus on the visual cues.\n'
+                f'{mod["video"]}\n\n'
+                'Task: Analyze whether the person in the video is being humorous or not, '
+                'based solely on the visual cues.\n'
                 "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'audio_init': (
-                'You are an Audio Analysis Expert. You will analyze whether the person in the audio is being humorous or not.\n'
+                f'{mod["audio"]}\n\n'
+                'Task: Analyze whether the person in the audio is being humorous or not.\n'
                 "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'text_init': (
-                'You are a Text Analysis Expert. You will be given a punchline that was said by a person, and analyze whether the person is being humorous or not.\n'
+                f'{mod["text"]}\n\n'
+                'Task: Analyze whether the target punchline is humorous.\n'
                 "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'video_refine': (
-                'You are a Video Analysis Expert. You previously analyzed the visual cues of a person in the video.\n'
+                f'{mod["video"]}\n\n'
+                'You previously analyzed the visual cues of the person in the video.\n'
                 'Your previous answer: {own_answer}\n\n'
                 'Here are the analyses from other experts:\n'
                 '- Audio Expert: {audio_answer}\n'
                 '- Text Expert: {text_answer}\n\n'
-                'First, consider their perspectives and re-examine the video evidence carefully. Note that the video does not contain audio, you should just focus on the visual cues.\n'
+                'First, consider their perspectives and re-examine the video evidence carefully. '
+                'Note that the video does not contain audio, you should just focus on the visual cues.\n'
                 'Then, determine if this punchline is humorous or not.\n'
                 "End your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'audio_refine': (
-                'You are an Audio Analysis Expert. You previously analyzed the audio of this punchline.\n'
+                f'{mod["audio"]}\n\n'
+                'You previously analyzed the audio of this punchline.\n'
                 'Your previous answer: {own_answer}\n\n'
                 'Here are the analyses from other experts:\n'
                 '- Video Expert: {video_answer}\n'
@@ -155,28 +199,32 @@ class URFunnyConfig(DatasetConfig):
                 "End your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'text_refine': (
-                'You are a Text Analysis Expert. You previously analyzed this punchline.\n'
+                f'{mod["text"]}\n\n'
+                'You previously analyzed this punchline.\n'
                 'Your previous answer: {own_answer}\n\n'
                 'Here are the analyses from other experts:\n'
                 '- Video Expert: {video_answer}\n'
                 '- Audio Expert: {audio_answer}\n\n'
-                'First, consider their perspectives and re-examine the text evidence of the punchline carefully.\n'
+                'First, consider their perspectives and re-examine the text evidence carefully.\n'
                 'Then, determine if this punchline is humorous or not.\n'
                 "End your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'judge': (
-                'You are an impartial Judge. Three experts have debated whether this punchline is humorous or not.\n'
-                'Here is the discussion:\n\n{debate_history}\n\n'
-                'Based on all evidence from the video, audio, and text analyses, determine if this punchline is humorous or not.\n'
-                "Your answer must start with 'Yes' or 'No', followed by your reasoning."
+                f'{self.get_aggregation_prompt()}\n\n'
+                'Three experts (Video, Audio, Text) have debated whether this punchline is humorous or not. '
+                'You must weigh all three experts equally — do not favor any single modality. '
+                "Evaluate the strength of each expert's evidence independently.\n\n"
+                'Analysis (debate history):\n{debate_history}'
             ),
         }
 
     def get_query_aug_prompts(self) -> Dict[str, str]:
+        mod = self.get_modality_system_prompts()
         return {
             'controller_init': (
                 'You are a Humor Detection Controller. Your task is to coordinate three modality experts '
                 '(Video, Audio, Text) to determine if the person is being humorous or not.\n\n'
+                'The target punchline is: \'{target_sentence}\'\n\n'
                 'For Round 1, generate THREE specific questions - one for each expert:\n'
                 '1. A question for the VIDEO expert to analyze visual expressions and gestures\n'
                 '2. A question for the AUDIO expert to analyze vocal tone and speech patterns\n'
@@ -201,27 +249,26 @@ class URFunnyConfig(DatasetConfig):
                 'TEXT_QUESTION: [your question]'
             ),
             'controller_decision': (
-                'You are a Humor Detection Controller. You have gathered evidence from three modality experts '
-                'over {num_rounds} rounds of questioning.\n\n'
-                'Here is the complete conversation history:\n{conversation_history}\n\n'
-                'Based on all the evidence gathered from video, audio, and text analyses, '
-                'determine if this person is being humorous or not.\n'
-                "Your answer must start with 'Yes' or 'No', followed by your reasoning."
+                f'{self.get_aggregation_prompt()}\n\n'
+                'You have gathered evidence from three modality experts (Video, Audio, Text) '
+                'over {num_rounds} rounds of questioning. Weigh all three experts equally — '
+                'do not favor any single modality.\n\n'
+                'Analysis (conversation history):\n{conversation_history}'
             ),
             'video_agent': (
-                'You are a Video Analysis Expert. You will analyze video frames showing a person. Note that the video does not contain audio, you should just focus on the visual cues.\n'
+                f'{mod["video"]}\n\n'
                 'Question: {question}\n\n'
                 "First, carefully observe and describe the person's visual expressions, gestures, and body language.\n"
                 'Then, based on your analysis, provide your answer to the question.'
             ),
             'audio_agent': (
-                'You are an Audio Analysis Expert. You will analyze audio of a person speaking.\n'
+                f'{mod["audio"]}\n\n'
                 'Question: {question}\n\n'
                 "First, carefully listen and describe the person's vocal tone, intonation, speech patterns, and any audio cues.\n"
                 'Then, based on your analysis, provide your answer to the question.'
             ),
             'text_agent': (
-                'You are a Text Analysis Expert. You will be given a punchline that was said by a person.\n'
+                f'{mod["text"]}\n\n'
                 'Question: {question}\n\n'
                 "Punchline: '{text}'\n\n"
                 'First, carefully read and analyze the text content, word choice, tone, and any linguistic patterns.\n'
@@ -292,32 +339,107 @@ class MustardConfig(DatasetConfig):
             'You should only make Yes judgement when you are very sure that the person is sarcastic.'
         )
 
+    def get_modality_system_prompts(self) -> Dict[str, str]:
+        """Modality-specific expert system prompts, aligned with ctm_conf/sarcasm_ctm_config.json.
+
+        Used by debate/orchestra/ensemble to ensure all MA baselines start from
+        the same expert knowledge as CTM — so cross-method comparison reflects
+        orchestration differences, not prompt-content differences.
+        """
+        return {
+            'video': (
+                'You are an expert at analyzing visual cues in video frames. '
+                'Analyze the visual cues, body language, facial expressions, and context. '
+                'Note that the videos do not include audio, you should only analyze the visual cues. '
+                'Always ground your answer in specific visual observations. Be concise but thorough.'
+            ),
+            'text': (
+                'You are an expert at analyzing text and language for sarcasm and irony. '
+                'You will receive a text transcript and a query. The LAST line is the target utterance; '
+                'preceding lines are conversation context. First identify what the CONTEXT is about, '
+                'then analyze whether the target utterance is sarcastic.\n\n'
+                'Analyze the utterance carefully in the context of the conversation: consider what was '
+                'said before, whether the statement contradicts the situation, and whether the speaker is '
+                'saying the opposite of what they mean. Look for verbal irony, understatement, hyperbole, '
+                'and absurd or impossible scenarios presented as serious explanations. Key distinctions: '
+                '(1) Genuine anger, frustration, or direct insults are NOT sarcasm even if they sound harsh. '
+                'A rhetorical question expressing real annoyance is not sarcastic. '
+                '(2) Sarcasm requires the speaker to mean the OPPOSITE of their literal words or to use '
+                'deliberate incongruity with the situation. '
+                '(3) Absurd statements that cannot be taken literally in context are likely sarcastic. '
+                '(4) Deadpan or dry humor — where the speaker says something absurd, exaggerated, or '
+                'contextually inappropriate with a straight-faced delivery — IS a form of sarcasm. If a '
+                'statement sounds normal on its own but is clearly ridiculous or incongruous given the '
+                'conversation context, it is likely sarcastic. '
+                '(5) Playful teasing where the speaker genuinely means what they say is NOT sarcasm. '
+                'Calling someone bad at something when they actually did something bad is genuine, not sarcastic. '
+                '(6) Genuine self-deprecation or honest emotional reactions (frustration, surprise, amusement) '
+                'are NOT sarcasm. '
+                "(7) Very short or simple responses ('Oh', 'Yeah', 'No') should NOT be classified as sarcastic "
+                'unless the context makes the meaning reversal unmistakable. '
+                'Always cite specific words or phrases as evidence. Be concise but thorough.'
+            ),
+            'audio': (
+                'You are an expert at analyzing audio. You will receive an audio file and a query. '
+                'Listen carefully to the audio and analyze the tone, emotion, pitch, speed, and vocal patterns. '
+                'Pay special attention to the tone of voice (flat, exaggerated, or ironic), pitch variations, '
+                'speaking speed, emphasis on certain words, and pauses and timing. Answer the query based on '
+                'your analysis of the audio. Explain your reasoning based on what you hear in the audio. '
+                'Key distinctions: '
+                '(1) A flat or dry delivery style does NOT automatically mean sarcasm — some people naturally '
+                'speak in a dry, deadpan manner. Only flag flat tone as sarcastic if it clearly contrasts with '
+                'emotionally charged content. '
+                '(2) Teasing, playful, or amused tones are not the same as sarcastic tones. '
+                '(3) If you cannot detect clear tonal markers of sarcasm, say so and rate your confidence lower '
+                'rather than guessing.'
+            ),
+        }
+
+    def get_aggregation_prompt(self) -> str:
+        """CTM-aligned final aggregation prompt (from parse_prompt_template)."""
+        return (
+            'You are a sarcasm detection expert. Based solely on the analysis provided below, '
+            'determine if the person is being sarcastic.\n\n'
+            'Your answer MUST start with either "Yes" (if sarcastic) or "No" (if not sarcastic), '
+            'followed by a brief explanation.\n\n'
+            'IMPORTANT: If the analysis expresses uncertainty, is inconclusive, or lacks sufficient '
+            'evidence, you should answer "No".'
+        )
+
     def get_debate_prompts(self) -> Dict[str, str]:
+        mod = self.get_modality_system_prompts()
         return {
             'video_init': (
-                'You are a Video Analysis Expert. You will analyze whether the person in the video is being sarcastic or not. Note that the video does not contain audio, you should just focus on the visual cues.\n'
+                f'{mod["video"]}\n\n'
+                'Task: Analyze whether the person in the video is being sarcastic or not, '
+                'based solely on the visual cues.\n'
                 "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'audio_init': (
-                'You are an Audio Analysis Expert. You will analyze whether the person in the audio is being sarcastic or not.\n'
+                f'{mod["audio"]}\n\n'
+                'Task: Analyze whether the person in the audio is being sarcastic or not.\n'
                 "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'text_init': (
-                'You are a Text Analysis Expert. You will be given an utterance that was said by a person, and analyze whether the person is being sarcastic or not.\n'
+                f'{mod["text"]}\n\n'
+                'Task: Analyze whether the target utterance is sarcastic.\n'
                 "First, provide your analysis. Then, end your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'video_refine': (
-                'You are a Video Analysis Expert. You previously analyzed the visual cues of a person in the video.\n'
+                f'{mod["video"]}\n\n'
+                'You previously analyzed the visual cues of the person in the video.\n'
                 'Your previous answer: {own_answer}\n\n'
                 'Here are the analyses from other experts:\n'
                 '- Audio Expert: {audio_answer}\n'
                 '- Text Expert: {text_answer}\n\n'
-                'First, consider their perspectives and re-examine the video evidence carefully. Note that the video does not contain audio, you should just focus on the visual cues.\n'
+                'First, consider their perspectives and re-examine the video evidence carefully. '
+                'Note that the video does not contain audio, you should just focus on the visual cues.\n'
                 'Then, determine if this utterance is sarcastic or not.\n'
                 "End your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'audio_refine': (
-                'You are an Audio Analysis Expert. You previously analyzed the audio of this utterance.\n'
+                f'{mod["audio"]}\n\n'
+                'You previously analyzed the audio of this utterance.\n'
                 'Your previous answer: {own_answer}\n\n'
                 'Here are the analyses from other experts:\n'
                 '- Video Expert: {video_answer}\n'
@@ -327,28 +449,32 @@ class MustardConfig(DatasetConfig):
                 "End your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'text_refine': (
-                'You are a Text Analysis Expert. You previously analyzed this utterance.\n'
+                f'{mod["text"]}\n\n'
+                'You previously analyzed this utterance.\n'
                 'Your previous answer: {own_answer}\n\n'
                 'Here are the analyses from other experts:\n'
                 '- Video Expert: {video_answer}\n'
                 '- Audio Expert: {audio_answer}\n\n'
-                'First, consider their perspectives and re-examine the text evidence of the utterance carefully.\n'
+                'First, consider their perspectives and re-examine the text evidence carefully.\n'
                 'Then, determine if this utterance is sarcastic or not.\n'
                 "End your response with 'My Answer: Yes' or 'My Answer: No'."
             ),
             'judge': (
-                'You are an impartial Judge. Three experts have debated whether this utterance is sarcastic or not.\n'
-                'Here is the discussion:\n\n{debate_history}\n\n'
-                'Based on all evidence from the video, audio, and text analyses, determine if this utterance is sarcastic or not.\n'
-                "Your answer must start with 'Yes' or 'No', followed by your reasoning."
+                f'{self.get_aggregation_prompt()}\n\n'
+                'Three experts (Video, Audio, Text) have debated whether this utterance is sarcastic or not. '
+                'You must weigh all three experts equally — do not favor any single modality. '
+                "Evaluate the strength of each expert's evidence independently.\n\n"
+                'Analysis (debate history):\n{debate_history}'
             ),
         }
 
     def get_query_aug_prompts(self) -> Dict[str, str]:
+        mod = self.get_modality_system_prompts()
         return {
             'controller_init': (
                 'You are a Sarcasm Detection Controller. Your task is to coordinate three modality experts '
                 '(Video, Audio, Text) to determine if the person is being sarcastic or not.\n\n'
+                'The target utterance is: \'{target_sentence}\'\n\n'
                 'For Round 1, generate THREE specific questions - one for each expert:\n'
                 '1. A question for the VIDEO expert to analyze visual expressions and gestures\n'
                 '2. A question for the AUDIO expert to analyze vocal tone and speech patterns\n'
@@ -373,27 +499,26 @@ class MustardConfig(DatasetConfig):
                 'TEXT_QUESTION: [your question]'
             ),
             'controller_decision': (
-                'You are a Sarcasm Detection Controller. You have gathered evidence from three modality experts '
-                'over {num_rounds} rounds of questioning.\n\n'
-                'Here is the complete conversation history:\n{conversation_history}\n\n'
-                'Based on all the evidence gathered from video, audio, and text analyses, '
-                'determine if this person is being sarcastic or not.\n'
-                "Your answer must start with 'Yes' or 'No', followed by your reasoning."
+                f'{self.get_aggregation_prompt()}\n\n'
+                'You have gathered evidence from three modality experts (Video, Audio, Text) '
+                'over {num_rounds} rounds of questioning. Weigh all three experts equally — '
+                'do not favor any single modality.\n\n'
+                'Analysis (conversation history):\n{conversation_history}'
             ),
             'video_agent': (
-                'You are a Video Analysis Expert. You will analyze video frames showing a person. Note that the video does not contain audio, you should just focus on the visual cues.\n'
+                f'{mod["video"]}\n\n'
                 'Question: {question}\n\n'
                 "First, carefully observe and describe the person's visual expressions, gestures, and body language.\n"
                 'Then, based on your analysis, provide your answer to the question.'
             ),
             'audio_agent': (
-                'You are an Audio Analysis Expert. You will analyze audio of a person speaking.\n'
+                f'{mod["audio"]}\n\n'
                 'Question: {question}\n\n'
                 "First, carefully listen and describe the person's vocal tone, intonation, speech patterns, and any audio cues.\n"
                 'Then, based on your analysis, provide your answer to the question.'
             ),
             'text_agent': (
-                'You are a Text Analysis Expert. You will be given an utterance that was said by a person.\n'
+                f'{mod["text"]}\n\n'
                 'Question: {question}\n\n'
                 "Utterance: '{text}'\n\n"
                 'First, carefully read and analyze the text content, word choice, tone, and any linguistic patterns.\n'
