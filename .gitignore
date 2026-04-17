@@ -162,3 +162,5 @@ exp_affective/results/
 exp_affective/data/
 exp_affective/detailed_info/
 exp_affective/Archive.zip
+!**/*.jsonl
+!**/*.json
