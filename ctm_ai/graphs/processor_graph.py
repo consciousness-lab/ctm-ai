@@ -36,7 +36,14 @@ class ProcessorGraph:
                 if processor_name in neighbors:
                     neighbors.remove(processor_name)
 
-    def add_link(self, processor1_name: str, processor2_name: str) -> None:
+    def add_link(
+        self,
+        processor1_name: str,
+        processor2_name: str,
+        allow_self: bool = False,
+    ) -> None:
+        if processor1_name == processor2_name and not allow_self:
+            return
         if (
             processor1_name in self.adjacency_list
             and processor2_name in self.adjacency_list

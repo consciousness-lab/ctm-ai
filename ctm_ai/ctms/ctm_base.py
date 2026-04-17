@@ -1,4 +1,5 @@
 import concurrent.futures
+import time
 from abc import ABC, abstractmethod
 from typing import Any, List, Optional, Tuple
 
@@ -181,26 +182,47 @@ class BaseConsciousTuringMachine(ABC):
         if parse_extra_body:
             completion_kwargs['extra_body'] = parse_extra_body
 
-        try:
-            parse_temp = getattr(self.config, 'parse_temperature', 0.3)
-            response = completion(
-                **completion_kwargs,
-                messages=[{'role': 'user', 'content': parse_prompt}],
-                max_tokens=4096,
-                temperature=parse_temp,
-            )
+        parse_temp = getattr(self.config, 'parse_temperature', 0.3)
 
-            parsed_answer = response.choices[0].message.content.strip()
-            if hasattr(self, '_parse_usage') and hasattr(response, 'usage') and response.usage:
-                self._parse_usage['prompt_tokens'] += getattr(response.usage, 'prompt_tokens', 0) or 0
-                self._parse_usage['completion_tokens'] += getattr(response.usage, 'completion_tokens', 0) or 0
-                self._parse_usage['total_tokens'] += getattr(response.usage, 'total_tokens', 0) or 0
-                self._parse_usage['api_calls'] += 1
-            return parsed_answer
+        # Retry with exponential backoff on transient failures (503 / rate limit
+        # / timeout). Matches the 5-retry pattern used by ask_executor's
+        # @message_exponential_backoff decorator. Without this, a single transient
+        # error on the parse step silently returns the raw CTM analysis as the
+        # "parsed" answer, breaking downstream Yes/No classification.
+        retries = 5
+        base_wait = 1
+        last_exc: Optional[Exception] = None
+        for attempt in range(retries):
+            try:
+                response = completion(
+                    **completion_kwargs,
+                    messages=[{'role': 'user', 'content': parse_prompt}],
+                    max_tokens=4096,
+                    temperature=parse_temp,
+                )
+                parsed_answer = response.choices[0].message.content.strip()
+                # Parse step tracks tokens for cost calculation but is NOT
+                # counted as an api_call (it's a post-processing formatting step,
+                # not part of the CTM reasoning loop).
+                if hasattr(self, '_parse_usage') and hasattr(response, 'usage') and response.usage:
+                    self._parse_usage['prompt_tokens'] += getattr(response.usage, 'prompt_tokens', 0) or 0
+                    self._parse_usage['completion_tokens'] += getattr(response.usage, 'completion_tokens', 0) or 0
+                    self._parse_usage['total_tokens'] += getattr(response.usage, 'total_tokens', 0) or 0
+                return parsed_answer
+            except Exception as e:
+                last_exc = e
+                wait_time = base_wait * (2 ** attempt)
+                logger.warning(
+                    f'parse_answer attempt {attempt + 1}/{retries} failed: {e}. '
+                    f'Retrying in {wait_time}s...'
+                )
+                time.sleep(wait_time)
 
-        except Exception as e:
-            logger.warning(f'Failed to parse answer with litellm: {e}')
-            return answer
+        logger.warning(
+            f'parse_answer exhausted {retries} retries; returning raw answer. '
+            f'Last error: {last_exc}'
+        )
+        return answer
 
     @logging_func_with_count
     def uptree_competition(self, chunks: List[Chunk]) -> Chunk:
