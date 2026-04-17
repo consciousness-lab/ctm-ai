@@ -30,6 +30,7 @@ from llm_utils import (
 sys.path.append('..')
 
 ROUNDS = 3
+TEXT_INPUT_KEY = 'language_text'
 COST_INPUT_PER_1M = 0.075
 COST_OUTPUT_PER_1M = 0.30
 
@@ -67,6 +68,7 @@ def run_instance(
     video_agent,
     audio_agent,
     text_agent,
+    controller_agent,
     tracker,
     output_file,
 ):
@@ -78,7 +80,7 @@ def run_instance(
 
     # Step 1: Load inputs
     inputs = load_sample_inputs(test_file, dataset, dataset_name)
-    target_sentence = inputs['target_sentence']
+    language_text = inputs[TEXT_INPUT_KEY]
     label = inputs['label']
     muted_video_path = inputs['muted_video_path']
     audio_path = inputs['audio_path']
@@ -118,7 +120,7 @@ def run_instance(
                 round_num=round_num,
             )
 
-        controller_response, usage = text_agent.call(controller_query)
+        controller_response, usage = controller_agent.call(controller_query)
         num_api_calls += 1
         total_prompt_tokens += usage.get('prompt_tokens', 0)
         total_completion_tokens += usage.get('completion_tokens', 0)
@@ -131,7 +133,7 @@ def run_instance(
         video_query = prompts['video_agent'].format(question=questions['video'])
         audio_query = prompts['audio_agent'].format(question=questions['audio'])
         text_query = prompts['text_agent'].format(
-            question=questions['text'], text=target_sentence
+            question=questions['text'], text=language_text
         )
 
         with ThreadPoolExecutor(max_workers=3) as executor:
@@ -161,11 +163,11 @@ def run_instance(
         print(f'    Audio: {audio_response[:60] if audio_response else "None"}...')
         print(f'    Text:  {text_response[:60] if text_response else "None"}...')
 
-    # Controller final decision
+    # Controller final decision (plain text agent without modality system prompt)
     decision_query = prompts['controller_decision'].format(
         num_rounds=ROUNDS, conversation_history=conversation_history
     )
-    final_verdict, usage = text_agent.call(decision_query)
+    final_verdict, usage = controller_agent.call(decision_query)
     num_api_calls += 1
     total_prompt_tokens += usage.get('prompt_tokens', 0)
     total_completion_tokens += usage.get('completion_tokens', 0)
@@ -244,9 +246,33 @@ if __name__ == '__main__':
         default=3,
         help='Number of questioning rounds (default: 3)',
     )
+    parser.add_argument(
+        '--ctm_config',
+        type=str,
+        default=None,
+        help=(
+            'Path (or filename under ctm_conf/) of the CTM config whose '
+            'per-modality system_prompts should be used by the orchestra '
+            'agents. Defaults to the dataset/provider pair in dataset_configs.'
+        ),
+    )
+    parser.add_argument(
+        '--text_input',
+        type=str,
+        choices=['language_text', 'target_sentence'],
+        default='language_text',
+        help=(
+            'Which text representation to feed the text agent. '
+            '"language_text" = get_context_field (context+target, matches CTM '
+            'text system_prompt expectation). "target_sentence" = '
+            'get_text_field (for mustard this includes speaker annotations, '
+            'which empirically helps orchestra controller aggregation).'
+        ),
+    )
     args = parser.parse_args()
 
     ROUNDS = args.rounds
+    TEXT_INPUT_KEY = args.text_input
 
     config = get_dataset_config(args.dataset_name)
     if args.dataset is None:
@@ -260,17 +286,43 @@ if __name__ == '__main__':
         cost_input_per_1m=COST_INPUT_PER_1M, cost_output_per_1m=COST_OUTPUT_PER_1M
     )
 
+    ctm_modality_prompts = config.get_ctm_modality_prompts(
+        args.provider, override_path=args.ctm_config
+    )
     video_agent = create_agent(
-        'video', provider=args.provider, model=args.model, temperature=args.temperature
+        'video',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        system_prompt=ctm_modality_prompts.get('video'),
     )
     audio_agent = create_agent(
-        'audio', provider=args.provider, model=args.model, temperature=args.temperature
+        'audio',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        system_prompt=ctm_modality_prompts.get('audio'),
     )
     text_agent = create_agent(
-        'text', provider=args.provider, model=args.model, temperature=args.temperature
+        'text',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        system_prompt=ctm_modality_prompts.get('text'),
+    )
+    # Plain text agent (no modality system_prompt) for the controller role
+    controller_agent = create_agent(
+        'text',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
     )
     print(
         f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {text_agent.model}'
+    )
+    loaded_modalities = sorted(ctm_modality_prompts.keys())
+    print(
+        f'CTM modality system prompts loaded for: {loaded_modalities or "(none)"}'
     )
 
     dataset = load_data(args.dataset)
@@ -293,6 +345,7 @@ if __name__ == '__main__':
                     video_agent,
                     audio_agent,
                     text_agent,
+                    controller_agent,
                     tracker,
                     output_file,
                 )

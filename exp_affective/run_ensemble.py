@@ -69,13 +69,18 @@ def run_instance(
 
     # Step 1: Load inputs
     inputs = load_sample_inputs(test_file, dataset, dataset_name)
-    target_sentence = inputs['target_sentence']
-    system_prompt = inputs['system_prompt']
+    language_text = inputs['language_text']
     label = inputs['label']
     muted_video_path = inputs['muted_video_path']
     audio_path = inputs['audio_path']
+    config = inputs['config']
 
-    query = f"{system_prompt}\n\ntarget text: '{target_sentence}'"
+    # Per-modality task wrappers; agents carry per-modality system_prompts
+    # loaded from the CTM config, so queries here stay task-specific only.
+    task_instructions = config.get_ensemble_task_instructions()
+    video_query = task_instructions['video']
+    audio_query = task_instructions['audio']
+    text_query = task_instructions['text'].format(text=language_text)
 
     print(f'--- Modality Ensemble for {test_file} ---')
 
@@ -85,11 +90,11 @@ def run_instance(
 
     def run_agent(agent_type):
         if agent_type == 'text':
-            return agent_type, *text_agent.call(query)
+            return agent_type, *text_agent.call(text_query)
         elif agent_type == 'audio':
-            return agent_type, *audio_agent.call(query, audio_path=audio_path)
+            return agent_type, *audio_agent.call(audio_query, audio_path=audio_path)
         elif agent_type == 'video':
-            return agent_type, *video_agent.call(query, video_path=muted_video_path)
+            return agent_type, *video_agent.call(video_query, video_path=muted_video_path)
 
     agent_types = ['text', 'audio', 'video']
     all_answers = {}
@@ -192,6 +197,16 @@ if __name__ == '__main__':
         default=1.0,
         help='Sampling temperature (default: 1.0)',
     )
+    parser.add_argument(
+        '--ctm_config',
+        type=str,
+        default=None,
+        help=(
+            'Path (or filename under ctm_conf/) of the CTM config whose '
+            'per-modality system_prompts should be used by the ensemble '
+            'agents. Defaults to the dataset/provider pair in dataset_configs.'
+        ),
+    )
     args = parser.parse_args()
 
     config = get_dataset_config(args.dataset_name)
@@ -206,17 +221,36 @@ if __name__ == '__main__':
         cost_input_per_1m=COST_INPUT_PER_1M, cost_output_per_1m=COST_OUTPUT_PER_1M
     )
 
+    ctm_modality_prompts = config.get_ctm_modality_prompts(
+        args.provider, override_path=args.ctm_config
+    )
     text_agent = create_agent(
-        'text', provider=args.provider, model=args.model, temperature=args.temperature
+        'text',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        system_prompt=ctm_modality_prompts.get('text'),
     )
     audio_agent = create_agent(
-        'audio', provider=args.provider, model=args.model, temperature=args.temperature
+        'audio',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        system_prompt=ctm_modality_prompts.get('audio'),
     )
     video_agent = create_agent(
-        'video', provider=args.provider, model=args.model, temperature=args.temperature
+        'video',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        system_prompt=ctm_modality_prompts.get('video'),
     )
     print(
         f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {text_agent.model}'
+    )
+    loaded_modalities = sorted(ctm_modality_prompts.keys())
+    print(
+        f'CTM modality system prompts loaded for: {loaded_modalities or "(none)"}'
     )
     print(f'Agents: TextAgent + AudioAgent + VideoAgent -> Majority Vote')
 

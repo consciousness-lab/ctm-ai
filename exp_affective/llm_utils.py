@@ -241,6 +241,78 @@ def build_video_content(video_path: str, provider: str = 'gemini') -> List[Dict]
         return [{'type': 'image_url', 'image_url': {'url': data_url}}]
 
 
+def extract_frames_base64(video_path: str, max_frames: int = 8) -> List[str]:
+    """Extract up to ``max_frames`` evenly-spaced JPEG frames from ``video_path``
+    and return them as base64 strings. Used as a fallback when the DashScope
+    video modality pre-check rejects a video (e.g. "video file is too short").
+    """
+    if not video_path or not os.path.exists(video_path):
+        return []
+    try:
+        import cv2  # type: ignore
+    except ImportError:
+        return []
+    cap = cv2.VideoCapture(video_path)
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if total <= 0:
+        cap.release()
+        return []
+    # Evenly-spaced indices; if the video has fewer frames than max_frames,
+    # grab every frame.
+    if total <= max_frames:
+        indices = list(range(total))
+    else:
+        indices = [int(total * i / max_frames) for i in range(max_frames)]
+    frames: List[str] = []
+    wanted = set(indices)
+    idx = 0
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        if idx in wanted:
+            _, buf = cv2.imencode('.jpg', frame)
+            frames.append(base64.b64encode(buf).decode())
+        idx += 1
+    cap.release()
+    return frames
+
+
+def build_frames_content(
+    video_path: str,
+    provider: str = 'gemini',
+    max_frames: int = 8,
+) -> List[Dict]:
+    """Frames-based alternative to :func:`build_video_content`.
+
+    Extracts up to ``max_frames`` JPEG frames from the video and returns them
+    as ``image_url`` blocks. Used as a fallback when the video modality is
+    rejected by the server (e.g. "video file is too short" from DashScope).
+    Provider-agnostic: both Gemini and Qwen accept multiple ``image_url``
+    blocks in a single user content list.
+    """
+    frames = extract_frames_base64(video_path, max_frames=max_frames)
+    return [
+        {
+            'type': 'image_url',
+            'image_url': {'url': f'data:image/jpeg;base64,{f}'},
+        }
+        for f in frames
+    ]
+
+
+# Patterns in DashScope / litellm error messages that indicate the video
+# modality was rejected but frames might work (short video / codec / size).
+# We do NOT fall back on content-moderation errors — those are permanent.
+_VIDEO_FALLBACK_PATTERNS = (
+    'too short',
+    'too long',
+    'Invalid video',
+    'video modality input does not meet',
+    'InvalidParameter',
+)
+
+
 # ============================================================================
 # Agent Classes
 # ============================================================================
@@ -256,30 +328,88 @@ class BaseAgent:
         provider: str = 'gemini',
         model: Optional[str] = None,
         temperature: float = 1.0,
+        system_prompt: Optional[str] = None,
     ):
         self.provider = provider
         self.model = model or DEFAULT_MODELS.get(provider, DEFAULT_MODELS['gemini'])
         self.temperature = temperature
+        self.system_prompt = system_prompt
 
     def _build_content(self, query: str, **kwargs: Any) -> List[Dict]:
         """Build content list. Override in subclasses"""
         raise NotImplementedError
 
+    def _supports_frames_fallback(self, kwargs: Dict[str, Any]) -> bool:
+        """Return True if this agent+kwargs combo has a ``video_path`` that can
+        be re-expressed as extracted frames when the video modality is rejected.
+        """
+        return bool(kwargs.get('video_path'))
+
+    def _build_content_with_frames(
+        self, query: str, **kwargs: Any
+    ) -> Optional[List[Dict]]:
+        """Rebuild the user content list replacing the video block with frame
+        image blocks. Returns ``None`` if the agent has no video or frames
+        cannot be extracted.
+        """
+        video_path = kwargs.get('video_path')
+        if not video_path:
+            return None
+        # Extract frames; if none, give up
+        frame_blocks = build_frames_content(video_path, self.provider)
+        if not frame_blocks:
+            return None
+        # Reconstruct the text portion the same way the agent normally would,
+        # but substitute frames for the video block.
+        context = kwargs.get('context')
+        text_blocks = build_text_content(query, context)
+        return text_blocks + frame_blocks
+
     def call(
-        self, query: str, max_retries: int = 3, **kwargs: Any
+        self,
+        query: str,
+        max_retries: int = 3,
+        few_shot_messages: Optional[List[Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> Tuple[Optional[str], Dict[str, int]]:
-        """Make an LLM API call with the agent's modality, retry up to max_retries on failure"""
+        """Make an LLM API call with the agent's modality, retry up to max_retries on failure.
+
+        If ``few_shot_messages`` is provided, it is spliced between the optional
+        system message and the final user message (standard in-context example
+        pattern: alternating user/assistant turns).
+
+        Frames fallback: if the video modality is rejected with a recoverable
+        error (see ``_VIDEO_FALLBACK_PATTERNS``) and this agent has a
+        ``video_path`` in kwargs, the call is retried once more with the
+        video replaced by extracted frames. Content-moderation rejections
+        (DataInspectionFailed) are not retried.
+        """
         content = self._build_content(query, **kwargs)
+
+        def build_messages(user_content: List[Dict]) -> List[Dict[str, Any]]:
+            msgs: List[Dict[str, Any]] = []
+            if self.system_prompt:
+                msgs.append({'role': 'system', 'content': self.system_prompt})
+            if few_shot_messages:
+                msgs.extend(few_shot_messages)
+            msgs.append({'role': 'user', 'content': user_content})
+            return msgs
+
+        messages = build_messages(content)
+        frames_fallback_tried = False
 
         for attempt in range(1, max_retries + 1):
             try:
                 model = self.model
-                if self.provider == 'qwen' and model.startswith('qwen/'):
-                    model = 'openai/' + model.split('/', 1)[1]
+                if self.provider == 'qwen':
+                    if model.startswith('qwen/'):
+                        model = 'openai/' + model.split('/', 1)[1]
+                    elif '/' not in model:
+                        model = 'openai/' + model
 
                 call_kwargs = {
                     'model': model,
-                    'messages': [{'role': 'user', 'content': content}],
+                    'messages': messages,
                     'temperature': self.temperature,
                 }
 
@@ -305,10 +435,31 @@ class BaseAgent:
                 )
 
             except Exception as e:
+                err = str(e)
                 print(
                     f'Error calling {self.provider} API ({self.AGENT_TYPE}), '
                     f'attempt {attempt}/{max_retries}: {e}'
                 )
+
+                # Frames fallback: if the video was rejected AND we haven't
+                # tried frames yet AND the agent has a video to re-express,
+                # swap content to frames and retry in the next loop iteration.
+                if (
+                    not frames_fallback_tried
+                    and self._supports_frames_fallback(kwargs)
+                    and any(p in err for p in _VIDEO_FALLBACK_PATTERNS)
+                ):
+                    frames_content = self._build_content_with_frames(query, **kwargs)
+                    if frames_content is not None:
+                        print(
+                            f'  -> Falling back to frames for {self.AGENT_TYPE} '
+                            f'(video rejected by server)'
+                        )
+                        messages = build_messages(frames_content)
+                        frames_fallback_tried = True
+                        # don't count this iteration against max_retries —
+                        # we've switched strategies
+                        continue
 
         # All retries exhausted
         return None, {'prompt_tokens': 0, 'completion_tokens': 0}
@@ -406,6 +557,7 @@ def create_agent(
     provider: str = 'gemini',
     model: Optional[str] = None,
     temperature: float = 1.0,
+    system_prompt: Optional[str] = None,
 ) -> BaseAgent:
     """Factory function to create an agent by type"""
     if agent_type not in AGENT_CLASSES:
@@ -414,7 +566,10 @@ def create_agent(
             f'Choose from: {list(AGENT_CLASSES.keys())}'
         )
     return AGENT_CLASSES[agent_type](
-        provider=provider, model=model, temperature=temperature
+        provider=provider,
+        model=model,
+        temperature=temperature,
+        system_prompt=system_prompt,
     )
 
 
@@ -437,6 +592,9 @@ def load_sample_inputs(
 
     return {
         'target_sentence': config.get_text_field(sample),
+        # Full context+target, matching what the CTM language_processor
+        # system_prompt expects the text agent to receive.
+        'language_text': config.get_context_field(sample),
         'system_prompt': config.get_system_prompt(),
         'label': config.get_label_field(sample),
         'full_video_path': get_full_video_path(test_file, dataset_name),

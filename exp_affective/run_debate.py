@@ -56,6 +56,7 @@ def run_instance(
     video_agent,
     audio_agent,
     text_agent,
+    judge_agent,
     tracker,
     output_file,
 ):
@@ -68,6 +69,7 @@ def run_instance(
     # Step 1: Load inputs
     inputs = load_sample_inputs(test_file, dataset, dataset_name)
     target_sentence = inputs['target_sentence']
+    language_text = inputs['language_text']
     label = inputs['label']
     muted_video_path = inputs['muted_video_path']
     audio_path = inputs['audio_path']
@@ -98,7 +100,7 @@ def run_instance(
         if round_num == 1:
             video_query = prompts['video_init']
             audio_query = prompts['audio_init']
-            text_query = f"{prompts['text_init']}\n\ntarget text: '{target_sentence}'"
+            text_query = f"{prompts['text_init']}\n\ntarget text: '{language_text}'"
         else:
             video_query = prompts['video_refine'].format(
                 own_answer=video_answer,
@@ -112,7 +114,7 @@ def run_instance(
             )
             text_query = (
                 f'{prompts["text_refine"].format(own_answer=text_answer, video_answer=video_answer, audio_answer=audio_answer)}'
-                f"\n\ntarget text: '{target_sentence}'"
+                f"\n\ntarget text: '{language_text}'"
             )
 
         with ThreadPoolExecutor(max_workers=3) as executor:
@@ -142,9 +144,9 @@ def run_instance(
             f'    Video: {extract_answer(video_answer)} | Audio: {extract_answer(audio_answer)} | Text: {extract_answer(text_answer)}'
         )
 
-    # Judge makes final decision
-    judge_query = f"{prompts['judge'].format(debate_history=debate_history)}\n\ntarget text: '{target_sentence}'"
-    final_verdict, usage = text_agent.call(judge_query)
+    # Judge makes final decision (plain text agent without modality system prompt)
+    judge_query = f"{prompts['judge'].format(debate_history=debate_history)}\n\ntarget text: '{language_text}'"
+    final_verdict, usage = judge_agent.call(judge_query)
     num_api_calls += 1
     total_prompt_tokens += usage.get('prompt_tokens', 0)
     total_completion_tokens += usage.get('completion_tokens', 0)
@@ -226,6 +228,16 @@ if __name__ == '__main__':
         default=3,
         help='Number of debate rounds (default: 3)',
     )
+    parser.add_argument(
+        '--ctm_config',
+        type=str,
+        default=None,
+        help=(
+            'Path (or filename under ctm_conf/) of the CTM config whose '
+            'per-modality system_prompts should be used by the debate agents. '
+            'Defaults to the dataset/provider pair in dataset_configs.'
+        ),
+    )
     args = parser.parse_args()
 
     ROUNDS = args.rounds
@@ -242,17 +254,43 @@ if __name__ == '__main__':
         cost_input_per_1m=COST_INPUT_PER_1M, cost_output_per_1m=COST_OUTPUT_PER_1M
     )
 
+    ctm_modality_prompts = config.get_ctm_modality_prompts(
+        args.provider, override_path=args.ctm_config
+    )
     video_agent = create_agent(
-        'video', provider=args.provider, model=args.model, temperature=args.temperature
+        'video',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        system_prompt=ctm_modality_prompts.get('video'),
     )
     audio_agent = create_agent(
-        'audio', provider=args.provider, model=args.model, temperature=args.temperature
+        'audio',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        system_prompt=ctm_modality_prompts.get('audio'),
     )
     text_agent = create_agent(
-        'text', provider=args.provider, model=args.model, temperature=args.temperature
+        'text',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
+        system_prompt=ctm_modality_prompts.get('text'),
+    )
+    # Plain text agent (no modality system_prompt) for the judge role
+    judge_agent = create_agent(
+        'text',
+        provider=args.provider,
+        model=args.model,
+        temperature=args.temperature,
     )
     print(
         f'Dataset: {args.dataset_name} | Provider: {args.provider} | Model: {text_agent.model}'
+    )
+    loaded_modalities = sorted(ctm_modality_prompts.keys())
+    print(
+        f'CTM modality system prompts loaded for: {loaded_modalities or "(none)"}'
     )
 
     dataset = load_data(args.dataset)
@@ -275,6 +313,7 @@ if __name__ == '__main__':
                     video_agent,
                     audio_agent,
                     text_agent,
+                    judge_agent,
                     tracker,
                     output_file,
                 )
