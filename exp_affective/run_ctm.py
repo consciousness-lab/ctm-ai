@@ -39,6 +39,7 @@ def run_instance(
     dataset_name,
     ctm_name,
     output_file='ctm_results.jsonl',
+    detailed_log_dir=None,
 ):
     try:
         print(f'[{test_file}] Starting processing...')
@@ -46,7 +47,7 @@ def run_instance(
         config = get_dataset_config(dataset_name)
         sample = dataset[test_file]
 
-        ctm = ConsciousTuringMachine(ctm_name)
+        ctm = ConsciousTuringMachine(ctm_name, detailed_log_dir=detailed_log_dir)
         target_sentence = config.get_text_field(sample)
         query = config.get_task_query()
 
@@ -119,12 +120,20 @@ def run_instance(
 
 
 def run_parallel(
-    dataset, dataset_name, ctm_name, max_workers=4, output_file='ctm_results.jsonl'
+    dataset,
+    dataset_name,
+    ctm_name,
+    max_workers=4,
+    output_file='ctm_results.jsonl',
+    detailed_log_dir=None,
 ):
     test_list = list(dataset.keys())
     print(f'Total test samples: {len(test_list)}')
     print(f'Using {max_workers} workers')
     print(f'Output file: {output_file}')
+    if detailed_log_dir:
+        print(f'Detailed log dir: {detailed_log_dir}')
+        os.makedirs(detailed_log_dir, exist_ok=True)
     print('=' * 50)
 
     with open(output_file, 'w', encoding='utf-8'):
@@ -136,7 +145,13 @@ def run_parallel(
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_test = {
             executor.submit(
-                run_instance, test_file, dataset, dataset_name, ctm_name, output_file
+                run_instance,
+                test_file,
+                dataset,
+                dataset_name,
+                ctm_name,
+                output_file,
+                detailed_log_dir,
             ): test_file
             for test_file in test_list
         }
@@ -191,6 +206,12 @@ if __name__ == '__main__':
         default=8,
         help='Number of parallel workers (default: 16)',
     )
+    parser.add_argument(
+        '--detailed_log_dir',
+        type=str,
+        default=None,
+        help='Directory for per-instance trajectory JSON files (default: detailed_info/)',
+    )
     args = parser.parse_args()
 
     # Get dataset configuration
@@ -221,4 +242,5 @@ if __name__ == '__main__':
         args.ctm_name,
         max_workers=args.max_workers,
         output_file=output_file,
+        detailed_log_dir=args.detailed_log_dir,
     )

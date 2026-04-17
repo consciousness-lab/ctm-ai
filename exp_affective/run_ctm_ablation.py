@@ -166,7 +166,7 @@ def run_instance(
         print(
             f'[{test_file}] Done in {elapsed:.1f}s | '
             f'iters={num_iterations} | links_added={total_links_added} | '
-            f'api_calls={ctm_usage["api_calls"]}+1parse | '
+            f'api_calls={ctm_usage["api_calls"]} | '
             f'tokens={ctm_usage["total_tokens"]}+{parse_usage["total_tokens"]}parse | '
             f'cost=${total_cost:.4f} | '
             f"parsed={parsed_answer[:50]}"
@@ -187,7 +187,6 @@ def run_instance(
                 'ctm_prompt_tokens': ctm_usage['prompt_tokens'],
                 'ctm_completion_tokens': ctm_usage['completion_tokens'],
                 'ctm_total_tokens': ctm_usage['total_tokens'],
-                'parse_api_calls': parse_usage['api_calls'],
                 'parse_prompt_tokens': parse_usage['prompt_tokens'],
                 'parse_completion_tokens': parse_usage['completion_tokens'],
                 'parse_total_tokens': parse_usage['total_tokens'],
@@ -264,6 +263,8 @@ def run_ablation(
         ablation_tag = f'{ablation_tag}_ot{tk["output_threshold_override"]}'
     if tk.get('max_iter_override') is not None:
         ablation_tag = f'{ablation_tag}_iter{tk["max_iter_override"]}'
+    if tk.get('link_form_ask_self'):
+        ablation_tag = f'{ablation_tag}_askself'
 
     if modality:
         ablation_tag = f'{ablation_tag}_only_{modality}'
@@ -393,6 +394,11 @@ if __name__ == '__main__':
         help='Override max_iter_num in config.')
     parser.add_argument('--run_link_thresholds', action='store_true')
     parser.add_argument('--run_output_thresholds', action='store_true')
+    parser.add_argument(
+        '--link_form_ask_self',
+        action='store_true',
+        help='Include winner in link_form (winner answers its own follow-up questions and may link to itself).',
+    )
     args = parser.parse_args()
 
     config = get_dataset_config(args.dataset_name)
@@ -416,6 +422,8 @@ if __name__ == '__main__':
         threshold_kwargs['output_threshold_override'] = args.output_threshold
     if args.max_iter is not None:
         threshold_kwargs['max_iter_override'] = args.max_iter
+    if args.link_form_ask_self:
+        threshold_kwargs['link_form_ask_self'] = True
 
     LINK_THRESHOLD_PRESETS = [
         {'link_form_threshold': 0.3},
