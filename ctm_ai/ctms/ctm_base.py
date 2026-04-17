@@ -290,6 +290,9 @@ class BaseConsciousTuringMachine(ABC):
     def fuse_processor(self, chunks: List[Chunk], query: str, **input_kwargs) -> None:
         proc_map = {p.name: p for p in self.processor_graph.nodes}
 
+        # Pass 1: collect tasks in the original nested-for order so that the
+        # resulting fuse_history / detailed_log append order is unchanged.
+        tasks = []
         for chunk in chunks:
             additional_questions = chunk.additional_questions or []
             valid_questions = [q for q in additional_questions if q]
@@ -305,28 +308,50 @@ class BaseConsciousTuringMachine(ABC):
             for nbr in self.processor_graph.get_neighbor_names(chunk.processor_name):
                 if nbr == chunk.processor_name:
                     continue
+                nbr_proc = proc_map.get(nbr)
+                if nbr_proc is None:
+                    continue
+                tasks.append(
+                    (chunk.processor_name, nbr, nbr_proc, combined_query)
+                )
 
-                # Use fuse phase - ask all questions at once, only need response
-                answer_chunk = proc_map[nbr].ask(
+        if not tasks:
+            return
+
+        # Pass 2: dispatch ask(phase='fuse') calls in parallel, preserving
+        # submission order via ordered futures.result().
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(
+                    nbr_proc.ask,
                     query=combined_query,
                     phase='fuse',
                     **input_kwargs,
                 )
-                if answer_chunk is not None:
-                    proc_map[chunk.processor_name].add_fuse_history(
-                        combined_query, answer_chunk.gist, nbr
-                    )
+                for (_c, _n, nbr_proc, combined_query) in tasks
+            ]
+            answer_chunks = [f.result() for f in futures]
 
-                    # Log fuse phase details
-                    if self.detailed_log is not None:
-                        current_iteration = self.detailed_log['current_iteration']
-                        fuse_info = {
-                            'from_processor': chunk.processor_name,
-                            'to_processor': nbr,
-                            'query': answer_chunk.executor_content or combined_query,
-                            'answer': answer_chunk.gist,
-                        }
-                        current_iteration['fuse_phase'].append(fuse_info)
+        # Pass 3: apply side effects serially in the original order.
+        for (c_name, nbr, _nbr_proc, combined_query), answer_chunk in zip(
+            tasks, answer_chunks
+        ):
+            if answer_chunk is None:
+                continue
+
+            proc_map[c_name].add_fuse_history(
+                combined_query, answer_chunk.gist, nbr
+            )
+
+            if self.detailed_log is not None:
+                current_iteration = self.detailed_log['current_iteration']
+                fuse_info = {
+                    'from_processor': c_name,
+                    'to_processor': nbr,
+                    'query': answer_chunk.executor_content or combined_query,
+                    'answer': answer_chunk.gist,
+                }
+                current_iteration['fuse_phase'].append(fuse_info)
 
     @abstractmethod
     def forward(
