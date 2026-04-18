@@ -20,5 +20,7 @@
             "model": "qwen/qwen3-omni-flash",
             "temperature": 0.1
         }
-    }
+    },
+    "fuse_history_header": "\nSupplementary observations from other modality experts (use as clues only — YOUR OWN modality evidence takes priority; do NOT override your judgment just because another expert disagrees). HOWEVER, if your own modality shows CLEAR positive markers (verbal irony, tone mismatch, hyperbole, deadpan delivery of absurd content, visual incongruity), do NOT under-call — assert YES confidently:\n",
+    "winner_answer_header": "\nEarlier iterations reached these conclusions (from other modality experts). Form your OWN conclusion based on YOUR modality's signals — you are free to agree, refine, or disagree. If YOUR modality independently shows unambiguous positive cues, do NOT hesitate to claim YES:\n"
 }

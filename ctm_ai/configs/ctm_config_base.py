@@ -7,6 +7,18 @@ DEFAULT_SCORE_WEIGHTS: Dict[str, float] = {
     'surprise': 0.2,
 }
 
+# Default headers used when injecting fuse_history / winner_answer into a
+# processor's executor prompt. Task-specific configs (e.g. mustard, urfunny)
+# may override these to bias the processor toward trusting or distrusting
+# other modality experts' evidence.
+DEFAULT_FUSE_HISTORY_HEADER: str = (
+    '\nThere are extra information from other processors:\n'
+)
+DEFAULT_WINNER_ANSWER_HEADER: str = (
+    '\nThere are some previous answers to the same query, '
+    'think further based on this answer:\n'
+)
+
 
 class ConsciousTuringMachineConfig:
     DEFAULT_PARSE_PROMPT_TEMPLATE = """Based solely on the analysis provided below, give your final answer.
@@ -41,6 +53,8 @@ Analysis:
         num_additional_questions: int = 3,
         max_steps_before_force: int = 9,
         force_final_prompt_template: Optional[str] = None,
+        fuse_history_header: Optional[str] = None,
+        winner_answer_header: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         self.ctm_name: Optional[str] = ctm_name
@@ -68,6 +82,16 @@ Analysis:
             **(score_weights or {}),
         }
         self.num_additional_questions: int = num_additional_questions
+        self.fuse_history_header: str = (
+            fuse_history_header
+            if fuse_history_header is not None
+            else DEFAULT_FUSE_HISTORY_HEADER
+        )
+        self.winner_answer_header: str = (
+            winner_answer_header
+            if winner_answer_header is not None
+            else DEFAULT_WINNER_ANSWER_HEADER
+        )
         for key, value in kwargs.items():
             setattr(self, key, value)
 

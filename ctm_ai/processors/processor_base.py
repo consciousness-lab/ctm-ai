@@ -6,7 +6,11 @@ from litellm import completion
 from numpy.typing import NDArray
 
 from ..chunks import Chunk
-from ..configs.ctm_config_base import DEFAULT_SCORE_WEIGHTS
+from ..configs.ctm_config_base import (
+    DEFAULT_FUSE_HISTORY_HEADER,
+    DEFAULT_SCORE_WEIGHTS,
+    DEFAULT_WINNER_ANSWER_HEADER,
+)
 from ..utils import (
     configure_litellm,
     get_completion_kwargs,
@@ -92,6 +96,12 @@ class BaseProcessor(object):
             **(kwargs.get('score_weights') or {}),
         }
         self.num_additional_questions: int = kwargs.get('num_additional_questions', 3)
+        self.fuse_history_header: str = (
+            kwargs.get('fuse_history_header') or DEFAULT_FUSE_HISTORY_HEADER
+        )
+        self.winner_answer_header: str = (
+            kwargs.get('winner_answer_header') or DEFAULT_WINNER_ANSWER_HEADER
+        )
         self.fuse_history = []
         self.winner_answer = []
         self.all_context_history = []
@@ -150,12 +160,12 @@ class BaseProcessor(object):
         # Add context history for initial and link_form phases
         if phase in ('initial', 'link_form'):
             if len(self.fuse_history) > 0:
-                content += '\nThere are extra information from other processors:\n'
+                content += self.fuse_history_header
                 for i, item in enumerate(self.fuse_history, 1):
                     content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 
             if len(self.winner_answer) > 0:
-                content += '\nThere are some previous answers to the same query, think further based on this answer:\n'
+                content += self.winner_answer_header
                 for i, item in enumerate(self.winner_answer, 1):
                     content += f'{i}. {item["processor_name"]}: {item["answer"]}\n'
 

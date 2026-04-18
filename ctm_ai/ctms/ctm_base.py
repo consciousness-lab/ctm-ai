@@ -44,6 +44,8 @@ class BaseConsciousTuringMachine(ABC):
                 temperature=temp,
                 score_weights=self.config.score_weights,
                 num_additional_questions=self.config.num_additional_questions,
+                fuse_history_header=self.config.fuse_history_header,
+                winner_answer_header=self.config.winner_answer_header,
             )
 
         self.output_threshold = self.config.output_threshold
@@ -60,6 +62,8 @@ class BaseConsciousTuringMachine(ABC):
             model=processor_config.get('model'),
             score_weights=self.config.score_weights,
             num_additional_questions=self.config.num_additional_questions,
+            fuse_history_header=self.config.fuse_history_header,
+            winner_answer_header=self.config.winner_answer_header,
         )
 
     def remove_processor(self, processor_name: str) -> None:
