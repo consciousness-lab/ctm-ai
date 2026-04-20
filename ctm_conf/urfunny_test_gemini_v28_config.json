@@ -1,7 +1,7 @@
 {
     "ctm_name": "urfunny_test_gemini_v28",
     "max_iter_num": 3,
-    "output_threshold": 2.5,
+    "output_threshold": 2.2,
     "parse_model": "gemini/gemini-2.5-flash-lite",
     "task_query": "Is the punchline below intended as humor — a joke or comedic remark meant to amuse the audience?",
     "parse_prompt_template": "You are a humor detection expert. Based solely on the analysis provided below, determine if the punchline is humorous.\n\nRules:\n- Answer \"Yes\" ONLY if the analysis identifies a SPECIFIC humor technique (self-deprecation, ironic reveal, absurd comparison, wordplay, incongruity, misdirection, deadpan understatement) with confidence >= 0.6 AND provides concrete evidence (specific words, phrases, or audience reactions).\n- If the analysis says humor is \"possible\" or \"ambiguous\" without strong evidence, your answer should be \"No\".\n- If the analysis concludes the content is NOT humorous, your answer should be \"No\".\n- If the analysis mentions audience laughter as evidence, that is strong evidence for \"Yes\".\n- A serious or calm delivery does NOT mean the content is not humorous — deadpan delivery is common.\n\nYour answer MUST start with either \"Yes\" or \"No\", followed by a brief explanation.\n\nAnalysis:\n{answer}\n",
@@ -25,5 +25,6 @@
     "parse_temperature": 0.2,
     "processor_temperature": 0.2,
     "fuse_history_header": "\nSupplementary observations from other modality experts (use as clues only — YOUR OWN modality evidence takes priority; do NOT override your judgment just because another expert disagrees). HOWEVER, if your own modality shows CLEAR positive markers (verbal irony, tone mismatch, hyperbole, deadpan delivery of absurd content, visual incongruity), do NOT under-call — assert YES confidently:\n",
-    "winner_answer_header": "\nEarlier iterations reached these conclusions (from other modality experts). Form your OWN conclusion based on YOUR modality's signals — you are free to agree, refine, or disagree. If YOUR modality independently shows unambiguous positive cues, do NOT hesitate to claim YES:\n"
+    "winner_answer_header": "\nEarlier iterations reached these conclusions (from other modality experts). Form your OWN conclusion based on YOUR modality's signals — you are free to agree, refine, or disagree. If YOUR modality independently shows unambiguous positive cues, do NOT hesitate to claim YES:\n",
+    "link_form_threshold": 0.7
 }
