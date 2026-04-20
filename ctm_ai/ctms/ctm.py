@@ -62,6 +62,13 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
             'total_tokens': 0,
         }
 
+        # Per-instance override of the class-level link_form relevance
+        # threshold. When the config specifies ``link_form_threshold``, use it;
+        # otherwise fall back to the class default.
+        cfg_lft = getattr(self.config, 'link_form_threshold', None)
+        if cfg_lft is not None:
+            self.LINK_FORM_THRESHOLD = float(cfg_lft)
+
         self.load_ctm()
 
     def __call__(

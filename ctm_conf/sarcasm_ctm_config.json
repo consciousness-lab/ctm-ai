@@ -1,7 +1,7 @@
 {
     "ctm_name": "sarcasm_ctm",
     "max_iter_num": 3,
-    "output_threshold": 2.1,
+    "output_threshold": 1.9,
     "num_additional_questions": 3,
     "parse_temperature": 0.2,
     "processor_temperature": 0.2,
@@ -21,5 +21,6 @@
         }
     },
     "fuse_history_header": "\nSupplementary observations from other modality experts (use as clues only — YOUR OWN modality evidence takes priority; do NOT override your judgment just because another expert disagrees). HOWEVER, if your own modality shows CLEAR positive markers (verbal irony, tone mismatch, hyperbole, deadpan delivery of absurd content, visual incongruity), do NOT under-call — assert YES confidently:\n",
-    "winner_answer_header": "\nEarlier iterations reached these conclusions (from other modality experts). Form your OWN conclusion based on YOUR modality's signals — you are free to agree, refine, or disagree. If YOUR modality independently shows unambiguous positive cues, do NOT hesitate to claim YES:\n"
+    "winner_answer_header": "\nEarlier iterations reached these conclusions (from other modality experts). Form your OWN conclusion based on YOUR modality's signals — you are free to agree, refine, or disagree. If YOUR modality independently shows unambiguous positive cues, do NOT hesitate to claim YES:\n",
+    "link_form_threshold": 0.9
 }

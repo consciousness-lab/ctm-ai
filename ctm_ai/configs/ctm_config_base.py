@@ -55,6 +55,7 @@ Analysis:
         force_final_prompt_template: Optional[str] = None,
         fuse_history_header: Optional[str] = None,
         winner_answer_header: Optional[str] = None,
+        link_form_threshold: Optional[float] = None,
         **kwargs: Any,
     ) -> None:
         self.ctm_name: Optional[str] = ctm_name
@@ -92,6 +93,9 @@ Analysis:
             if winner_answer_header is not None
             else DEFAULT_WINNER_ANSWER_HEADER
         )
+        # Optional override for ConsciousTuringMachine.LINK_FORM_THRESHOLD.
+        # When None, CTM falls back to its class-level default (0.8).
+        self.link_form_threshold: Optional[float] = link_form_threshold
         for key, value in kwargs.items():
             setattr(self, key, value)
 
