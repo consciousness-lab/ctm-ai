@@ -45,38 +45,41 @@ def _build_base_additional_questions_json(num_questions: int = 3) -> str:
 _BASE_SCORE_RUBRIC = """
 ## Self-Evaluation Instructions
 
-IMPORTANT: Evaluate ONLY the "response" field you wrote above. The "additional_question" must have NO influence on your scores.
+Evaluate ONLY the "response" field you wrote above. The "additional_question" must have NO influence on your scores.
 
-First commit to your best answer in "response", then step back and critically self-assess along three dimensions:
+### STRICT CALIBRATION — READ BEFORE SCORING
+These scores are used to RANK competing analyses against each other. If every analysis scores 0.9+, the ranking collapses and the system cannot pick the best one. **The full 0.0–1.0 range must be used.** Anchor yourself to:
 
-### Relevance (0.0 - 1.0): How relevant do you think your response is to the question? 
-Here, "relevant" means that the answer engages with the question and provides information 
-that is useful or connected to addressing it. Even if the answer expresses uncertainty 
-(e.g., "difficult to determine") but still explains reasoning, it should be considered relevant. 
-Only answers that completely refuse, ignore, or go off-topic should be scored as 0.0. 
-- 1.0 = Directly and precisely answers with specific details
-- 0.8 = Mostly answers with useful supporting details
-- 0.6 = Engages with the question but incomplete or limited
-- 0.4 = Loosely connected, not very helpful
-- 0.2 = Weak or indirect connection only
-- 0.0 = Off-topic, refuses to answer, or irrelevant
+- Most routine answers fall in **0.4–0.7** for relevance and for confidence.
+- Scores of **0.9 or 1.0 are RESERVED** — they require specific, named evidence (see the per-dimension rules below).
+- If you notice both relevance AND confidence trending ≥0.9, pause and lower one by at least 0.2 unless you can quote the specific textual / tonal / visual cues in your response.
+- Ambiguity is the norm for sarcasm and humor — a confidence of 1.0 on a socially ambiguous case is almost always wrong.
 
-### Confidence (0.0 - 1.0): How certain are you about your response?
-- 1.0 = Very certain, definitive statements
-- 0.8 = Mostly certain, minor qualifications
-- 0.6 = Some uncertainty but reasonable conclusions
-- 0.4 = Significant uncertainty, many qualifications
-- 0.2 = Very uncertain, extensive hedging
-- 0.0 = Cannot determine, "I don't know", or refuses
-(Note: If your response says "cannot determine" or equivalent, this MUST be 0.0)
+### Relevance (0.0 - 1.0) — How directly does your response address the specific question?
+- **1.0 (RARE)**: Commits to a clear verdict AND names ≥2 specific cues (specific words/phrases, specific tonal markers, specific visual features).
+- **0.8**: Commits to a verdict and names ≥1 specific cue.
+- **0.6**: Engages with the question and gives a reasoned opinion, but cues are described generally ("the tone seems off", "the expression looks odd") rather than named precisely.
+- **0.4**: Mostly summarizes the context; verdict is weak, hedged, or implicit.
+- **0.2**: Tangentially related; restates or describes without committing.
+- **0.0**: Off-topic, refuses, or says "I cannot answer".
 
-### Surprise (0.0 - 1.0): How novel or insightful is your response?
-- 1.0 = Highly unexpected, novel insights
-- 0.6 = Mix of predictable and unexpected
-- 0.3 = Mostly predictable, common knowledge
-- 0.0 = Entirely expected, standard response
+### Confidence (0.0 - 1.0) — How strong is your internal belief that the verdict is correct?
+Sarcasm and humor are inherently ambiguous. A single clear signal should anchor to ~0.6, not ~1.0.
+- **1.0 (VERY RARE)**: Multiple independent signals converge AND no contradicting evidence. Essentially "I would bet on this."
+- **0.8**: Signals are clearly consistent; residual ambiguity is minor.
+- **0.6**: One strong signal but non-trivial counter-signals exist; the call leans but is not certain.
+- **0.4**: Truly mixed evidence; the call is a judgment rather than a deduction.
+- **0.2**: Very uncertain; largely a guess.
+- **0.0**: Cannot determine or the response says "I don't know".
 
-Be honest and well-calibrated. Do NOT inflate scores. Most routine answers should score around relevance ~0.6, confidence ~0.6, surprise ~0.3."""
+### Surprise (0.0 - 1.0) — Does the verdict reverse the surface / literal reading?
+- **1.0**: Full reversal — the literal reading would predict one thing, the correct verdict says the opposite (classic sarcasm override).
+- **0.6**: Substantive twist — non-trivial reinterpretation required.
+- **0.3**: Default / most obvious reading, no reversal.
+- **0.0**: Literal restatement, no interpretive work done.
+
+### Final calibration check (MANDATORY)
+Before emitting the JSON, answer silently: "If I gave these scores to a hundred similar analyses, would they separate good ones from mediocre ones?" If your relevance is ≥0.9, you must be able to quote ≥2 specific cues in your response; if confidence is ≥0.9, list ≥2 mutually-reinforcing signals. Otherwise lower the score by at least 0.2. Typical well-calibrated scores for a solid-but-not-exceptional analysis: relevance ≈ 0.6, confidence ≈ 0.6, surprise ≈ 0.3."""
 
 
 def build_base_score_format(num_questions: int = 3) -> str:
