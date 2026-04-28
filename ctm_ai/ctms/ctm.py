@@ -289,6 +289,11 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
         # that existed in the original CTM and was missing from the winner-only
         # optimization. Winner's own follow-ups are already answered via
         # link_form caching, so we skip chunk = winner.
+
+        # Pass 1: materialize the (c_name, nbr, nbr_proc, combined_query) task
+        # list in the same order the original nested for-loops produced, so
+        # downstream fuse_history / detailed_log append order is unchanged.
+        tasks = []
         for chunk in chunks:
             c_name = chunk.processor_name
             if c_name == w_name:
@@ -313,27 +318,49 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
                 nbr_proc = proc_map.get(nbr)
                 if nbr_proc is None:
                     continue
+                tasks.append((c_name, nbr, nbr_proc, combined_query))
 
-                answer_chunk = nbr_proc.ask(
-                    query=combined_query, phase='fuse', **input_kwargs
+        if not tasks:
+            return
+
+        # Pass 2: dispatch all ask(phase='fuse') calls concurrently. Results
+        # are collected in submission order (via ordered futures.result(),
+        # NOT as_completed) so the original ordering is preserved.
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [
+                executor.submit(
+                    nbr_proc.ask,
+                    query=combined_query,
+                    phase='fuse',
+                    **input_kwargs,
                 )
-                if answer_chunk is None:
-                    continue
+                for (_c, _n, nbr_proc, combined_query) in tasks
+            ]
+            answer_chunks = [f.result() for f in futures]
 
-                proc_map[c_name].add_fuse_history(
-                    combined_query, answer_chunk.gist, nbr
+        # Pass 3: apply side effects serially in the original order so that
+        # fuse_history / detailed_log entries are identical to the sequential
+        # implementation.
+        for (c_name, nbr, _nbr_proc, combined_query), answer_chunk in zip(
+            tasks, answer_chunks
+        ):
+            if answer_chunk is None:
+                continue
+
+            proc_map[c_name].add_fuse_history(
+                combined_query, answer_chunk.gist, nbr
+            )
+
+            if self.detailed_log is not None:
+                current_iteration = self.detailed_log['current_iteration']
+                current_iteration['fuse_phase'].append(
+                    {
+                        'from_processor': c_name,
+                        'to_processor': nbr,
+                        'query': answer_chunk.executor_content or combined_query,
+                        'answer': answer_chunk.gist,
+                    }
                 )
-
-                if self.detailed_log is not None:
-                    current_iteration = self.detailed_log['current_iteration']
-                    current_iteration['fuse_phase'].append(
-                        {
-                            'from_processor': c_name,
-                            'to_processor': nbr,
-                            'query': answer_chunk.executor_content or combined_query,
-                            'answer': answer_chunk.gist,
-                        }
-                    )
 
     # ------------------------------------------------------------------
     # go_down: broadcast + link_form
