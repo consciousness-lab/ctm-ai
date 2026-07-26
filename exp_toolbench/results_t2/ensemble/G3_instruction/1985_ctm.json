@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a road trip with my family and I want to share our itinerary with friends. Can you generate short URLs for each destination using the bitly tool? Additionally, I need a list of available domains from the URL Link Shortener tool to choose the perfect domain for the trip.",
+  "query_id": 1985,
+  "final_answer": "It appears there is an issue with the Bitly tool requiring an access token. I cannot proceed with generating short URLs for the destinations. However, I have provided a list of available domains from the URL Link Shortener tool for your trip. You can choose the perfect domain from the list provided earlier.",
+  "weight_score": 0.0,
+  "parsed_answer": "It appears there is an issue with the Bitly tool requiring an access token. I cannot proceed with generating short URLs for the destinations. However, I have provided a list of available domains from the URL Link Shortener tool for your trip. You can choose the perfect domain from the list provided earlier.",
+  "metrics": {
+    "latency_seconds": 45.36374759674072,
+    "num_model_calls": 16,
+    "num_tool_calls": 10,
+    "total_tokens": 20550,
+    "num_processors": 3
+  }
+}

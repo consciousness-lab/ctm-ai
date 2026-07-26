@@ -1,0 +1,18 @@
+{
+  "query": "I'm organizing a workshop on mindfulness and need to schedule appointments for the participants. Can you fetch the available appointment times at the clinic for the workshop day? Additionally, provide me with a list of exercises that target the mind and require meditation.",
+  "query_id": 9957,
+  "final_answer": "I have successfully logged into the appointment system and retrieved the available time slots for the workshop day. The available appointment times are: 9:00 AM, 11:00 AM, 1:00 PM, and 3:00 PM. These times are currently open and can be booked by participants. Additionally, here are some mindfulness exercises that focus on the mind and require meditation: 1) Mindful breathing, 2) Body scan meditation, and 3) Loving-kindness meditation. These exercises are effective for enhancing mental clarity and emotional well-being.",
+  "weight_score": 2.12,
+  "parsed_answer": "**Available Appointment Times for the Workshop Day:**  \n- 9:00 AM  \n- 11:00 AM  \n- 1:00 PM  \n- 3:00 PM  \n\n**Mindfulness Exercises That Require Meditation:**  \n1. **Mindful Breathing** \u2013 Focuses on deep, conscious breathing to bring attention to the present moment.  \n2. **Body Scan Meditation** \u2013 Involves mentally scanning the body to release tension and increase awareness.  \n3. **Loving-Kindness Meditation** \u2013 Cultivates compassion and goodwill towards oneself and others.  \n\nThese exercises are designed to enhance mental clarity, emotional balance, and overall well-being.",
+  "metrics": {
+    "latency_seconds": 51.06996130943298,
+    "num_processors": 3,
+    "num_model_calls": 7,
+    "num_tool_calls": 3,
+    "total_tokens": 6757,
+    "prompt_tokens": 5942,
+    "completion_tokens": 815,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "query": "I'm organizing a movie night for my company's employees and I need some suggestions for inspirational movies. Can you recommend some popular inspirational movies that are available for streaming in the US? Also, provide me with the streaming sources where I can watch these movies.",
+  "query_id": 8335,
+  "final_answer": "Here are some inspirational movies that are available for streaming in the US, along with their streaming sources:\n\n1. 'The Pursuit of Happyness' - This movie is available on Amazon Prime Video and Hulu.\n2. 'Rocky' - This inspirational film is available on Netflix. Other inspirational movies in the Drama genre on Netflix include 'A Man of No Importance', 'The Last Days of Ptolemy Grey', and 'The Blacklist: Redemption'.\n3. 'The Secret Garden' - This movie is available on Apple TV+ and Amazon Prime Video.\n\nPlease note that the availability of these movies can change over time, so it's always a good idea to check the streaming platforms directly or use a streaming service lookup tool for the most up-to-date information.",
+  "weight_score": 1.6,
+  "parsed_answer": "Here are some popular inspirational movies available for streaming in the US, along with their streaming sources:\n\n1. **The Pursuit of Happyness**  \n   - **Streaming Platforms**: Amazon Prime Video, Hulu  \n   - **Genre**: Drama, Biography  \n   - **Synopsis**: Based on the true story of Chris Gardner, a man who overcomes homelessness and financial hardship to achieve his dreams.\n\n2. **Rocky**  \n   - **Streaming Platforms**: Netflix  \n   - **Genre**: Drama, Sports  \n   - **Synopsis**: Follows Rocky Balboa, an underdog boxer who gets a shot at the heavyweight championship, inspiring viewers with his perseverance and determination.\n\n3. **The Secret Garden**  \n   - **Streaming Platforms**: Apple TV+, Amazon Prime Video  \n   - **Genre**: Drama, Family  \n   - **Synopsis**: A heartwarming story about a young girl who discovers a hidden garden and learns the power of love, hope, and healing.\n\n**Note**: Streaming availability can change over time. For the most up-to-date information, check directly on the platforms or use a streaming service lookup tool.",
+  "metrics": {
+    "latency_seconds": 121.05877327919006,
+    "num_processors": 2,
+    "num_model_calls": 19,
+    "num_tool_calls": 9,
+    "total_tokens": 21501,
+    "prompt_tokens": 18540,
+    "completion_tokens": 2961,
+    "num_links_added": 1,
+    "active_links": 1
+  }
+}

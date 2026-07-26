@@ -1,0 +1,18 @@
+{
+  "query": "I want to watch a documentary about nature. Can you suggest a popular nature documentary available for streaming in the US? Also, provide the streaming sources for the documentary 'Planet Earth'.",
+  "query_id": 5865,
+  "final_answer": "I encountered an error when attempting to retrieve streaming availability information for nature documentaries. The API 'advanced_search' was not found in the tool 'streaming_availability'. As a result, I cannot provide specific streaming sources for the documentary 'Planet Earth'. However, 'Planet Earth' is a popular nature documentary series that can be found on various streaming platforms. For the most accurate and up-to-date information on where to watch 'Planet Earth', I recommend checking the official website of the streaming service you prefer or using a streaming service's search feature to look up the title. If you have a specific streaming service in mind, I can help you find more details about its availability.",
+  "weight_score": 1.06,
+  "parsed_answer": "Based on the analysis provided, here is a comprehensive and concise response to your query:\n\n**Popular Nature Documentary Suggestion:**  \n\"Planet Earth\" is a highly popular nature documentary series that offers an in-depth look at the natural world. It is widely regarded as one of the most visually stunning and educational nature series ever produced.\n\n**Streaming Availability:**  \nWhile I was unable to retrieve specific streaming availability information for \"Planet Earth\" due to an error with the API, the documentary is available on multiple streaming platforms. For the most accurate and up-to-date information on where to watch \"Planet Earth,\" I recommend:\n\n1. Checking the official websites of popular streaming services such as:\n   - **Netflix**\n   - **Amazon Prime Video**\n   - **HBO Max**\n   - **Disney+**\n   - **iTunes**\n   - **Google Play Movies**\n\n2. Using the search feature on your preferred streaming platform to look up the title \"Planet Earth.\"\n\nIf you have a specific streaming service in mind, I can help you find more details about its availability.",
+  "metrics": {
+    "latency_seconds": 43.3315155506134,
+    "num_processors": 1,
+    "num_model_calls": 7,
+    "num_tool_calls": 3,
+    "total_tokens": 6503,
+    "prompt_tokens": 5454,
+    "completion_tokens": 1049,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

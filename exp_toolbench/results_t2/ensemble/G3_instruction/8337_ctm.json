@@ -1,0 +1,14 @@
+{
+  "query": "I'm hosting a movie-themed party for my friends and I need some ideas for classic movies to watch. Can you recommend some popular classic movies that are available for streaming in the US? Also, provide me with the streaming sources where I can watch these movies.",
+  "query_id": 8337,
+  "final_answer": "",
+  "weight_score": 0.0,
+  "parsed_answer": "",
+  "metrics": {
+    "latency_seconds": 171.20483708381653,
+    "num_model_calls": 24,
+    "num_tool_calls": 24,
+    "total_tokens": 60019,
+    "num_processors": 6
+  }
+}

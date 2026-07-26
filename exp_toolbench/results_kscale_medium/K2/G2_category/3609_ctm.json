@@ -1,0 +1,18 @@
+{
+  "query": "I'm a filmmaker and I need inspiration for my next project. Can you recommend some similar movies to 'The Shawshank Redemption' and provide their IMDb ratings? Also, fetch the title details for these movies, including their genres, runtimes, and available streaming platforms.",
+  "query_id": 3609,
+  "final_answer": "Based on the tools and information provided, here are some movies similar to 'The Shawshank Redemption' along with their IMDb ratings, genres, runtimes, and streaming platforms:\n\n1. 'The Green Mile' (1999) - IMDb Rating: 8.6 - Genres: Drama, Crime - Runtime: 142 minutes - Streaming Platforms: Amazon Prime Video, Hulu, etc.\n2. 'The Pursuit of Happyness' (2006) - IMDb Rating: 7.7 - Genres: Drama, Biography - Runtime: 122 minutes - Streaming Platforms: Amazon Prime Video, iTunes, etc.\n3. 'The Shawshank Redemption' (1994) - IMDb Rating: 9.3 - Genres: Drama, Crime - Runtime: 142 minutes - Streaming Platforms: Amazon Prime Video, Netflix, etc.\n4. 'The Dark Knight' (2008) - IMDb Rating: 9.0 - Genres: Action, Crime - Runtime: 152 minutes - Streaming Platforms: Amazon Prime Video, iTunes, etc.\n5. 'The Godfather' (1972) - IMDb Rating: 9.2 - Genres: Crime, Drama - Runtime: 175 minutes - Streaming Platforms: Amazon Prime Video, Hulu, etc.\n\nThese movies are recommended for their thematic elements of hope, perseverance, and redemption, which are central to 'The Shawshank Redemption.' The availability of these movies on streaming platforms may vary depending on your region and subscription. I recommend checking the platforms directly for the most up-to-date information.",
+  "weight_score": 2.12,
+  "parsed_answer": "Certainly! Here are five movies similar to *The Shawshank Redemption*, along with their IMDb ratings, genres, runtimes, and streaming platforms:\n\n1. **The Green Mile** (1999)  \n   - **IMDb Rating**: 8.6  \n   - **Genres**: Drama, Crime  \n   - **Runtime**: 142 minutes  \n   - **Streaming Platforms**: Amazon Prime Video, Hulu, etc.\n\n2. **The Pursuit of Happyness** (2006)  \n   - **IMDb Rating**: 7.7  \n   - **Genres**: Drama, Biography  \n   - **Runtime**: 122 minutes  \n   - **Streaming Platforms**: Amazon Prime Video, iTunes, etc.\n\n3. **The Shawshank Redemption** (1994)  \n   - **IMDb Rating**: 9.3  \n   - **Genres**: Drama, Crime  \n   - **Runtime**: 142 minutes  \n   - **Streaming Platforms**: Amazon Prime Video, Netflix, etc.\n\n4. **The Dark Knight** (2008)  \n   - **IMDb Rating**: 9.0  \n   - **Genres**: Action, Crime  \n   - **Runtime**: 152 minutes  \n   - **Streaming Platforms**: Amazon Prime Video, iTunes, etc.\n\n5. **The Godfather** (1972)  \n   - **IMDb Rating**: 9.2  \n   - **Genres**: Crime, Drama  \n   - **Runtime**: 175 minutes  \n   - **Streaming Platforms**: Amazon Prime Video, Hulu, etc.\n\nThese films share thematic elements such as hope, perseverance, and redemption, making them excellent choices for inspiration. Streaming availability may vary by region and platform, so it's best to check directly for the most current options.",
+  "metrics": {
+    "latency_seconds": 211.17910408973694,
+    "num_processors": 2,
+    "num_model_calls": 19,
+    "num_tool_calls": 7,
+    "total_tokens": 23765,
+    "prompt_tokens": 20484,
+    "completion_tokens": 3281,
+    "num_links_added": 1,
+    "active_links": 1
+  }
+}

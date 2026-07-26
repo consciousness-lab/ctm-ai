@@ -1,0 +1,18 @@
+{
+  "query": "I want to explore different genres of movies and series available on streaming platforms. Can you provide me with the basic details and streaming availability of a movie or series with the keyword 'zombie' and released between the years 2000 and 2025? Also, fetch the details of the actors and crew associated with the title with Watchmode ID 3173903.",
+  "query_id": 8032,
+  "final_answer": "The movie '28 Days Later' is a zombie-themed film released in 2002, directed by Danny Boyle. It is available on Amazon Prime Video and other platforms such as iTunes and Google Play. The film has a runtime of approximately 126 minutes. The main actors include Cillian Murphy as Jim, the protagonist; Naomie Harris as Selena, a nurse; Brendan Gleeson as Frank, a former soldier; and Kelly Macdonald as Claire, a journalist. The movie is known for its intense portrayal of a zombie apocalypse and its unique narrative structure. However, the specific details about the Watchmode ID 3173903 could not be retrieved due to an error in the API call.",
+  "weight_score": 1.46,
+  "parsed_answer": "Based on the analysis provided:\n\n**Title:** *28 Days Later*  \n**Genre:** Horror, Thriller  \n**Release Year:** 2002  \n**Runtime:** 126 minutes  \n**Director:** Danny Boyle  \n**Streaming Availability:**  \n- Amazon Prime Video  \n- iTunes  \n- Google Play  \n\n**Main Cast:**  \n- Cillian Murphy as Jim  \n- Naomie Harris as Selena  \n- Brendan Gleeson as Frank  \n- Kelly Macdonald as Claire  \n\n**Overview:**  \n*28 Days Later* is a critically acclaimed zombie-themed film that presents a unique and intense portrayal of a zombie apocalypse. It is known for its fast-paced narrative, minimal dialogue, and the shocking transformation of the infected characters.\n\n**Note:** The specific details for the Watchmode ID 3173903 could not be retrieved due to an error in the API call. If you have additional information or need further assistance, please provide more context.",
+  "metrics": {
+    "latency_seconds": 159.08983993530273,
+    "num_processors": 5,
+    "num_model_calls": 55,
+    "num_tool_calls": 27,
+    "total_tokens": 54493,
+    "prompt_tokens": 48010,
+    "completion_tokens": 6483,
+    "num_links_added": 4,
+    "active_links": 4
+  }
+}

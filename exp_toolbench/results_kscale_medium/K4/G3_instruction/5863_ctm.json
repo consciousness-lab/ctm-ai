@@ -1,0 +1,18 @@
+{
+  "query": "I'm hosting a company movie night and we want to watch a sci-fi movie. Can you suggest a popular sci-fi movie available for streaming in the US? Also, provide the streaming sources for the movie 'Inception'.",
+  "query_id": 5863,
+  "final_answer": "The movie 'Inception' is available for streaming in the US on HBO Max and Amazon Prime Video. You can access it through the following links: HBO Max - https://www.hbomax.com/feature/urn:hbo:feature:ZPZ4OUBP2GJCYQXW, Amazon Prime Video - https://www.amazon.com/gp/video/detail/amzn1.dv.gti.6a6bde7c-a956-3e51-9832-2d9f01b1f3c8?ref_=imdbref_tt_wbr_aiv&tag=imdbtag_tt_wbr_aiv-20.",
+  "weight_score": 2.06,
+  "parsed_answer": "A popular sci-fi movie available for streaming in the US is *Inception*. It is a critically acclaimed film directed by Christopher Nolan, known for its complex narrative and visual effects.\n\n**Streaming Sources for 'Inception':**\n- **HBO Max**: [https://www.hbomax.com/feature/urn:hbo:feature:ZPZ4OUBP2GJCYQXW](https://www.hbomax.com/feature/urn:hbo:feature:ZPZ4OUBP2GJCYQXW)\n- **Amazon Prime Video**: [https://www.amazon.com/gp/video/detail/amzn1.dv.gti.6a6bde7c-a956-3e51-9832-2d9f01b1f3c8?ref_=imdbref_tt_wbr_aiv&tag=imdbtag_tt_wbr_aiv-20](https://www.amazon.com/gp/video/detail/amzn1.dv.gti.6a6bde7c-a956-3e51-9832-2d9f01b1f3c8?ref_=imdbref_tt_wbr_aiv&tag=imdbtag_tt_wbr_aiv-20)",
+  "metrics": {
+    "latency_seconds": 47.05952286720276,
+    "num_processors": 3,
+    "num_model_calls": 7,
+    "num_tool_calls": 3,
+    "total_tokens": 6525,
+    "prompt_tokens": 5508,
+    "completion_tokens": 1017,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

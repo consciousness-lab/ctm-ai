@@ -1,0 +1,14 @@
+{
+  "query": "I'm hosting a garden party and I want to ensure that the soil is healthy for my plants. Can you provide me with the latest soil data for my backyard? Please include the soil pollutants and limit the number of readings to 10. Additionally, I would like to scan the headers of the gardening website to check its status and configuration.",
+  "query_id": 12742,
+  "final_answer": "I am unable to retrieve the soil data for your backyard due to subscription or access restrictions. However, I can assist you with scanning the headers of the gardening website to check its status and configuration. Please provide the domain name of the website you would like to scan.",
+  "weight_score": 0.0,
+  "parsed_answer": "I am unable to retrieve the soil data for your backyard due to subscription or access restrictions. However, I can assist you with scanning the headers of the gardening website to check its status and configuration. Please provide the domain name of the website you would like to scan.",
+  "metrics": {
+    "latency_seconds": 18.112133502960205,
+    "num_model_calls": 5,
+    "num_tool_calls": 3,
+    "total_tokens": 6513,
+    "num_processors": 4
+  }
+}

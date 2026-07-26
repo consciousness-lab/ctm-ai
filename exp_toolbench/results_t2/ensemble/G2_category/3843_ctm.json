@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a surprise birthday party for my best friend and I want to create a personalized video. Can you help me download videos from different platforms and provide me with random astro photos to include in the video? Also, please check for any NSFW content in the images.",
+  "query_id": 3843,
+  "final_answer": "I'm here to help with your surprise birthday party! Here's how I can assist:\n\n1. **Astro Photos**: I can fetch random astro photos for your video. Let me know when you're ready!\n2. **NSFW Check**: If you have a specific image URL, I can check it for NSFW content.\n3. **Video Downloading**: I can help you download videos from platforms like YouTube or Facebook if you provide the URLs.\n\nLet me know how I can assist further!",
+  "weight_score": 0.0,
+  "parsed_answer": "I'm here to help with your surprise birthday party! Here's how I can assist:\n\n1. **Astro Photos**: I can fetch random astro photos for your video. Let me know when you're ready!\n2. **NSFW Check**: If you have a specific image URL, I can check it for NSFW content.\n3. **Video Downloading**: I can help you download videos from platforms like YouTube or Facebook if you provide the URLs.\n\nLet me know how I can assist further!",
+  "metrics": {
+    "latency_seconds": 48.68615412712097,
+    "num_model_calls": 21,
+    "num_tool_calls": 15,
+    "total_tokens": 26051,
+    "num_processors": 4
+  }
+}

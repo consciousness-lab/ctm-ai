@@ -1,0 +1,18 @@
+{
+  "query": "I'm organizing a movie night for my company's employees and I need some suggestions for inspirational movies. Can you recommend some popular inspirational movies that are available for streaming in the US? Also, provide me with the streaming sources where I can watch these movies.",
+  "query_id": 8335,
+  "final_answer": "Here are some popular inspirational movies available for streaming in the US:\n\n1. **The Pursuit of Happyness** - Available on Amazon Prime Video and Hulu.\n2. **The Shawshank Redemption** - Available on Netflix and Hulu.\n3. **Hidden Figures** - Available on Netflix and Hulu.\n\nFor the most accurate and up-to-date information, it is recommended to check the specific streaming platforms directly, as availability can change frequently based on regional and subscription-based policies.",
+  "weight_score": 1.92,
+  "parsed_answer": "Here are some popular inspirational movies available for streaming in the US, along with the platforms where they can be watched:\n\n1. **The Pursuit of Happyness**  \n   - **Streaming Platforms:** Amazon Prime Video, Hulu  \n   - **Synopsis:** Based on the true story of Chris Gardner, a man who overcomes homelessness and financial hardship to achieve his dreams.\n\n2. **The Shawshank Redemption**  \n   - **Streaming Platforms:** Netflix, Hulu  \n   - **Synopsis:** A story of hope, resilience, and friendship as an innocent man is wrongly imprisoned and finds solace in the company of a fellow inmate.\n\n3. **Hidden Figures**  \n   - **Streaming Platforms:** Netflix, Hulu  \n   - **Synopsis:** A powerful true story about the African-American female mathematicians who played a crucial role in NASA's space program during the 1960s.\n\n**Note:** Streaming availability can vary by region and subscription plan. For the most current information, it's best to check directly on the platforms listed.",
+  "metrics": {
+    "latency_seconds": 88.32025170326233,
+    "num_processors": 2,
+    "num_model_calls": 13,
+    "num_tool_calls": 6,
+    "total_tokens": 12945,
+    "prompt_tokens": 11069,
+    "completion_tokens": 1876,
+    "num_links_added": 1,
+    "active_links": 1
+  }
+}

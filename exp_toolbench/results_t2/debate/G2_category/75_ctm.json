@@ -1,0 +1,14 @@
+{
+  "query": "I'm organizing a charity event and need to transport goods to the venue. Can you provide me with a list of companies that offer shipping services? It would be great if you could also provide me with a random project description from the SQUAKE platform.",
+  "query_id": 75,
+  "final_answer": "Here is a list of shipping companies you can use for transporting goods to your charity event:\n\n- Aras Kargo\n- Yurti\u00e7i Kargo\n- S\u00fcrat Kargo\n- PTT Kargo\n- MNG Kargo\n- Hepsijet\n- TrendyolExpress\n- UPS Kargo\n- ByExpress Kargo\n- Kolay Gelsin\n- Horoz Lojistik\n- CanadaPost\n- DHL Kargo\n- FedEx\n- TNT Kargo\n- USPS\n- Yanwen\n- AliExpress\n- Ceva Lojistik\n- \u0130nter Global Kargo\n- Kargo\u0130st\n- Jetizz\n\nUnfortunately, I couldn't retrieve a random project description from the SQUAKE platform. The response was: 'Welcome to SQUAE's API documentation!' Please check the platform directly for more information.",
+  "weight_score": 0.0,
+  "parsed_answer": "Here is a list of shipping companies you can use for transporting goods to your charity event:\n\n- Aras Kargo\n- Yurti\u00e7i Kargo\n- S\u00fcrat Kargo\n- PTT Kargo\n- MNG Kargo\n- Hepsijet\n- TrendyolExpress\n- UPS Kargo\n- ByExpress Kargo\n- Kolay Gelsin\n- Horoz Lojistik\n- CanadaPost\n- DHL Kargo\n- FedEx\n- TNT Kargo\n- USPS\n- Yanwen\n- AliExpress\n- Ceva Lojistik\n- \u0130nter Global Kargo\n- Kargo\u0130st\n- Jetizz\n\nUnfortunately, I couldn't retrieve a random project description from the SQUAKE platform. The response was: 'Welcome to SQUAE's API documentation!' Please check the platform directly for more information.",
+  "metrics": {
+    "latency_seconds": 78.41919803619385,
+    "num_model_calls": 23,
+    "num_tool_calls": 15,
+    "total_tokens": 30311,
+    "num_processors": 5
+  }
+}

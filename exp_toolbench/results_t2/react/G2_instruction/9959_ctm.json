@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a fitness retreat and need a variety of exercises for the participants. Can you provide me with a list of exercises that target the back, chest, and shoulders? Additionally, fetch the horoscope for a specific sign and date to create personalized workout plans.",
+  "query_id": 9959,
+  "final_answer": "",
+  "weight_score": 0.0,
+  "parsed_answer": "",
+  "metrics": {
+    "latency_seconds": 19.22330665588379,
+    "num_model_calls": 8,
+    "num_tool_calls": 6,
+    "total_tokens": 12584,
+    "num_processors": 5
+  }
+}

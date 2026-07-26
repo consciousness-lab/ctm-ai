@@ -1,0 +1,14 @@
+{
+  "query": "I'm looking for some Bollywood movie recommendations. Fetch a list of comedy movies released in 2013. Additionally, provide me with the details of the top-ranked movie from IMDb's top 100 movies list.",
+  "query_id": 3640,
+  "final_answer": "Bollywood Comedy Movies from 2013:\n1. Happy Phirr Bhag Jayegi\n2. Bajra vs Burger\n3. Chupke Chupke Hum\n4. Dillagi Dil\n5. Dhamaal\n6. Dillagi Dil\n7. Phir Se Phir Bhag Jayegi\n8. Rocky Aur Rani Kii Prem Kahani\n9. Saat Aankh Mare\n10. Zamana Maine Lagta Nahi\n\nTop-Ranked Movie from IMDb's Top 100 Movies List:\n1. The Shawshank Redemption (1994) - Directed by Frank Darabont, Rating: 9.2",
+  "weight_score": 0.0,
+  "parsed_answer": "Bollywood Comedy Movies from 2013:\n1. Happy Phirr Bhag Jayegi\n2. Bajra vs Burger\n3. Chupke Chupke Hum\n4. Dillagi Dil\n5. Dhamaal\n6. Dillagi Dil\n7. Phir Se Phir Bhag Jayegi\n8. Rocky Aur Rani Kii Prem Kahani\n9. Saat Aankh Mare\n10. Zamana Maine Lagta Nahi\n\nTop-Ranked Movie from IMDb's Top 100 Movies List:\n1. The Shawshank Redemption (1994) - Directed by Frank Darabont, Rating: 9.2",
+  "metrics": {
+    "latency_seconds": 102.29787111282349,
+    "num_model_calls": 6,
+    "num_tool_calls": 5,
+    "total_tokens": 13114,
+    "num_processors": 7
+  }
+}

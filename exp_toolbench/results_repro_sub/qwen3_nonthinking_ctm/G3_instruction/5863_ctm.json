@@ -1,0 +1,18 @@
+{
+  "query": "I'm hosting a company movie night and we want to watch a sci-fi movie. Can you suggest a popular sci-fi movie available for streaming in the US? Also, provide the streaming sources for the movie 'Inception'.",
+  "query_id": 5863,
+  "final_answer": "The movie 'Inception' is a popular sci-fi film that is available for streaming in the US on platforms such as Amazon Prime Video, Netflix, and Hulu. It was released on July 16, 2010, and directed by Christopher Nolan, featuring a stellar cast including Leonardo DiCaprio, Joseph Gordon-Levitt, and Ellen Page. The film explores themes such as dreams, reality, time, and the subconscious mind. It received critical acclaim and is widely regarded as one of the best films of the 2010s, with a 97% approval rating on Rotten Tomatoes and an IMDb rating of 8.8. The movie has a runtime of 148 minutes and was praised for its originality, visual effects, and layered storytelling. It grossed over $828 million worldwide and won several awards, including four Academy Awards.",
+  "weight_score": 2.02,
+  "parsed_answer": "Based on the analysis provided, a popular sci-fi movie available for streaming in the US is **'Inception'**. It is a critically acclaimed film directed by Christopher Nolan, featuring a stellar cast including Leonardo DiCaprio, Joseph Gordon-Levitt, and Ellen Page. The movie explores themes such as dreams, reality, time, and the subconscious mind, and is widely regarded as one of the best films of the 2010s.\n\n**Streaming Sources for 'Inception':**\n- **Amazon Prime Video**\n- **Netflix**\n- **Hulu**\n\nThe film has a runtime of 148 minutes, a 97% approval rating on Rotten Tomatoes, and an IMDb rating of 8.8. It grossed over $828 million worldwide and won four Academy Awards.",
+  "metrics": {
+    "latency_seconds": 116.08124279975891,
+    "num_processors": 6,
+    "num_model_calls": 45,
+    "num_tool_calls": 18,
+    "total_tokens": 39694,
+    "prompt_tokens": 35033,
+    "completion_tokens": 4661,
+    "num_links_added": 5,
+    "active_links": 5
+  }
+}

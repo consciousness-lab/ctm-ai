@@ -1,0 +1,14 @@
+{
+  "query": "My company is organizing a conference in Argentina and we need to ship some packages. Can you give me a quote for shipping a package from Buenos Aires to Cordoba? Also, provide me with the contact details of the transitaires available in Argentina.",
+  "query_id": 61,
+  "final_answer": "Here is the shipping quote for a package from Buenos Aires to Cordoba in Argentina:\n\n- Classic shipping: Door delivery - $953.42, Office delivery - $864.24\n- Express shipping: Door delivery - $1310.95, Office delivery - $1250.62\n\nThe contact details of the transitaires available in Argentina are as follows:\n\n1. Christian DELHOMME - christian.delhomme@afdc.nc\n2. Remi TESSIER - remi.tessier@afdc.nc\n3. Julie GUENN\u00c9TEAU - julie.guenneteau@afdc.nc\n4. Axel LUCET - axel.lucet@afdc.nc\n5. Charline MARCHAND - charline.marchand@afdc.nc\n6. St\u00e9phane LACOUR - stephane.lacour@afdc.nc\n7. Zaki MECHOUA - mechoua.zaki@afdc.nc\n8. Arnaud \u00c9BRAY - arnaud.dbray@afdc.nc\n9. Coline DEBILL - coline.debill@afdc.nc\n10. Guillaume FLEURANCE - guillaume.fleurence@afdc.nc\n11. Corentin Charles GUICHARD - corentin-charles.guichard@afdc.nc\n12. Patrick MARCHAND - patrick.marchand@afdc.nc\n\nPlease note that these details are for transitaires in New Caledonia, not Argentina. For Argentina, you may need to contact the respective transport companies directly for more information.",
+  "weight_score": 0.0,
+  "parsed_answer": "Here is the shipping quote for a package from Buenos Aires to Cordoba in Argentina:\n\n- Classic shipping: Door delivery - $953.42, Office delivery - $864.24\n- Express shipping: Door delivery - $1310.95, Office delivery - $1250.62\n\nThe contact details of the transitaires available in Argentina are as follows:\n\n1. Christian DELHOMME - christian.delhomme@afdc.nc\n2. Remi TESSIER - remi.tessier@afdc.nc\n3. Julie GUENN\u00c9TEAU - julie.guenneteau@afdc.nc\n4. Axel LUCET - axel.lucet@afdc.nc\n5. Charline MARCHAND - charline.marchand@afdc.nc\n6. St\u00e9phane LACOUR - stephane.lacour@afdc.nc\n7. Zaki MECHOUA - mechoua.zaki@afdc.nc\n8. Arnaud \u00c9BRAY - arnaud.dbray@afdc.nc\n9. Coline DEBILL - coline.debill@afdc.nc\n10. Guillaume FLEURANCE - guillaume.fleurence@afdc.nc\n11. Corentin Charles GUICHARD - corentin-charles.guichard@afdc.nc\n12. Patrick MARCHAND - patrick.marchand@afdc.nc\n\nPlease note that these details are for transitaires in New Caledonia, not Argentina. For Argentina, you may need to contact the respective transport companies directly for more information.",
+  "metrics": {
+    "latency_seconds": 83.7878086566925,
+    "num_model_calls": 3,
+    "num_tool_calls": 2,
+    "total_tokens": 6093,
+    "num_processors": 9
+  }
+}

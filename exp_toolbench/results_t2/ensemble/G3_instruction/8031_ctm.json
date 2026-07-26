@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a movie night with my friends this weekend. Can you recommend some new titles that have been added to streaming platforms recently? Also, provide me with the basic details and streaming availability of the movie with IMDb ID tt9904802.",
+  "query_id": 8031,
+  "final_answer": "Here are some new titles added to streaming platforms recently: 1463951, 1463370, 1463385, 1463390, 1463395, 1463400, 1463405, 1463410, 1463415, and 1463420. For the movie with IMDb ID tt9904802, titled 'The Last Days of Ptolemy Grey', it is a comedy released in 2022. However, the streaming availability information is not available at the moment.",
+  "weight_score": 0.0,
+  "parsed_answer": "Here are some new titles added to streaming platforms recently: 1463951, 1463370, 1463385, 1463390, 1463395, 1463400, 1463405, 1463410, 1463415, and 1463420. For the movie with IMDb ID tt9904802, titled 'The Last Days of Ptolemy Grey', it is a comedy released in 2022. However, the streaming availability information is not available at the moment.",
+  "metrics": {
+    "latency_seconds": 96.10360026359558,
+    "num_model_calls": 19,
+    "num_tool_calls": 8,
+    "total_tokens": 49281,
+    "num_processors": 6
+  }
+}

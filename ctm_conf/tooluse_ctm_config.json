@@ -1,5 +1,7 @@
 {
     "ctm_name": "tooluse_ctm",
+    "model": "gemini/gemini-2.5-flash-lite",
+    "parse_model": "gemini/gemini-2.5-flash-lite",
     "max_iter_num": 3,
     "output_threshold": 1.8,
     "num_additional_questions": 3,

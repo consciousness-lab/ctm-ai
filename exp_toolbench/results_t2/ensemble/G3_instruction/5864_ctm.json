@@ -1,0 +1,14 @@
+{
+  "query": "I want to watch a classic movie with my family. Can you suggest a popular classic movie available for streaming in the US? Also, provide the streaming sources for the movie 'Casablanca'.",
+  "query_id": 5864,
+  "final_answer": "Casablanca is a classic movie that is often available on streaming platforms such as Amazon Prime Video, Hulu, and YouTube. For the most accurate and up-to-date information on where to stream it, you may want to check directly on these platforms or use a streaming service's search feature. Enjoy watching!",
+  "weight_score": 0.0,
+  "parsed_answer": "Casablanca is a classic movie that is often available on streaming platforms such as Amazon Prime Video, Hulu, and YouTube. For the most accurate and up-to-date information on where to stream it, you may want to check directly on these platforms or use a streaming service's search feature. Enjoy watching!",
+  "metrics": {
+    "latency_seconds": 33.91746687889099,
+    "num_model_calls": 23,
+    "num_tool_calls": 18,
+    "total_tokens": 47076,
+    "num_processors": 6
+  }
+}

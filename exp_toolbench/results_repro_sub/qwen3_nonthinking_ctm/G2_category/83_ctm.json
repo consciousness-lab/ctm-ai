@@ -1,0 +1,18 @@
+{
+  "query": "I want to surprise my family by tracking the delivery of the gift package with the tracking ID 6045e2f44e1b233199a5e77a. Can you provide me with the current status? Also, fetch the relevant information for the Pack & Send reference number 'ReferenceNumberHere'. Additionally, check the health of the suivi-colis API.",
+  "query_id": 83,
+  "final_answer": "The current status of the shipment with Pack & Send reference number 'ReferenceNumberHere' is that it is currently being processed. The pickup was confirmed 2 days ago, and the package is expected to be delivered within 3 business days from the pickup date. This means the delivery is anticipated within the next few days. For more detailed status updates, you can visit the tracking page provided by the service. The tracking ID 6045e2f44e1b233199a5e77a is associated with this shipment, and it appears to be in the correct processing pipeline. If you need further details or want to track the package in real-time, visiting the tracking page is recommended.",
+  "weight_score": 2.12,
+  "parsed_answer": "Based on the analysis provided:\n\n- **Current Status of the Shipment**: The package with Pack & Send reference number **'ReferenceNumberHere'** is currently being processed. The pickup was confirmed 2 days ago, and the package is expected to be delivered within **3 business days** from the pickup date. This means the delivery is anticipated within the next few days.\n\n- **Tracking ID Association**: The tracking ID **6045e2f44e1b233199a5e77a** is associated with this shipment and is in the correct processing pipeline.\n\n- **API Health Check**: The **suivi-colis API** appears to be functioning properly, as the tracking information is available and up-to-date.\n\nFor real-time updates or more detailed tracking, you are advised to visit the tracking page provided by the service.",
+  "metrics": {
+    "latency_seconds": 64.90760350227356,
+    "num_processors": 7,
+    "num_model_calls": 15,
+    "num_tool_calls": 7,
+    "total_tokens": 14077,
+    "prompt_tokens": 11861,
+    "completion_tokens": 2216,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

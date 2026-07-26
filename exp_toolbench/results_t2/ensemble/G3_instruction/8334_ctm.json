@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a weekend getaway with my family and we want to watch some movies during our trip. Can you recommend some popular movies that are available for streaming in Australia? Also, provide us with the streaming sources where we can watch these movies.",
+  "query_id": 8334,
+  "final_answer": "It seems there is an issue with retrieving the streaming availability information. Please try again later or check the available streaming services directly for the latest updates.",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there is an issue with retrieving the streaming availability information. Please try again later or check the available streaming services directly for the latest updates.",
+  "metrics": {
+    "latency_seconds": 101.52874183654785,
+    "num_model_calls": 23,
+    "num_tool_calls": 22,
+    "total_tokens": 54936,
+    "num_processors": 6
+  }
+}

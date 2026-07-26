@@ -1,0 +1,14 @@
+{
+  "query": "I'm organizing a movie night for my company's employees and I need some suggestions for inspirational movies. Can you recommend some popular inspirational movies that are available for streaming in the US? Also, provide me with the streaming sources where I can watch these movies.",
+  "query_id": 8335,
+  "final_answer": "I'm unable to retrieve the list of genres and languages for the streaming availability tool due to an API error. However, here are some popular inspirational movies that are generally available on streaming platforms in the US: 1. 'The Pursuit of Happyness' (2006) 2. 'Rocky' (1976) 3. 'The Secret Garden' (1993) 4. 'The Theory of Everything' (2014) 5. 'Hidden Figures' (2016) You can check their availability on platforms like Netflix, Amazon Prime Video, Hulu, and Disney+.",
+  "weight_score": 0.0,
+  "parsed_answer": "I'm unable to retrieve the list of genres and languages for the streaming availability tool due to an API error. However, here are some popular inspirational movies that are generally available on streaming platforms in the US: 1. 'The Pursuit of Happyness' (2006) 2. 'Rocky' (1976) 3. 'The Secret Garden' (1993) 4. 'The Theory of Everything' (2014) 5. 'Hidden Figures' (2016) You can check their availability on platforms like Netflix, Amazon Prime Video, Hulu, and Disney+.",
+  "metrics": {
+    "latency_seconds": 25.11752986907959,
+    "num_model_calls": 5,
+    "num_tool_calls": 3,
+    "total_tokens": 11388,
+    "num_processors": 6
+  }
+}

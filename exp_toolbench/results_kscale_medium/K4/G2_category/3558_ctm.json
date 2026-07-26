@@ -1,0 +1,18 @@
+{
+  "query": "I want to watch a specific movie, 'The Shawshank Redemption'. Can you fetch the details of this movie, including its director, cast, and rating? Also, provide additional details like plot summaries, quotes, and reviews for this movie.",
+  "query_id": 3558,
+  "final_answer": "The movie 'The Shawshank Redemption' is a drama released in 1994 and has a runtime of 137 minutes. It is directed by Frank Darabont and stars Tim Robbins and Morgan Freeman. The film is highly acclaimed, with an IMDb rating of 9.3. The synopsis of the movie is: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.' The film is available for streaming in the United States on Amazon Prime and Netflix, and in India on Hotstar. The movie is in English and is available with the image URL provided. It is a classic film that has been praised for its storytelling and performances.",
+  "weight_score": 2.12,
+  "parsed_answer": "**Movie Details: The Shawshank Redemption**\n\n**Title:** The Shawshank Redemption  \n**Release Year:** 1994  \n**Runtime:** 137 minutes  \n**Genre:** Drama  \n**Language:** English  \n**Director:** Frank Darabont  \n**Cast:**  \n- Tim Robbins as Andy Dufresne  \n- Morgan Freeman as Ellis \"Red\" Redding  \n- Bob Gunton as Warden Norton  \n- William Sadler as Brooks Hatlen  \n- James Whitmore as Captain Hadley  \n\n**IMDb Rating:** 9.3 (out of 10)  \n\n**Plot Summary:**  \nTwo imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency. The story follows Andy Dufresne, a banker wrongfully convicted of murdering his wife and her lover, as he navigates the harsh realities of prison life. His friendship with Ellis \"Red\" Redding becomes a source of hope and resilience, leading to a journey of perseverance, hope, and eventual freedom.\n\n**Quotes:**  \n- \"Hope is a good thing, maybe the best of things, and no good thing ever dies.\"  \n- \"Get busy living or get busy dying.\"  \n- \"These walls are closing in.\"  \n\n**Reviews:**  \nThe film is widely praised for its powerful storytelling, emotional depth, and outstanding performances by Tim Robbins and Morgan Freeman. It is often regarded as one of the greatest movies of all time, celebrated for its themes of hope, friendship, and redemption. Critics and audiences alike have lauded its direction, screenplay, and the way it resonates with viewers on a deeply personal level.\n\n**Streaming Availability:**  \n- **United States:** Amazon Prime, Netflix  \n- **India:** Hotstar  \n\n**Image URL:** [Provided in the analysis]  \n\n**Additional Notes:**  \nThe Shawshank Redemption is a classic film that has stood the test of time, continuing to captivate audiences with its timeless message and compelling narrative. It remains a cultural touchstone and a must-watch for film enthusiasts.",
+  "metrics": {
+    "latency_seconds": 53.864574670791626,
+    "num_processors": 2,
+    "num_model_calls": 5,
+    "num_tool_calls": 2,
+    "total_tokens": 4538,
+    "prompt_tokens": 3459,
+    "completion_tokens": 1079,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

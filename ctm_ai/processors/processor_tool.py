@@ -154,7 +154,9 @@ class ToolProcessor(BaseProcessor):
             'tools': tools,
             'tool_choice': 'auto',
         }
-        return completion(**call_kwargs)
+        response = completion(**call_kwargs)
+        self._record_usage(response)
+        return response
 
     def _tool_decision_and_execute(
         self,

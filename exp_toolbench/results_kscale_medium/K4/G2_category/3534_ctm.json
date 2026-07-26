@@ -1,0 +1,18 @@
+{
+  "query": "I'm organizing a film-themed event and I want to showcase quotes from a specific actor. Can you fetch me the quotes from the actor 'Al Pacino'? Also, provide me with some interesting facts about the different types of titles in the MoviesDatabase API.",
+  "query_id": 3534,
+  "final_answer": "Here is a quote from Al Pacino: 'Keep your friends close, but your enemies closer.' This quote is from the character Michael Corleone in the movie 'The Godfather Part III,' released in 1990. Al Pacino is known for his iconic roles in films such as 'The Godfather,' 'Scarface,' and 'Dog Day Afternoon.' The quote is one of the most famous lines from the 'Godfather' series and has become a widely recognized phrase in popular culture. Regarding the MoviesDatabase API, it typically includes various types of titles such as movies, TV shows, and series. Each title is categorized and may have additional details like genres, release years, and ratings. The API also allows for searching by actor, character, or specific quotes, which can be very useful for events like yours. If you need more quotes or additional information about the API's functionalities, feel free to ask.",
+  "weight_score": 2.12,
+  "parsed_answer": "**Quotes from Al Pacino:**\n\nOne of the most famous quotes from Al Pacino is:  \n**\"Keep your friends close, but your enemies closer.\"**  \nThis line is delivered by the character Michael Corleone in *The Godfather Part III* (1990), and it has become a widely recognized phrase in popular culture.\n\nOther notable quotes from Al Pacino include:  \n- *\"I'm gonna make him an offer he can't refuse.\"* \u2013 from *The Godfather* (1972)  \n- *\"You're gonna need a bigger boat.\"* \u2013 from *Jaws* (1975)  \n- *\"I'm the king of the world!\"* \u2013 from *Titanic* (1997)  \n\n**Interesting Facts About the MoviesDatabase API Titles:**\n\nThe MoviesDatabase API categorizes titles into several types, including:\n\n1. **Movies**: Full-length films, such as *The Godfather*, *Scarface*, and *Dog Day Afternoon*.  \n2. **TV Shows**: Television series, including both scripted and unscripted content.  \n3. **Series**: Often used interchangeably with TV shows, but may refer to specific types of serialized content.  \n4. **Episodes**: Individual episodes of a TV series, which can be searched and retrieved with details like air dates and episode numbers.  \n5. **People**: Includes actors, directors, and other industry professionals, allowing for searches by name or role.  \n6. **Genres**: Titles are often tagged with genres (e.g., drama, action, comedy) for better categorization and searchability.  \n7. **Ratings**: Titles may include audience and critic ratings, which can be useful for event planning or audience engagement.  \n8. **Release Dates**: Information on when a title was released, which can be helpful for historical or chronological event themes.  \n\nThe API also allows for advanced searches by actor, character, or specific quotes, making it a powerful tool for curating content for your film-themed event. If you need more quotes or further details about the API, feel free to ask!",
+  "metrics": {
+    "latency_seconds": 63.043248891830444,
+    "num_processors": 4,
+    "num_model_calls": 9,
+    "num_tool_calls": 4,
+    "total_tokens": 9018,
+    "prompt_tokens": 7397,
+    "completion_tokens": 1621,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a surprise anniversary party for my parents and I need some ideas for decorations. Generate a QR code with a random sentence that can be used as a party theme and provide me with a random word that represents love.",
+  "query_id": 13795,
+  "final_answer": "Here is your QR code with a random sentence as the party theme: [QR Code URL](http://codzz.com/qrcodes/MTJfMDJfMjRfMThfMzRfMjA=.jpg). The random word representing love is: nymphlike.",
+  "weight_score": 0.0,
+  "parsed_answer": "Here is your QR code with a random sentence as the party theme: [QR Code URL](http://codzz.com/qrcodes/MTJfMDJfMjRfMThfMzRfMjA=.jpg). The random word representing love is: nymphlike.",
+  "metrics": {
+    "latency_seconds": 37.88638472557068,
+    "num_model_calls": 13,
+    "num_tool_calls": 9,
+    "total_tokens": 17128,
+    "num_processors": 4
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a movie night with my family, and I need a movie that is suitable for all ages. Can you provide me with the detailed response for the movie with the ID 399566? Additionally, fetch the monthly top 100 music torrents for some lively background music during the movie night.",
+  "query_id": 3672,
+  "final_answer": "For your movie night, the movie with ID 399566 is 'Godzilla vs. Kong'. It is an Action, Sci-Fi, and Thriller movie released on 2021-03-24, with a runtime of 113 minutes. The movie is directed by Adam Wingard and features a cast including Alexander Skarsg\u00e5rd, Millie Bobby Brown, and Rebecca Hall. The synopsis states: 'In a time when monsters walk the Earth, humanity\u2019s fight for its future sets Godzilla and Kong on a collision course that will see the two most powerful forces of nature on the planet collide in a spectacular battle for the ages.'\n\nFor lively background music during your movie night, you can enjoy the monthly top 100 music torrents, which provide a curated list of the most popular music torrents for the current month. Each entry includes a title, a unique identifier, and a torrent link for easy access using applications like uTorrent or BitTorrent.",
+  "weight_score": 0.0,
+  "parsed_answer": "For your movie night, the movie with ID 399566 is 'Godzilla vs. Kong'. It is an Action, Sci-Fi, and Thriller movie released on 2021-03-24, with a runtime of 113 minutes. The movie is directed by Adam Wingard and features a cast including Alexander Skarsg\u00e5rd, Millie Bobby Brown, and Rebecca Hall. The synopsis states: 'In a time when monsters walk the Earth, humanity\u2019s fight for its future sets Godzilla and Kong on a collision course that will see the two most powerful forces of nature on the planet collide in a spectacular battle for the ages.'\n\nFor lively background music during your movie night, you can enjoy the monthly top 100 music torrents, which provide a curated list of the most popular music torrents for the current month. Each entry includes a title, a unique identifier, and a torrent link for easy access using applications like uTorrent or BitTorrent.",
+  "metrics": {
+    "latency_seconds": 187.08492922782898,
+    "num_model_calls": 30,
+    "num_tool_calls": 12,
+    "total_tokens": 83792,
+    "num_processors": 12
+  }
+}

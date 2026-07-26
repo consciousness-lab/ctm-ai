@@ -1,0 +1,14 @@
+{
+  "query": "I want to surprise my family by tracking the delivery of the gift package with the tracking ID 6045e2f44e1b233199a5e77a. Can you provide me with the current status? Also, fetch the relevant information for the Pack & Send reference number 'ReferenceNumberHere'. Additionally, check the health of the suivi-colis API.",
+  "query_id": 83,
+  "final_answer": "The current status of the delivery with tracking ID 6045e2f44e1b233199a5e77a is as follows: \n\n1. **Jan 25, 2023 08:12AM**: Parcel Collected, Your parcel has been collected from the New York, NY branch.\n2. **Jan 24, 2023 04:30PM**: Parcel Arrives, Your parcel has arrived at the New York, NY branch.\n3. **Jan 24, 2023 02:15PM**: Out for Delivery, Your parcel is out for delivery from the New York, NY branch.\n\nFor the Pack & Send reference number 'ReferenceNumberHere', the shipment is currently being processed. Pickup was confirmed 2 days ago, and the package is expected to be delivered within 3 business days from the pickup date. For more detailed status updates, please visit our tracking page.\n\nThe suivi-colis API is healthy and operational.",
+  "weight_score": 0.0,
+  "parsed_answer": "The current status of the delivery with tracking ID 6045e2f44e1b233199a5e77a is as follows: \n\n1. **Jan 25, 2023 08:12AM**: Parcel Collected, Your parcel has been collected from the New York, NY branch.\n2. **Jan 24, 2023 04:30PM**: Parcel Arrives, Your parcel has arrived at the New York, NY branch.\n3. **Jan 24, 2023 02:15PM**: Out for Delivery, Your parcel is out for delivery from the New York, NY branch.\n\nFor the Pack & Send reference number 'ReferenceNumberHere', the shipment is currently being processed. Pickup was confirmed 2 days ago, and the package is expected to be delivered within 3 business days from the pickup date. For more detailed status updates, please visit our tracking page.\n\nThe suivi-colis API is healthy and operational.",
+  "metrics": {
+    "latency_seconds": 65.29594087600708,
+    "num_model_calls": 4,
+    "num_tool_calls": 3,
+    "total_tokens": 6593,
+    "num_processors": 7
+  }
+}

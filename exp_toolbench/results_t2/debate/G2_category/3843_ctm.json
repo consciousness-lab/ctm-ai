@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a surprise birthday party for my best friend and I want to create a personalized video. Can you help me download videos from different platforms and provide me with random astro photos to include in the video? Also, please check for any NSFW content in the images.",
+  "query_id": 3843,
+  "final_answer": "I'm sorry, but there are some issues with the tools related to astro photos and NSFW content detection. However, I can help you download videos from different platforms using the video_downloader tool. If you provide the specific URLs of the videos you want to download, I'll assist you with that. For the astro photos and NSFW checks, I recommend checking the available functions again or reaching out to the respective service providers for further assistance.",
+  "weight_score": 0.0,
+  "parsed_answer": "I'm sorry, but there are some issues with the tools related to astro photos and NSFW content detection. However, I can help you download videos from different platforms using the video_downloader tool. If you provide the specific URLs of the videos you want to download, I'll assist you with that. For the astro photos and NSFW checks, I recommend checking the available functions again or reaching out to the respective service providers for further assistance.",
+  "metrics": {
+    "latency_seconds": 62.05923891067505,
+    "num_model_calls": 34,
+    "num_tool_calls": 24,
+    "total_tokens": 45145,
+    "num_processors": 4
+  }
+}

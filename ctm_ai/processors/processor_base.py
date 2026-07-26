@@ -179,6 +179,25 @@ class BaseProcessor(object):
 
         return content
 
+    def _record_usage(self, response: Any) -> None:
+        """Accumulate token + call counts from a completion response (S1 metrics).
+
+        Shared by both stage-2 synthesis (``ask_executor``) and stage-1 tool
+        decision (``ToolProcessor._ask_with_tools``) so every LLM call a
+        processor makes is counted.
+        """
+        if hasattr(response, 'usage') and response.usage:
+            self._usage_stats['prompt_tokens'] += (
+                getattr(response.usage, 'prompt_tokens', 0) or 0
+            )
+            self._usage_stats['completion_tokens'] += (
+                getattr(response.usage, 'completion_tokens', 0) or 0
+            )
+            self._usage_stats['total_tokens'] += (
+                getattr(response.usage, 'total_tokens', 0) or 0
+            )
+        self._usage_stats['api_calls'] += 1
+
     @message_exponential_backoff()
     def ask_executor(
         self,
@@ -195,11 +214,7 @@ class BaseProcessor(object):
             **kwargs,
         }
         response = completion(**call_kwargs)
-        if hasattr(response, 'usage') and response.usage:
-            self._usage_stats['prompt_tokens'] += getattr(response.usage, 'prompt_tokens', 0) or 0
-            self._usage_stats['completion_tokens'] += getattr(response.usage, 'completion_tokens', 0) or 0
-            self._usage_stats['total_tokens'] += getattr(response.usage, 'total_tokens', 0) or 0
-        self._usage_stats['api_calls'] += 1
+        self._record_usage(response)
         contents = [
             response.choices[i].message.content for i in range(len(response.choices))
         ]

@@ -99,6 +99,15 @@ if __name__ == '__main__':
         default=None,
         help="CTM config name to load from ctm_conf/{ctm_name}_config.json (e.g. 'tooluse_ctm').",
     )
+    parser.add_argument(
+        '--k_processors',
+        type=int,
+        default=None,
+        help='Fix the number of tool processors K per query (processor-count '
+        'scaling). Each query is capped/padded to exactly K tools = its relevant '
+        'tools + random distractor tools from the pool (seeded, reproducible). '
+        'Default None = use all available tools.',
+    )
 
     args = parser.parse_args()
 

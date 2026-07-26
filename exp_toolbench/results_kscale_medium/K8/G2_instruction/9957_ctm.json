@@ -1,0 +1,18 @@
+{
+  "query": "I'm organizing a workshop on mindfulness and need to schedule appointments for the participants. Can you fetch the available appointment times at the clinic for the workshop day? Additionally, provide me with a list of exercises that target the mind and require meditation.",
+  "query_id": 9957,
+  "final_answer": "I have successfully logged into the appointment system and retrieved the available appointment times for the workshop day. The available times are: 9:00 AM, 11:00 AM, 1:00 PM, and 3:00 PM. These times are suitable for participants to schedule their appointments. Additionally, here is a list of mindfulness exercises that target the mind and require meditation: 1. Mindful breathing, 2. Body scan meditation, 3. Loving-kindness meditation, 4. Visualization meditation, 5. Mindful walking, 6. Transcendental meditation, 7. Guided meditation, 8. Mantra meditation, 9. Progressive muscle relaxation, and 10. Mindful listening. These exercises can help participants focus on the present moment and reduce stress.",
+  "weight_score": 2.12,
+  "parsed_answer": "**Available Appointment Times for the Workshop Day:**  \n- 9:00 AM  \n- 11:00 AM  \n- 1:00 PM  \n- 3:00 PM  \n\n**List of Mindfulness Exercises That Target the Mind and Require Meditation:**  \n1. Mindful breathing  \n2. Body scan meditation  \n3. Loving-kindness meditation  \n4. Visualization meditation  \n5. Mindful walking  \n6. Transcendental meditation  \n7. Guided meditation  \n8. Mantra meditation  \n9. Progressive muscle relaxation  \n10. Mindful listening  \n\nThese exercises are designed to help participants focus on the present moment, reduce stress, and cultivate a sense of calm and awareness.",
+  "metrics": {
+    "latency_seconds": 149.15105938911438,
+    "num_processors": 5,
+    "num_model_calls": 47,
+    "num_tool_calls": 22,
+    "total_tokens": 46609,
+    "prompt_tokens": 39943,
+    "completion_tokens": 6666,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

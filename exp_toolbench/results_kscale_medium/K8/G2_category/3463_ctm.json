@@ -1,0 +1,18 @@
+{
+  "query": "I want to create a movie recommendation website and I need to find movies similar to 'Titanic' for our users. Can you suggest some similar movies and provide the movie ID for 'Titanic'? Additionally, it would be great to include the latest anime releases on our website.",
+  "query_id": 3463,
+  "final_answer": "The movie 'Titanic' has several similar movies with the following details:\n\n1. 'Titanic (1997)' with ID: 24168-titanic\n2. 'Titanic 666 (2022)' with ID: 76645-titanic-666\n3. 'Titanic II (2010)' with ID: 104-titanic-ii\n4. 'Titanic (1996)' with ID: 24167-titanic\n5. 'Titanic: Blood and Steel (2012)' with ID: 62512-titanic-blood-and-steel\n6. 'Raise the Titanic (1980)' with ID: 21013-raise-the-titanic\n7. 'Titanic (2012)' with ID: 2081-titanic\n8. 'S.O.S. Titanic (1979)' with ID: 37002-s-o-s-titanic\n9. 'Titanic: The Legend Goes On... (2000)' with ID: 24169-titanic-the-legend-goes-on\n10. 'Titanic 2000 (1999)' with ID: 45979-titanic-2000\n\nTo include the latest anime releases on your website, you may need additional information on the current anime releases and their details.",
+  "weight_score": 2.12,
+  "parsed_answer": "**Movie Recommendation for 'Titanic':**\n\nHere are some movies similar to *Titanic*, along with their respective movie IDs:\n\n1. **Titanic (1997)** \u2013 ID: `24168-titanic`  \n2. **Titanic 666 (2022)** \u2013 ID: `76645-titanic-666`  \n3. **Titanic II (2010)** \u2013 ID: `104-titanic-ii`  \n4. **Titanic (1996)** \u2013 ID: `24167-titanic`  \n5. **Titanic: Blood and Steel (2012)** \u2013 ID: `62512-titanic-blood-and-steel`  \n6. **Raise the Titanic (1980)** \u2013 ID: `21013-raise-the-titanic`  \n7. **Titanic (2012)** \u2013 ID: `2081-titanic`  \n8. **S.O.S. Titanic (1979)** \u2013 ID: `37002-s-o-s-titanic`  \n9. **Titanic: The Legend Goes On... (2000)** \u2013 ID: `24169-titanic-the-legend-goes-on`  \n10. **Titanic 2000 (1999)** \u2013 ID: `45979-titanic-2000`  \n\n**Note:** While these movies share the name \"Titanic,\" they are not direct sequels or remakes but are related in theme or title. For a more accurate recommendation, consider using a movie recommendation algorithm based on plot, genre, and audience ratings.\n\n---\n\n**Latest Anime Releases:**\n\nTo include the latest anime releases on your website, you would need to integrate a dynamic data source or API that provides up-to-date information on current and upcoming anime. Some popular sources include:\n\n- **MyAnimeList** \u2013 Offers a comprehensive database of anime with release dates and ratings.\n- **AniList** \u2013 Provides real-time updates on new anime episodes and releases.\n- **Crunchyroll** \u2013 Lists current and upcoming anime with episode schedules.\n- **Netflix Anime Catalog** \u2013 Updates regularly with new anime titles.\n\nYou can use APIs like:\n\n- **MyAnimeList API** \u2013 [https://myanimelist.net/api](https://myanimelist.net/api)\n- **AniList API** \u2013 [https://anilist.co](https://anilist.co)\n- **Crunchyroll API** \u2013 [https://www.crunchyroll.com/api](https://www.crunchyroll.com/api)\n\nThese APIs can be integrated into your website to fetch and display the latest anime releases, including titles, descriptions, release dates, and episode information.\n\nLet me know if you'd like help integrating any of these APIs or building a recommendation system.",
+  "metrics": {
+    "latency_seconds": 110.4238109588623,
+    "num_processors": 6,
+    "num_model_calls": 13,
+    "num_tool_calls": 6,
+    "total_tokens": 13068,
+    "prompt_tokens": 10670,
+    "completion_tokens": 2398,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

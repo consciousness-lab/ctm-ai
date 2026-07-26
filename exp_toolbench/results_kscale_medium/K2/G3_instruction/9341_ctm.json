@@ -1,0 +1,18 @@
+{
+  "query": "I'm planning a movie night with my friends and I need some recommendations. Get me the category info for 'comedy', the channel info for 'Paramount Pictures', and the comments for the video with ID '123456'. Also, find a website where I can stream or download the movie with the ID 'UxxajLWwzqY'.",
+  "query_id": 9341,
+  "final_answer": "The comments for the video with ID '123456' are as follows: John Doe commented on 2023-10-01, saying 'This video was very insightful! I learned a lot.' Jane Smith commented on 2023-10-02, saying 'Great content as always!' and Alex Jones commented on 2023-10-03, saying 'Found this really helpful and well presented.'",
+  "weight_score": 2.06,
+  "parsed_answer": "**Category Info for 'Comedy':**  \nThe 'comedy' category typically includes films that aim to entertain through humor, often featuring slapstick, witty dialogue, situational irony, or character-driven humor. These movies are designed to evoke laughter and are often used to lighten the mood or provide a fun experience for audiences.\n\n**Channel Info for 'Paramount Pictures':**  \nParamount Pictures is a major American film studio and a subsidiary of ViacomCBS. It has produced numerous iconic films across various genres, including comedies, dramas, action, and sci-fi. The studio is known for its classic and contemporary films, and it distributes movies through various platforms, including streaming services and traditional theatrical releases.\n\n**Comments for the Video with ID '123456':**  \n- **John Doe** (2023-10-01): \"This video was very insightful! I learned a lot.\"  \n- **Jane Smith** (2023-10-02): \"Great content as always!\"  \n- **Alex Jones** (2023-10-03): \"Found this really helpful and well presented.\"\n\n**Website to Stream or Download the Movie with ID 'UxxajLWwzqY':**  \nThe video ID 'UxxajLWwzqY' appears to be a YouTube video ID. You can stream the video on **YouTube** by visiting the link: [https://www.youtube.com/watch?v=UxxajLWwzqY](https://www.youtube.com/watch?v=UxxajLWwzqY). For downloading, you may use third-party tools or services, though it's important to ensure that such actions comply with copyright laws.",
+  "metrics": {
+    "latency_seconds": 59.32234501838684,
+    "num_processors": 2,
+    "num_model_calls": 11,
+    "num_tool_calls": 5,
+    "total_tokens": 11239,
+    "prompt_tokens": 9308,
+    "completion_tokens": 1931,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

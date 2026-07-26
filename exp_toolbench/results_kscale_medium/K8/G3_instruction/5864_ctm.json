@@ -1,0 +1,18 @@
+{
+  "query": "I want to watch a classic movie with my family. Can you suggest a popular classic movie available for streaming in the US? Also, provide the streaming sources for the movie 'Casablanca'.",
+  "query_id": 5864,
+  "final_answer": "Casablanca is a classic film released in 1942, directed by Michael Curtiz, and starring Humphrey Bogart and Ingrid Bergman. It is widely regarded as one of the greatest films of all time. For streaming availability in the US, 'Casablanca' is available on several platforms including Amazon Prime Video, Google Play, and Vudu. You can also find it on some streaming services like Spectrum TV and on-demand platforms. If you're looking for a popular classic movie to watch with your family, 'Casablanca' is an excellent choice due to its timeless story, iconic characters, and enduring appeal.",
+  "weight_score": 1.92,
+  "parsed_answer": "**Suggested Movie:** *Casablanca* (1942)  \n**Director:** Michael Curtiz  \n**Stars:** Humphrey Bogart, Ingrid Bergman  \n\n**Streaming Availability in the US:**  \n*Casablanca* is a popular and highly regarded classic film that is available for streaming on the following platforms:  \n- **Amazon Prime Video**  \n- **Google Play**  \n- **Vudu**  \n- **Spectrum TV** (on-demand)  \n\n**Why Watch It with Family?**  \n*Casablanca* is a timeless classic known for its compelling storyline, memorable characters, and iconic dialogue. Its themes of love, sacrifice, and duty resonate across generations, making it an excellent choice for family movie night. The film's enduring popularity and critical acclaim also ensure that it remains a beloved and widely appreciated cinematic treasure.",
+  "metrics": {
+    "latency_seconds": 137.30754590034485,
+    "num_processors": 6,
+    "num_model_calls": 39,
+    "num_tool_calls": 17,
+    "total_tokens": 39317,
+    "prompt_tokens": 33980,
+    "completion_tokens": 5337,
+    "num_links_added": 2,
+    "active_links": 2
+  }
+}

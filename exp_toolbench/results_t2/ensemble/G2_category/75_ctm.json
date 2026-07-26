@@ -1,0 +1,14 @@
+{
+  "query": "I'm organizing a charity event and need to transport goods to the venue. Can you provide me with a list of companies that offer shipping services? It would be great if you could also provide me with a random project description from the SQUAKE platform.",
+  "query_id": 75,
+  "final_answer": "Here is a list of companies that offer shipping services in Turkey:\n\n- Aras Kargo\n- Yurti\u00e7i Kargo\n- S\u00fcrat Kargo\n- PTT Kargo\n- MNG Kargo\n- HepsiJet\n- TrendyolExpress\n- UPS Kargo\n- ByExpress Kargo\n- Kolay Gelsin\n- Horoz Lojistik\n- CanadaPost\n- DHL Kargo\n- FedEx\n- TNT Kargo\n- USPS\n- Yanwen\n- AliExpress\n- Ceva Lojistik\n- \u0130nter Global Kargo\n- Kargo\u0130st\n- Jetizz\n\nAdditionally, here is a random project description from the SQUAKE platform:\n\n\"Welcome to SQUAE's API hub. Here, businesses can access the most performant API in the market for calculating carbon emissions and purchasing certified climate contributions in real-time. Ideal for travel, mobility, and logistics companies, our API enables seamless integration to build sustainable products. Get started by specifying your needs or exploring our resources for developers.\"\n\nLet me know if you need further assistance!",
+  "weight_score": 0.0,
+  "parsed_answer": "Here is a list of companies that offer shipping services in Turkey:\n\n- Aras Kargo\n- Yurti\u00e7i Kargo\n- S\u00fcrat Kargo\n- PTT Kargo\n- MNG Kargo\n- HepsiJet\n- TrendyolExpress\n- UPS Kargo\n- ByExpress Kargo\n- Kolay Gelsin\n- Horoz Lojistik\n- CanadaPost\n- DHL Kargo\n- FedEx\n- TNT Kargo\n- USPS\n- Yanwen\n- AliExpress\n- Ceva Lojistik\n- \u0130nter Global Kargo\n- Kargo\u0130st\n- Jetizz\n\nAdditionally, here is a random project description from the SQUAKE platform:\n\n\"Welcome to SQUAE's API hub. Here, businesses can access the most performant API in the market for calculating carbon emissions and purchasing certified climate contributions in real-time. Ideal for travel, mobility, and logistics companies, our API enables seamless integration to build sustainable products. Get started by specifying your needs or exploring our resources for developers.\"\n\nLet me know if you need further assistance!",
+  "metrics": {
+    "latency_seconds": 61.30487108230591,
+    "num_model_calls": 11,
+    "num_tool_calls": 6,
+    "total_tokens": 12862,
+    "num_processors": 5
+  }
+}

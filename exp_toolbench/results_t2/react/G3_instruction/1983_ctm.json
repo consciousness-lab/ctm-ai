@@ -1,0 +1,14 @@
+{
+  "query": "I'm organizing a charity event and I need to promote it on social media. Can you generate short URLs for the event details using the bitly tool? Additionally, I want to create branded short links for the event website using the URL Link Shortener tool.",
+  "query_id": 1983,
+  "final_answer": "The short URL for the event details using Bitly is not available due to an error. However, a branded short link for the event website has been created: https://short.ly/event2023. Please ensure you have the correct access token for Bitly to generate the short URL.",
+  "weight_score": 0.0,
+  "parsed_answer": "The short URL for the event details using Bitly is not available due to an error. However, a branded short link for the event website has been created: https://short.ly/event2023. Please ensure you have the correct access token for Bitly to generate the short URL.",
+  "metrics": {
+    "latency_seconds": 63.475544929504395,
+    "num_model_calls": 4,
+    "num_tool_calls": 3,
+    "total_tokens": 5348,
+    "num_processors": 3
+  }
+}

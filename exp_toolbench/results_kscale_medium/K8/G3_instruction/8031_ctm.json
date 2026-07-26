@@ -1,0 +1,18 @@
+{
+  "query": "I'm planning a movie night with my friends this weekend. Can you recommend some new titles that have been added to streaming platforms recently? Also, provide me with the basic details and streaming availability of the movie with IMDb ID tt9904802.",
+  "query_id": 8031,
+  "final_answer": "For your movie night, here are some recent additions to streaming platforms: 'The Last of Us' (HBO Max, June 19, 2023), 'The Whale' (Amazon Prime Video, Netflix, and Hulu), 'Glass Onion: A Knives Out Mystery' (Netflix, 2022), and 'The Power of the Dog' (HBO Max, 2021). These titles are available on various streaming platforms. Regarding the movie with IMDb ID tt9904802, which is 'The Woman in the Window', it is a psychological thriller directed by Joe Wright and stars Amy Adams. It was released on April 10, 2020, and is available for streaming on Amazon Prime Video, Netflix, and Hulu. The runtime of the film is approximately 123-133 minutes, and it explores themes of psychological suspense, voyeurism, and the complexities of mental health. The film received positive reviews and was nominated for several awards, including the Golden Globe Award for Best Motion Picture - Drama.",
+  "weight_score": 1.8200000000000003,
+  "parsed_answer": "For your movie night, here are some recent additions to streaming platforms:\n\n1. **The Last of Us** (HBO Max) \u2013 Released on June 19, 2023. This is a critically acclaimed adaptation of the popular video game, featuring a post-apocalyptic storyline and strong performances.\n\n2. **The Whale** \u2013 Available on Amazon Prime Video, Netflix, and Hulu. This film explores themes of isolation and redemption, starring Brendan Fraser in a powerful performance.\n\n3. **Glass Onion: A Knives Out Mystery** (Netflix) \u2013 Released in 2022, this is the sequel to the successful \"Knives Out\" series, offering a clever and suspenseful mystery.\n\n4. **The Power of the Dog** (HBO Max) \u2013 Released in 2021, this film is a gripping drama with strong performances and a compelling narrative.\n\nRegarding the movie with IMDb ID **tt9904802**, which is **\"The Woman in the Window\"**, here are the basic details:\n\n- **Genre**: Psychological Thriller\n- **Director**: Joe Wright\n- **Stars**: Amy Adams, Gary Oldman, Lucy Boynton\n- **Release Date**: April 10, 2020\n- **Runtime**: Approximately 123\u2013133 minutes\n- **Streaming Availability**: Amazon Prime Video, Netflix, and Hulu\n- **Themes**: Psychological suspense, voyeurism, and mental health\n- **Reception**: The film received positive reviews and was nominated for several awards, including the Golden Globe Award for Best Motion Picture - Drama.\n\nThese recommendations should provide a great variety of options for your movie night with friends. Enjoy!",
+  "metrics": {
+    "latency_seconds": 434.16557264328003,
+    "num_processors": 6,
+    "num_model_calls": 91,
+    "num_tool_calls": 44,
+    "total_tokens": 89491,
+    "prompt_tokens": 79372,
+    "completion_tokens": 10119,
+    "num_links_added": 8,
+    "active_links": 8
+  }
+}

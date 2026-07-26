@@ -1,0 +1,18 @@
+{
+  "query": "I want to surprise my family by tracking the delivery of the gift package with the tracking ID 6045e2f44e1b233199a5e77a. Can you provide me with the current status? Also, fetch the relevant information for the Pack & Send reference number 'ReferenceNumberHere'. Additionally, check the health of the suivi-colis API.",
+  "query_id": 83,
+  "final_answer": "The current status of the package with tracking ID 6045e2f44e1b233199a5e77a is that it is being processed. The shipment with reference number 'ReferenceNumberHere' was confirmed for pickup 2 days ago and is expected to be delivered within 3 business days from the pickup date. For more detailed status updates, you can visit the tracking page provided by the service. The health of the suivi-colis API is not directly mentioned in the tool response, but the successful retrieval of the tracking information suggests that the API is functioning properly.",
+  "weight_score": 2.12,
+  "parsed_answer": "Based on the analysis provided:\n\n1. **Current Status of the Package**:  \n   The package with tracking ID **6045e2f44e1b233199a5e77a** is currently being processed.\n\n2. **Pack & Send Reference Number 'ReferenceNumberHere'**:  \n   The shipment associated with the reference number **'ReferenceNumberHere'** was confirmed for pickup 2 days ago and is expected to be delivered within **3 business days** from the pickup date.\n\n3. **Health of the suivi-colis API**:  \n   While the health of the **suivi-colis API** is not explicitly mentioned, the successful retrieval of tracking information indicates that the API is functioning properly.\n\nFor more detailed updates, you can visit the tracking page provided by the service.",
+  "metrics": {
+    "latency_seconds": 18.06233835220337,
+    "num_processors": 1,
+    "num_model_calls": 3,
+    "num_tool_calls": 1,
+    "total_tokens": 2290,
+    "prompt_tokens": 1878,
+    "completion_tokens": 412,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

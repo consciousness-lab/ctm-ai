@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a surprise birthday party for my best friend and I want to create a personalized video. Can you help me download videos from different platforms and provide me with random astro photos to include in the video? Also, please check for any NSFW content in the images.",
+  "query_id": 3843,
+  "final_answer": "It seems there are some issues with the available functions. Please check the function names and ensure they are correctly referenced. For now, I can't proceed with the requested tasks. Let me know if you need further assistance!",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there are some issues with the available functions. Please check the function names and ensure they are correctly referenced. For now, I can't proceed with the requested tasks. Let me know if you need further assistance!",
+  "metrics": {
+    "latency_seconds": 9.053591966629028,
+    "num_model_calls": 6,
+    "num_tool_calls": 5,
+    "total_tokens": 7475,
+    "num_processors": 4
+  }
+}

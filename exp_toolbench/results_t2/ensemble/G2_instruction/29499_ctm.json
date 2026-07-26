@@ -1,0 +1,14 @@
+{
+  "query": "My friends and I are planning a stargazing trip and we want to track the International Space Station (ISS). Can you provide us with the current location of the ISS? Also, fetch the history of messages from the 'my_channel' channel on PubNub Network to see if there are any interesting updates about space exploration.",
+  "query_id": 29499,
+  "final_answer": "The current location of the International Space Station (ISS) is at latitude 40.2158 and longitude -76.5389. The history of messages from the 'my_channel' channel on the PubNub Network includes a timestamp of 16895347200190726. You can use this information to track the ISS and check for any interesting updates about space exploration.",
+  "weight_score": 0.0,
+  "parsed_answer": "The current location of the International Space Station (ISS) is at latitude 40.2158 and longitude -76.5389. The history of messages from the 'my_channel' channel on the PubNub Network includes a timestamp of 16895347200190726. You can use this information to track the ISS and check for any interesting updates about space exploration.",
+  "metrics": {
+    "latency_seconds": 43.281102657318115,
+    "num_model_calls": 11,
+    "num_tool_calls": 6,
+    "total_tokens": 8543,
+    "num_processors": 2
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "query": "I want to watch a classic movie with my family. Can you suggest a popular classic movie available for streaming in the US? Also, provide the streaming sources for the movie 'Casablanca'.",
+  "query_id": 5864,
+  "final_answer": "Based on the available information, the suggested classic movie for your family to watch is 'Casablanca'. This film is available for streaming on Amazon Prime Video, Hulu, and Google Play Movies. It was released on December 24, 1942, and features main characters such as Rick Blaine (played by Humphrey Bogart), Ilsa Lund (played by Ingrid Bergman), and Victor Laszlo (played by Paul Henreid).",
+  "weight_score": 2.12,
+  "parsed_answer": "Based on the analysis provided, a popular classic movie you can watch with your family is **\"Casablanca\"**. This film is highly regarded for its timeless story, memorable characters, and iconic performances.\n\n**Streaming Sources for \"Casablanca\" in the US:**\n- **Amazon Prime Video**\n- **Hulu**\n- **Google Play Movies**\n\n\"**Casablanca**,\" released on December 24, 1942, features unforgettable performances by Humphrey Bogart as Rick Blaine, Ingrid Bergman as Ilsa Lund, and Paul Henreid as Victor Laszlo. It is a must-watch for classic film enthusiasts and is widely considered one of the greatest movies of all time.",
+  "metrics": {
+    "latency_seconds": 79.10484075546265,
+    "num_processors": 2,
+    "num_model_calls": 13,
+    "num_tool_calls": 5,
+    "total_tokens": 12264,
+    "prompt_tokens": 10904,
+    "completion_tokens": 1360,
+    "num_links_added": 1,
+    "active_links": 1
+  }
+}

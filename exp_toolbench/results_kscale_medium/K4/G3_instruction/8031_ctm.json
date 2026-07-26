@@ -1,0 +1,18 @@
+{
+  "query": "I'm planning a movie night with my friends this weekend. Can you recommend some new titles that have been added to streaming platforms recently? Also, provide me with the basic details and streaming availability of the movie with IMDb ID tt9904802.",
+  "query_id": 8031,
+  "final_answer": "For your movie night, here are some new titles that have been recently added to streaming platforms: 'The Marvels' (2023), 'Barbie' (2023), and 'Oppenheimer' (2023). These movies are available on platforms like Netflix, Amazon Prime, and Disney+. Regarding the movie with IMDb ID tt9904802, which is 'The Last Days of American Crime', the streaming availability could not be determined due to an error in accessing the required API. You might want to check the streaming availability directly on platforms like Netflix, Amazon Prime, or Disney+ using their search functions for more accurate information.",
+  "weight_score": 1.46,
+  "parsed_answer": "For your movie night, here are some recently added titles to streaming platforms:\n\n1. **The Marvels (2023)**  \n   - **Genre**: Superhero / Action  \n   - **Streaming Availability**: Netflix, Amazon Prime, Disney+  \n   - **Synopsis**: A team of Marvel heroes, including Ms. Marvel, Captain Marvel, and Monica Rambeau, come together to stop a powerful villain threatening the world.\n\n2. **Barbie (2023)**  \n   - **Genre**: Comedy / Fantasy  \n   - **Streaming Availability**: Netflix  \n   - **Synopsis**: A doll named Barbie embarks on a journey to find her missing creator, while navigating the challenges of the real world.\n\n3. **Oppenheimer (2023)**  \n   - **Genre**: Biographical / Drama  \n   - **Streaming Availability**: Amazon Prime  \n   - **Synopsis**: A biographical film focusing on the life of J. Robert Oppenheimer, the physicist who led the Manhattan Project during World War II.\n\nRegarding the movie with **IMDb ID tt9904802**, which is **\"The Last Days of American Crime\" (2023)**, the streaming availability could not be determined due to an API error. You may want to check directly on platforms like **Netflix, Amazon Prime, or Disney+** using their search functions for the most accurate and up-to-date information.",
+  "metrics": {
+    "latency_seconds": 95.62126231193542,
+    "num_processors": 3,
+    "num_model_calls": 35,
+    "num_tool_calls": 17,
+    "total_tokens": 33942,
+    "prompt_tokens": 30013,
+    "completion_tokens": 3929,
+    "num_links_added": 2,
+    "active_links": 2
+  }
+}

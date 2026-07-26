@@ -1,0 +1,14 @@
+{
+  "query": "I want to watch a documentary about nature. Can you suggest a popular nature documentary available for streaming in the US? Also, provide the streaming sources for the documentary 'Planet Earth'.",
+  "query_id": 5865,
+  "final_answer": "It seems there was an issue retrieving the streaming sources for 'Planet Earth'. However, 'Planet Earth' is a popular nature documentary that is available on various streaming platforms. You can check platforms like Netflix, BBC iPlayer, and Amazon Prime Video for this documentary. For precise availability, please check the specific platform's catalog.",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there was an issue retrieving the streaming sources for 'Planet Earth'. However, 'Planet Earth' is a popular nature documentary that is available on various streaming platforms. You can check platforms like Netflix, BBC iPlayer, and Amazon Prime Video for this documentary. For precise availability, please check the specific platform's catalog.",
+  "metrics": {
+    "latency_seconds": 26.412854194641113,
+    "num_model_calls": 19,
+    "num_tool_calls": 14,
+    "total_tokens": 37448,
+    "num_processors": 6
+  }
+}

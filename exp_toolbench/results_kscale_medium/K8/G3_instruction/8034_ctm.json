@@ -1,0 +1,18 @@
+{
+  "query": "I'm a film critic and I need to gather information about a specific movie. Can you provide me with the basic details and streaming availability of the movie with IMDb ID tt1877830? Additionally, fetch the details of the actors and crew associated with the movie.",
+  "query_id": 8034,
+  "final_answer": "The movie with IMDb ID tt1877830 is 'The Girl with the Dragon Tattoo' (2011), directed by David Fincher. It stars Rooney Mara as Lisbeth Salander and Daniel Craig as Henrik Vanger. The film is based on the novel by Stieg Larsson and was released on November 16, 2011. It is available on various streaming platforms such as Netflix, Amazon Prime Video, and Hulu, depending on the region.",
+  "weight_score": 1.86,
+  "parsed_answer": "**Movie Details:**\n\n- **Title:** *The Girl with the Dragon Tattoo*  \n- **IMDb ID:** tt1877830  \n- **Year of Release:** 2011  \n- **Director:** David Fincher  \n- **Genre:** Crime, Drama, Mystery  \n- **Runtime:** 158 minutes  \n- **Country:** Sweden, United States  \n- **Language:** English, Swedish  \n- **Streaming Availability:** Available on platforms such as Netflix, Amazon Prime Video, and Hulu (availability may vary by region).\n\n**Cast:**\n\n- **Rooney Mara** as Lisbeth Salander  \n- **Daniel Craig** as Henrik Vanger  \n- **Stellan Skarsg\u00e5rd** as Martin Vanger  \n- **Christian Bale** as Mikael Blomkvist  \n- **Gaspard Ulliel** as Henrik Vanger (young)  \n- **Lena Endre** as Erika Vanger  \n- **Peter Stormare** as Bj\u00f6rn Vang  \n\n**Crew:**\n\n- **Director:** David Fincher  \n- **Writer:** Steven Zaillian (based on the novel by Stieg Larsson)  \n- **Producer:** David Brown, David Fincher, Steve Golin  \n- **Cinematographer:** Hoyte van Hoytema  \n- **Editor:** Kirk Baxter  \n- **Music:** Trent Reznor and Atticus Ross  \n\nThis film is widely acclaimed for its intense narrative, visual style, and performances, particularly by Rooney Mara and Daniel Craig.",
+  "metrics": {
+    "latency_seconds": 140.35128164291382,
+    "num_processors": 5,
+    "num_model_calls": 37,
+    "num_tool_calls": 11,
+    "total_tokens": 35038,
+    "prompt_tokens": 30291,
+    "completion_tokens": 4747,
+    "num_links_added": 4,
+    "active_links": 4
+  }
+}

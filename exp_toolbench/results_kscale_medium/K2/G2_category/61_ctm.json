@@ -1,0 +1,18 @@
+{
+  "query": "My company is organizing a conference in Argentina and we need to ship some packages. Can you give me a quote for shipping a package from Buenos Aires to Cordoba? Also, provide me with the contact details of the transitaires available in Argentina.",
+  "query_id": 61,
+  "final_answer": "The shipping cost for a package from Buenos Aires (postcode 1007) to Cordoba (postcode 5000) is available through the provided quotes. The quotes are divided into two types: fiscalType 'py' and 'cf'. For the 'classic' service, the door-to-door cost is 953.42 and the office-to-office cost is 864.24. For the 'express' service, the door-to-door cost is 1310.95 and the office-to-office cost is 1250.62. For fiscalType 'cf', the 'classic' service has a door-to-door cost of 1153.54 and an office-to-office cost of 1016.33. The 'express' service for 'cf' has a door-to-door cost of 1586.86 and an office-to-office cost of 1412.97. These quotes are valid as of the last sync on 2023-04-21. For the contact details of the transitaires available in Argentina, I recommend reaching out to local logistics companies or using a search engine to find the contact information for specific transportistas in your area.",
+  "weight_score": 1.8200000000000003,
+  "parsed_answer": "Based on the provided analysis, here is the comprehensive and concise response to your query:\n\n**Shipping Quote from Buenos Aires to C\u00f3rdoba (Argentina):**\n\n- **Classic Service:**\n  - **Door-to-Door:** 953.42 ARS\n  - **Office-to-Office:** 864.24 ARS\n\n- **Express Service:**\n  - **Door-to-Door:** 1310.95 ARS\n  - **Office-to-Office:** 1250.62 ARS\n\n- **FiscalType 'cf':**\n  - **Classic Service:**\n    - **Door-to-Door:** 1153.54 ARS\n    - **Office-to-Office:** 1016.33 ARS\n  - **Express Service:**\n    - **Door-to-Door:** 1586.86 ARS\n    - **Office-to-Office:** 1412.97 ARS\n\n*Note: These quotes are valid as of 2023-04-21.*\n\n**Contact Details for Transitaires in Argentina:**\n\nFor contact details of local transportistas or transitaires in Argentina, it is recommended to:\n- Reach out to **local logistics companies** in Buenos Aires and C\u00f3rdoba.\n- Use a **search engine** to find contact information for specific transportistas in your area.\n- Consider using **shipping platforms** like **Mercado Env\u00edos**, **DHL**, **FedEx**, or **UPS** for direct contact and service options.\n\nPlease ensure that you verify the current contact details and service availability, as they may have changed since the last update.",
+  "metrics": {
+    "latency_seconds": 91.72529673576355,
+    "num_processors": 2,
+    "num_model_calls": 11,
+    "num_tool_calls": 4,
+    "total_tokens": 10679,
+    "prompt_tokens": 8721,
+    "completion_tokens": 1958,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

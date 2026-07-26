@@ -1,0 +1,14 @@
+{
+  "query": "I'm a developer and I'm working on a project that requires URL shortening functionality. Can you provide me with a list of available domains from the URL Link Shortener tool? I also need help creating short URLs for my project using the bitly tool.",
+  "query_id": 1989,
+  "final_answer": "It seems there was an issue with the Bitly tool, specifically a missing access token. Please check if you have the necessary access token for Bitly and ensure it's properly configured. For the URL Link Shortener tool, I provided a list of available domains, and you can use them to create short URLs for your project. Let me know if you need further assistance!",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there was an issue with the Bitly tool, specifically a missing access token. Please check if you have the necessary access token for Bitly and ensure it's properly configured. For the URL Link Shortener tool, I provided a list of available domains, and you can use them to create short URLs for your project. Let me know if you need further assistance!",
+  "metrics": {
+    "latency_seconds": 31.201627731323242,
+    "num_model_calls": 11,
+    "num_tool_calls": 6,
+    "total_tokens": 13356,
+    "num_processors": 3
+  }
+}

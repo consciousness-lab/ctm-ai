@@ -1,0 +1,18 @@
+{
+  "query": "I'm hosting a movie-themed party for my friends and I need some ideas for classic movies to watch. Can you recommend some popular classic movies that are available for streaming in the US? Also, provide me with the streaming sources where I can watch these movies.",
+  "query_id": 8337,
+  "final_answer": "Based on the tool response, here are some classic movies that are available for streaming in the US, along with their streaming sources: \n\n1. **Classic Films for Kids** - This documentary movie is available on streaming platforms. \n2. **The Classic** (2022) - This comedy movie is available for streaming. \n3. **The Classic** (2022) - This drama movie is also available for streaming. \n\nPlease note that the streaming sources for these movies are not explicitly mentioned in the tool response. To get the exact streaming platforms where these movies can be watched, you may need to check services like Netflix, Hulu, Amazon Prime, or other streaming platforms. \n\nFor a more comprehensive list of classic movies and their streaming availability, you may want to check streaming platforms directly or use a dedicated movie database service.",
+  "weight_score": 1.26,
+  "parsed_answer": "Based on the analysis provided, here are some classic movie recommendations for your movie-themed party, along with guidance on where to find them:\n\n### Recommended Classic Movies for Streaming in the US:\n1. **Classic Films for Kids** \u2013 A documentary that showcases beloved classic films suitable for all ages.  \n2. **The Classic** (2022) \u2013 A comedy and drama film that reimagines the concept of a classic movie.  \n\n### Streaming Sources:\nWhile the specific streaming platforms for these titles are not listed in the analysis, you can check the following popular services for availability:\n- **Netflix**\n- **Hulu**\n- **Amazon Prime Video**\n- **Disney+**\n- **iTunes**\n- **Google Play Movies**\n- **Vudu**\n- **Paramount+**\n\n### Additional Tips:\n- For a more comprehensive list of classic movies and their streaming availability, consider using a movie database like **JustWatch**, **IMDb**, or **Rotten Tomatoes**.\n- Some classic films may also be available through **public domain libraries** or **streaming services that specialize in classic cinema**, such as **Criterion Channel** or **Kino Lorber**.\n\nThese recommendations should help you curate a fun and nostalgic movie lineup for your party!",
+  "metrics": {
+    "latency_seconds": 68.15228867530823,
+    "num_processors": 1,
+    "num_model_calls": 7,
+    "num_tool_calls": 3,
+    "total_tokens": 7092,
+    "prompt_tokens": 5682,
+    "completion_tokens": 1410,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

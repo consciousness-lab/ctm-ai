@@ -1,0 +1,14 @@
+{
+  "query": "I'm organizing a charity event and need to transport goods to the venue. Can you provide me with a list of companies that offer shipping services? It would be great if you could also provide me with a random project description from the SQUAKE platform.",
+  "query_id": 75,
+  "final_answer": "Here is a list of companies that offer shipping services in Turkey: Aras Kargo, Yurti\u00e7i Kargo, S\u00fcrat Kargo, PTT Kargo, MNG Kargo, HepsiJet, TrendyolExpress, UPS Kargo, ByExpress Kargo, Kolay Gelsin, Horoz Lojistik, CanadaPost, DHL Kargo, Fedex, TNT Kargo, Usps, Yanwen, AliExpress, Ceva Lojistik, \u0130nter Global Kargo, Kargo\u0130st, Jetizz. However, I couldn't retrieve a random project description from the SQUAKE platform due to an API token error. Please try again later or contact their support for assistance.",
+  "weight_score": 0.0,
+  "parsed_answer": "Here is a list of companies that offer shipping services in Turkey: Aras Kargo, Yurti\u00e7i Kargo, S\u00fcrat Kargo, PTT Kargo, MNG Kargo, HepsiJet, TrendyolExpress, UPS Kargo, ByExpress Kargo, Kolay Gelsin, Horoz Lojistik, CanadaPost, DHL Kargo, Fedex, TNT Kargo, Usps, Yanwen, AliExpress, Ceva Lojistik, \u0130nter Global Kargo, Kargo\u0130st, Jetizz. However, I couldn't retrieve a random project description from the SQUAKE platform due to an API token error. Please try again later or contact their support for assistance.",
+  "metrics": {
+    "latency_seconds": 12.58838677406311,
+    "num_model_calls": 3,
+    "num_tool_calls": 2,
+    "total_tokens": 3474,
+    "num_processors": 5
+  }
+}

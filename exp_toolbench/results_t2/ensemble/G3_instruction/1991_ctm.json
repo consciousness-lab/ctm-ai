@@ -1,0 +1,14 @@
+{
+  "query": "I'm a social media influencer and I want to track the engagement of my posts. Can you help me create short URLs for each post using the bitly tool? I also need to create branded short links for my website using the URL Link Shortener tool.",
+  "query_id": 1991,
+  "final_answer": "The short URL for your post has been created successfully using the URL Link Shortener tool. The generated short URL is 'https://mybrand.rebrandly.com/post1'. If you need further assistance, feel free to ask!",
+  "weight_score": 0.0,
+  "parsed_answer": "The short URL for your post has been created successfully using the URL Link Shortener tool. The generated short URL is 'https://mybrand.rebrandly.com/post1'. If you need further assistance, feel free to ask!",
+  "metrics": {
+    "latency_seconds": 32.89073896408081,
+    "num_model_calls": 11,
+    "num_tool_calls": 7,
+    "total_tokens": 12991,
+    "num_processors": 3
+  }
+}

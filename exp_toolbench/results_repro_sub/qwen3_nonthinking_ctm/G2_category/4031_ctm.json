@@ -1,0 +1,18 @@
+{
+  "query": "I am planning a surprise party for my sister and I want to create personalized video invitations for all the guests. Can you provide me with the details of the templates available in my Nexweave account? Additionally, I would like to fetch the details of a specific order using the tes API.",
+  "query_id": 4031,
+  "final_answer": "I have successfully fetched the details of the specific order using the tes API. The user with the username 'user1' has an order ID of 9223372036854755493. The email associated with this account is 'example@example.com', and the user status is 0, which typically indicates an active or valid account status. However, I currently do not have access to the details of the templates available in your Nexweave account. To proceed with creating personalized video invitations for your sister's surprise party, you may need to log in to your Nexweave account and explore the available templates directly. If you need assistance with anything else, feel free to ask.",
+  "weight_score": 1.8200000000000003,
+  "parsed_answer": "Based on the analysis provided:\n\n1. **Order Details via tes API**:  \n   - The user with the username 'user1' has an order ID of **9223372036854755493**.  \n   - The associated email is **example@example.com**.  \n   - The user status is **0**, which typically indicates an **active or valid account status**.  \n\n2. **Nexweave Templates**:  \n   - The details of the templates available in your Nexweave account are **not currently accessible** through the provided analysis.  \n   - To proceed with creating personalized video invitations, you will need to **log in to your Nexweave account** and explore the available templates directly.  \n\nIf you need further assistance with the Nexweave templates or any other task, feel free to ask.",
+  "metrics": {
+    "latency_seconds": 188.98872089385986,
+    "num_processors": 9,
+    "num_model_calls": 87,
+    "num_tool_calls": 38,
+    "total_tokens": 87508,
+    "prompt_tokens": 75976,
+    "completion_tokens": 11532,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

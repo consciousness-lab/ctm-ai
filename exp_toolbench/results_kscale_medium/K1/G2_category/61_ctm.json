@@ -1,0 +1,18 @@
+{
+  "query": "My company is organizing a conference in Argentina and we need to ship some packages. Can you give me a quote for shipping a package from Buenos Aires to Cordoba? Also, provide me with the contact details of the transitaires available in Argentina.",
+  "query_id": 61,
+  "final_answer": "The tool provided information about a transitaire in Argentina named Ecodiag. The contact details are as follows: name - Ecodiag, email - julie.filippi@ecodiag.nc, phone - +687 26.21.33, and codePostal - 98845. However, the tool did not provide a specific quote for shipping a package from Buenos Aires to Cordoba. It is recommended to contact Ecodiag directly for shipping quotes and further assistance. The response includes the details of the transitaire, but additional information about shipping costs and options is needed for a complete answer.",
+  "weight_score": 1.46,
+  "parsed_answer": "Based on the analysis provided:\n\n**Shipping Quote:**  \nThe tool does not provide a specific shipping quote for a package from Buenos Aires to C\u00f3rdoba, Argentina. To obtain a detailed quote, it is recommended to contact Ecodiag directly for shipping cost estimates and options.\n\n**Transitaire Contact Details:**  \n- **Name:** Ecodiag  \n- **Email:** julie.filippi@ecodiag.nc  \n- **Phone:** +687 26.21.33  \n- **Postal Code:** 98845  \n\nFor further assistance with shipping arrangements, please reach out to Ecodiag using the provided contact details.",
+  "metrics": {
+    "latency_seconds": 36.217896699905396,
+    "num_processors": 1,
+    "num_model_calls": 7,
+    "num_tool_calls": 3,
+    "total_tokens": 5854,
+    "prompt_tokens": 4923,
+    "completion_tokens": 931,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

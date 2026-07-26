@@ -1,0 +1,18 @@
+{
+  "query": "I'm planning a movie night with my friends and I need some recommendations. Get me the category info for 'comedy', the channel info for 'Paramount Pictures', and the comments for the video with ID '123456'. Also, find a website where I can stream or download the movie with the ID 'UxxajLWwzqY'.",
+  "query_id": 9341,
+  "final_answer": "For the category 'comedy', the description is: 'Comedy videos include all types of humor, from stand-up comedy to humorous movies and short films.' The category has a total of 1,234,567 users and 87,654 videos. The links provided are: self-link to 'https://vimeo.com/comedy', alternate link in English to 'https://vimeo.com/comedy', and alternate link in Spanish to 'https://vimeo.com/comedy/es'.",
+  "weight_score": 2.12,
+  "parsed_answer": "Based on the analysis provided:\n\n### Category Info for 'Comedy':\n- **Description**: Comedy videos include all types of humor, from stand-up comedy to humorous movies and short films.\n- **Total Users**: 1,234,567\n- **Total Videos**: 87,654\n- **Links**:\n  - Self-link: [https://vimeo.com/comedy](https://vimeo.com/comedy)\n  - Alternate link (English): [https://vimeo.com/comedy](https://vimeo.com/comedy)\n  - Alternate link (Spanish): [https://vimeo.com/comedy/es](https://vimeo.com/comedy/es)\n\n### Channel Info for 'Paramount Pictures':\n- No specific information about the 'Paramount Pictures' channel was provided in the analysis.\n\n### Comments for Video ID '123456':\n- No specific comments for the video with ID '123456' were provided in the analysis.\n\n### Website to Stream or Download Movie with ID 'UxxajLWwzqY':\n- No specific website was provided for streaming or downloading the movie with ID 'UxxajLWwzqY'. However, this ID appears to be a YouTube video ID. You can stream the video at: [https://www.youtube.com/watch?v=UxxajLWwzqY](https://www.youtube.com/watch?v=UxxajLWwzqY). For downloading, you may use a YouTube-to-mp3 or video downloader service, though note that downloading may violate YouTube's terms of service.",
+  "metrics": {
+    "latency_seconds": 67.40416359901428,
+    "num_processors": 4,
+    "num_model_calls": 9,
+    "num_tool_calls": 4,
+    "total_tokens": 8794,
+    "prompt_tokens": 7379,
+    "completion_tokens": 1415,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

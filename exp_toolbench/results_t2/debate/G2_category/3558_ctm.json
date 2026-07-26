@@ -1,0 +1,14 @@
+{
+  "query": "I want to watch a specific movie, 'The Shawshank Redemption'. Can you fetch the details of this movie, including its director, cast, and rating? Also, provide additional details like plot summaries, quotes, and reviews for this movie.",
+  "query_id": 3558,
+  "final_answer": "The movie 'The Shawshank Redemption' is directed by Frank Darabont and stars Tim Robbins as Andy Dufresne and Morgan Freeman as Ellis 'Red' Redding. It has an IMDb rating of 9.3 and is a drama about hope, friendship, and resilience. The plot follows Andy Dufresne, a banker who is wrongfully convicted of murdering his wife and her lover, and his journey through the harsh realities of prison life. For more detailed information like quotes, reviews, and additional details, please check the IMDb page directly.",
+  "weight_score": 0.0,
+  "parsed_answer": "The movie 'The Shawshank Redemption' is directed by Frank Darabont and stars Tim Robbins as Andy Dufresne and Morgan Freeman as Ellis 'Red' Redding. It has an IMDb rating of 9.3 and is a drama about hope, friendship, and resilience. The plot follows Andy Dufresne, a banker who is wrongfully convicted of murdering his wife and her lover, and his journey through the harsh realities of prison life. For more detailed information like quotes, reviews, and additional details, please check the IMDb page directly.",
+  "metrics": {
+    "latency_seconds": 60.78737497329712,
+    "num_model_calls": 38,
+    "num_tool_calls": 30,
+    "total_tokens": 46859,
+    "num_processors": 3
+  }
+}

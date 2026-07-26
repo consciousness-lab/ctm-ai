@@ -1,0 +1,18 @@
+{
+  "query": "I'm a social media influencer and I want to track the engagement of my posts. Can you help me create short URLs for each post using the bitly tool? I also need to create branded short links for my website using the URL Link Shortener tool.",
+  "query_id": 1991,
+  "final_answer": "I have successfully retrieved a list of branded domains from the URL Link Shortener tool. Here are the details of the domains:\n\n1. Domain ID: 639b7d02e9c89b012359a3f4\n   - Full Name: mycustomdomain1.rebrand.ly\n   - Name: mycustomdomain1\n   - Extension: rebrand.ly\n   - Created At: 2023-04-15T10:00:00.000Z\n   - Updated At: 2023-04-15T10:00:00.000Z\n   - Owner: null\n   - Stats: null\n   - Active: true\n\n2. Domain ID: 639b7d02e9c89b012359a3f5\n   - Full Name: mycustomdomain2.rebrand.ly\n   - Name: mycustomdomain2\n   - Extension: rebrand.ly\n   - Created At: 2023-04-15T10:00:00.000Z\n   - Updated At: 2023-04-15T10:00:00.000Z\n   - Owner: null\n   - Stats: null\n   - Active: true\n\nThese domains are currently active and can be used to create branded short links for your website. You can now use these domains to generate short URLs for your posts using the Bitly tool.",
+  "weight_score": 2.12,
+  "parsed_answer": "To help you track engagement and create branded short links for your social media posts and website, here's a step-by-step guide based on the analysis provided:\n\n### 1. **Create Short URLs for Social Media Posts Using Bitly**\n- **Step 1:** Log in to your Bitly account.\n- **Step 2:** Navigate to the \"Create\" section and paste the full URL of your post.\n- **Step 3:** Customize the short link (if desired) using Bitly's shortening feature.\n- **Step 4:** Copy the generated Bitly short URL and use it in your social media posts.\n- **Step 5:** Track engagement metrics like clicks, shares, and saves directly from Bitly's analytics dashboard.\n\n### 2. **Create Branded Short Links for Your Website Using the URL Link Shortener Tool**\n- **Step 1:** Log in to your URL Link Shortener tool (likely Rebrandly, given the domain format).\n- **Step 2:** Use one of the active branded domains you've retrieved:\n  - `mycustomdomain1.rebrand.ly`\n  - `mycustomdomain2.rebrand.ly`\n- **Step 3:** Paste your website URL into the shortening tool.\n- **Step 4:** Choose the branded domain and generate the short link.\n- **Step 5:** Copy the branded short link and use it as your primary link for your website across all platforms.\n\n### 3. **Track Engagement and Performance**\n- **Bitly Analytics:** Monitor click-through rates, geographic data, and referral sources for your social media posts.\n- **Branded Domain Analytics:** Use the Rebrandly analytics dashboard to track traffic, user behavior, and performance of your branded short links.\n\n### Summary\n- Use **Bitly** to create and track short URLs for your social media posts.\n- Use your **branded domains (mycustomdomain1.rebrand.ly and mycustomdomain2.rebrand.ly)** to generate branded short links for your website.\n- Monitor engagement and performance through the respective analytics tools.\n\nThis setup will help you maintain a professional brand presence while effectively tracking the performance of your online content.",
+  "metrics": {
+    "latency_seconds": 96.23419046401978,
+    "num_processors": 8,
+    "num_model_calls": 17,
+    "num_tool_calls": 6,
+    "total_tokens": 16947,
+    "prompt_tokens": 14109,
+    "completion_tokens": 2838,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

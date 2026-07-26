@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a road trip with my family and I want to share our itinerary with friends. Can you generate short URLs for each destination using the bitly tool? Additionally, I need a list of available domains from the URL Link Shortener tool to choose the perfect domain for the trip.",
+  "query_id": 1985,
+  "final_answer": "Here's the information you requested:\n\n1. A short URL for the destination has been created: https://short.ly/destination1.\n2. Available domains from the URL Link Shortener tool include:\n   - mycustomdomain.com (ID: 64ad7990e2d5b1850c80003a)\n   - shortlink.site (ID: 64ad7990e2d5b1850c80003b)\n\nYou can use these domains to share your itinerary with friends. Let me know if you need further assistance!",
+  "weight_score": 0.0,
+  "parsed_answer": "Here's the information you requested:\n\n1. A short URL for the destination has been created: https://short.ly/destination1.\n2. Available domains from the URL Link Shortener tool include:\n   - mycustomdomain.com (ID: 64ad7990e2d5b1850c80003a)\n   - shortlink.site (ID: 64ad7990e2d5b1850c80003b)\n\nYou can use these domains to share your itinerary with friends. Let me know if you need further assistance!",
+  "metrics": {
+    "latency_seconds": 78.27061438560486,
+    "num_model_calls": 5,
+    "num_tool_calls": 4,
+    "total_tokens": 7469,
+    "num_processors": 3
+  }
+}

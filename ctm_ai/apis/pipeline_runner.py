@@ -2,11 +2,86 @@ import json
 import multiprocessing
 import os
 import random
+import time
 
 from termcolor import colored
 
 from .api_manager import contain, get_white_list, rapidapi_wrapper
 from .api_server import standardize
+
+# Cache of the full tool pool per tool_root_dir, for distractor sampling (S2).
+_TOOL_POOL_CACHE: dict = {}
+
+
+def _get_tool_pool(tool_root_dir):
+    """List every (category_dir, tool_json_path) under the tool root (cached)."""
+    if tool_root_dir not in _TOOL_POOL_CACHE:
+        pool = []
+        for cate in os.listdir(tool_root_dir):
+            catdir = os.path.join(tool_root_dir, cate)
+            if not os.path.isdir(catdir):
+                continue
+            for fname in os.listdir(catdir):
+                if fname.endswith('.json'):
+                    pool.append((cate, os.path.join(catdir, fname)))
+        _TOOL_POOL_CACHE[tool_root_dir] = pool
+    return _TOOL_POOL_CACHE[tool_root_dir]
+
+
+def _augment_api_list_to_k(data_dict, tool_des, k, tool_root_dir, seed):
+    """Cap/pad a query to exactly ``k`` tools = its relevant tools + random
+    distractor tools sampled from the pool (seeded → reproducible). Returns
+    ``(new_data_dict, new_tool_des)`` kept index-aligned. Used for the
+    processor-count (K) scaling experiment (T1/T3)."""
+    rng = random.Random(seed)
+    relevant = list(data_dict.get('api_list', []))
+    if tool_des and len(tool_des) == len(relevant):
+        paired = list(zip(relevant, tool_des))
+    else:
+        paired = [(a, [standardize(a['tool_name']), '']) for a in relevant]
+
+    if len(paired) >= k:
+        selected = rng.sample(paired, k)
+    else:
+        selected = list(paired)
+        used = {
+            (standardize(a['category_name']), standardize(a['tool_name']))
+            for a, _ in paired
+        }
+        pool = _get_tool_pool(tool_root_dir)
+        attempts = 0
+        max_attempts = max(1000, k * 300)
+        while len(selected) < k and attempts < max_attempts:
+            attempts += 1
+            cate, tool_path = rng.choice(pool)
+            base = os.path.basename(tool_path)[:-5]
+            key = (standardize(cate), standardize(base))
+            if key in used:
+                continue
+            try:
+                tool_json = json.load(open(tool_path))
+            except (OSError, ValueError):
+                continue
+            apis = tool_json.get('api_list', [])
+            if not apis:
+                continue
+            api = rng.choice(apis)
+            used.add(key)
+            selected.append(
+                (
+                    {
+                        'category_name': cate,
+                        'tool_name': tool_json.get('tool_name', ''),
+                        'api_name': api.get('name', ''),
+                    },
+                    [base, tool_json.get('tool_description', '')],
+                )
+            )
+
+    new_data = dict(data_dict)
+    new_data['api_list'] = [a for a, _ in selected]
+    new_tool_des = [d for _, d in selected]
+    return new_data, new_tool_des
 
 
 def method_converter(
@@ -34,7 +109,8 @@ def method_converter(
     answer = ctm(
         query=query,
     )
-    return answer
+    # Return the ctm too so the caller can read per-query run metrics (S1).
+    return answer, ctm
 
 
 def run_single_task(
@@ -70,6 +146,15 @@ def run_single_task(
     set_iteration_log_file(str(query_id), log_file)
 
     [callback.on_tool_retrieval_start() for callback in callbacks]
+    k_proc = getattr(args, 'k_processors', None)
+    if k_proc is not None:
+        data_dict, tool_des = _augment_api_list_to_k(
+            data_dict,
+            tool_des,
+            k_proc,
+            args.tool_root_dir,
+            seed=int(query_id) * 10007 + k_proc,
+        )
     env = rapidapi_wrapper(data_dict, tool_des, args, process_id=process_id)
 
     if (
@@ -109,12 +194,35 @@ def run_single_task(
     num_additional_questions = getattr(args, 'num_additional_questions', 3)
     ctm_name = getattr(args, 'ctm_name', None)
 
-    answer, weight_score, parsed_answer = method_converter(
+    _t0 = time.time()
+    (answer, weight_score, parsed_answer), ctm = method_converter(
         env=env,
         query=query,
         num_additional_questions=num_additional_questions,
         ctm_name=ctm_name,
     )
+    _latency = time.time() - _t0
+
+    # --- S1: per-query run metrics (model/tool calls, tokens, latency, links) ---
+    usage = ctm.get_usage_stats()
+    parse_usage = ctm.get_parse_usage_stats()
+    adjacency = ctm.processor_graph.adjacency_list
+    active_links = sum(len(v) for v in adjacency.values()) // 2
+    metrics = {
+        'latency_seconds': _latency,
+        'num_processors': len(ctm.processor_graph.nodes),
+        # processor stage-1 + stage-2 calls, plus the final parse/summarize call
+        'num_model_calls': usage.get('api_calls', 0) + 1,
+        'num_tool_calls': getattr(env, 'tool_call_count', 0),
+        'total_tokens': usage.get('total_tokens', 0)
+        + parse_usage.get('total_tokens', 0),
+        'prompt_tokens': usage.get('prompt_tokens', 0)
+        + parse_usage.get('prompt_tokens', 0),
+        'completion_tokens': usage.get('completion_tokens', 0)
+        + parse_usage.get('completion_tokens', 0),
+        'num_links_added': getattr(ctm, '_total_links_added', 0),
+        'active_links': active_links,
+    }
 
     [
         callback.on_request_end(
@@ -131,6 +239,7 @@ def run_single_task(
             data['final_answer'] = answer
             data['weight_score'] = weight_score
             data['parsed_answer'] = parsed_answer
+            data['metrics'] = metrics
             json.dump(data, writer, indent=2)
             success = True
             print(colored(f'[process({process_id})]valid={success}', 'green'))

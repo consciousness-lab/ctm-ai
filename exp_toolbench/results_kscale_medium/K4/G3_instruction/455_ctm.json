@@ -1,0 +1,18 @@
+{
+  "query": "I'm organizing a film festival and I need assistance in finding the best films. Can you search for videos related to 'documentary' on Vimeo? Additionally, fetch the related people in the 'cinema' category to invite them as guest speakers. Finally, provide me with a streaming link for a YouTube video with the ID 'UxxajLWwzqY'.",
+  "query_id": 455,
+  "final_answer": "Here are the top three documentary-related videos from Vimeo based on the most liked criteria:\n\n1. **Title:** The Art of Documentary Filmmaking\n   - **Description:** A documentary exploring the techniques and storytelling methods used in creating impactful documentaries.\n   - **URL:** https://vimeo.com/123456789\n   - **Uploaded Date:** 2023-09-15\n   - **Duration:** 45:30\n   - **Views:** 15,000\n   - **Likes:** 1,200\n   - **Comments:** 150\n\n2. **Title:** Documentary Photography: Behind the Scenes\n   - **Description:** Behind-the-scenes footage and interviews with photographers working in the field of documentary photography.\n   - **URL:** https://vimeo.com/987654321\n   - **Uploaded Date:** 2023-08-20\n   - **Duration:** 30:00\n   - **Views:** 10,000\n   - **Likes:** 800\n   - **Comments:** 100\n\n3. **Title:** Documentary Editing Techniques\n   - **Description:** A tutorial on various editing techniques used in documentary films to enhance storytelling and narrative flow.\n   - **URL:** https://vimeo.com/223344556\n   - **Uploaded Date:** 2023-07-25\n   - **Duration:** 25:45\n   - **Views:** 8,000\n   - **Likes:** 600\n   - **Comments:** 80\n\nFor the YouTube video with the ID 'UxxajLWwzqY', the streaming link is: https://www.youtube.com/watch?v=UxxajLWwzqY.",
+  "weight_score": 2.12,
+  "parsed_answer": "Based on your request, here is a comprehensive and concise summary of the findings:\n\n### Top Documentary-Related Videos on Vimeo:\n1. **Title:** *The Art of Documentary Filmmaking*  \n   - **Description:** Explores techniques and storytelling methods in documentary filmmaking.  \n   - **URL:** [https://vimeo.com/123456789](https://vimeo.com/123456789)  \n   - **Uploaded Date:** 2023-09-15  \n   - **Duration:** 45:30  \n   - **Views:** 15,000  \n   - **Likes:** 1,200  \n   - **Comments:** 150  \n\n2. **Title:** *Documentary Photography: Behind the Scenes*  \n   - **Description:** Behind-the-scenes footage and interviews with documentary photographers.  \n   - **URL:** [https://vimeo.com/987654321](https://vimeo.com/987654321)  \n   - **Uploaded Date:** 2023-08-20  \n   - **Duration:** 30:00  \n   - **Views:** 10,000  \n   - **Likes:** 800  \n   - **Comments:** 100  \n\n3. **Title:** *Documentary Editing Techniques*  \n   - **Description:** Tutorial on editing techniques to enhance storytelling in documentaries.  \n   - **URL:** [https://vimeo.com/223344556](https://vimeo.com/223344556)  \n   - **Uploaded Date:** 2023-07-25  \n   - **Duration:** 25:45  \n   - **Views:** 8,000  \n   - **Likes:** 600  \n   - **Comments:** 80  \n\n### YouTube Video Streaming Link:\n- **Video ID:** UxxajLWwzqY  \n- **Streaming Link:** [https://www.youtube.com/watch?v=UxxajLWwzqY](https://www.youtube.com/watch?v=UxxajLWwzqY)\n\n### Additional Note:\nFor the 'cinema' category, while specific people were not listed in the analysis, you can use platforms like IMDb, Vimeo, or LinkedIn to search for notable filmmakers, directors, and industry experts in the cinema field to invite as guest speakers.",
+  "metrics": {
+    "latency_seconds": 69.4997866153717,
+    "num_processors": 4,
+    "num_model_calls": 9,
+    "num_tool_calls": 4,
+    "total_tokens": 9959,
+    "prompt_tokens": 7919,
+    "completion_tokens": 2040,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "query": "I want to watch a classic movie with my family. Can you suggest a popular classic movie available for streaming in the US? Also, provide the streaming sources for the movie 'Casablanca'.",
+  "query_id": 5864,
+  "final_answer": "I was unable to retrieve streaming availability information for the movie 'Casablanca' due to an error in the API call. However, 'Casablanca' is a highly popular classic film that is often available on streaming platforms. You may want to check platforms like Amazon Prime Video, Hulu, or Netflix for availability. Since the streaming availability data could not be retrieved, it's recommended to verify directly on the platforms or use a streaming service's search feature to confirm if 'Casablanca' is available for streaming in the US.",
+  "weight_score": 1.06,
+  "parsed_answer": "Based on the analysis provided, here is a comprehensive and concise response to your request:\n\n**Suggested Classic Movie:**  \n\"**Casablanca**\" is a highly popular classic film that is often available for streaming in the US. It is a timeless choice for family movie nights, known for its compelling storyline, memorable characters, and iconic performances.\n\n**Streaming Sources for 'Casablanca':**  \nWhile the exact streaming availability could not be confirmed due to an API error, you can check the following platforms in the US for availability:  \n- **Amazon Prime Video**  \n- **Hulu**  \n- **Netflix**  \n\n**Recommendation:**  \nTo confirm availability, you may want to use the search feature on these platforms or check their official websites. Alternatively, you can use a streaming service like **Google Play Movies**, **iTunes**, or **Vudu** for rental or purchase options.",
+  "metrics": {
+    "latency_seconds": 40.594305992126465,
+    "num_processors": 1,
+    "num_model_calls": 7,
+    "num_tool_calls": 3,
+    "total_tokens": 5735,
+    "prompt_tokens": 4791,
+    "completion_tokens": 944,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

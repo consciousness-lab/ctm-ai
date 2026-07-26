@@ -1,0 +1,14 @@
+{
+  "query": "I am planning a surprise party for my sister and I want to create personalized video invitations for all the guests. Can you provide me with the details of the templates available in my Nexweave account? Additionally, I would like to fetch the details of a specific order using the tes API.",
+  "query_id": 4031,
+  "final_answer": "It seems there is an issue with the API token for accessing the Nexweave templates. Please ensure you have the correct API token and try again. If you need further assistance, feel free to ask.",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there is an issue with the API token for accessing the Nexweave templates. Please ensure you have the correct API token and try again. If you need further assistance, feel free to ask.",
+  "metrics": {
+    "latency_seconds": 62.692750692367554,
+    "num_model_calls": 8,
+    "num_tool_calls": 6,
+    "total_tokens": 18372,
+    "num_processors": 9
+  }
+}

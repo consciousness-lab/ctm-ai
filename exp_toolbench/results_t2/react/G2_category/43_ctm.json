@@ -1,0 +1,14 @@
+{
+  "query": "My friends and I are eagerly awaiting the delivery of a package. Can you please track the package with the Pack & Send reference number 'ReferenceNumberHere'? Additionally, I'm interested in the latest status of the package with colis ID 'CA107308006SI'.",
+  "query_id": 43,
+  "final_answer": "The package with Pack & Send reference number 'ReferenceNumberHere' is currently being processed and is expected to be delivered within 3 business days from the pickup date. For the colis ID 'CA107308006SI', the latest status is that the package is in transit and was last updated on 09/09/2019 at 09:41:12 in Noum\u00e9a CDC.",
+  "weight_score": 0.0,
+  "parsed_answer": "The package with Pack & Send reference number 'ReferenceNumberHere' is currently being processed and is expected to be delivered within 3 business days from the pickup date. For the colis ID 'CA107308006SI', the latest status is that the package is in transit and was last updated on 09/09/2019 at 09:41:12 in Noum\u00e9a CDC.",
+  "metrics": {
+    "latency_seconds": 29.951406240463257,
+    "num_model_calls": 3,
+    "num_tool_calls": 2,
+    "total_tokens": 3579,
+    "num_processors": 5
+  }
+}

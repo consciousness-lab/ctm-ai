@@ -1,0 +1,14 @@
+{
+  "query": "My friend loves puzzles. Can you scramble the word 'PUZZLE' for me? I also want to have a chat with an AI chatbot. Ask the chatbot if it knows any good puzzle games.",
+  "query_id": 15067,
+  "final_answer": "The scrambled word for 'PUZZLE' is 'ZUUEPLL'. The AI chatbot responded that it doesn't know any good puzzle games.",
+  "weight_score": 0.0,
+  "parsed_answer": "The scrambled word for 'PUZZLE' is 'ZUUEPLL'. The AI chatbot responded that it doesn't know any good puzzle games.",
+  "metrics": {
+    "latency_seconds": 62.82711625099182,
+    "num_model_calls": 10,
+    "num_tool_calls": 6,
+    "total_tokens": 7020,
+    "num_processors": 2
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "query": "I want to create a movie recommendation website and I need to find movies similar to 'Titanic' for our users. Can you suggest some similar movies and provide the movie ID for 'Titanic'? Additionally, it would be great to include the latest anime releases on our website.",
+  "query_id": 3463,
+  "final_answer": "Here's the information you requested:\n\n- **Movie ID for 'Titanic'**: `24168-titanic`\n- **Similar Movies to 'Titanic'**:\n  1. Romeo + Juliet (1996)\n  2. The Notebook (2004)\n  3. Atonement (2001)\n  4. Wuthering Heights (1992)\n  5. Anna and the King (1999)\n\nFor the latest anime releases, you might need to check a specific anime database or API. If you have any other questions or need further assistance, feel free to ask!",
+  "weight_score": 0.0,
+  "parsed_answer": "Here's the information you requested:\n\n- **Movie ID for 'Titanic'**: `24168-titanic`\n- **Similar Movies to 'Titanic'**:\n  1. Romeo + Juliet (1996)\n  2. The Notebook (2004)\n  3. Atonement (2001)\n  4. Wuthering Heights (1992)\n  5. Anna and the King (1999)\n\nFor the latest anime releases, you might need to check a specific anime database or API. If you have any other questions or need further assistance, feel free to ask!",
+  "metrics": {
+    "latency_seconds": 84.76771783828735,
+    "num_model_calls": 5,
+    "num_tool_calls": 4,
+    "total_tokens": 9667,
+    "num_processors": 5
+  }
+}

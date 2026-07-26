@@ -1,0 +1,14 @@
+{
+  "query": "I'm organizing a workshop on mindfulness and need to schedule appointments for the participants. Can you fetch the available appointment times at the clinic for the workshop day? Additionally, provide me with a list of exercises that target the mind and require meditation.",
+  "query_id": 9957,
+  "final_answer": "It seems there was an issue retrieving the planetary overview or horoscope information. However, I can provide the available appointment times for the clinic on the workshop day. The available times are as follows: 07:00, 07:15, 07:30, 07:45, 08:00, 08:15, 08:30, 08:45, 09:00, 09:15, 09:30, and so on. Please note that all times are marked as unavailable. If you need further assistance, please let me know.",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there was an issue retrieving the planetary overview or horoscope information. However, I can provide the available appointment times for the clinic on the workshop day. The available times are as follows: 07:00, 07:15, 07:30, 07:45, 08:00, 08:15, 08:30, 08:45, 09:00, 09:15, 09:30, and so on. Please note that all times are marked as unavailable. If you need further assistance, please let me know.",
+  "metrics": {
+    "latency_seconds": 38.62168526649475,
+    "num_model_calls": 5,
+    "num_tool_calls": 4,
+    "total_tokens": 9228,
+    "num_processors": 5
+  }
+}

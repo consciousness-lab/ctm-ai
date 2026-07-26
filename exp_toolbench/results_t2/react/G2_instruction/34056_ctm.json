@@ -1,0 +1,14 @@
+{
+  "query": "My company is organizing a financial conference and we need to download the portfolio for the event. Can you assist us in downloading the portfolio from FreeFloatUs? Additionally, I'm interested in knowing the equivalent words for the number 98765432.10 in English.",
+  "query_id": 34056,
+  "final_answer": "I apologize for the inconvenience. It seems there is an issue with the API token for accessing the FreeFloatUs portfolio. Please ensure you have the correct API token and include it in your request either as a header or a query parameter. If you need further assistance, please provide the token or more details about the setup. Additionally, the equivalent words for the number 98765432.10 in English are: ninety-eight million, seven hundred and sixty-five thousand, four hundred and thirty-two dollars and ten cents.",
+  "weight_score": 0.0,
+  "parsed_answer": "I apologize for the inconvenience. It seems there is an issue with the API token for accessing the FreeFloatUs portfolio. Please ensure you have the correct API token and include it in your request either as a header or a query parameter. If you need further assistance, please provide the token or more details about the setup. Additionally, the equivalent words for the number 98765432.10 in English are: ninety-eight million, seven hundred and sixty-five thousand, four hundred and thirty-two dollars and ten cents.",
+  "metrics": {
+    "latency_seconds": 14.901551723480225,
+    "num_model_calls": 5,
+    "num_tool_calls": 3,
+    "total_tokens": 6307,
+    "num_processors": 5
+  }
+}

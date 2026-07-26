@@ -1,0 +1,18 @@
+{
+  "query": "I'm planning a weekend getaway with my family and we want to watch some movies during our trip. Can you recommend some popular movies that are available for streaming in Australia? Also, provide us with the streaming sources where we can watch these movies.",
+  "query_id": 8334,
+  "final_answer": "Here are some popular movies that are currently available for streaming in Australia, along with the platforms where they can be found: 1. 'The Batman' (2022) - Available on HBO Max. 2. 'The Gray Man' (2022) - Available on Amazon Prime Video. 3. 'Barbie' (2023) - Available on Netflix. 4. 'The Power of the Dog' (2021) - Available on Netflix. 5. 'Everything Everywhere All At Once' (2022) - Available on Netflix. These movies are well-received and widely available on major streaming platforms in Australia. For the most up-to-date availability, you can check the platforms directly. The subscription costs for Netflix in Australia are approximately $11.99 per month, while Amazon Prime Video is around $12.99 per month. These prices may vary depending on the subscription plan and any ongoing promotions.",
+  "weight_score": 1.6,
+  "parsed_answer": "Here are some popular movies currently available for streaming in Australia, along with the platforms where they can be found:\n\n1. **'The Batman' (2022)** \u2013 Available on **HBO Max**.  \n2. **'The Gray Man' (2022)** \u2013 Available on **Amazon Prime Video**.  \n3. **'Barbie' (2023)** \u2013 Available on **Netflix**.  \n4. **'The Power of the Dog' (2021)** \u2013 Available on **Netflix**.  \n5. **'Everything Everywhere All At Once' (2022)** \u2013 Available on **Netflix**.  \n\nThese films are well-received and accessible on major streaming platforms in Australia. For the most accurate and up-to-date availability, it is recommended to check the platforms directly. \n\n**Subscription Costs (approximate):**  \n- **Netflix**: $11.99 per month  \n- **Amazon Prime Video**: $12.99 per month  \n\nPrices may vary based on your subscription plan or any ongoing promotions. Enjoy your family movie night!",
+  "metrics": {
+    "latency_seconds": 161.96709656715393,
+    "num_processors": 4,
+    "num_model_calls": 43,
+    "num_tool_calls": 21,
+    "total_tokens": 43908,
+    "prompt_tokens": 38400,
+    "completion_tokens": 5508,
+    "num_links_added": 3,
+    "active_links": 3
+  }
+}

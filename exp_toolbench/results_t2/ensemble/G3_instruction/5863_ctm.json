@@ -1,0 +1,14 @@
+{
+  "query": "I'm hosting a company movie night and we want to watch a sci-fi movie. Can you suggest a popular sci-fi movie available for streaming in the US? Also, provide the streaming sources for the movie 'Inception'.",
+  "query_id": 5863,
+  "final_answer": "",
+  "weight_score": 0.0,
+  "parsed_answer": "",
+  "metrics": {
+    "latency_seconds": 30.806752681732178,
+    "num_model_calls": 24,
+    "num_tool_calls": 21,
+    "total_tokens": 51157,
+    "num_processors": 6
+  }
+}

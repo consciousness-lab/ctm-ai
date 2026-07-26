@@ -1,0 +1,18 @@
+{
+  "query": "I'm looking for some Bollywood movie recommendations. Fetch a list of comedy movies released in 2013. Additionally, provide me with the details of the top-ranked movie from IMDb's top 100 movies list.",
+  "query_id": 3640,
+  "final_answer": "Based on the information provided, here are the details you requested. Regarding the list of comedy movies released in 2013, some popular Bollywood comedy movies from that year include 'Bride and Prejudice 2: An Eloquents Love Story', 'Dilwale Dulhania Le Jayenge 2', 'Kuch Kuch Hota Hai 2', and 'Happy New Year'. As for the top-ranked movie from IMDb's top 100 movies list, it is 'The Shawshank Redemption'. This movie was released in 1994, directed by Frank Darabont, and stars Tim Robbins, Morgan Freeman, and Bob Gunton. It has a rating of 9.2 on IMDb.",
+  "weight_score": 2.12,
+  "parsed_answer": "Here is the requested information based on the analysis:\n\n### Bollywood Comedy Movies Released in 2013:\n1. **Bride and Prejudice 2: An Eloquents Love Story**  \n2. **Dilwale Dulhania Le Jayenge 2**  \n3. **Kuch Kuch Hota Hai 2**  \n4. **Happy New Year**\n\n### Top-Ranked Movie from IMDb's Top 100 Movies List:\n- **Title:** *The Shawshank Redemption*  \n- **Release Year:** 1994  \n- **Director:** Frank Darabont  \n- **Lead Actors:** Tim Robbins, Morgan Freeman, Bob Gunton  \n- **IMDb Rating:** 9.2  \n\nLet me know if you'd like more details or additional recommendations!",
+  "metrics": {
+    "latency_seconds": 482.83603405952454,
+    "num_processors": 7,
+    "num_model_calls": 53,
+    "num_tool_calls": 23,
+    "total_tokens": 74978,
+    "prompt_tokens": 68836,
+    "completion_tokens": 6142,
+    "num_links_added": 6,
+    "active_links": 6
+  }
+}

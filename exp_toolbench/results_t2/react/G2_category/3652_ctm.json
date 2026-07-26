@@ -1,0 +1,14 @@
+{
+  "query": "My company is organizing a movie-themed event and we need information about a specific movie. Can you fetch the crew details for the movie with the Imdb Id 'tt987654'? Also, provide us with a random actor suggestion.",
+  "query_id": 3652,
+  "final_answer": "The crew details for the movie with the Imdb Id 'tt987654' could not be retrieved. However, here is a random actor suggestion for your movie-themed event: Faby Martinez. She is known for her role in the movie 'The Last Days of American Crime.' Let me know if you need further assistance!",
+  "weight_score": 0.0,
+  "parsed_answer": "The crew details for the movie with the Imdb Id 'tt987654' could not be retrieved. However, here is a random actor suggestion for your movie-themed event: Faby Martinez. She is known for her role in the movie 'The Last Days of American Crime.' Let me know if you need further assistance!",
+  "metrics": {
+    "latency_seconds": 13.204049587249756,
+    "num_model_calls": 5,
+    "num_tool_calls": 3,
+    "total_tokens": 7536,
+    "num_processors": 7
+  }
+}

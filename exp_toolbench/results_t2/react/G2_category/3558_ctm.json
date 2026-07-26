@@ -1,0 +1,14 @@
+{
+  "query": "I want to watch a specific movie, 'The Shawshank Redemption'. Can you fetch the details of this movie, including its director, cast, and rating? Also, provide additional details like plot summaries, quotes, and reviews for this movie.",
+  "query_id": 3558,
+  "final_answer": "It seems there was an issue retrieving the additional details for 'The Shawshank Redemption'. However, I can provide the basic information about the movie. 'The Shawshank Redemption' is directed by Frank Darabont, stars Tim Robbins and Morgan Freeman, and has an IMDb rating of 9.3. The movie is a drama about hope and friendship, set in a prison. For more detailed information like plot summaries, quotes, and reviews, please try checking the IMDb website directly.",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there was an issue retrieving the additional details for 'The Shawshank Redemption'. However, I can provide the basic information about the movie. 'The Shawshank Redemption' is directed by Frank Darabont, stars Tim Robbins and Morgan Freeman, and has an IMDb rating of 9.3. The movie is a drama about hope and friendship, set in a prison. For more detailed information like plot summaries, quotes, and reviews, please try checking the IMDb website directly.",
+  "metrics": {
+    "latency_seconds": 7.86875581741333,
+    "num_model_calls": 3,
+    "num_tool_calls": 2,
+    "total_tokens": 3134,
+    "num_processors": 3
+  }
+}

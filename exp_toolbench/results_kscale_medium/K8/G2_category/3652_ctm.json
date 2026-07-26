@@ -1,0 +1,18 @@
+{
+  "query": "My company is organizing a movie-themed event and we need information about a specific movie. Can you fetch the crew details for the movie with the Imdb Id 'tt987654'? Also, provide us with a random actor suggestion.",
+  "query_id": 3652,
+  "final_answer": "The movie with the IMDb ID 'tt987654' could not be found in the database. This indicates that either the IMDb ID is incorrect or the movie is not available in the current database. As a result, it is not possible to retrieve crew details or suggest a random actor for this specific movie. Please verify the IMDb ID or provide more details about the movie to proceed.",
+  "weight_score": 1.06,
+  "parsed_answer": "Based on the analysis provided, the IMDb ID 'tt987654' could not be found in the database. This suggests that either the ID is incorrect or the movie is not available in the current system. As a result, it is not possible to retrieve crew details for this movie or provide a random actor suggestion.\n\nTo proceed, please verify the IMDb ID or provide additional information about the movie, such as the title, release year, or genre. This will help in accurately fetching the required details.",
+  "metrics": {
+    "latency_seconds": 122.03497791290283,
+    "num_processors": 5,
+    "num_model_calls": 47,
+    "num_tool_calls": 12,
+    "total_tokens": 40111,
+    "prompt_tokens": 35310,
+    "completion_tokens": 4801,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

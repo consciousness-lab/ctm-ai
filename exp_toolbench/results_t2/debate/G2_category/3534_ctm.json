@@ -1,0 +1,14 @@
+{
+  "query": "I'm organizing a film-themed event and I want to showcase quotes from a specific actor. Can you fetch me the quotes from the actor 'Al Pacino'? Also, provide me with some interesting facts about the different types of titles in the MoviesDatabase API.",
+  "query_id": 3534,
+  "final_answer": "Here are the quotes from Al Pacino:\n\n1. \"Keep your friends close, but your enemies closer.\" - Michael Corleone from *The Godfather Part II* (1974)\n\nInteresting facts about the different types of titles in the MoviesDatabase API:\n- The API supports a variety of title types such as movies, TV episodes, podcasts, and more.\n- It includes types like 'tvSeries', 'tvEpisode', 'tvMovie', 'tvMiniSeries', and 'tvPilot', among others.\n- There are also types like 'musicVideo', 'podcastEpisode', and 'videoGame' to cover a wide range of media content.\n\nLet me know if you need further assistance with your event!",
+  "weight_score": 0.0,
+  "parsed_answer": "Here are the quotes from Al Pacino:\n\n1. \"Keep your friends close, but your enemies closer.\" - Michael Corleone from *The Godfather Part II* (1974)\n\nInteresting facts about the different types of titles in the MoviesDatabase API:\n- The API supports a variety of title types such as movies, TV episodes, podcasts, and more.\n- It includes types like 'tvSeries', 'tvEpisode', 'tvMovie', 'tvMiniSeries', and 'tvPilot', among others.\n- There are also types like 'musicVideo', 'podcastEpisode', and 'videoGame' to cover a wide range of media content.\n\nLet me know if you need further assistance with your event!",
+  "metrics": {
+    "latency_seconds": 93.23597311973572,
+    "num_model_calls": 24,
+    "num_tool_calls": 12,
+    "total_tokens": 35716,
+    "num_processors": 6
+  }
+}

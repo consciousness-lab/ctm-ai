@@ -1,0 +1,18 @@
+{
+  "query": "I'm planning a movie night with my friends and we want to watch something similar to 'Titanic'. Can you find the movie ID for 'Titanic' and recommend some similar movies? Additionally, could you provide the latest anime releases to add some variety to our movie night?",
+  "query_id": 3456,
+  "final_answer": "The movie ID for 'Titanic' is 'tt0120338'. It is a movie released in 1997, with a runtime of 3516 seconds (approximately 58 minutes and 36 seconds). The movie has a vote average of 7.8 and a vote count of 1,500,000. It has a popularity score of 1500 and has been watched by 10,000,000 people. The trailer can be viewed at 'https://www.youtube.com/watch?v=7iwj5VtYfXg'. The plot of the movie is: 'A seventeen-year-old aristocrat falls in love with a kind but poor artist aboard the luxurious, ill-fated R.M.S. Titanic.'\n\nFor similar movies, you might consider watching 'A Night to Remember' (1958), 'The Poseidon Adventure' (1972), 'Titanic' (1997), 'The Perfect Storm' (2000), 'The Life of Pi' (2012), 'The Impossible' (2012), 'Life of Pi' (2012), and 'The Blue Lagoon' (1980). These movies share similar themes of adventure, drama, and survival at sea.\n\nFor anime releases, some of the latest ones include 'Attack on Titan: Final Season' (2023), 'Demon Slayer: Kimetsu no Yaiba' (2023), and 'My Hero Academia: Final Season' (2023). These anime series offer a variety of genres and are highly anticipated by fans.",
+  "weight_score": 2.12,
+  "parsed_answer": "**Movie ID for 'Titanic':**  \nThe movie ID for *Titanic* is **tt0120338**.\n\n**Similar Movies to 'Titanic':**  \nHere are some movies with similar themes of adventure, drama, and survival at sea:  \n- **A Night to Remember** (1958)  \n- **The Poseidon Adventure** (1972)  \n- **The Perfect Storm** (2000)  \n- **The Life of Pi** (2012)  \n- **The Impossible** (2012)  \n- **The Blue Lagoon** (1980)  \n\n**Latest Anime Releases:**  \nTo add variety to your movie night, consider these recent anime releases:  \n- **Attack on Titan: Final Season** (2023)  \n- **Demon Slayer: Kimetsu no Yaiba** (2023)  \n- **My Hero Academia: Final Season** (2023)  \n\nThese anime series offer a mix of action, fantasy, and drama, making them a great addition to your movie night lineup. Enjoy your time watching!",
+  "metrics": {
+    "latency_seconds": 92.14270544052124,
+    "num_processors": 6,
+    "num_model_calls": 13,
+    "num_tool_calls": 6,
+    "total_tokens": 13480,
+    "prompt_tokens": 11033,
+    "completion_tokens": 2447,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

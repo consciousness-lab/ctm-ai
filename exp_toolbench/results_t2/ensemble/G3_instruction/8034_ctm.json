@@ -1,0 +1,14 @@
+{
+  "query": "I'm a film critic and I need to gather information about a specific movie. Can you provide me with the basic details and streaming availability of the movie with IMDb ID tt1877830? Additionally, fetch the details of the actors and crew associated with the movie.",
+  "query_id": 8034,
+  "final_answer": "The movie **Thor** (IMDb ID: tt1877830) has the following basic details:\n\n- **Genre**: Action, Adventure, Sci-Fi\n- **Release Year**: 2011\n- **Runtime**: 148 minutes\n- **IMDb Rating**: 6.9\n- **Language**: English\n- **Synopsis**: The powerful but arrogant god Thor is cast out of Asgard to live amongst humans in Midgard (Earth), where he soon becomes one of their finest defenders.\n- **Streaming Availability**:\n  - **United States**: Disney+, Amazon Prime\n  - **India**: Disney+ Hotstar\n\nFor the cast and crew, it seems there was an issue with the title ID used. If you have any further questions or need more details, please let me know!",
+  "weight_score": 0.0,
+  "parsed_answer": "The movie **Thor** (IMDb ID: tt1877830) has the following basic details:\n\n- **Genre**: Action, Adventure, Sci-Fi\n- **Release Year**: 2011\n- **Runtime**: 148 minutes\n- **IMDb Rating**: 6.9\n- **Language**: English\n- **Synopsis**: The powerful but arrogant god Thor is cast out of Asgard to live amongst humans in Midgard (Earth), where he soon becomes one of their finest defenders.\n- **Streaming Availability**:\n  - **United States**: Disney+, Amazon Prime\n  - **India**: Disney+ Hotstar\n\nFor the cast and crew, it seems there was an issue with the title ID used. If you have any further questions or need more details, please let me know!",
+  "metrics": {
+    "latency_seconds": 63.44344091415405,
+    "num_model_calls": 14,
+    "num_tool_calls": 10,
+    "total_tokens": 30872,
+    "num_processors": 6
+  }
+}

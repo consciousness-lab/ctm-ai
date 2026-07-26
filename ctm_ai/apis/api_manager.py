@@ -136,6 +136,8 @@ You have access of the following tools:\n"""
             self.task_description += f'{k + 1}.{standardize_tool_name}: {striped}\n'
 
         self.success = 0
+        # S1 metric: number of real tool (/virtual) invocations for this query.
+        self.tool_call_count = 0
 
     def build_tool_description(self, data_dict):
         white_list = get_white_list(self.tool_root_dir)
@@ -340,6 +342,7 @@ You have access of the following tools:\n"""
                 function = function_dict['function']
                 if function['name'].endswith(action_name):
                     pure_api_name = self.api_name_reflect[function['name']]
+                    self.tool_call_count += 1
                     payload = {
                         'category': self.cate_names[k],
                         'tool_name': self.tool_names[k],
@@ -361,7 +364,13 @@ You have access of the following tools:\n"""
                             payload, api_customization=self.api_customization
                         )
                     else:
-                        time.sleep(2)  # rate limit: 30 per minute
+                        # Public RapidAPI is rate-limited (30/min); a local
+                        # MirrorAPI server is not, so skip the throttle there.
+                        if not (
+                            'localhost' in self.service_url
+                            or '127.0.0.1' in self.service_url
+                        ):
+                            time.sleep(2)
                         headers = {'toolbench_key': self.toolbench_key}
                         timeout = None if self.service_url.endswith('virtual') else 15
                         try:

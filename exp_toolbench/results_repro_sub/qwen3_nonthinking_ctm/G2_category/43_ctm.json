@@ -1,0 +1,18 @@
+{
+  "query": "My friends and I are eagerly awaiting the delivery of a package. Can you please track the package with the Pack & Send reference number 'ReferenceNumberHere'? Additionally, I'm interested in the latest status of the package with colis ID 'CA107308006SI'.",
+  "query_id": 43,
+  "final_answer": "The package with reference number 'ReferenceNumberHere' is currently being processed, and pickup was confirmed 2 days ago. The estimated delivery date was October 5th, 2023, but the package with colis ID 'CA107308006SI' was delivered earlier, on October 4th, 2023. The status of the colis ID 'CA107308006SI' is 'Delivered', and it was shipped from the United States to Italy, with a weight of 2.5 kg and a service type of Express Mail International. The date of pickup was October 1st, 2023, and the last update for the package was on September 9th, 2019, when it was located in 'NOUMEA CDC' in Nouvelle-Cal\u00e9donie. The tracking system is operational, and for more detailed tracking information, you can visit the tracking page provided by Pack & Send.",
+  "weight_score": 2.12,
+  "parsed_answer": "The package with the Pack & Send reference number **'ReferenceNumberHere'** is currently being processed. Pickup was confirmed two days ago, and the estimated delivery date was **October 5th, 2023**. \n\nRegarding the package with **colis ID 'CA107308006SI'**, it was **delivered on October 4th, 2023**, and its status is **'Delivered'**. This package was shipped from the **United States to Italy**, with a **weight of 2.5 kg** and a **service type of Express Mail International**. The pickup date was **October 1st, 2023**, and the last update was on **September 9th, 2019**, when it was located at **'NOUMEA CDC' in Nouvelle-Cal\u00e9donie**.\n\nThe tracking system is operational, and for more detailed tracking information, you can visit the tracking page provided by Pack & Send.",
+  "metrics": {
+    "latency_seconds": 240.07846188545227,
+    "num_processors": 5,
+    "num_model_calls": 35,
+    "num_tool_calls": 15,
+    "total_tokens": 31656,
+    "prompt_tokens": 27286,
+    "completion_tokens": 4370,
+    "num_links_added": 3,
+    "active_links": 3
+  }
+}

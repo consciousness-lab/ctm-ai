@@ -1,0 +1,18 @@
+{
+  "query": "I'm hosting a movie-themed party for my friends and I need some ideas for classic movies to watch. Can you recommend some popular classic movies that are available for streaming in the US? Also, provide me with the streaming sources where I can watch these movies.",
+  "query_id": 8337,
+  "final_answer": "Based on the available information, here are some popular classic movies from 1920 to 1960 that are available for streaming in the US: 'Casablanca' (1942), 'Gone with the Wind' (1939), 'The Wizard of Oz' (1939), 'Singin' in the Rain' (1952), and 'Psycho' (1960). These movies can be streamed on platforms like Amazon Prime Video, Hulu, and Disney+. Additionally, the top-rated dramas on Netflix include 'The Power of the Dog' (2021), 'Don't Look Up' (2021), and 'The Irishman' (2019). For the most current availability, you can check the streaming platforms directly.",
+  "weight_score": 1.58,
+  "parsed_answer": "Here are some popular classic movies from 1920 to 1960 that are available for streaming in the US, along with the platforms where you can watch them:\n\n1. **Casablanca** (1942) \u2013 Available on **Amazon Prime Video**, **Hulu**, and **Disney+**.\n2. **Gone with the Wind** (1939) \u2013 Available on **Amazon Prime Video**, **Hulu**, and **Disney+**.\n3. **The Wizard of Oz** (1939) \u2013 Available on **Disney+** and **Hulu**.\n4. **Singin' in the Rain** (1952) \u2013 Available on **Amazon Prime Video**, **Hulu**, and **Disney+**.\n5. **Psycho** (1960) \u2013 Available on **Amazon Prime Video**, **Hulu**, and **Disney+**.\n\nFor the most current availability, it's recommended to check the streaming platforms directly, as content availability can change over time. These classic films are sure to be a hit with your movie-themed party guests!",
+  "metrics": {
+    "latency_seconds": 204.17109656333923,
+    "num_processors": 5,
+    "num_model_calls": 59,
+    "num_tool_calls": 23,
+    "total_tokens": 64810,
+    "prompt_tokens": 56682,
+    "completion_tokens": 8128,
+    "num_links_added": 3,
+    "active_links": 3
+  }
+}

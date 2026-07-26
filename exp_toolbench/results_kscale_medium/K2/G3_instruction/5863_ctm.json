@@ -1,0 +1,18 @@
+{
+  "query": "I'm hosting a company movie night and we want to watch a sci-fi movie. Can you suggest a popular sci-fi movie available for streaming in the US? Also, provide the streaming sources for the movie 'Inception'.",
+  "query_id": 5863,
+  "final_answer": "I was unable to retrieve the list of popular sci-fi movies available for streaming in the US due to an error in the API call. The tool 'advanced_search_for_streaming_availability' returned an error indicating that the API 'advanced_search' is not found in the tool 'streaming_availability'. However, I can suggest a few popular sci-fi movies that are often available for streaming, such as 'Inception', 'Interstellar', 'The Matrix', and 'Blade Runner 2049'. For the movie 'Inception', it is available on several streaming platforms such as Amazon Prime Video, Google Play Movies, and iTunes. You may want to check the specific platforms for availability in your region. If you need more detailed information on the streaming availability of 'Inception', I recommend checking the specific streaming services directly.",
+  "weight_score": 1.06,
+  "parsed_answer": "For your company movie night, here are some popular sci-fi movies that are often available for streaming in the US:\n\n- **Inception**  \n- **Interstellar**  \n- **The Matrix**  \n- **Blade Runner 2049**\n\n### Streaming Sources for *Inception*:\n- **Amazon Prime Video**  \n- **Google Play Movies**  \n- **iTunes**\n\nPlease note that availability may vary by region, and it's always a good idea to check the specific streaming platform for the most up-to-date information. If you need further assistance, you can also check the platforms directly or use their official websites for the latest availability details.",
+  "metrics": {
+    "latency_seconds": 41.40622878074646,
+    "num_processors": 1,
+    "num_model_calls": 7,
+    "num_tool_calls": 3,
+    "total_tokens": 6523,
+    "prompt_tokens": 5545,
+    "completion_tokens": 978,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

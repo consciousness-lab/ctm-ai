@@ -1,0 +1,18 @@
+{
+  "query": "I'm organizing a movie night for my company's employees and I need some suggestions for inspirational movies. Can you recommend some popular inspirational movies that are available for streaming in the US? Also, provide me with the streaming sources where I can watch these movies.",
+  "query_id": 8335,
+  "final_answer": "Based on the available information, here are some popular inspirational movies that are generally available for streaming in the US on platforms like Netflix, Amazon Prime Video, and Hulu: 'The Pursuit of Happyness', 'Rocky', 'The Secret Life of Walter Mitty', 'Whiplash', and 'The Theory of Everything'. For the most accurate and up-to-date information on streaming availability, it is recommended to check the specific streaming platforms directly. The Pursuit of Happyness is a 2006 film directed by Jay Roach and stars Will Smith as Chris Gardner, a man who faces numerous challenges while pursuing his dreams. The movie is highly regarded for its inspirational message and emotional depth, making it a great choice for a company movie night.",
+  "weight_score": 1.46,
+  "parsed_answer": "Here are some popular inspirational movies that are generally available for streaming in the US, along with the platforms where they can be found:\n\n1. **The Pursuit of Happyness**  \n   - **Streaming Platforms**: Netflix, Amazon Prime Video, Hulu  \n   - **Overview**: A 2006 film directed by Jay Roach, starring Will Smith as Chris Gardner, who faces numerous challenges while pursuing his dreams. It is highly regarded for its inspirational message and emotional depth.\n\n2. **Rocky**  \n   - **Streaming Platforms**: Amazon Prime Video, Hulu  \n   - **Overview**: A classic inspirational film about a down-on-his-luck Italian-American boxer who gets a mysterious opportunity to fight for the world heavyweight championship.\n\n3. **The Secret Life of Walter Mitty**  \n   - **Streaming Platforms**: Netflix, Amazon Prime Video  \n   - **Overview**: A story about a daydreaming man who embarks on a journey to find himself, ultimately discovering the value of living in the present.\n\n4. **Whiplash**  \n   - **Streaming Platforms**: Amazon Prime Video, Hulu  \n   - **Overview**: A gripping tale about a young drummer and his demanding instructor, exploring themes of ambition, dedication, and the cost of excellence.\n\n5. **The Theory of Everything**  \n   - **Streaming Platforms**: Amazon Prime Video, Hulu  \n   - **Overview**: A biographical drama about the life of physicist Stephen Hawking, highlighting his personal and professional challenges and his inspirational journey.\n\n**Note**: Streaming availability can vary by region and platform. For the most accurate and up-to-date information, it is recommended to check the specific streaming platforms directly.",
+  "metrics": {
+    "latency_seconds": 217.04172372817993,
+    "num_processors": 5,
+    "num_model_calls": 63,
+    "num_tool_calls": 28,
+    "total_tokens": 63395,
+    "prompt_tokens": 56159,
+    "completion_tokens": 7236,
+    "num_links_added": 4,
+    "active_links": 4
+  }
+}

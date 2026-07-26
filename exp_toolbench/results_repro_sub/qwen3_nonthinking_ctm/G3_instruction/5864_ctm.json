@@ -1,0 +1,18 @@
+{
+  "query": "I want to watch a classic movie with my family. Can you suggest a popular classic movie available for streaming in the US? Also, provide the streaming sources for the movie 'Casablanca'.",
+  "query_id": 5864,
+  "final_answer": "The movie 'Casablanca' is a classic film that is highly acclaimed and available for streaming on platforms like Amazon Prime Video and Google Play Movies. It was released on January 24, 1942, and has a runtime of approximately 102 minutes. The film is directed by Michael Curtiz and written by Julius J. Epstein, Philip G. Epstein, and Howard Koch. It stars Humphrey Bogart as Rick Blaine and Ingrid Bergman as Ilsa Lund. 'Casablanca' is widely regarded as one of the greatest films of all time, with a 98% score on Rotten Tomatoes, a 9.2/10 rating on IMDb, and a 94/100 score on Metacritic. For the most accurate and up-to-date information on streaming availability, pricing, or special features, please check the platforms directly.",
+  "weight_score": 2.0,
+  "parsed_answer": "A popular classic movie that you can watch with your family is *Casablanca*. It is a highly acclaimed film released on January 24, 1942, and is widely regarded as one of the greatest films of all time. It is available for streaming in the US on platforms such as **Amazon Prime Video** and **Google Play Movies**. The film is directed by Michael Curtiz and stars Humphrey Bogart and Ingrid Bergman.\n\nFor the most accurate and up-to-date information on streaming availability, pricing, or special features, please check the platforms directly.",
+  "metrics": {
+    "latency_seconds": 121.15602707862854,
+    "num_processors": 6,
+    "num_model_calls": 45,
+    "num_tool_calls": 18,
+    "total_tokens": 40578,
+    "prompt_tokens": 35611,
+    "completion_tokens": 4967,
+    "num_links_added": 5,
+    "active_links": 5
+  }
+}

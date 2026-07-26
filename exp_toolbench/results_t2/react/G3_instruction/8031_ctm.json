@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a movie night with my friends this weekend. Can you recommend some new titles that have been added to streaming platforms recently? Also, provide me with the basic details and streaming availability of the movie with IMDb ID tt9904802.",
+  "query_id": 8031,
+  "final_answer": "I couldn't find the streaming availability for 'The Last Days of Ptolemy Grey' in the US. However, here are some new titles recently added to streaming platforms: 1463951, 1463370, 1463385, 1463390, 1463395, 1463400, 1463405, 1463410, 1463415, and 1463420. You can use these IDs to get more details about the titles. For 'The Last Days of Ptolemy Grey', the basic details are: it's a comedy movie released in 2022 with a runtime of \\N minutes. The title is not available on any streaming platform in the US based on the current data.",
+  "weight_score": 0.0,
+  "parsed_answer": "I couldn't find the streaming availability for 'The Last Days of Ptolemy Grey' in the US. However, here are some new titles recently added to streaming platforms: 1463951, 1463370, 1463385, 1463390, 1463395, 1463400, 1463405, 1463410, 1463415, and 1463420. You can use these IDs to get more details about the titles. For 'The Last Days of Ptolemy Grey', the basic details are: it's a comedy movie released in 2022 with a runtime of \\N minutes. The title is not available on any streaming platform in the US based on the current data.",
+  "metrics": {
+    "latency_seconds": 69.23469948768616,
+    "num_model_calls": 5,
+    "num_tool_calls": 3,
+    "total_tokens": 11500,
+    "num_processors": 6
+  }
+}

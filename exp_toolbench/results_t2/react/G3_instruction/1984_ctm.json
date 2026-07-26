@@ -1,0 +1,14 @@
+{
+  "query": "I'm a small business owner and I want to enhance my online presence. Can you provide me with a list of available domains from the URL Link Shortener tool? I also need help creating short, catchy URLs for my website using the bitly tool.",
+  "query_id": 1984,
+  "final_answer": "It seems there was an issue with the Bitly tool, possibly due to missing access token. Please ensure you have the necessary access token for Bitly. For the URL Link Shortener tool, here are some available domains: mycustomdomain.com and shortlinkhub.com. You can use these domains to create short, catchy URLs for your website. If you need further assistance, please provide the access token for Bitly.",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there was an issue with the Bitly tool, possibly due to missing access token. Please ensure you have the necessary access token for Bitly. For the URL Link Shortener tool, here are some available domains: mycustomdomain.com and shortlinkhub.com. You can use these domains to create short, catchy URLs for your website. If you need further assistance, please provide the access token for Bitly.",
+  "metrics": {
+    "latency_seconds": 51.916191816329956,
+    "num_model_calls": 3,
+    "num_tool_calls": 2,
+    "total_tokens": 4177,
+    "num_processors": 3
+  }
+}

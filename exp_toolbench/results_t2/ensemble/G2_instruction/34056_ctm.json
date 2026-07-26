@@ -1,0 +1,14 @@
+{
+  "query": "My company is organizing a financial conference and we need to download the portfolio for the event. Can you assist us in downloading the portfolio from FreeFloatUs? Additionally, I'm interested in knowing the equivalent words for the number 98765432.10 in English.",
+  "query_id": 34056,
+  "final_answer": "I was unable to download the portfolio from FreeFloatUs due to an invalid or missing API token. Please ensure you have the correct API token and provide it for further assistance. The number 98765432.10 in English is 'ninety-eight million, seven hundred and sixty-five thousand, four hundred and thirty-two dollars and ten cents'.",
+  "weight_score": 0.0,
+  "parsed_answer": "I was unable to download the portfolio from FreeFloatUs due to an invalid or missing API token. Please ensure you have the correct API token and provide it for further assistance. The number 98765432.10 in English is 'ninety-eight million, seven hundred and sixty-five thousand, four hundred and thirty-two dollars and ten cents'.",
+  "metrics": {
+    "latency_seconds": 48.044776916503906,
+    "num_model_calls": 15,
+    "num_tool_calls": 9,
+    "total_tokens": 17390,
+    "num_processors": 5
+  }
+}

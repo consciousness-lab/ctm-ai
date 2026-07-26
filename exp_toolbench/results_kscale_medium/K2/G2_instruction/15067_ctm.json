@@ -1,0 +1,18 @@
+{
+  "query": "My friend loves puzzles. Can you scramble the word 'PUZZLE' for me? I also want to have a chat with an AI chatbot. Ask the chatbot if it knows any good puzzle games.",
+  "query_id": 15067,
+  "final_answer": "The word 'PUZZLE' has been scrambled to 'ZUUEPLL'. Now, I would like to chat with an AI chatbot to see if it knows any good puzzle games. Puzzle games are a great way to challenge the mind and improve problem-solving skills. Some popular examples include 'Tetris', 'Monument Valley', and 'Portal'. If you're interested in discovering new puzzle games, I can provide more information or even suggest some games based on your preferences.",
+  "weight_score": 2.12,
+  "parsed_answer": "The word **'PUZZLE'** has been scrambled to **'ZUUEPLL'**.\n\nNow, I would like to chat with an AI chatbot to see if it knows any good puzzle games. Puzzle games are a great way to challenge the mind and improve problem-solving skills. Some popular examples include **'Tetris'**, **'Monument Valley'**, and **'Portal'**. If you're interested in discovering new puzzle games, I can provide more information or even suggest some games based on your preferences.",
+  "metrics": {
+    "latency_seconds": 31.049172401428223,
+    "num_processors": 2,
+    "num_model_calls": 5,
+    "num_tool_calls": 2,
+    "total_tokens": 3786,
+    "prompt_tokens": 3230,
+    "completion_tokens": 556,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

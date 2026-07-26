@@ -1,0 +1,14 @@
+{
+  "query": "My company is organizing a conference in Argentina and we need to ship some packages. Can you give me a quote for shipping a package from Buenos Aires to Cordoba? Also, provide me with the contact details of the transitaires available in Argentina.",
+  "query_id": 61,
+  "final_answer": "Here is the shipping quote for a package from Buenos Aires to Cordoba, Argentina, for a 1 kg package:\n\n- **Classic Shipping (Door to Door):** $953.42\n- **Express Shipping (Door to Door):** $1,310.95\n\nI was unable to retrieve the contact details of the transitaires available in Argentina. Please reach out to the shipping provider for more information. If you need further assistance, feel free to ask!",
+  "weight_score": 0.0,
+  "parsed_answer": "Here is the shipping quote for a package from Buenos Aires to Cordoba, Argentina, for a 1 kg package:\n\n- **Classic Shipping (Door to Door):** $953.42\n- **Express Shipping (Door to Door):** $1,310.95\n\nI was unable to retrieve the contact details of the transitaires available in Argentina. Please reach out to the shipping provider for more information. If you need further assistance, feel free to ask!",
+  "metrics": {
+    "latency_seconds": 247.15347409248352,
+    "num_model_calls": 20,
+    "num_tool_calls": 6,
+    "total_tokens": 51038,
+    "num_processors": 9
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "query": "I need to organize my documents and files. Can you fetch the list of available files from my cloud storage and provide me with the disk usage details? Also, check if a specific file exists in the storage.",
+  "query_id": 22262,
+  "final_answer": "The list of available files and folders in your cloud storage is as follows:\n\n- **Folders**: `sample-docs`, `sample-pdfs`, `sample-spreadsheets`, `sample-text`\n\nThe disk usage details for your GroupDocs.Annotation Cloud storage are as follows:\n- Total storage capacity, used storage, and remaining available storage information can be obtained via the GetDiscUsage API.\n\nThe file `report.docx` exists in the path `/sample-docs/`.\n\nLet me know if you need further assistance!",
+  "weight_score": 0.0,
+  "parsed_answer": "The list of available files and folders in your cloud storage is as follows:\n\n- **Folders**: `sample-docs`, `sample-pdfs`, `sample-spreadsheets`, `sample-text`\n\nThe disk usage details for your GroupDocs.Annotation Cloud storage are as follows:\n- Total storage capacity, used storage, and remaining available storage information can be obtained via the GetDiscUsage API.\n\nThe file `report.docx` exists in the path `/sample-docs/`.\n\nLet me know if you need further assistance!",
+  "metrics": {
+    "latency_seconds": 153.2408254146576,
+    "num_model_calls": 21,
+    "num_tool_calls": 9,
+    "total_tokens": 35356,
+    "num_processors": 7
+  }
+}

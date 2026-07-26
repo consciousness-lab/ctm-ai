@@ -1,0 +1,18 @@
+{
+  "query": "My company is organizing a financial conference and we need to download the portfolio for the event. Can you assist us in downloading the portfolio from FreeFloatUs? Additionally, I'm interested in knowing the equivalent words for the number 98765432.10 in English.",
+  "query_id": 34056,
+  "final_answer": "To download the portfolio from FreeFloatUs, you need to obtain an API token by registering on their platform and generating it through their developer console or API management interface. Once you have the API token, you should include it in the request headers, typically as `Authorization: Bearer <token>`, to authenticate your request. The specific API endpoint for accessing portfolios may vary, but common examples include `/api/v1/portfolios`. The number 98765432.10 is equivalent to 'ninety-eight million seven hundred sixty-five thousand four hundred thirty-two point one zero' in English.",
+  "weight_score": 1.46,
+  "parsed_answer": "To assist with downloading the portfolio from FreeFloatUs, follow these steps:\n\n1. **Register on FreeFloatUs**: Create an account on their platform if you haven't already.\n2. **Generate an API Token**: Navigate to the developer console or API management interface and generate an API token. This token will be used for authentication.\n3. **Use the API Endpoint**: Make a request to the appropriate API endpoint, typically something like `/api/v1/portfolios`. Include the API token in the request headers as `Authorization: Bearer <token>` to authenticate your request.\n\nRegarding the number **98765432.10**, its equivalent in English words is:  \n**\"ninety-eight million seven hundred sixty-five thousand four hundred thirty-two point one zero.\"**",
+  "metrics": {
+    "latency_seconds": 108.1860466003418,
+    "num_processors": 2,
+    "num_model_calls": 21,
+    "num_tool_calls": 9,
+    "total_tokens": 20551,
+    "prompt_tokens": 17772,
+    "completion_tokens": 2779,
+    "num_links_added": 1,
+    "active_links": 1
+  }
+}

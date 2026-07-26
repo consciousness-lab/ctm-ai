@@ -1,0 +1,18 @@
+{
+  "query": "My friends and I are eagerly awaiting the delivery of a package. Can you please track the package with the Pack & Send reference number 'ReferenceNumberHere'? Additionally, I'm interested in the latest status of the package with colis ID 'CA107308006SI'.",
+  "query_id": 43,
+  "final_answer": "The latest status of the package with the colis ID 'CA107308006SI' is that it is in transit. The package is currently located in NOUMEA CDC, which is in Nouvelle-Cal\u00e9donie (NC). The last update was on September 9, 2019, at 09:41:12. The status is 'COLIS_EN_TRANSIT', meaning the package is still in transit. There are no additional details provided about the package's current location or estimated delivery date.",
+  "weight_score": 2.06,
+  "parsed_answer": "Based on the analysis provided, here is the current status of your package:\n\n- **Colis ID:** CA107308006SI  \n- **Status:** In Transit (COLIS_EN_TRANSIT)  \n- **Current Location:** NOUMEA CDC, Nouvelle-Cal\u00e9donie (NC)  \n- **Last Update Date and Time:** September 9, 2019, at 09:41:12  \n- **Estimated Delivery Date:** Not provided  \n\nThe package is still en route and there are no further details available regarding its exact location or expected delivery date. You may want to check directly with the carrier for more up-to-date information, as the last update is over a year old.",
+  "metrics": {
+    "latency_seconds": 73.04807019233704,
+    "num_processors": 2,
+    "num_model_calls": 5,
+    "num_tool_calls": 2,
+    "total_tokens": 4203,
+    "prompt_tokens": 3479,
+    "completion_tokens": 724,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

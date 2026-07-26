@@ -1,0 +1,14 @@
+{
+  "query": "I'm planning a surprise birthday party for my friend and I want to create a website for the event. Can you help me take a screenshot of the website using the Screenshot Maker API? Save the screenshot on a S3 bucket and provide me with the URL. Also, I would like to gather information about the certificate details of the website using the Certficate API.",
+  "query_id": 12634,
+  "final_answer": "The screenshot of the website has been saved on an S3 bucket and can be accessed at the provided URL: https://storage.linebot.site/screenshot8wfy2l1733153568307.png. However, there was an issue retrieving the certificate details for the domain. Please ensure the domain name is correct and accessible. If the problem persists, double-check the domain name or try a different one. Let me know if you need further assistance!",
+  "weight_score": 0.0,
+  "parsed_answer": "The screenshot of the website has been saved on an S3 bucket and can be accessed at the provided URL: https://storage.linebot.site/screenshot8wfy2l1733153568307.png. However, there was an issue retrieving the certificate details for the domain. Please ensure the domain name is correct and accessible. If the problem persists, double-check the domain name or try a different one. Let me know if you need further assistance!",
+  "metrics": {
+    "latency_seconds": 16.22540831565857,
+    "num_model_calls": 4,
+    "num_tool_calls": 2,
+    "total_tokens": 6064,
+    "num_processors": 3
+  }
+}

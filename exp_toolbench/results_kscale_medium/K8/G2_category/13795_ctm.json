@@ -1,0 +1,18 @@
+{
+  "query": "I'm planning a surprise anniversary party for my parents and I need some ideas for decorations. Generate a QR code with a random sentence that can be used as a party theme and provide me with a random word that represents love.",
+  "query_id": 13795,
+  "final_answer": "The QR code has been successfully generated with the theme: 'Celebrating love and memories with our parents on their anniversary!' You can access the QR code at the provided URL: http://codzz.com/qrcodes/MTJfMDJfMjRfMThfMzRfMjE=.jpg. The random word that represents love is 'compassion'.",
+  "weight_score": 2.12,
+  "parsed_answer": "Here are the details for your surprise anniversary party decorations:\n\n**Party Theme:**  \n\"**Celebrating love and memories with our parents on their anniversary!**\"  \n\n**QR Code:**  \nYou can access the QR code at the following URL:  \n[http://codzz.com/qrcodes/MTJfMDJfMjRfMThfMzRfMjE=.jpg](http://codzz.com/qrcodes/MTJfMDJfMjRfMThfMzRfMjE=.jpg)  \n\n**Random Word Representing Love:**  \n**Compassion**\n\nYou can use the QR code as part of your decorations to add a digital and interactive element to the theme. The word \"compassion\" can be incorporated into signage, banners, or centerpieces to emphasize the deep emotional connection and love you have for your parents.",
+  "metrics": {
+    "latency_seconds": 97.1738760471344,
+    "num_processors": 8,
+    "num_model_calls": 17,
+    "num_tool_calls": 8,
+    "total_tokens": 15315,
+    "prompt_tokens": 13629,
+    "completion_tokens": 1686,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

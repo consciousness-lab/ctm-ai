@@ -1,0 +1,18 @@
+{
+  "query": "I'm organizing a charity event and need to transport goods to the venue. Can you provide me with a list of companies that offer shipping services? It would be great if you could also provide me with a random project description from the SQUAKE platform.",
+  "query_id": 75,
+  "final_answer": "Here is a list of companies that offer shipping services, which you can consider for transporting goods to your charity event venue: aras, yurtici, surat, ptt, mng, heprijet, trendyolexpress, ups, byexpress, kolaygelsin, horozlojistik, canadapost, dhl, fedex, tnt, usps, yanwen, aliexpress, ceva, interglobal, kargoist, and jetizz. These companies are well-known in the logistics and shipping industry and can provide reliable services for your event. For more specific details, such as pricing, delivery times, or service areas, you may need to contact these companies directly. Additionally, if you are looking for a random project description from the SQUAKE platform, I can provide one if you have access to that platform or if you can share more details about the project type or domain you are interested in.",
+  "weight_score": 2.12,
+  "parsed_answer": "Here is a list of companies that offer shipping and logistics services, which you can consider for transporting goods to your charity event venue:\n\n- Aras  \n- Yurtici  \n- Surat  \n- PTT  \n- MNG  \n- HEPrijet  \n- TrendyOlexpress  \n- UPS  \n- ByExpress  \n- KolayGelsin  \n- HorozLojistik  \n- Canadapost  \n- DHL  \n- FedEx  \n- TNT  \n- USPS  \n- Yanwen  \n- AliExpress  \n- Ceva  \n- Interglobal  \n- Kargoist  \n- Jetizz  \n\nThese companies are well-established in the logistics and shipping industry and can provide reliable services for your event. For specific details such as pricing, delivery times, or service areas, you may need to contact them directly.\n\nRegarding a random project description from the SQUAKE platform, I currently do not have access to the platform or its database. If you have access to the platform or can provide more details about the project type or domain you're interested in, I can help you craft a suitable project description.",
+  "metrics": {
+    "latency_seconds": 71.15171432495117,
+    "num_processors": 4,
+    "num_model_calls": 9,
+    "num_tool_calls": 4,
+    "total_tokens": 7877,
+    "prompt_tokens": 6465,
+    "completion_tokens": 1412,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

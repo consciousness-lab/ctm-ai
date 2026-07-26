@@ -1,0 +1,14 @@
+{
+  "query": "I want to explore different genres of movies and series available on streaming platforms. Can you provide me with the basic details and streaming availability of a movie or series with the keyword 'zombie' and released between the years 2000 and 2025? Also, fetch the details of the actors and crew associated with the title with Watchmode ID 3173903.",
+  "query_id": 8032,
+  "final_answer": "It seems there are no results found for movies or series with the keyword 'zombie' released between 2000 and 2025. Additionally, the details for the title with Watchmode ID 3173903 could not be retrieved. Please try adjusting your search parameters or check the ID for accuracy.",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there are no results found for movies or series with the keyword 'zombie' released between 2000 and 2025. Additionally, the details for the title with Watchmode ID 3173903 could not be retrieved. Please try adjusting your search parameters or check the ID for accuracy.",
+  "metrics": {
+    "latency_seconds": 118.80766797065735,
+    "num_model_calls": 8,
+    "num_tool_calls": 7,
+    "total_tokens": 18973,
+    "num_processors": 6
+  }
+}

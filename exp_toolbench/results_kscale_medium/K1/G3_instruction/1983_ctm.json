@@ -1,0 +1,18 @@
+{
+  "query": "I'm organizing a charity event and I need to promote it on social media. Can you generate short URLs for the event details using the bitly tool? Additionally, I want to create branded short links for the event website using the URL Link Shortener tool.",
+  "query_id": 1983,
+  "final_answer": "I have successfully retrieved a list of active branded domains for URL shortening. These domains can be used to create branded short links for your charity event website. Here are the domains and their short names: mycustomdomain.com (mcdo), shorturl.com (su), longlinkreducer.com (lre), mybrandnewdomain.com (mbnd), and customlinkfactory.com (clfc). You can use these branded domains to generate short links that reflect your charity event's brand. For example, you could create a short link like 'mcdo.charityevent.org' to direct users to your event website. To proceed, I recommend selecting a domain that aligns with your event's branding and then using the URL Link Shortener tool to generate the specific short link for your event website. Please provide the event website URL so I can generate the short link for you.",
+  "weight_score": 2.12,
+  "parsed_answer": "To promote your charity event on social media, I can generate short URLs using the Bitly tool and branded short links using the available domains. Here are the steps and recommendations:\n\n### Step 1: Use Bitly for General Short URLs\n- Bitly is ideal for creating short, trackable links for social media posts.\n- Example: If your event website is `https://www.charityevent.org`, a Bitly short URL could be `https://bit.ly/CharityEvent2025`.\n\n### Step 2: Use Branded Domains for Custom Short Links\nYou have the following branded domains available for creating custom short links:\n- **mycustomdomain.com** (short name: `mcdo`)\n- **shorturl.com** (short name: `su`)\n- **longlinkreducer.com** (short name: `lre`)\n- **mybrandnewdomain.com** (short name: `mbnd`)\n- **customlinkfactory.com** (short name: `clfc`)\n\nTo create a branded short link, you can use the format:\n```\n<short-name>.<domain>.<event-slug>\n```\nExample: If you choose `mcdo` and your event is called \"Hope for All\", the short link could be:\n```\nhttps://mcdo.charityevent.org/hopeforall\n```\n\n### Recommendation\n- **Select a branded domain** that aligns with your event\u2019s identity (e.g., `mcdo` for a modern, custom feel).\n- **Provide your event website URL** so I can generate the exact branded short link for you.\n\nPlease share the event website URL and your preferred branded domain, and I will create the short link for you.",
+  "metrics": {
+    "latency_seconds": 35.495211124420166,
+    "num_processors": 1,
+    "num_model_calls": 3,
+    "num_tool_calls": 1,
+    "total_tokens": 3189,
+    "prompt_tokens": 2535,
+    "completion_tokens": 654,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

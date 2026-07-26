@@ -1,0 +1,14 @@
+{
+  "query": "I am planning a surprise party for my sister and I want to create personalized video invitations for all the guests. Can you provide me with the details of the templates available in my Nexweave account? Additionally, I would like to fetch the details of a specific order using the tes API.",
+  "query_id": 4031,
+  "final_answer": "It seems there is an issue with the API token for accessing the Nexweave templates. Please ensure that you have the correct API token and try again. If you need further assistance, feel free to ask. For the order details, the response was: {'id': 1, 'petId': 1, 'quantity': 1, 'shipDate': '2023-07-15T08:55:49.943+0000', 'status': 'placed', 'complete': True}. Let me know how you'd like to proceed.",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there is an issue with the API token for accessing the Nexweave templates. Please ensure that you have the correct API token and try again. If you need further assistance, feel free to ask. For the order details, the response was: {'id': 1, 'petId': 1, 'quantity': 1, 'shipDate': '2023-07-15T08:55:49.943+0000', 'status': 'placed', 'complete': True}. Let me know how you'd like to proceed.",
+  "metrics": {
+    "latency_seconds": 104.7933042049408,
+    "num_model_calls": 46,
+    "num_tool_calls": 33,
+    "total_tokens": 107674,
+    "num_processors": 9
+  }
+}

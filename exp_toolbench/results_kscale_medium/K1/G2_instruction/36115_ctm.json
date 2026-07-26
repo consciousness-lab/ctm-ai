@@ -1,0 +1,18 @@
+{
+  "query": "I'm a sports journalist and I'm writing an article about the performance of the Kolkata Knight Riders in the IPL. Can you provide me with the statistics of the team for the most runs? Also, give me the current standings of Major League Soccer for the 2021 season.",
+  "query_id": 36115,
+  "final_answer": "The provided tool result does not contain any specific information about the Kolkata Knight Riders' performance in the IPL or the current standings of Major League Soccer for the 2021 season. The returned data is about an upcoming cricket series and does not address the original query. To provide the requested information, it would be necessary to consult sports databases or official IPL and MLS websites for the most recent statistics and standings.",
+  "weight_score": 1.06,
+  "parsed_answer": "Based on the analysis provided, there is no relevant data available regarding the Kolkata Knight Riders' performance in the IPL or the current standings of Major League Soccer for the 2021 season. The tool response appears to be unrelated to the query and does not provide the requested statistics.\n\nTo accurately answer your question, you would need to consult official sources such as the IPL website or sports databases like ESPN Cricinfo for the Kolkata Knight Riders' performance statistics, and the Major League Soccer (MLS) official site or sports news platforms for the 2021 season standings. Let me know if you'd like guidance on how to find this information.",
+  "metrics": {
+    "latency_seconds": 43.908629417419434,
+    "num_processors": 1,
+    "num_model_calls": 7,
+    "num_tool_calls": 3,
+    "total_tokens": 6288,
+    "prompt_tokens": 5490,
+    "completion_tokens": 798,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

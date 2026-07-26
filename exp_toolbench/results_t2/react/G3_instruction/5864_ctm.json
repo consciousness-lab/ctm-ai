@@ -1,0 +1,14 @@
+{
+  "query": "I want to watch a classic movie with my family. Can you suggest a popular classic movie available for streaming in the US? Also, provide the streaming sources for the movie 'Casablanca'.",
+  "query_id": 5864,
+  "final_answer": "",
+  "weight_score": 0.0,
+  "parsed_answer": "",
+  "metrics": {
+    "latency_seconds": 66.78840923309326,
+    "num_model_calls": 8,
+    "num_tool_calls": 7,
+    "total_tokens": 17164,
+    "num_processors": 6
+  }
+}

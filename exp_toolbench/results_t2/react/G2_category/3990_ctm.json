@@ -1,0 +1,14 @@
+{
+  "query": "My company is launching a new product and we need to create a promotional video. Can you help us find videos related to our industry? Additionally, provide us with the ability to download these videos and generate PDF documents with video thumbnails and descriptions for reference during the video editing process.",
+  "query_id": 3990,
+  "final_answer": "It seems there is an issue with the tool 'video_downloader' as it is not able to find the API 'modifytiff'. I am unable to proceed further with the task. Please check the tool configuration and ensure that the required APIs are available.",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there is an issue with the tool 'video_downloader' as it is not able to find the API 'modifytiff'. I am unable to proceed further with the task. Please check the tool configuration and ensure that the required APIs are available.",
+  "metrics": {
+    "latency_seconds": 54.09021878242493,
+    "num_model_calls": 5,
+    "num_tool_calls": 3,
+    "total_tokens": 10186,
+    "num_processors": 8
+  }
+}

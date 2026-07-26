@@ -1,0 +1,18 @@
+{
+  "query": "I'm planning a weekend getaway with my family and we want to watch some movies during our trip. Can you recommend some popular movies that are available for streaming in Australia? Also, provide us with the streaming sources where we can watch these movies.",
+  "query_id": 8334,
+  "final_answer": "Based on the available information, here are some popular movies that are generally available for streaming in Australia, along with the streaming platforms where they can be found. These recommendations are based on general trends and the most common platforms where these movies are available. For the most accurate and up-to-date information, it is recommended to check the specific streaming platform's library directly.\n\n1. **The Lion King (1994)**: This animated classic is available on Disney+ in Australia. It may also be found on Netflix or Amazon Prime Video, depending on the region and licensing agreements.\n\n2. **Inception**: This action-packed movie is often available on platforms like Netflix, Disney+, and Amazon Prime Video.\n\n3. **The Dark Knight**: This superhero film is a popular choice and is generally available on Netflix, Disney+, and Amazon Prime Video.\n\n4. **Forrest Gump**: A classic drama film that is often found on Netflix, Disney+, and Amazon Prime Video.\n\n5. **The Avengers**: This superhero movie is available on Netflix, Disney+, and Amazon Prime Video.\n\nFor the most accurate and current information, it is recommended to check the official websites or apps of these platforms directly.",
+  "weight_score": 1.46,
+  "parsed_answer": "Here are some popular movies that are generally available for streaming in Australia, along with the primary streaming platforms where they can be found. Please note that availability may vary depending on regional licensing agreements and platform updates:\n\n1. **The Lion King (1994)**  \n   - **Streaming Platforms**: Disney+  \n   - **Also available on**: Netflix or Amazon Prime Video (depending on region and licensing)\n\n2. **Inception**  \n   - **Streaming Platforms**: Netflix, Disney+, Amazon Prime Video\n\n3. **The Dark Knight**  \n   - **Streaming Platforms**: Netflix, Disney+, Amazon Prime Video\n\n4. **Forrest Gump**  \n   - **Streaming Platforms**: Netflix, Disney+, Amazon Prime Video\n\n5. **The Avengers**  \n   - **Streaming Platforms**: Netflix, Disney+, Amazon Prime Video\n\n**Recommendation**: For the most accurate and up-to-date information, always check the official websites or apps of the streaming platforms directly, as availability can change over time. Enjoy your family movie night!",
+  "metrics": {
+    "latency_seconds": 200.87363648414612,
+    "num_processors": 6,
+    "num_model_calls": 65,
+    "num_tool_calls": 32,
+    "total_tokens": 65192,
+    "prompt_tokens": 57579,
+    "completion_tokens": 7613,
+    "num_links_added": 4,
+    "active_links": 4
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "query": "I'm hosting a company movie night and we want to watch a sci-fi movie. Can you suggest a popular sci-fi movie available for streaming in the US? Also, provide the streaming sources for the movie 'Inception'.",
+  "query_id": 5863,
+  "final_answer": "The movie 'Inception' is a popular sci-fi movie available for streaming in the US. It was released in 2010 and falls under the genres of Action, Adventure, and Sci-Fi. The movie can be streamed on Netflix and Amazon Prime Video.",
+  "weight_score": 2.12,
+  "parsed_answer": "Based on the analysis provided, a popular sci-fi movie available for streaming in the US is **'Inception'** (2010). It is a well-regarded film that combines elements of Action, Adventure, and Sci-Fi, making it a great choice for a company movie night.\n\n**Streaming Sources for 'Inception':**\n- **Netflix**\n- **Amazon Prime Video**\n\nThese platforms offer the movie for streaming, ensuring that your team can enjoy it conveniently.",
+  "metrics": {
+    "latency_seconds": 61.88420057296753,
+    "num_processors": 6,
+    "num_model_calls": 13,
+    "num_tool_calls": 6,
+    "total_tokens": 11790,
+    "prompt_tokens": 10389,
+    "completion_tokens": 1401,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

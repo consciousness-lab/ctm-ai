@@ -1,0 +1,14 @@
+{
+  "query": "As a language enthusiast, I'm always eager to learn new languages. Can you help me explore the possible translations between Russian, Japanese, and Arabic? Additionally, I would like to obtain a list of available language codes for future reference.",
+  "query_id": 12974,
+  "final_answer": "The supported languages for translation include Russian, Japanese, and Arabic. Here is a list of available language codes for future reference:\n\n- af: Afrikaans\n- ar: Arabic\n- bn: Bangla\n- bs: Bosnian\n- bg: Bulgarian\n- ca: Catalan\n- hr: Croatian\n- cs: Czech\n- da: Danish\n- nl: Dutch\n- en: English\n- et: Estonian\n- fi: Finnish\n- fr: French\n- de: German\n- el: Greek\n- gu: Gujarati\n- ht: Haitian\n- hi: Hindi\n- hu: Hungarian\n- is: Icelandic\n- id: Indonesian\n- ga: Irish\n- it: Italian\n- ja: Japanese\n- kn: Kannada\n- kk: Kazakh\n- ko: Korean\n\nYou can use these codes for translation purposes.",
+  "weight_score": 0.0,
+  "parsed_answer": "The supported languages for translation include Russian, Japanese, and Arabic. Here is a list of available language codes for future reference:\n\n- af: Afrikaans\n- ar: Arabic\n- bn: Bangla\n- bs: Bosnian\n- bg: Bulgarian\n- ca: Catalan\n- hr: Croatian\n- cs: Czech\n- da: Danish\n- nl: Dutch\n- en: English\n- et: Estonian\n- fi: Finnish\n- fr: French\n- de: German\n- el: Greek\n- gu: Gujarati\n- ht: Haitian\n- hi: Hindi\n- hu: Hungarian\n- is: Icelandic\n- id: Indonesian\n- ga: Irish\n- it: Italian\n- ja: Japanese\n- kn: Kannada\n- kk: Kazakh\n- ko: Korean\n\nYou can use these codes for translation purposes.",
+  "metrics": {
+    "latency_seconds": 382.84015703201294,
+    "num_model_calls": 17,
+    "num_tool_calls": 10,
+    "total_tokens": 21276,
+    "num_processors": 2
+  }
+}

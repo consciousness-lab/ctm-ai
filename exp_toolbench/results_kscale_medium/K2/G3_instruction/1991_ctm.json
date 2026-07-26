@@ -1,0 +1,18 @@
+{
+  "query": "I'm a social media influencer and I want to track the engagement of my posts. Can you help me create short URLs for each post using the bitly tool? I also need to create branded short links for my website using the URL Link Shortener tool.",
+  "query_id": 1991,
+  "final_answer": "The `get_a_list_of_domains_for_url_link_shortener` tool was successfully called and returned a list of domains. Here are the available domains for creating branded short links: example.com (ID: 12345), test.com (ID: 67890), and sample.com (ID: 11223). These domains can be used to create branded short links for your website. For the Bitly tool, you can create short URLs for each post by using the Bitly API or the Bitly website, and then track the engagement of your posts through the Bitly analytics dashboard. You can also use the URL Link Shortener tool to create branded short links using one of the domains listed above.",
+  "weight_score": 2.12,
+  "parsed_answer": "To help you track engagement and create short URLs for your social media posts and branded links for your website, here's a comprehensive and concise plan based on the analysis:\n\n### 1. **Create Short URLs for Social Media Posts Using Bitly**\n- **Tool**: Use the Bitly API or Bitly website.\n- **Process**:\n  - Log in to your Bitly account.\n  - Paste the full URL of your social media post.\n  - Generate a short URL (e.g., `bit.ly/yourpost`).\n  - Share the short URL on your social media platforms.\n- **Track Engagement**:\n  - Use the Bitly analytics dashboard to monitor clicks, views, and other engagement metrics.\n  - You can also set up custom domains for Bitly links if needed.\n\n### 2. **Create Branded Short Links for Your Website**\n- **Available Domains**:\n  - `example.com` (ID: 12345)\n  - `test.com` (ID: 67890)\n  - `sample.com` (ID: 11223)\n- **Tool**: Use the URL Link Shortener tool.\n- **Process**:\n  - Log in to the URL Link Shortener tool.\n  - Select one of the available branded domains (e.g., `example.com`).\n  - Enter your full website URL.\n  - Generate a branded short link (e.g., `example.com/yourbrand`).\n  - Use this link for your website in social media, email campaigns, or other marketing efforts.\n\n### Summary\n- Use **Bitly** for tracking engagement on social media posts with short URLs.\n- Use the **URL Link Shortener tool** with one of the branded domains (`example.com`, `test.com`, or `sample.com`) to create professional, branded links for your website.\n\nThis approach ensures you have both tracking capabilities and a professional brand presence across your online content.",
+  "metrics": {
+    "latency_seconds": 32.601919412612915,
+    "num_processors": 2,
+    "num_model_calls": 5,
+    "num_tool_calls": 2,
+    "total_tokens": 4499,
+    "prompt_tokens": 3618,
+    "completion_tokens": 881,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

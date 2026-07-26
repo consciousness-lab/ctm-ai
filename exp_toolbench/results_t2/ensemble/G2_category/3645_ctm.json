@@ -1,0 +1,14 @@
+{
+  "query": "I need to test the functionality of the DAILY OVRLL 0822202130837 API. Please check if the API is working by sending a GET request to the '/status/200' endpoint. Also, fetch information about an anime with the ID '1' using the Anime DB API.",
+  "query_id": 3645,
+  "final_answer": "The DAILY OVRLL 0822202130837 API is working as expected. The anime with ID '1' is 'Fullmetal Alchemist: Brotherhood', which has a synopsis of 'Two brothers search for the Philosopher's Stone after an attempt to revive their deceased mother goes awry and leaves them in damaged physical forms.' It falls under the genres of Action, Adventure, Drama, Fantasy, Magic, and Shounen, has 64 episodes, a rating of PG-13, and a score of 9.22.",
+  "weight_score": 0.0,
+  "parsed_answer": "The DAILY OVRLL 0822202130837 API is working as expected. The anime with ID '1' is 'Fullmetal Alchemist: Brotherhood', which has a synopsis of 'Two brothers search for the Philosopher's Stone after an attempt to revive their deceased mother goes awry and leaves them in damaged physical forms.' It falls under the genres of Action, Adventure, Drama, Fantasy, Magic, and Shounen, has 64 episodes, a rating of PG-13, and a score of 9.22.",
+  "metrics": {
+    "latency_seconds": 47.8934121131897,
+    "num_model_calls": 10,
+    "num_tool_calls": 6,
+    "total_tokens": 14510,
+    "num_processors": 7
+  }
+}

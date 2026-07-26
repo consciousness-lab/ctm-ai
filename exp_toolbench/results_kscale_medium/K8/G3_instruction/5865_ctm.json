@@ -1,0 +1,18 @@
+{
+  "query": "I want to watch a documentary about nature. Can you suggest a popular nature documentary available for streaming in the US? Also, provide the streaming sources for the documentary 'Planet Earth'.",
+  "query_id": 5865,
+  "final_answer": "The documentary 'Planet Earth' is a popular nature documentary that is available for streaming in the US. It is a TV series that was released in 2006. Another related documentary is 'Planet Earth II', which was released in 2016 and is also available for streaming. Additionally, 'Our Planet', a documentary released in 2019, is another popular nature documentary that is available for streaming. The streaming sources for 'Planet Earth' include platforms such as Netflix and Amazon Prime Video.",
+  "weight_score": 2.02,
+  "parsed_answer": "A popular nature documentary available for streaming in the US is **\"Planet Earth\"**, which was released in 2006. It is widely regarded as one of the most iconic nature documentaries and is available on platforms such as **Netflix** and **Amazon Prime Video**.\n\nFor those interested in more recent options, **\"Planet Earth II\"** (2016) and **\"Our Planet\"** (2019) are also highly recommended and available for streaming on similar platforms.",
+  "metrics": {
+    "latency_seconds": 138.5735001564026,
+    "num_processors": 5,
+    "num_model_calls": 37,
+    "num_tool_calls": 14,
+    "total_tokens": 32958,
+    "prompt_tokens": 28725,
+    "completion_tokens": 4233,
+    "num_links_added": 4,
+    "active_links": 4
+  }
+}

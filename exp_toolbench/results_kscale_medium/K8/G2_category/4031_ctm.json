@@ -1,0 +1,18 @@
+{
+  "query": "I am planning a surprise party for my sister and I want to create personalized video invitations for all the guests. Can you provide me with the details of the templates available in my Nexweave account? Additionally, I would like to fetch the details of a specific order using the tes API.",
+  "query_id": 4031,
+  "final_answer": "I have successfully fetched the details of the specific order using the tes API. The order with ID 1 has a status of 'placed' and is marked as complete. The order includes a pet ID of 1, with a quantity of 1, and the ship date is July 15, 2023. However, the information provided does not include any details about the templates available in your Nexweave account or the personalized video invitations for the surprise party. To proceed with creating the video invitations, I need to know the specific templates available in your Nexweave account and any additional details you may have about the invitations.",
+  "weight_score": 1.46,
+  "parsed_answer": "Based on the analysis provided, here is a comprehensive and concise response to your query:\n\nThe specific order with ID 1 has been successfully fetched using the tes API. The order status is 'placed' and marked as complete. It includes a pet ID of 1, a quantity of 1, and a ship date of July 15, 2023. However, there is no information available regarding the templates in your Nexweave account or any details related to the personalized video invitations for your sister's surprise party.\n\nTo proceed with creating the video invitations, you will need to:\n\n1. Log in to your Nexweave account.\n2. Navigate to the template section to view the available video invitation templates.\n3. Select a template that suits your needs and customize it with personal details for your sister's surprise party.\n\nIf you require further assistance in accessing or customizing the templates, please provide additional details or check the Nexweave platform for template-specific instructions.",
+  "metrics": {
+    "latency_seconds": 128.6931595802307,
+    "num_processors": 8,
+    "num_model_calls": 77,
+    "num_tool_calls": 36,
+    "total_tokens": 74214,
+    "prompt_tokens": 65548,
+    "completion_tokens": 8666,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

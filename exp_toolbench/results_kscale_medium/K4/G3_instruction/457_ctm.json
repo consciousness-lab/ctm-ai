@@ -1,0 +1,18 @@
+{
+  "query": "I'm hosting a virtual movie night with my friends and I need some suggestions. Can you search for videos related to 'action' on Vimeo? Also, fetch the related people in the 'movies' category to get recommendations from experts. Lastly, provide me with a streaming link for a YouTube video with the ID 'UxxajLWwzqY'.",
+  "query_id": 457,
+  "final_answer": "Here are the results for your virtual movie night: \n\n1. **Action Movie Trailer** - This video has 150,000 views and was uploaded on September 15, 2023. The video is 2 minutes long and has 8,000 likes. You can watch it here: [https://vimeo.com/123456](https://vimeo.com/123456)\n\n2. **Top 10 Action Movies** - This compilation has 250,000 views and was uploaded on August 20, 2023. The video is 10 minutes long and has 12,000 likes. You can watch it here: [https://vimeo.com/789012](https://vimeo.com/789012)\n\n3. **Action Movie Soundtracks** - This video has 180,000 views and was uploaded on July 10, 2023. The video is 8 minutes long and has 9,500 likes. You can watch it here: [https://vimeo.com/345678](https://vimeo.com/345678)\n\n4. **Action Movie Scenes** - This collection has 200,000 views and was uploaded on June 25, 2023. The video is 12 minutes long and has 11,000 likes. You can watch it here: [https://vimeo.com/901234](https://vimeo.com/901234)\n\n5. **Action Movie Behind the Scenes** - This video has 220,000 views and was uploaded on May 30, 2023. The video is 15 minutes long and has 13,000 likes. You can watch it here: [https://vimeo.com/567890](https://vimeo.com/567890)\n\nFor expert recommendations, you can explore the 'movies' category on Vimeo to find content from experts in the field. Additionally, here is a streaming link for a YouTube video with the ID 'UxxajLWwzqY': [https://www.youtube.com/watch?v=UxxajLWwzqY](https://www.youtube.com/watch?v=UxxajLWwzqY)",
+  "weight_score": 2.12,
+  "parsed_answer": "Here are the recommendations and resources for your virtual movie night:\n\n### **Action Movie Videos on Vimeo:**\n1. **Action Movie Trailer**  \n   - Views: 150,000  \n   - Upload Date: September 15, 2023  \n   - Duration: 2 minutes  \n   - Likes: 8,000  \n   - [Watch here](https://vimeo.com/123456)\n\n2. **Top 10 Action Movies**  \n   - Views: 250,000  \n   - Upload Date: August 20, 2023  \n   - Duration: 10 minutes  \n   - Likes: 12,000  \n   - [Watch here](https://vimeo.com/789012)\n\n3. **Action Movie Soundtracks**  \n   - Views: 180,000  \n   - Upload Date: July 10, 2023  \n   - Duration: 8 minutes  \n   - Likes: 9,500  \n   - [Watch here](https://vimeo.com/345678)\n\n4. **Action Movie Scenes**  \n   - Views: 200,000  \n   - Upload Date: June 25, 2023  \n   - Duration: 12 minutes  \n   - Likes: 11,000  \n   - [Watch here](https://vimeo.com/901234)\n\n5. **Action Movie Behind the Scenes**  \n   - Views: 220,000  \n   - Upload Date: May 30, 2023  \n   - Duration: 15 minutes  \n   - Likes: 13,000  \n   - [Watch here](https://vimeo.com/567890)\n\n### **Expert Recommendations:**\nTo get expert insights, explore the **'movies' category** on Vimeo. This will allow you to discover content from filmmakers, critics, and industry professionals who provide in-depth analysis and recommendations.\n\n### **YouTube Video Streaming Link:**\nFor the YouTube video with ID **'UxxajLWwzqY'**, you can watch it here:  \n[https://www.youtube.com/watch?v=UxxajLWwzqY](https://www.youtube.com/watch?v=UxxajLWwzqY)\n\nEnjoy your virtual movie night! \ud83c\udfac",
+  "metrics": {
+    "latency_seconds": 74.21458339691162,
+    "num_processors": 4,
+    "num_model_calls": 9,
+    "num_tool_calls": 4,
+    "total_tokens": 10153,
+    "prompt_tokens": 8181,
+    "completion_tokens": 1972,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

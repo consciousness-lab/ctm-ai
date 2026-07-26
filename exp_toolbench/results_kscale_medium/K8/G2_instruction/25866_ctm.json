@@ -1,0 +1,18 @@
+{
+  "query": "I'm hosting a cocktail party and I need some cocktail recipes. Can you suggest some cocktail recipes that contain vodka as one of the ingredients? Also, provide me with a cake recipe from The Birthday Cake DB.",
+  "query_id": 25866,
+  "final_answer": "For your cocktail party, here are some cocktail recipes that contain vodka as one of the ingredients: 1. Moscow Mule: Vodka, lime juice, ginger beer, and a lime wedge. 2. Cosmopolitan: Vodka, triple sec, cranberry juice, and lime juice. 3. Bloody Mary: Vodka, tomato juice, lemon juice, Worcestershire sauce, and various spices. Regarding the cake recipe, the 'List of Cakes' endpoint provides a comprehensive list of cakes, including their names, images (accessed via AWS S3), and unique IDs. To obtain detailed recipes for a specific cake, you need to use the cake's ID in the 'Detailed Cake Recipe by ID' endpoint. This structured approach allows users to efficiently find both broad and specific information about cakes, making it easier to plan and prepare for special occasions.",
+  "weight_score": 1.8200000000000003,
+  "parsed_answer": "Certainly! Here are three vodka-based cocktail recipes perfect for your cocktail party:\n\n1. **Moscow Mule**  \n   - Ingredients: Vodka, lime juice, ginger beer, and a lime wedge.  \n   - Instructions: Fill a copper mug with ice, add lime juice, top with ginger beer, and stir gently. Garnish with a lime wedge.\n\n2. **Cosmopolitan**  \n   - Ingredients: Vodka, triple sec, cranberry juice, and lime juice.  \n   - Instructions: In a shaker with ice, combine all ingredients and shake well. Strain into a chilled cocktail glass and garnish with a lime wedge.\n\n3. **Bloody Mary**  \n   - Ingredients: Vodka, tomato juice, lemon juice, Worcestershire sauce, and various spices (like celery salt, tabasco, and black pepper).  \n   - Instructions: In a shaker with ice, mix all ingredients. Shake well and strain into a glass. Garnish with celery or a lime wedge.\n\nFor the cake recipe, you can refer to **The Birthday Cake DB**. To get a detailed cake recipe, use the **'Detailed Cake Recipe by ID'** endpoint with the specific cake ID you're interested in. The **'List of Cakes'** endpoint provides a comprehensive list of cakes, including names, images (via AWS S3), and unique IDs, allowing you to easily find and plan your cake selection.",
+  "metrics": {
+    "latency_seconds": 199.57762169837952,
+    "num_processors": 8,
+    "num_model_calls": 49,
+    "num_tool_calls": 16,
+    "total_tokens": 50481,
+    "prompt_tokens": 43838,
+    "completion_tokens": 6643,
+    "num_links_added": 1,
+    "active_links": 1
+  }
+}

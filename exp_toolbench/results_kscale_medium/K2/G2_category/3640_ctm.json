@@ -1,0 +1,18 @@
+{
+  "query": "I'm looking for some Bollywood movie recommendations. Fetch a list of comedy movies released in 2013. Additionally, provide me with the details of the top-ranked movie from IMDb's top 100 movies list.",
+  "query_id": 3640,
+  "final_answer": "Here is the information you requested regarding Bollywood movie recommendations and details about the top-ranked movie from IMDb's Top 100 list. For the comedy movies released in 2013, the top comedy movies include 'The Intern' (starring Robert De Niro and Anne Hathaway), 'The Heat' (starring Sandra Bullock and Melissa McCarthy), and 'Trainwreck' (starring Amy Schumer). These movies were well-received and had significant commercial success. The top-ranked movie from IMDb's Top 100 Movies list is 'The Shawshank Redemption,' directed by Frank Darabont, released in 1994, and starring Tim Robbins and Morgan Freeman. It is based on the Stephen King novella 'Rita Hayworth and Shawshank Redemption,' and it received critical acclaim for its storytelling, performances, and direction, becoming a cult classic.",
+  "weight_score": 1.62,
+  "parsed_answer": "Here is a comprehensive and concise answer based on your request:\n\n**Comedy Movies Released in 2013:**\n- *The Intern* (starring Robert De Niro and Anne Hathaway)\n- *The Heat* (starring Sandra Bullock and Melissa McCarthy)\n- *Trainwreck* (starring Amy Schumer)\n\n**Top-Ranked Movie from IMDb's Top 100 Movies List:**\n- **Title:** *The Shawshank Redemption*  \n- **Director:** Frank Darabont  \n- **Release Year:** 1994  \n- **Stars:** Tim Robbins, Morgan Freeman  \n- **Based On:** Stephen King's novella *Rita Hayworth and Shawshank Redemption*  \n- **Status:** A critically acclaimed cult classic, known for its powerful storytelling, strong performances, and enduring popularity.",
+  "metrics": {
+    "latency_seconds": 189.44525122642517,
+    "num_processors": 2,
+    "num_model_calls": 19,
+    "num_tool_calls": 9,
+    "total_tokens": 20849,
+    "prompt_tokens": 18386,
+    "completion_tokens": 2463,
+    "num_links_added": 1,
+    "active_links": 1
+  }
+}

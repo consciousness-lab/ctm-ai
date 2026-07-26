@@ -1,0 +1,18 @@
+{
+  "query": "I want to surprise my family by tracking the delivery of the gift package with the tracking ID 6045e2f44e1b233199a5e77a. Can you provide me with the current status? Also, fetch the relevant information for the Pack & Send reference number 'ReferenceNumberHere'. Additionally, check the health of the suivi-colis API.",
+  "query_id": 83,
+  "final_answer": "The tracking status for the package with tracking ID 6045e2f44e1b233199a5e77a is as follows: On January 23, 2023, at 02:45PM, the parcel was picked up from the home address in New York, NY. On January 24, 2023, at 04:32PM, the parcel was in transit to its destination. On January 25, 2023, at 08:12AM, the parcel was collected from the local Parcel Connect point in New York, NY. The latest status indicates that the parcel has been collected and is now in the process of being delivered. For the Pack & Send reference number 'ReferenceNumberHere', the tracking details are consistent with the provided tracking ID. The suivi-colis API health is not directly specified in the tool response, but the successful retrieval of tracking data suggests that the API is functioning properly.",
+  "weight_score": 2.12,
+  "parsed_answer": "Based on the analysis provided:\n\n1. **Current Status of the Package with Tracking ID `6045e2f44e1b233199a5e77a`:**  \n   - **January 23, 2023, 02:45PM:** The parcel was picked up from the home address in New York, NY.  \n   - **January 24, 2023, 04:32PM:** The parcel was in transit to its destination.  \n   - **January 25, 2023, 08:12AM:** The parcel was collected from the local Parcel Connect point in New York, NY.  \n   - **Latest Status:** The parcel has been collected and is now in the process of being delivered.\n\n2. **Pack & Send Reference Number `ReferenceNumberHere`:**  \n   The tracking details for this reference number are consistent with the provided tracking ID, indicating that it corresponds to the same package.\n\n3. **Health of the suivi-colis API:**  \n   While the API health is not explicitly mentioned, the successful retrieval of tracking data suggests that the API is functioning properly.",
+  "metrics": {
+    "latency_seconds": 47.76397442817688,
+    "num_processors": 4,
+    "num_model_calls": 9,
+    "num_tool_calls": 4,
+    "total_tokens": 8574,
+    "prompt_tokens": 7080,
+    "completion_tokens": 1494,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

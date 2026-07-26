@@ -1,0 +1,18 @@
+{
+  "query": "I want to watch a specific movie, 'The Shawshank Redemption'. Can you fetch the details of this movie, including its director, cast, and rating? Also, provide additional details like plot summaries, quotes, and reviews for this movie.",
+  "query_id": 3558,
+  "final_answer": "The movie 'The Shawshank Redemption' is a classic film directed by Frank Darabont. It stars Tim Robbins as Andy Dufresne, a banker who is wrongfully convicted of murder and sentenced to life imprisonment in Shawshank State Penitentiary. The film follows Andy's journey through the prison system, where he becomes a symbol of hope and resilience for his fellow inmates. The movie is known for its powerful storytelling, deep character development, and memorable quotes, such as 'Get busy living, or get busy dying.' It has received critical acclaim and is often cited as one of the greatest films of all time. The movie is available on several streaming platforms, including Netflix, Amazon Prime Video, and others, as per the latest data.",
+  "weight_score": 1.8200000000000003,
+  "parsed_answer": "**Movie Details: The Shawshank Redemption**\n\n**Director:** Frank Darabont  \n**Cast:**  \n- Tim Robbins as Andy Dufresne  \n- Morgan Freeman as Ellis \"Red\" Redding  \n- Bob Gunton as Warden Norton  \n- William Sadler as Brooks Hatlen  \n- James Whitmore as Captain Hadley  \n\n**Rating:**  \n- **IMDb Rating:** 9.3/10  \n- **Rotten Tomatoes:** 97% (Critics) / 98% (Audience)  \n- **Metacritic:** 91/100  \n\n**Plot Summary:**  \n\"The Shawshank Redemption\" follows Andy Dufresne, a banker who is wrongfully convicted of murdering his wife and her lover. Sentenced to life in Shawshank State Penitentiary, Andy uses his intelligence and resourcefulness to endure the harsh realities of prison life. Over time, he becomes a symbol of hope and resilience for his fellow inmates, particularly for Red, a long-term prisoner who eventually finds freedom and purpose through Andy's influence. The film explores themes of hope, perseverance, and the human spirit.\n\n**Memorable Quotes:**  \n- \"Get busy living, or get busy dying.\"  \n- \"Hope is a good thing, maybe the best of things, and no good thing ever dies.\"  \n- \"Some birds aren't meant to be caged. That's all. They're born to be free.\"  \n\n**Critical Reception and Reviews:**  \n\"The Shawshank Redemption\" is widely regarded as one of the greatest films of all time. Critics praise its powerful storytelling, deep character development, and emotional resonance. The film's themes of hope and redemption have made it a timeless classic, and its impact continues to be felt in popular culture. It has been celebrated for its direction, performances, and enduring relevance.\n\n**Availability:**  \nThe movie is available on several streaming platforms, including **Netflix**, **Amazon Prime Video**, and **HBO Max**, depending on your region. It is also available for purchase or rental on digital platforms like iTunes and Google Play.",
+  "metrics": {
+    "latency_seconds": 53.858768701553345,
+    "num_processors": 1,
+    "num_model_calls": 3,
+    "num_tool_calls": 1,
+    "total_tokens": 3883,
+    "prompt_tokens": 3186,
+    "completion_tokens": 697,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

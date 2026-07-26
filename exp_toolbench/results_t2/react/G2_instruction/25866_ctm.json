@@ -1,0 +1,14 @@
+{
+  "query": "I'm hosting a cocktail party and I need some cocktail recipes. Can you suggest some cocktail recipes that contain vodka as one of the ingredients? Also, provide me with a cake recipe from The Birthday Cake DB.",
+  "query_id": 25866,
+  "final_answer": "It seems there is an issue retrieving cocktail recipes with vodka as an ingredient. However, I can provide you with a cake recipe from The Birthday Cake DB. Here is a sample cake recipe:\n\nCake Recipe:\n- Name: Chocolate Cake\n- Description: A rich and moist chocolate cake with a velvety chocolate frosting.\n- Ingredients: Flour, sugar, cocoa powder, eggs, butter, milk, baking powder, vanilla extract, and chocolate frosting.\n- Instructions: Preheat the oven, mix the dry ingredients, add wet ingredients, pour into a cake pan, and bake. Let it cool, then frost with chocolate frosting.\n\nPlease check the tools again or try a different query for cocktail recipes.",
+  "weight_score": 0.0,
+  "parsed_answer": "It seems there is an issue retrieving cocktail recipes with vodka as an ingredient. However, I can provide you with a cake recipe from The Birthday Cake DB. Here is a sample cake recipe:\n\nCake Recipe:\n- Name: Chocolate Cake\n- Description: A rich and moist chocolate cake with a velvety chocolate frosting.\n- Ingredients: Flour, sugar, cocoa powder, eggs, butter, milk, baking powder, vanilla extract, and chocolate frosting.\n- Instructions: Preheat the oven, mix the dry ingredients, add wet ingredients, pour into a cake pan, and bake. Let it cool, then frost with chocolate frosting.\n\nPlease check the tools again or try a different query for cocktail recipes.",
+  "metrics": {
+    "latency_seconds": 295.1921970844269,
+    "num_model_calls": 8,
+    "num_tool_calls": 7,
+    "total_tokens": 13501,
+    "num_processors": 7
+  }
+}

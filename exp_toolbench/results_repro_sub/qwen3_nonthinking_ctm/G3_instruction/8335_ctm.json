@@ -1,0 +1,18 @@
+{
+  "query": "I'm organizing a movie night for my company's employees and I need some suggestions for inspirational movies. Can you recommend some popular inspirational movies that are available for streaming in the US? Also, provide me with the streaming sources where I can watch these movies.",
+  "query_id": 8335,
+  "final_answer": "Based on the information provided, here are some inspirational movies that are available for streaming in the US:\n\n1. **The Pursuit of Happyness** (2006): This movie is available on streaming platforms such as Netflix, Amazon Prime Video, and Hulu. It tells the inspiring story of Chris Gardner, a man who overcomes significant challenges to achieve his dreams.\n\n2. **Rocky** (1976): This iconic film is available on streaming platforms like Amazon Prime Video, Hulu, and iTunes. It showcases the underdog story of a small-time boxer who trains for the championship.\n\n3. **Hidden Figures** (2016): This inspirational movie is available on streaming services such as Netflix, Amazon Prime Video, and Hulu. It highlights the true story of three African American women who played a critical role in NASA's space program during the 1960s.\n\nThese movies are widely appreciated for their uplifting messages and inspiring stories. For the most accurate and up-to-date information on specific streaming platforms, you can check directly on these services or use a streaming availability tool.",
+  "weight_score": 2.02,
+  "parsed_answer": "Here are some popular inspirational movies available for streaming in the US, along with the platforms where they can be watched:\n\n1. **The Pursuit of Happyness** (2006)  \n   - **Streaming Platforms**: Netflix, Amazon Prime Video, Hulu  \n   - **Synopsis**: Based on the true story of Chris Gardner, this film follows his journey of perseverance and determination in the face of adversity.\n\n2. **Rocky** (1976)  \n   - **Streaming Platforms**: Amazon Prime Video, Hulu, iTunes  \n   - **Synopsis**: A classic underdog story about a small-time boxer who trains for the championship, embodying themes of resilience and self-belief.\n\n3. **Hidden Figures** (2016)  \n   - **Streaming Platforms**: Netflix, Amazon Prime Video, Hulu  \n   - **Synopsis**: This film highlights the inspiring true story of three African American women who made significant contributions to NASA's space program during the 1960s.\n\nThese movies are widely appreciated for their uplifting messages and motivational themes, making them excellent choices for a company movie night. For the most current availability, you can check directly on the streaming platforms or use a streaming availability tool.",
+  "metrics": {
+    "latency_seconds": 259.30743074417114,
+    "num_processors": 6,
+    "num_model_calls": 45,
+    "num_tool_calls": 21,
+    "total_tokens": 47647,
+    "prompt_tokens": 41959,
+    "completion_tokens": 5688,
+    "num_links_added": 5,
+    "active_links": 5
+  }
+}

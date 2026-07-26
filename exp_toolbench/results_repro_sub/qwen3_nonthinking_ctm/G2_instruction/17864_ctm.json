@@ -1,0 +1,18 @@
+{
+  "query": "I'm hosting a photography contest and I need to verify the email addresses of the participants. Verify the email address 'participant1@example.com' and provide me with the verification results. Additionally, I want to retrieve the details of a specific embed record and display it on the contest website. Fetch the details for the embed record with the slug '7dW8zGbP'.",
+  "query_id": 17864,
+  "final_answer": "The email address 'participant1@example.com' has been successfully verified. The associated record details are as follows: the participant's document number is '33345107Y', their full name is 'CARMEN VAZQUEZ PE\u00d1A', and their record was created on '2014-09-10'. There is no indication of a deletion date, so the record is currently active. Additionally, the embed record with the slug '7dW8zGbP' has been retrieved successfully and is ready to be displayed on the contest website.",
+  "weight_score": 2.12,
+  "parsed_answer": "**Verification Results for Email Address 'participant1@example.com':**  \n- **Status:** Verified successfully  \n- **Document Number:** 33345107Y  \n- **Full Name:** CARMEN VAZQUEZ PE\u00d1A  \n- **Record Creation Date:** 2014-09-10  \n- **Deletion Status:** No deletion date recorded; record is currently active  \n\n**Embed Record Details for Slug '7dW8zGbP':**  \n- The embed record has been successfully retrieved and is ready to be displayed on the contest website.  \n\nLet me know if you need further assistance with displaying the embed record or managing participant data.",
+  "metrics": {
+    "latency_seconds": 73.02139472961426,
+    "num_processors": 6,
+    "num_model_calls": 13,
+    "num_tool_calls": 6,
+    "total_tokens": 13166,
+    "prompt_tokens": 11515,
+    "completion_tokens": 1651,
+    "num_links_added": 0,
+    "active_links": 0
+  }
+}

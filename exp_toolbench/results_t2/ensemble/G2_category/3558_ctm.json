@@ -1,0 +1,14 @@
+{
+  "query": "I want to watch a specific movie, 'The Shawshank Redemption'. Can you fetch the details of this movie, including its director, cast, and rating? Also, provide additional details like plot summaries, quotes, and reviews for this movie.",
+  "query_id": 3558,
+  "final_answer": "I'm unable to retrieve the additional details for 'The Shawshank Redemption' due to an API error. However, I can provide the basic information about the movie: it is a 1994 film directed by Frank Darabont, starring Tim Robbins and Morgan Freeman, and it has an IMDb rating of 9.3. The plot revolves around the story of Andy Dufresne, a banker who is wrongfully imprisoned and seeks to survive and eventually escape the harsh conditions of Shawshank Prison. For more detailed information like quotes, reviews, and plot summaries, you might want to check the movie's page on IMDb directly.",
+  "weight_score": 0.0,
+  "parsed_answer": "I'm unable to retrieve the additional details for 'The Shawshank Redemption' due to an API error. However, I can provide the basic information about the movie: it is a 1994 film directed by Frank Darabont, starring Tim Robbins and Morgan Freeman, and it has an IMDb rating of 9.3. The plot revolves around the story of Andy Dufresne, a banker who is wrongfully imprisoned and seeks to survive and eventually escape the harsh conditions of Shawshank Prison. For more detailed information like quotes, reviews, and plot summaries, you might want to check the movie's page on IMDb directly.",
+  "metrics": {
+    "latency_seconds": 39.72050404548645,
+    "num_model_calls": 18,
+    "num_tool_calls": 14,
+    "total_tokens": 19722,
+    "num_processors": 3
+  }
+}

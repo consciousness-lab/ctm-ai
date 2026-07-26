@@ -15,7 +15,9 @@ def get_model_provider(model: str) -> str:
         'qwen/qwen3-omni-flash'       -> 'qwen'
         'openai/gpt-4o'               -> 'openai'
     """
-    if model.startswith('qwen/'):
+    if model.startswith('vllm/'):
+        return 'vllm'
+    elif model.startswith('qwen/'):
         return 'qwen'
     elif model.startswith('gemini/'):
         return 'gemini'
@@ -28,8 +30,29 @@ def get_completion_kwargs(model: str) -> dict:
     """Get provider-specific kwargs for litellm completion.
 
     For Qwen models, routes through DashScope's OpenAI-compatible endpoint.
+    For vllm/ models, routes through a locally hosted vLLM OpenAI-compatible
+    endpoint (e.g. self-hosted Qwen3-8B) with Qwen3 thinking disabled by default.
     For other providers, returns the model name as-is (handled natively by LiteLLM).
     """
+    if model.startswith('vllm/'):
+        # Local vLLM OpenAI-compatible server (e.g. Qwen3-8B on :8001).
+        # Route via litellm's openai/ provider pointed at the local endpoint.
+        actual_model = 'openai/' + model.split('/', 1)[1]
+        # Qwen3 thinking toggle: default OFF (non-thinking). Set env
+        # VLLM_THINKING=1/true/yes to re-enable the model's <think> reasoning.
+        enable_thinking = os.getenv('VLLM_THINKING', '0').lower() in (
+            '1',
+            'true',
+            'yes',
+        )
+        return {
+            'model': actual_model,
+            'api_base': os.getenv('VLLM_API_BASE', 'http://localhost:8001/v1'),
+            'api_key': os.getenv('VLLM_API_KEY', 'dummy'),
+            'extra_body': {
+                'chat_template_kwargs': {'enable_thinking': enable_thinking}
+            },
+        }
     if model.startswith('qwen/'):
         actual_model = 'openai/' + model.split('/', 1)[1]
         return {
