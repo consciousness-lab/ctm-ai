@@ -12,6 +12,127 @@ from ..graphs import ProcessorGraph
 from ..utils import logger, logging_func_with_count
 from .ctm_base import BaseConsciousTuringMachine
 
+# --------------------------------------------------------------------------
+# Pluggable chunk-scoring for the confidence-estimator study. CTM_SCORE_METHOD
+# in {self, judge, logprob} chooses how the up-tree competition weight is set;
+# CTM_CHUNK_LOG (a dir) collects per-chunk (self / judge / logprob) values.
+# --------------------------------------------------------------------------
+_SCORE_CLIENT = None
+
+
+def _score_client():
+    global _SCORE_CLIENT
+    if _SCORE_CLIENT is None:
+        from openai import OpenAI
+
+        _SCORE_CLIENT = OpenAI(
+            base_url=os.getenv('VLLM_API_BASE', 'http://localhost:8001/v1'),
+            api_key=os.getenv('VLLM_API_KEY', 'dummy'),
+        )
+    return _SCORE_CLIENT
+
+
+_NOTHINK = {'chat_template_kwargs': {'enable_thinking': False}}
+
+
+def _judge_score(query, gist):
+    import re
+
+    try:
+        r = _score_client().chat.completions.create(
+            model='Qwen3-8B',
+            messages=[{'role': 'user', 'content': (
+                f'Query: {query[:1500]}\nResponse: {gist[:2000]}\nEstimate the '
+                'probability from 0.00 to 1.00 that this response CORRECTLY and '
+                'COMPLETELY solves the query. Reply with ONLY the number.'
+            )}],
+            max_tokens=8, temperature=0.0, extra_body=_NOTHINK,
+        )
+        m = re.search(r'[01]?\.\d+|[01]', r.choices[0].message.content or '')
+        if not m:
+            return None
+        v = float(m.group())
+        return max(0.0, min(1.0, v / 100 if v > 1 else v))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+_SELF_DECOUPLED_PROMPT = (
+    'You wrote the response below to the task. Evaluate ONLY this response.\n'
+    'Task: {q}\nResponse: {a}\n\n'
+    'Score each from 0.0 to 1.0:\n'
+    '- relevance: does the response provide specific, actionable data that answers '
+    'the task? If it says "I cannot"/"please provide" or gives guidance instead of '
+    'actual data, relevance MUST be 0.0-0.2; only responses with ACTUAL DATA from '
+    'tool calls deserve 0.6+.\n'
+    '- confidence: how certain that the information is correct? If no tool was '
+    'successfully called or a tool errored, confidence MUST be 0.0-0.3.\n'
+    '- surprise: does it bring novel information beyond the task context?\n\n'
+    'Reply with ONLY a JSON object: '
+    '{{"relevance": <0-1>, "confidence": <0-1>, "surprise": <0-1>}}'
+)
+
+
+def _self_decoupled_score(query, gist):
+    """CTM's own r/c/s self-scoring, but in a SEPARATE forward pass (decoupled
+    from answer generation). Returns the CTM weight r + c + 0.2*s (0..2.2)."""
+    import re
+
+    try:
+        r = _score_client().chat.completions.create(
+            model='Qwen3-8B',
+            messages=[{'role': 'user', 'content': _SELF_DECOUPLED_PROMPT.format(
+                q=query[:1500], a=gist[:2000])}],
+            max_tokens=120, temperature=0.0, extra_body=_NOTHINK,
+        )
+        txt = r.choices[0].message.content or ''
+
+        def g(name):
+            m = re.search(name + r'"?\s*:\s*([01]?\.\d+|[01](?:\.0+)?)', txt)
+            return float(m.group(1)) if m else None
+
+        rel, con, sur = g('relevance'), g('confidence'), g('surprise')
+        if rel is None or con is None:
+            return None
+        return rel + con + 0.2 * (sur or 0.0)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _logprob_score(query, gist):
+    import math
+
+    try:
+        r = _score_client().chat.completions.create(
+            model='Qwen3-8B',
+            messages=[{'role': 'user', 'content': (
+                f'Query: {query[:1500]}\nResponse: {gist[:2000]}\nDoes the response '
+                'correctly and completely solve the query? Answer with exactly one '
+                'word: Yes or No.'
+            )}],
+            max_tokens=1, temperature=0.0, logprobs=True, top_logprobs=20,
+            extra_body=_NOTHINK,
+        )
+        top = r.choices[0].logprobs.content[0].top_logprobs
+        ly = ln = None
+        for t in top:
+            tk = t.token.strip().lower()
+            if tk == 'yes' and ly is None:
+                ly = t.logprob
+            elif tk == 'no' and ln is None:
+                ln = t.logprob
+        if ly is None and ln is None:
+            return None
+        if ly is None:
+            ly = ln - 10.0
+        if ln is None:
+            ln = ly - 10.0
+        mx = max(ly, ln)
+        ey, en = math.exp(ly - mx), math.exp(ln - mx)
+        return ey / (ey + en)
+    except Exception:  # noqa: BLE001
+        return None
+
 
 class ConsciousTuringMachine(BaseConsciousTuringMachine):
     """Conscious Turing Machine.
@@ -351,6 +472,52 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
     # Forward
     # ------------------------------------------------------------------
 
+    def _rescore_chunks(self, chunks, query, iteration=0):
+        """Override each chunk's competition weight with the chosen estimator
+        (CTM_SCORE_METHOD) and log per-chunk self/judge/logprob values (iter 0)."""
+        # CTM-AI's canonical scoring is 'self_decoupled' (r+c+0.2s in a separate
+        # forward pass). 'self' is the legacy coupled ablation.
+        method = os.getenv('CTM_SCORE_METHOD', 'self_decoupled')
+        log_dir = os.getenv('CTM_CHUNK_LOG')
+        if method == 'self' and not log_dir:
+            return
+        snap = [(c, c.relevance, c.confidence, c.surprise, c.weight) for c in chunks]
+        vals = {}
+        fnmap = {'judge': _judge_score, 'logprob': _logprob_score,
+                 'self_decoupled': _self_decoupled_score}
+        if method in fnmap:
+            fn = fnmap[method]
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=max(1, min(8, len(chunks)))
+            ) as ex:
+                futs = {ex.submit(fn, query, c.gist or ''): idx
+                        for idx, c in enumerate(chunks)}
+                for f in concurrent.futures.as_completed(futs):
+                    vals[futs[f]] = f.result()
+        for idx, (c, sr, sc, ss, sw) in enumerate(snap):
+            v = vals.get(idx)
+            if v is not None:
+                if method == 'self_decoupled':
+                    c.weight = v  # already r + c + 0.2s on the 0..2.2 scale
+                else:
+                    c.weight, c.confidence = v * 2.2, v
+            if log_dir and iteration == 0:
+                try:
+                    os.makedirs(log_dir, exist_ok=True)
+                    p = os.path.join(log_dir, f'{os.getpid()}.jsonl')
+                    with open(p, 'a') as f:
+                        f.write(json.dumps({
+                            'query': query[:2000], 'processor': c.processor_name,
+                            'gist': (c.gist or '')[:3000], 'self_relevance': sr,
+                            'self_confidence': sc, 'self_surprise': ss,
+                            'self_weight': sw,
+                            'judge': v if method == 'judge' else None,
+                            'logprob': v if method == 'logprob' else None,
+                            'self_decoupled': v if method == 'self_decoupled' else None,
+                        }, ensure_ascii=False) + '\n')
+                except Exception:  # noqa: BLE001
+                    pass
+
     def forward(
         self,
         query: str,
@@ -416,6 +583,7 @@ class ConsciousTuringMachine(BaseConsciousTuringMachine):
             }
 
             chunks = self.ask_processors(query, **input_params)
+            self._rescore_chunks(chunks, query, i)
             winning_chunk = self.uptree_competition(chunks)
 
             answer = winning_chunk.gist

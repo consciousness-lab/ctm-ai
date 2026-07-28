@@ -109,7 +109,26 @@ if __name__ == '__main__':
         'Default None = use all available tools.',
     )
 
+    parser.add_argument(
+        '--score_method', type=str, default='self_decoupled',
+        choices=['self', 'judge', 'logprob', 'self_decoupled'],
+        help='Chunk-scoring method for up-tree competition. Default '
+        "'self_decoupled' is CTM-AI's canonical scoring: the r+c+0.2s rubric "
+        'evaluated in a separate forward pass (decoupled from answer generation). '
+        "'self' is the legacy coupled ablation; 'judge'/'logprob' are baselines.",
+    )
+    parser.add_argument(
+        '--chunk_log_dir', type=str, default=None,
+        help='If set, log per-chunk self/judge/logprob values here (iter 0).',
+    )
+
     args = parser.parse_args()
+
+    import os as _os
+
+    _os.environ['CTM_SCORE_METHOD'] = args.score_method
+    if args.chunk_log_dir:
+        _os.environ['CTM_CHUNK_LOG'] = args.chunk_log_dir
 
     pipeline_runner = pipeline_runner(args)
     pipeline_runner.run(num_processes=args.num_processes)
